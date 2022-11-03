@@ -405,10 +405,6 @@ pub fn run() {
     let dummy_test_value: Box<dyn Any> = Box::new(());
     let counter_before = crate::cop0::count();
     for (index, test) in tests.iter().enumerate() {
-        text_out("Running ");
-        text_out(test.name());
-        text_out("...\n");
-
         let values = test.values();
         let level = test.level();
 
@@ -427,6 +423,10 @@ pub fn run() {
         };
 
         if execute_test {
+            text_out("Running ");
+            text_out(test.name());
+            text_out("...\n");
+
             let mut time = 0u32;
             if values.len() == 0 {
                 test_value(&test, &dummy_test_value, &mut failed[level as usize], &mut succeeded[level as usize], &mut time);
