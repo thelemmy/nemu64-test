@@ -248,7 +248,12 @@ impl Test for EntryHiMasking {
             unsafe { cop0::set_entry_hi(value); }
             let expected = value & 0xC00000FF_FFFFE0FF;
             let readback = cop0::entry_hi();
-            soft_assert_eq(readback, expected, format!("EntryHi was written as 0x{:x}", value).as_str())?;
+            soft_assert_eq(readback, expected, format!("EntryHi was written as 0x{:x} via DMTC0", value).as_str())?;
+
+            unsafe { cop0::set_entry_hi_32_64(value); }
+            let expected = value & 0xC00000FF_FFFFE0FF;
+            let readback = cop0::entry_hi();
+            soft_assert_eq(readback, expected, format!("EntryHi was written as 0x{:x} via MTC0", value).as_str())?;
         }
         Ok(())
     }

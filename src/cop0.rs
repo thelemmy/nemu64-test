@@ -255,6 +255,24 @@ unsafe fn read_cop0_64<const INDEX: u32>() -> u64 {
     ((raw_value_hi as u64) << 32) | (raw_value_lo as u64)
 }
 
+/// Uses mfc0 to read a 32 bit value but returns the whole value (useful to verify proper sign
+/// extension)
+#[inline]
+unsafe fn read_cop0_32_64<const INDEX: u32>() -> u64 {
+    // The inline assembler isn't properly setup for 64 bit - workaround in asm
+    let raw_value_lo: u32;
+    let raw_value_hi: u32;
+    unsafe {
+        asm!("
+        .set noat
+        mfc0 {tmp}, ${cop0reg}
+        add {gpr_lo}, $0, {tmp}
+        dsrl32 {gpr_hi}, {tmp}, 0
+    ", gpr_lo = out(reg) raw_value_lo, gpr_hi = out(reg) raw_value_hi, tmp = out(reg) _, cop0reg = const INDEX)
+    }
+    ((raw_value_hi as u64) << 32) | (raw_value_lo as u64)
+}
+
 #[inline]
 unsafe fn write_cop0<const INDEX: u32>(value: u32) {
     unsafe {
@@ -278,6 +296,25 @@ unsafe fn write_cop0_64<const INDEX: u32>(value: u64) {
         dsrl32 {tmp2}, {tmp2}, 0
         or {tmp}, {tmp}, {tmp2}
         dmtc0 {tmp}, ${cop0reg}
+        nop
+    ", gpr_lo = in(reg) (value as u32), gpr_hi = in(reg) ((value >> 32) as u32),
+        tmp = out(reg) _, tmp2 = out(reg) _, cop0reg = const INDEX)
+    }
+}
+
+/// Uses mtc0 to write a 32 bit value, but the caller controls the whole register, so can
+/// incorrectly setup sign extension
+#[inline]
+unsafe fn write_cop0_32_64<const INDEX: u32>(value: u64) {
+    unsafe {
+        asm!("
+        .set noat
+        dsll32 {tmp}, {gpr_hi}, 0
+        // Zero extend gpr_lo
+        dsll32 {tmp2}, {gpr_lo}, 0
+        dsrl32 {tmp2}, {tmp2}, 0
+        or {tmp}, {tmp}, {tmp2}
+        mtc0 {tmp}, ${cop0reg}
         nop
     ", gpr_lo = in(reg) (value as u32), gpr_hi = in(reg) ((value >> 32) as u32),
         tmp = out(reg) _, tmp2 = out(reg) _, cop0reg = const INDEX)
@@ -358,9 +395,9 @@ pub unsafe fn set_context_64(value: u64) {
     unsafe { write_cop0_64::<INDEX>(value) }
 }
 
-pub unsafe fn set_context_32(value: u32) {
+pub unsafe fn set_context_32_64(value: u64) {
     const INDEX: u32 = RegisterIndex::Context as u32;
-    unsafe { write_cop0::<INDEX>(value) }
+    unsafe { write_cop0_32_64::<INDEX>(value) }
 }
 
 pub fn pagemask() -> u32 {
@@ -398,6 +435,32 @@ pub fn count() -> u32 {
     unsafe { read_cop0::<INDEX>() }
 }
 
+pub unsafe fn set_count(value: u32) {
+    const INDEX: u32 = RegisterIndex::Count as u32;
+    unsafe { write_cop0::<INDEX>(value) }
+}
+
+pub unsafe fn set_count32_64(value: u64) {
+    const INDEX: u32 = RegisterIndex::Count as u32;
+    unsafe { write_cop0_32_64::<INDEX>(value) }
+}
+
+/// Read COUNT via MFC0 and returns the whole register (to verify sign extension)
+pub fn count32_64() -> u64 {
+    const INDEX: u32 = RegisterIndex::Count as u32;
+    unsafe { read_cop0_32_64::<INDEX>() }
+}
+
+pub fn count64() -> u64 {
+    const INDEX: u32 = RegisterIndex::Count as u32;
+    unsafe { read_cop0_64::<INDEX>() }
+}
+
+pub unsafe fn set_count64(value: u64) {
+    const INDEX: u32 = RegisterIndex::Count as u32;
+    unsafe { write_cop0_64::<INDEX>(value) }
+}
+
 pub fn entry_hi() -> u64 {
     const INDEX: u32 = RegisterIndex::EntryHi as u32;
     unsafe { read_cop0_64::<INDEX>() }
@@ -406,6 +469,11 @@ pub fn entry_hi() -> u64 {
 pub unsafe fn set_entry_hi(value: u64) {
     const INDEX: u32 = RegisterIndex::EntryHi as u32;
     unsafe { write_cop0_64::<INDEX>(value) }
+}
+
+pub unsafe fn set_entry_hi_32_64(value: u64) {
+    const INDEX: u32 = RegisterIndex::EntryHi as u32;
+    unsafe { write_cop0_32_64::<INDEX>(value) }
 }
 
 pub fn status() -> Status {
@@ -436,6 +504,11 @@ pub fn exceptpc() -> u64 {
 pub unsafe fn set_exceptpc(value: u64) {
     const INDEX: u32 = RegisterIndex::ExceptPC as u32;
     unsafe { write_cop0_64::<INDEX>(value) }
+}
+
+pub unsafe fn set_exceptpc_32_64(value: u64) {
+    const INDEX: u32 = RegisterIndex::ExceptPC as u32;
+    unsafe { write_cop0_32_64::<INDEX>(value) }
 }
 
 pub fn previd() -> u32 {
@@ -482,9 +555,9 @@ pub unsafe fn set_xcontext_64(value: u64) {
     unsafe { write_cop0_64::<INDEX>(value) }
 }
 
-pub unsafe fn set_xcontext_32(value: u32) {
+pub unsafe fn set_xcontext_32_64(value: u64) {
     const INDEX: u32 = RegisterIndex::XContext as u32;
-    unsafe { write_cop0::<INDEX>(value) }
+    unsafe { write_cop0_32_64::<INDEX>(value) }
 }
 
 pub fn errorepc() -> u64 {

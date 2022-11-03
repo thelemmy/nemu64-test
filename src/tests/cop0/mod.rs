@@ -6,9 +6,9 @@ use core::any::Any;
 use core::arch::asm;
 
 use crate::cop0;
-use crate::cop0::{RegisterIndex, Status};
+use crate::cop0::{count, count32_64, count64, RegisterIndex, set_count, set_count32_64, set_count64, Status};
 use crate::tests::{Level, Test};
-use crate::tests::soft_asserts::soft_assert_eq;
+use crate::tests::soft_asserts::{soft_assert_eq, soft_assert_range};
 
 /// Tests the behavior of the COP0 Random register after writing to Wired and executing any other instructions.
 /// 
@@ -273,13 +273,13 @@ impl Test for ContextMixedBitWriting {
         let expected1 = 0x12345678_00000000 | (previous & 0x7FFFFF);
         soft_assert_eq(cop0::context_64(), expected1, format!("Context after writing 64 bit").as_str())?;
 
-        unsafe { cop0::set_context_32(0x8B000000); }
-        let expected2 = 0xFFFFFFFF_8B000000 | (previous & 0x7FFFFF);
-        soft_assert_eq(cop0::context_64(), expected2, format!("Writing Context (32 bit) should sign extend").as_str())?;
+        unsafe { cop0::set_context_32_64(0xFF123FFF_8B000000); }
+        let expected2 = 0xFF123FFF_8B000000 | (previous & 0x7FFFFF);
+        soft_assert_eq(cop0::context_64(), expected2, format!("Writing Context (MTC0) also transfers the upper bits (1)").as_str())?;
 
-        unsafe { cop0::set_context_32(0x7B000000); }
-        let expected3 = 0x7B000000 | (previous & 0x7FFFFF);
-        soft_assert_eq(cop0::context_64(), expected3, format!("Writing Context (32 bit) should sign extend").as_str())?;
+        unsafe { cop0::set_context_32_64(0xFFFFF123_7B000000); }
+        let expected3 = 0xFFFFF123_7B000000 | (previous & 0x7FFFFF);
+        soft_assert_eq(cop0::context_64(), expected3, format!("Writing Context (MTC0) also transfers the upper bits (2)").as_str())?;
 
         Ok(())
     }
@@ -340,13 +340,13 @@ impl Test for XContextMaskingMixed {
         let expected1 = 0x12345678_00000000 | (previous & 0x00000001_FFFFFFFF);
         soft_assert_eq(cop0::xcontext_64(), expected1, format!("XContext after writing 64 bit").as_str())?;
 
-        unsafe { cop0::set_xcontext_32(0x8B000000); }
-        let expected2 = 0xFFFFFFFE_00000000 | (previous & 0x00000001_FFFFFFFF);
-        soft_assert_eq(cop0::xcontext_64(), expected2, format!("Writing XContext (32 bit) should sign extend").as_str())?;
+        unsafe { cop0::set_xcontext_32_64(0x87654321_8B000000); }
+        let expected2 = 0x87654320_00000000 | (previous & 0x00000001_FFFFFFFF);
+        soft_assert_eq(cop0::xcontext_64(), expected2, format!("Writing XContext (MTC0) also writes the upper 32 bits").as_str())?;
 
-        unsafe { cop0::set_xcontext_32(0x7B000000); }
+        unsafe { cop0::set_xcontext_32_64(0x8B000000); }
         let expected3 = previous & 0x00000001_FFFFFFFF;
-        soft_assert_eq(cop0::xcontext_64(), expected3, format!("Writing XContext (32 bit) should sign extend").as_str())?;
+        soft_assert_eq(cop0::xcontext_64(), expected3, format!("Writing XContext (MTC0) also writes the upper 32 bits").as_str())?;
         Ok(())
     }
 }
@@ -386,7 +386,12 @@ impl Test for ExceptPCNoMasking {
             unsafe { cop0::set_exceptpc(value); }
             let expected = value;
             let readback = cop0::exceptpc();
-            soft_assert_eq(readback, expected, format!("ExceptPC was written as 0x{:x}. It shouldn't be masked", value).as_str())?;
+            soft_assert_eq(readback, expected, format!("ExceptPC was written as 0x{:x} via DMTC0. It shouldn't be masked", value).as_str())?;
+
+            unsafe { cop0::set_exceptpc_32_64(value); }
+            let expected = value;
+            let readback = cop0::exceptpc();
+            soft_assert_eq(readback, expected, format!("ExceptPC was written as 0x{:x} via MTC0. It shouldn't be masked", value).as_str())?;
         }
         Ok(())
     }
@@ -790,6 +795,93 @@ impl Test for CacheErrorMasking {
         )}
         soft_assert_eq(readback, 0, "CacheError (27) was written as 0xFFFFFFFF")?;
         
+        Ok(())
+    }
+}
+
+/// Various COP0.Count related tests
+pub struct Count;
+
+impl Test for Count {
+    fn name(&self) -> &str { "Count" }
+
+    fn level(&self) -> Level { Level::Weird }
+
+    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+
+    fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
+        let old_count = count();
+
+        unsafe { set_count(0x100) }
+
+        let count1_32 = count32_64();
+        let count1_64 = count64();
+
+        // Write without properly sign-extending - that should be completely ignored
+        unsafe { set_count32_64(0xFFFF0000) }
+
+        let count2_32 = count32_64();
+        let count2_64 = count64();
+
+        unsafe { set_count64(0xFFFF_FFFF0000) }
+
+        let count3_32 = count32_64();
+        let count3_64 = count64();
+
+        // Use incorrect sign extension
+        unsafe { set_count32_64(0xFF0000FF_00000100) }
+
+        let count4_32 = count32_64();
+        let count4_64 = count64();
+
+        // Restore previous count as otherwise the test harness thinks this test uses a lot of time
+        unsafe { set_count(old_count); }
+
+        soft_assert_range(count1_32, 0x100, 0x300, "MFC0 COUNT after MTC0 COUNT <- 0x100")?;
+        soft_assert_range(count1_64, 0x100, 0x300, "DMFC0 COUNT after MTC0 COUNT <- 0x100")?;
+
+        soft_assert_range(count2_32, 0xFFFFFFFF_FFFF0000, 0xFFFFFFFF_FFFF0200, "MFC0 COUNT after MTC0 COUNT <- 0x00000000_FFFF0000")?;
+        soft_assert_range(count2_64, 0xFFFF0000, 0xFFFF0200, "DMFC0 COUNT after MTC0 COUNT <- 0x00000000_FFFF0000")?;
+
+        soft_assert_range(count3_32, 0xFFFFFFFF_FFFF0000, 0xFFFFFFFF_FFFF0200, "MFC0 COUNT after DMTC0 COUNT <- 0xFFFF_FFFF0000")?;
+        soft_assert_range(count3_64, 0xFFFF0000, 0xFFFF0200, "DMFC0 COUNT after DMTC0 COUNT <- 0xFFFF_FFFF0000")?;
+
+        soft_assert_range(count4_32, 0x100, 0x300, "MFC0 COUNT after MTC0 COUNT <- 0xFF0000FF_00000100")?;
+        soft_assert_range(count4_64, 0x100, 0x300, "DMFC0 COUNT after MTC0 COUNT <- 0xFF0000FF_00000100")?;
+
+        Ok(())
+    }
+}
+
+/// Write to a large COUNT value, wait a bit and observe overflow
+pub struct CountOverflow;
+
+impl Test for CountOverflow {
+    fn name(&self) -> &str { "Count (overflow)" }
+
+    fn level(&self) -> Level { Level::Timing }
+
+    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+
+    fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
+        let old_count = count();
+
+        unsafe { set_count64(0xFFFFFFFD) }
+
+        // Wait for the counter to overflow
+        unsafe { asm!("NOP; NOP; NOP; NOP; NOP; NOP; NOP; NOP; NOP; NOP; NOP; NOP; ") }
+
+        let count_32 = count32_64();
+        let count_64 = count64();
+
+        // Restore previous count as otherwise the test harness thinks this test uses a lot of time
+        unsafe { set_count(old_count); }
+
+        // This is a very inaccurate test - tests/timing has precise COUNT tests. Here we just want to observe the overflow behavior
+
+        soft_assert_range(count_32, 0x0, 0x200, "MFC0 COUNT after DMTC0 COUNT <- 0x00000000_FFFFFFFD and wait until overflow")?;
+        soft_assert_range(count_64, 0x0, 0x200, "DMFC0 COUNT after DMTC0 COUNT <- 0x00000000_FFFFFFFD and wait until overflow")?;
+
         Ok(())
     }
 }

@@ -106,3 +106,12 @@ pub fn soft_assert_less(v1: u32, v2: u32, help: &str) -> Result<(), String> {
         Err(format!("a < b expected, but a={} b={} (hex: a=0x{:x} b=0x{:x}). {}", v1, v2, v1, v2, help))
     }
 }
+
+/// Tests if value is within range.
+pub fn soft_assert_range<T: PartialOrd + LowerHex>(value: T, min: T, max: T, help: &str) -> Result<(), String> {
+    if value >= min && value <= max {
+        Ok(())
+    } else {
+        Err(format!("value expected to be 0x{:x}..=0x{:x}, but was 0x{:x}. {}", min, max, value, help))
+    }
+}
