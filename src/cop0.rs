@@ -240,7 +240,7 @@ unsafe fn read_cop0<const INDEX: u32>() -> u32 {
 }
 
 #[inline]
-unsafe fn read_cop0_64<const INDEX: u32>() -> u64 {
+pub unsafe fn read_cop0_64<const INDEX: u32>() -> u64 {
     // The inline assembler isn't properly setup for 64 bit - workaround in asm
     let raw_value_lo: u32;
     let raw_value_hi: u32;
@@ -258,7 +258,7 @@ unsafe fn read_cop0_64<const INDEX: u32>() -> u64 {
 /// Uses mfc0 to read a 32 bit value but returns the whole value (useful to verify proper sign
 /// extension)
 #[inline]
-unsafe fn read_cop0_32_64<const INDEX: u32>() -> u64 {
+pub unsafe fn read_cop0_32_64<const INDEX: u32>() -> u64 {
     // The inline assembler isn't properly setup for 64 bit - workaround in asm
     let raw_value_lo: u32;
     let raw_value_hi: u32;
@@ -305,7 +305,7 @@ unsafe fn write_cop0_64<const INDEX: u32>(value: u64) {
 /// Uses mtc0 to write a 32 bit value, but the caller controls the whole register, so can
 /// incorrectly setup sign extension
 #[inline]
-unsafe fn write_cop0_32_64<const INDEX: u32>(value: u64) {
+pub unsafe fn write_cop0_32_64<const INDEX: u32>(value: u64) {
     unsafe {
         asm!("
         .set noat
@@ -663,7 +663,8 @@ pub fn preset_cause_to_copindex2() -> Result<(), String> {
         unsafe { asm!("MFC2 $0, $0"); }
         Ok(())
     })?;
-    if temp_context.cause != Cause::new().with_coprocessor_error(u2::new(2)).with_exception(CauseException::CopUnusable) {
+    if temp_context.cause.exception() != Ok(CauseException::CopUnusable) || temp_context.cause.coprocessor_error() != u2::new(2) {
+        crate::println!("Cause is 0x{:x}", temp_context.cause.raw_value());
         return Err("Presetting Cause.copindex to 2 failed".to_string());
     };
 

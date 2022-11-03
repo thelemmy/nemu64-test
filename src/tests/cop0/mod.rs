@@ -6,7 +6,7 @@ use core::any::Any;
 use core::arch::asm;
 
 use crate::cop0;
-use crate::cop0::{count, count32_64, count64, RegisterIndex, set_count, set_count32_64, set_count64, Status};
+use crate::cop0::{count, count32_64, count64, read_cop0_64, RegisterIndex, set_count, set_count32_64, set_count64, Status, write_cop0_32_64};
 use crate::tests::{Level, Test};
 use crate::tests::soft_asserts::{soft_assert_eq, soft_assert_range};
 
@@ -619,48 +619,39 @@ impl Test for UnusedRegistersExtraUnrelated {
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         #[inline]
-        fn write_read_cop0<const INDEX: u32>(value: u32) -> u32 {
-            let readback: u32;
+        fn write_read_cop0<const INDEX: u32>(value: u64) -> u64 {
+            unsafe { write_cop0_32_64::<INDEX>(value); }
+
+            // Simulate some other work - it won't affect the latch
             unsafe {
                 asm!("
                     .set noat
-                    mtc0 {gpr_write}, ${cop0_reg}
-                    nop
-                    nop
                     addiu $0, $0, 0xABCD
                     xor $0, $5, $9
                     mult $0, $0
-                    nop
-                    nop
-                    mfc0 {gpr_read}, ${cop0_reg}
-                    nop
-                    nop
                 ",
-                gpr_write = in(reg) value,
-                cop0_reg = const INDEX,
-                gpr_read = out(reg) readback,
                 );
             }
             
-            readback
+            unsafe { read_cop0_64::<INDEX>() }
         }
         
         macro_rules! perform_test {
             ($reg:expr, $value:expr) => {
                 let readback = write_read_cop0::<$reg>($value);
-                soft_assert_eq(readback, $value, &format!("Unused COP0 Reg{} written with {:#010X}, then various unrelated CPU instructions (ADDIU, XOR, MULT) before readback. Expecting same value back.", $reg, $value))?;
+                soft_assert_eq(readback, $value, &format!("Unused COP0 Reg{} written with {:#010X}, then various unrelated CPU instructions (ADDIU, XOR, MULT) before DMFC0. Expecting same value back.", $reg, $value))?;
             }
         }
         
         // Test with different write and junk values to make sure emulator isn't cheating
-        for write in [0x13171A1Eu32, 0xAAAAAAAA, 0xFEDCBA98, 0x12345678, 0xFFFFFFFF] {
-            perform_test!(7, write);
-            perform_test!(21, write);
-            perform_test!(22, write);
-            perform_test!(23, write);
-            perform_test!(24, write);
-            perform_test!(25, write);
-            perform_test!(31, write);
+        for value in [0x12345678_13171A1Eu64, 0x00000000_AAAAAAAA, 0x11111111_FEDCBA98, 0x12345678, 0xFFFFFFFF_FFFFFFFF] {
+            perform_test!(7, value);
+            perform_test!(21, value);
+            perform_test!(22, value);
+            perform_test!(23, value);
+            perform_test!(24, value);
+            perform_test!(25, value);
+            perform_test!(31, value);
         }
         
         Ok(())
@@ -866,7 +857,8 @@ impl Test for CountOverflow {
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let old_count = count();
 
-        unsafe { set_count64(0xFFFFFFFD) }
+        // The upper 32 bits are ignored, so place some garbage in them
+        unsafe { set_count64(0xF0FF0012_FFFFFFFD) }
 
         // Wait for the counter to overflow
         unsafe { asm!("NOP; NOP; NOP; NOP; NOP; NOP; NOP; NOP; NOP; NOP; NOP; NOP; ") }

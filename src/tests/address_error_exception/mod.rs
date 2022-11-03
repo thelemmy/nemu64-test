@@ -5,7 +5,7 @@ use core::any::Any;
 use core::arch::asm;
 use arbitrary_int::{u31, u41};
 use crate::cop0;
-use crate::cop0::{CauseException, Context, XContext};
+use crate::cop0::{CauseException, Context, preset_cause_to_copindex2, XContext};
 use crate::exception_handler::expect_exception;
 
 use crate::tests::{Level, Test};
@@ -29,12 +29,15 @@ impl Test for UnalignedLW {
     fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
+        preset_cause_to_copindex2()?;
+
         let a = 0x12345678u32;
         // Make unaligned pointer
         let p = &a as *const u32 as isize + 2;
 
         unsafe { cop0::set_context_64(0); }
         unsafe { cop0::set_xcontext_64(0); }
+
         let exception_context = expect_exception(CauseException::AdEL, 1, || {
             unsafe {
                 asm!("
