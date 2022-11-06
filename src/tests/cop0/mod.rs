@@ -877,3 +877,61 @@ impl Test for CountOverflow {
         Ok(())
     }
 }
+
+/// Reading COUNT immediately after writing it returns the just written value a couple of times,
+/// like if count doesn't increase for a little bit
+pub struct CountHazards {
+
+}
+
+impl Test for CountHazards {
+    fn name(&self) -> &str { "MTC0/MFC0 COUNT hazards" }
+
+    fn level(&self) -> Level { Level::COP0Hazard }
+
+    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+
+    fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
+        for count_value in [0, 100, 0x1234, 0x8000000, 0xFFFFFFFC, 0xFFFFFFFF] {
+            let backup_count = count();
+            let out0: u32;
+            let out1: u32;
+            let out2: u32;
+            let out3: u32;
+            unsafe {
+                asm!("
+                    .set noat
+1:
+                    NOP
+                    MTC0 {count_value}, ${COUNT}
+
+                    // Read back
+                    MFC0 {out0}, ${COUNT}
+                    MFC0 {out1}, ${COUNT}
+                    MFC0 {out2}, ${COUNT}
+                    MFC0 {out3}, ${COUNT}
+
+                    SUB {counter}, {counter}, 1
+                    BNE {counter}, $0, 1b
+                    NOP  // delay
+                ",
+                out0 = out(reg) out0,
+                out1 = out(reg) out1,
+                out2 = out(reg) out2,
+                out3 = out(reg) out3,
+                count_value = in(reg) count_value,
+                counter = inout(reg) 2 => _,
+                COUNT = const RegisterIndex::Count as usize);
+            }
+
+            unsafe { set_count(backup_count); }
+
+            soft_assert_eq(out0, count_value + 0, "First readback")?;
+            soft_assert_eq(out1, count_value + 0, "Second readback")?;
+            soft_assert_eq(out2, count_value + 0, "Third readback")?;
+            soft_assert_eq(out3, count_value + 1, "Fourth readback")?;
+        }
+        Ok(())
+    }
+}
+

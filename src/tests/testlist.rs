@@ -483,6 +483,7 @@ fn default_tests() -> Vec<Box<dyn Test>> {
         Box::new(super::cop0::CacheErrorMasking),
         Box::new(super::cop0::Count {}),
         Box::new(super::cop0::CountOverflow {}),
+        Box::new(super::cop0::CountHazards {}),
         Box::new(super::cop1::CFC1CTC1_0),
         Box::new(super::cop1::CFC1CTC1_31),
         Box::new(super::cop1::full_vs_half_mode::FullMode),
