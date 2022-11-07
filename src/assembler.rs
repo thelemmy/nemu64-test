@@ -396,7 +396,67 @@ impl Assembler {
         Self::make_main_immediate(Opcode::BEQ, rt, rs, offset_as_instruction_count as u16)
     }
 
-    pub const fn make_c_cond(condition: Cop1Condition, fs: FR, ft: FR) -> FPUFloatInstruction {
+    pub const fn make_jr(rs: GPR) -> u32 {
+        Self::make_special(SpecialOpcode::JR, u5::new(0), u5::new(0), rs.raw_value(), u5::new(0))
+    }
+
+    pub const fn make_sll(rd: GPR, rt: GPR, sa: GPR) -> u32 {
+        Self::make_special(SpecialOpcode::SLL, sa.raw_value(), rd.raw_value(), u5::new(0), rt.raw_value())
+    }
+
+    pub const fn make_nop() -> u32 {
+        Self::make_sll(GPR::R0, GPR::R0, GPR::R0)
+    }
+
+    pub const fn make_div(rt: GPR, rs: GPR) -> u32 {
+        Self::make_special(SpecialOpcode::DIV, u5::new(0), u5::new(0), rs.raw_value(), rt.raw_value())
+    }
+
+    pub const fn make_divu(rt: GPR, rs: GPR) -> u32 {
+        Self::make_special(SpecialOpcode::DIVU, u5::new(0), u5::new(0), rs.raw_value(), rt.raw_value())
+    }
+
+    pub const fn make_ddiv(rt: GPR, rs: GPR) -> u32 {
+        Self::make_special(SpecialOpcode::DDIV, u5::new(0), u5::new(0), rs.raw_value(), rt.raw_value())
+    }
+
+    pub const fn make_ddivu(rt: GPR, rs: GPR) -> u32 {
+        Self::make_special(SpecialOpcode::DDIVU, u5::new(0), u5::new(0), rs.raw_value(), rt.raw_value())
+    }
+
+    pub const fn make_mult(rt: GPR, rs: GPR) -> u32 {
+        Self::make_special(SpecialOpcode::MULT, u5::new(0), u5::new(0), rs.raw_value(), rt.raw_value())
+    }
+
+    pub const fn make_multu(rt: GPR, rs: GPR) -> u32 {
+        Self::make_special(SpecialOpcode::MULTU, u5::new(0), u5::new(0), rs.raw_value(), rt.raw_value())
+    }
+
+    pub const fn make_dmult(rt: GPR, rs: GPR) -> u32 {
+        Self::make_special(SpecialOpcode::DMULT, u5::new(0), u5::new(0), rs.raw_value(), rt.raw_value())
+    }
+
+    pub const fn make_dmultu(rt: GPR, rs: GPR) -> u32 {
+        Self::make_special(SpecialOpcode::DMULTU, u5::new(0), u5::new(0), rs.raw_value(), rt.raw_value())
+    }
+
+    pub const fn make_mflo(rd: GPR) -> u32 {
+        Self::make_special(SpecialOpcode::MFLO, u5::new(0), rd.raw_value(), u5::new(0), u5::new(0))
+    }
+
+    pub const fn make_mtlo(rs: GPR) -> u32 {
+        Self::make_special(SpecialOpcode::MTLO, u5::new(0), u5::new(0), rs.raw_value(), u5::new(0))
+    }
+
+    pub const fn make_mfhi(rd: GPR) -> u32 {
+        Self::make_special(SpecialOpcode::MFHI, u5::new(0), rd.raw_value(), u5::new(0), u5::new(0))
+    }
+
+    pub const fn make_mthi(rs: GPR) -> u32 {
+        Self::make_special(SpecialOpcode::MTHI, u5::new(0), u5::new(0), rs.raw_value(), u5::new(0))
+    }
+
+    pub const fn make_cop1_c_cond(condition: Cop1Condition, fs: FR, ft: FR) -> FPUFloatInstruction {
         Self::make_cop1_float_instruction(Cop1FloatInstruction::new_with_raw_value(condition.raw_value()).ok().unwrap(), FR::F0, fs, ft)
     }
 
@@ -416,83 +476,83 @@ impl Assembler {
         Self::make_cop1instruction(Cop1Opcode::_DCTC1, rt.raw_value(), rd)
     }
 
-    pub const fn make_abs(fd: FR, fs: FR) -> FPUFloatInstruction {
+    pub const fn make_cop1_abs(fd: FR, fs: FR) -> FPUFloatInstruction {
         Self::make_cop1_float_instruction(Cop1FloatInstruction::ABS, fd, fs, FR::F0)
     }
 
-    pub const fn make_add(fd: FR, fs: FR, ft: FR) -> FPUFloatInstruction {
+    pub const fn make_cop1_add(fd: FR, fs: FR, ft: FR) -> FPUFloatInstruction {
         Self::make_cop1_float_instruction(Cop1FloatInstruction::ADD, fd, fs, ft)
     }
 
-    pub const fn make_cvt_d(fd: FR, fs: FR) -> FPUFloatInstruction {
+    pub const fn make_cop1_cvt_d(fd: FR, fs: FR) -> FPUFloatInstruction {
         Self::make_cop1_float_instruction(Cop1FloatInstruction::CVT_D, fd, fs, FR::F0)
     }
 
-    pub const fn make_cvt_l(fd: FR, fs: FR) -> FPUFloatInstruction {
+    pub const fn make_cop1_cvt_l(fd: FR, fs: FR) -> FPUFloatInstruction {
         Self::make_cop1_float_instruction(Cop1FloatInstruction::CVT_L, fd, fs, FR::F0)
     }
 
-    pub const fn make_cvt_s(fd: FR, fs: FR) -> FPUFloatInstruction {
+    pub const fn make_cop1_cvt_s(fd: FR, fs: FR) -> FPUFloatInstruction {
         Self::make_cop1_float_instruction(Cop1FloatInstruction::CVT_S, fd, fs, FR::F0)
     }
 
-    pub const fn make_cvt_w(fd: FR, fs: FR) -> FPUFloatInstruction {
+    pub const fn make_cop1_cvt_w(fd: FR, fs: FR) -> FPUFloatInstruction {
         Self::make_cop1_float_instruction(Cop1FloatInstruction::CVT_W, fd, fs, FR::F0)
     }
 
-    pub const fn make_round_w(fd: FR, fs: FR) -> FPUFloatInstruction {
+    pub const fn make_cop1_round_w(fd: FR, fs: FR) -> FPUFloatInstruction {
         Self::make_cop1_float_instruction(Cop1FloatInstruction::ROUND_W, fd, fs, FR::F0)
     }
 
-    pub const fn make_round_l(fd: FR, fs: FR) -> FPUFloatInstruction {
+    pub const fn make_cop1_round_l(fd: FR, fs: FR) -> FPUFloatInstruction {
         Self::make_cop1_float_instruction(Cop1FloatInstruction::ROUND_L, fd, fs, FR::F0)
     }
 
-    pub const fn make_trunc_w(fd: FR, fs: FR) -> FPUFloatInstruction {
+    pub const fn make_cop1_trunc_w(fd: FR, fs: FR) -> FPUFloatInstruction {
         Self::make_cop1_float_instruction(Cop1FloatInstruction::TRUNC_W, fd, fs, FR::F0)
     }
 
-    pub const fn make_trunc_l(fd: FR, fs: FR) -> FPUFloatInstruction {
+    pub const fn make_cop1_trunc_l(fd: FR, fs: FR) -> FPUFloatInstruction {
         Self::make_cop1_float_instruction(Cop1FloatInstruction::TRUNC_L, fd, fs, FR::F0)
     }
 
-    pub const fn make_floor_w(fd: FR, fs: FR) -> FPUFloatInstruction {
+    pub const fn make_cop1_floor_w(fd: FR, fs: FR) -> FPUFloatInstruction {
         Self::make_cop1_float_instruction(Cop1FloatInstruction::FLOOR_W, fd, fs, FR::F0)
     }
 
-    pub const fn make_floor_l(fd: FR, fs: FR) -> FPUFloatInstruction {
+    pub const fn make_cop1_floor_l(fd: FR, fs: FR) -> FPUFloatInstruction {
         Self::make_cop1_float_instruction(Cop1FloatInstruction::FLOOR_L, fd, fs, FR::F0)
     }
 
-    pub const fn make_ceil_w(fd: FR, fs: FR) -> FPUFloatInstruction {
+    pub const fn make_cop1_ceil_w(fd: FR, fs: FR) -> FPUFloatInstruction {
         Self::make_cop1_float_instruction(Cop1FloatInstruction::CEIL_W, fd, fs, FR::F0)
     }
 
-    pub const fn make_ceil_l(fd: FR, fs: FR) -> FPUFloatInstruction {
+    pub const fn make_cop1_ceil_l(fd: FR, fs: FR) -> FPUFloatInstruction {
         Self::make_cop1_float_instruction(Cop1FloatInstruction::CEIL_L, fd, fs, FR::F0)
     }
 
-    pub const fn make_div(fd: FR, fs: FR, ft: FR) -> FPUFloatInstruction {
+    pub const fn make_cop1_div(fd: FR, fs: FR, ft: FR) -> FPUFloatInstruction {
         Self::make_cop1_float_instruction(Cop1FloatInstruction::DIV, fd, fs, ft)
     }
 
-    pub const fn make_mov(fd: FR, fs: FR) -> FPUFloatInstruction {
+    pub const fn make_cop1_mov(fd: FR, fs: FR) -> FPUFloatInstruction {
         Self::make_cop1_float_instruction(Cop1FloatInstruction::MOV, fd, fs, FR::F0)
     }
 
-    pub const fn make_mul(fd: FR, fs: FR, ft: FR) -> FPUFloatInstruction {
+    pub const fn make_cop1_mul(fd: FR, fs: FR, ft: FR) -> FPUFloatInstruction {
         Self::make_cop1_float_instruction(Cop1FloatInstruction::MUL, fd, fs, ft)
     }
 
-    pub const fn make_neg(fd: FR, fs: FR) -> FPUFloatInstruction {
+    pub const fn make_cop1_neg(fd: FR, fs: FR) -> FPUFloatInstruction {
         Self::make_cop1_float_instruction(Cop1FloatInstruction::NEG, fd, fs, FR::F0)
     }
 
-    pub const fn make_sqrt(fd: FR, fs: FR) -> FPUFloatInstruction {
+    pub const fn make_cop1_sqrt(fd: FR, fs: FR) -> FPUFloatInstruction {
         Self::make_cop1_float_instruction(Cop1FloatInstruction::SQRT, fd, fs, FR::F0)
     }
 
-    pub const fn make_sub(fd: FR, fs: FR, ft: FR) -> FPUFloatInstruction {
+    pub const fn make_cop1_sub(fd: FR, fs: FR, ft: FR) -> FPUFloatInstruction {
         Self::make_cop1_float_instruction(Cop1FloatInstruction::SUB, fd, fs, ft)
     }
 

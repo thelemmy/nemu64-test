@@ -1,8 +1,9 @@
+use linked_list_allocator::align_up;
 use alloc::alloc::{alloc, dealloc};
 use core::alloc::Layout;
 use core::cmp::max;
 use core::mem::size_of;
-use crate::MemoryMap;
+use crate::{cop0, MemoryMap};
 
 /// A dynamically allocated chunk of memory that is accessed as uncached memory. This is
 /// useful to talk to other devices (e.g. DMA, RDP etc)
@@ -25,8 +26,11 @@ impl<T: Copy + Clone> UncachedHeapMemory<T> {
     pub fn new_with_align(count: usize, align: usize) -> Self {
         let element_size = size_of::<T>();
         let byte_size = count * element_size;
-        let layout = Layout::from_size_align(byte_size, max(align, element_size)).unwrap();
+        let effective_align = max(align, element_size);
+        assert!(effective_align.is_power_of_two());
+        let layout = Layout::from_size_align(align_up(byte_size, effective_align), effective_align).unwrap();
         let original_data = unsafe { alloc(layout) };
+        Self::invalidate_caches(original_data, byte_size);
         let uncached_data = MemoryMap::uncached_mut(original_data) as *mut T;
 
         Self {
@@ -47,6 +51,23 @@ impl<T: Copy + Clone> UncachedHeapMemory<T> {
         }
 
         result
+    }
+
+    // Invalidates both ICACHE and DCACHE of the memory region.
+    // ICACHE is cleared to allow generating self-modifying code
+    // DCACHE is cleared incase this memory has been in cache from earlier
+    fn invalidate_caches(p: *const u8, byte_size: usize) {
+        for byte_offset in (0..byte_size).step_by(32) {
+            let location = (p as usize) + byte_offset;
+            unsafe {
+                // 0: Invalidate Instruction Cache
+                cop0::cache::<0, 0>(location);
+
+                // 1: Index_Write_Back_Invalidate
+                cop0::cache::<1, 0>(location);
+                cop0::cache::<1, 16>(location);
+            }
+        }
     }
 
     pub const fn count(&self) -> usize { self.count }
@@ -75,4 +96,21 @@ impl<T: Copy + Clone> Drop for UncachedHeapMemory<T> {
     fn drop(&mut self) {
         unsafe { dealloc(self.original_data, self.layout); }
     }
+}
+
+pub struct UncachedHeapMemoryWriter<'a, T: Copy + Clone> {
+    memory: &'a mut UncachedHeapMemory<T>,
+    index: usize,
+}
+
+impl<'a, T: Copy + Clone> UncachedHeapMemoryWriter<'a, T> {
+    pub fn new(memory: &'a mut UncachedHeapMemory<T>) -> Self {
+        Self { memory, index: 0 }
+    }
+
+    pub fn write(&mut self, value: T) {
+        self.memory.write(self.index, value);
+        self.index += 1
+    }
+
 }

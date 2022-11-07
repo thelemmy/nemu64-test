@@ -149,7 +149,7 @@ impl Test for AddS {
     fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        const INSTRUCTION: u32 = Assembler::make_add(FR::F4, FR::F0, FR::F2).s();
+        const INSTRUCTION: u32 = Assembler::make_cop1_add(FR::F4, FR::F0, FR::F2).s();
         randomized_test32::<INSTRUCTION>("ADD.S", false, 3000, 0x341aa5e3310b4ab0)
     }
 }
@@ -164,7 +164,7 @@ impl Test for AddD {
     fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        const INSTRUCTION: u32 = Assembler::make_add(FR::F4, FR::F0, FR::F2).d();
+        const INSTRUCTION: u32 = Assembler::make_cop1_add(FR::F4, FR::F0, FR::F2).d();
         randomized_test64::<INSTRUCTION>("ADD.D", false, 3000, 0xe888e60dc53b5a03)
     }
 }
@@ -179,7 +179,7 @@ impl Test for SubS {
     fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        const INSTRUCTION: u32 = Assembler::make_sub(FR::F4, FR::F0, FR::F2).s();
+        const INSTRUCTION: u32 = Assembler::make_cop1_sub(FR::F4, FR::F0, FR::F2).s();
         randomized_test32::<INSTRUCTION>("SUB.S", false, 3000, 0xa56dbeaf17cd7173)
     }
 }
@@ -194,7 +194,7 @@ impl Test for SubD {
     fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        const INSTRUCTION: u32 = Assembler::make_sub(FR::F4, FR::F0, FR::F2).d();
+        const INSTRUCTION: u32 = Assembler::make_cop1_sub(FR::F4, FR::F0, FR::F2).d();
         randomized_test64::<INSTRUCTION>("SUB.D", false, 3000, 0x79d3b74f1bc3ff24)
     }
 }
@@ -209,7 +209,7 @@ impl Test for MulS {
     fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        const INSTRUCTION: u32 = Assembler::make_mul(FR::F4, FR::F0, FR::F2).s();
+        const INSTRUCTION: u32 = Assembler::make_cop1_mul(FR::F4, FR::F0, FR::F2).s();
         randomized_test32::<INSTRUCTION>("MUL.S", false, 2000, 0x170788e9b03e2c0a)
     }
 }
@@ -224,7 +224,7 @@ impl Test for MulD {
     fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        const INSTRUCTION: u32 = Assembler::make_mul(FR::F4, FR::F0, FR::F2).d();
+        const INSTRUCTION: u32 = Assembler::make_cop1_mul(FR::F4, FR::F0, FR::F2).d();
         randomized_test64::<INSTRUCTION>("MUL.D", false, 2000, 0x15e6d76853f4df59)
     }
 }
@@ -239,7 +239,7 @@ impl Test for DivS {
     fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        const INSTRUCTION: u32 = Assembler::make_div(FR::F4, FR::F0, FR::F2).s();
+        const INSTRUCTION: u32 = Assembler::make_cop1_div(FR::F4, FR::F0, FR::F2).s();
         randomized_test32::<INSTRUCTION>("DIV.S", false, 2000, 0x55c6839600fd0fa2)
     }
 }
@@ -254,7 +254,7 @@ impl Test for DivD {
     fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        const INSTRUCTION: u32 = Assembler::make_div(FR::F4, FR::F0, FR::F2).d();
+        const INSTRUCTION: u32 = Assembler::make_cop1_div(FR::F4, FR::F0, FR::F2).d();
         randomized_test64::<INSTRUCTION>("DIV.D",false, 2000, 0xa2ae9ba9a3fec554)
     }
 }
@@ -269,7 +269,7 @@ impl Test for SqrtS {
     fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        const INSTRUCTION: u32 = Assembler::make_sqrt(FR::F4, FR::F0).s();
+        const INSTRUCTION: u32 = Assembler::make_cop1_sqrt(FR::F4, FR::F0).s();
         randomized_test32::<INSTRUCTION>("SQRT.S", false, 2000, 0x276c42a0e3a11a1)
     }
 }
@@ -284,7 +284,7 @@ impl Test for SqrtD {
     fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        const INSTRUCTION: u32 = Assembler::make_sqrt(FR::F4, FR::F0).d();
+        const INSTRUCTION: u32 = Assembler::make_cop1_sqrt(FR::F4, FR::F0).d();
         randomized_test64::<INSTRUCTION>("SQRT.D", false, 2000, 0x6cb8986281efca80)
     }
 }
@@ -299,7 +299,7 @@ impl Test for CvtSFromW {
     fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        const INSTRUCTION: u32 = Assembler::make_cvt_s(FR::F4, FR::F0).w();
+        const INSTRUCTION: u32 = Assembler::make_cop1_cvt_s(FR::F4, FR::F0).w();
         randomized_test32::<INSTRUCTION>("CVT.S.W", false, 2000, 0x8ac09585da537355)
     }
 }
@@ -314,7 +314,7 @@ impl Test for CvtWFromS {
     fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        const INSTRUCTION: u32 = Assembler::make_cvt_w(FR::F4, FR::F0).s();
+        const INSTRUCTION: u32 = Assembler::make_cop1_cvt_w(FR::F4, FR::F0).s();
         randomized_test32::<INSTRUCTION>("CVT.W.S", false, 2000, 0x41ca013057f72659)
     }
 }
@@ -329,7 +329,7 @@ impl Test for StresstestAddS {
     fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        const INSTRUCTION: u32 = Assembler::make_add(FR::F4, FR::F0, FR::F2).s();
+        const INSTRUCTION: u32 = Assembler::make_cop1_add(FR::F4, FR::F0, FR::F2).s();
         randomized_test32::<INSTRUCTION>("1/10 ADD.S", true, 3000000, 0x464cfdae544a9be0)
     }
 }
@@ -344,7 +344,7 @@ impl Test for StresstestAddD {
     fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        const INSTRUCTION: u32 = Assembler::make_add(FR::F4, FR::F0, FR::F2).d();
+        const INSTRUCTION: u32 = Assembler::make_cop1_add(FR::F4, FR::F0, FR::F2).d();
         randomized_test64::<INSTRUCTION>("2/10 ADD.D", true, 3000000, 0x25d261c14617031e)
     }
 }
@@ -359,7 +359,7 @@ impl Test for StresstestSubS {
     fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        const INSTRUCTION: u32 = Assembler::make_sub(FR::F4, FR::F0, FR::F2).s();
+        const INSTRUCTION: u32 = Assembler::make_cop1_sub(FR::F4, FR::F0, FR::F2).s();
         randomized_test32::<INSTRUCTION>("3/10 SUB.S", true, 3000000, 0x5906d66d6ed35481)
     }
 }
@@ -374,7 +374,7 @@ impl Test for StresstestSubD {
     fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        const INSTRUCTION: u32 = Assembler::make_sub(FR::F4, FR::F0, FR::F2).d();
+        const INSTRUCTION: u32 = Assembler::make_cop1_sub(FR::F4, FR::F0, FR::F2).d();
         randomized_test64::<INSTRUCTION>("4/10 SUB.D", true, 3000000, 0xe6dee76e5196222f)
     }
 }
@@ -389,7 +389,7 @@ impl Test for StresstestMulS {
     fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        const INSTRUCTION: u32 = Assembler::make_mul(FR::F4, FR::F0, FR::F2).s();
+        const INSTRUCTION: u32 = Assembler::make_cop1_mul(FR::F4, FR::F0, FR::F2).s();
         randomized_test32::<INSTRUCTION>("5/10 MUL.S", true, 2000000, 0xd6fcbec0926cc113)
     }
 }
@@ -404,7 +404,7 @@ impl Test for StresstestMulD {
     fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        const INSTRUCTION: u32 = Assembler::make_mul(FR::F4, FR::F0, FR::F2).d();
+        const INSTRUCTION: u32 = Assembler::make_cop1_mul(FR::F4, FR::F0, FR::F2).d();
         randomized_test64::<INSTRUCTION>("6/10 MUL.D", true, 2000000, 0xe2c05aaec9cc1dc4)
     }
 }
@@ -419,7 +419,7 @@ impl Test for StresstestDivS {
     fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        const INSTRUCTION: u32 = Assembler::make_div(FR::F4, FR::F0, FR::F2).s();
+        const INSTRUCTION: u32 = Assembler::make_cop1_div(FR::F4, FR::F0, FR::F2).s();
         randomized_test32::<INSTRUCTION>("7/10 DIV.S", true, 2000000, 0x76efe398daa10453)
     }
 }
@@ -434,7 +434,7 @@ impl Test for StresstestDivD {
     fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        const INSTRUCTION: u32 = Assembler::make_div(FR::F4, FR::F0, FR::F2).d();
+        const INSTRUCTION: u32 = Assembler::make_cop1_div(FR::F4, FR::F0, FR::F2).d();
         randomized_test64::<INSTRUCTION>("8/10 DIV.D", true, 2000000, 0xf64eb203f41fe776)
     }
 }
@@ -449,7 +449,7 @@ impl Test for StresstestSqrtS {
     fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        const INSTRUCTION: u32 = Assembler::make_sqrt(FR::F4, FR::F0).s();
+        const INSTRUCTION: u32 = Assembler::make_cop1_sqrt(FR::F4, FR::F0).s();
         randomized_test32::<INSTRUCTION>("9/10 SQRT.S", true, 2000000, 0x4fde48202eec2625)
     }
 }
@@ -464,7 +464,7 @@ impl Test for StresstestSqrtD {
     fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        const INSTRUCTION: u32 = Assembler::make_sqrt(FR::F4, FR::F0).d();
+        const INSTRUCTION: u32 = Assembler::make_cop1_sqrt(FR::F4, FR::F0).d();
         randomized_test64::<INSTRUCTION>("10/10 SQRT.D", true, 2000000, 0x88edc4c0aec12da4)
     }
 }
@@ -479,7 +479,7 @@ impl Test for StresstestCvtSFromW {
     fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        const INSTRUCTION: u32 = Assembler::make_cvt_s(FR::F4, FR::F0).w();
+        const INSTRUCTION: u32 = Assembler::make_cop1_cvt_s(FR::F4, FR::F0).w();
         randomized_test32::<INSTRUCTION>("CVT.S.W", true, 2000000, 0x1adc160325245c23)
     }
 }
@@ -494,7 +494,7 @@ impl Test for StresstestCvtWFromS {
     fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        const INSTRUCTION: u32 = Assembler::make_cvt_w(FR::F4, FR::F0).s();
+        const INSTRUCTION: u32 = Assembler::make_cop1_cvt_w(FR::F4, FR::F0).s();
         randomized_test32::<INSTRUCTION>("CVT.W.S", true, 2000000, 0x1e1b3c375a34d773)
     }
 }

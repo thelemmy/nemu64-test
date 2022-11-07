@@ -640,6 +640,12 @@ fn default_tests() -> Vec<Box<dyn Test>> {
         Box::new(super::pif_memory::LB {}),
         Box::new(super::pif_memory::LH {}),
 
+        Box::new(super::timing::RepeatedMFC0Count {}),
+        Box::new(super::timing::HalfCycleExactCalibration {}),
+        Box::new(super::timing::PreciseMeasureJustNOPs {}),
+        Box::new(super::timing::SingleInstructionCPUTiming {}),
+        Box::new(super::timing::SingleInstructionCOP1Timing {}),
+
         Box::new(super::rdp::StartAndEndMasking {}),
         Box::new(super::rdp::StartIsValidFlag {}),
         Box::new(super::rdp::StatusFlagsDuringRun {}),

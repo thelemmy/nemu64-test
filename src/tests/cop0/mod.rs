@@ -880,6 +880,7 @@ impl Test for CountOverflow {
 
 /// Reading COUNT immediately after writing it returns the just written value a couple of times,
 /// like if count doesn't increase for a little bit
+/// TODO: Reading COUNT right after performing e.g. DMULTU returns a non-incremented value
 pub struct CountHazards {
 
 }

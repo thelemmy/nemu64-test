@@ -31,6 +31,7 @@ mod startup;
 mod soft_asserts;
 mod sp_memory;
 mod testlist;
+mod timing;
 mod tlb;
 mod tlb64;
 mod traps;
@@ -356,6 +357,10 @@ pub fn run() {
                     let temp = (SoftF64::new(*f1), SoftF64::new(*f2), *ordering, *special);
                     return format!(" with '{:x?}'", temp);
                 },
+                None => {}
+            }
+            match (*value).downcast_ref::<(&str, u32, u32)>() {
+                Some(v) => return format!(" with '{:x?}'", v),
                 None => {}
             }
             return " with unknown arguments".to_string();

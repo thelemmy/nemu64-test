@@ -59,6 +59,10 @@ impl MemoryMap {
         (address | 0xA000_0000) as *mut T
     }
 
+    pub fn physical_to_cached<T>(address: usize) -> *const T {
+        (address | 0x8000_0000) as *const T
+    }
+
     pub fn uncached_to_physical_mut<T>(p: *mut T) -> usize { (p as usize) & 0x1FFF_FFFF }
 
     pub fn uncached_spmem_address<T>(offset: usize) -> *mut T {

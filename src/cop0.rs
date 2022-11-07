@@ -637,7 +637,8 @@ pub unsafe fn cache<const OP: u8, const OFFSET: u16>(location: usize) {
         cache {op}, {offset} ({gpr})",
         gpr = in(reg) location,
         offset = const OFFSET,
-        op = const OP)
+        op = const OP,
+        options(nostack))
     }
 }
 

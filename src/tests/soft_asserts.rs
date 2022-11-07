@@ -24,6 +24,15 @@ pub fn soft_assert_eq2<T: Debug + PartialEq + Eq, H: FnOnce() -> String>(v1: T, 
     }
 }
 
+/// Tests if `v1 == v2` but print decimal.
+pub fn soft_assert_eq_decimal<T: Debug + PartialEq>(actual: T, expected: T, help: &str) -> Result<(), String> {
+    if actual == expected {
+        Ok(())
+    } else {
+        Err(format!("a == b expected, but: Actual: {:#?}, expected {:#?}. {}", actual, expected, help))
+    }
+}
+
 /// Inlined test of whether [vectors](Vector) `v1 == v2`, Equivalent to [`soft_assert_eq2`] but prints
 /// a more readable error message on failure.
 #[inline(always)]

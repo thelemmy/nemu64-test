@@ -278,7 +278,7 @@ impl Test for C_F {
     fn values(&self) -> Vec<Box<dyn Any>> { test_values() }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
-        const INSTRUCTION: FPUFloatInstruction = Assembler::make_c_cond(Cop1Condition::F, FR::F0, FR::F2);
+        const INSTRUCTION: FPUFloatInstruction = Assembler::make_cop1_c_cond(Cop1Condition::F, FR::F0, FR::F2);
         const INSTRUCTION_S: u32 = INSTRUCTION.s();
         const INSTRUCTION_D: u32 = INSTRUCTION.d();
 
@@ -304,7 +304,7 @@ impl Test for C_UN {
     fn values(&self) -> Vec<Box<dyn Any>> { test_values() }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
-        const INSTRUCTION: FPUFloatInstruction = Assembler::make_c_cond(Cop1Condition::UN, FR::F0, FR::F2);
+        const INSTRUCTION: FPUFloatInstruction = Assembler::make_cop1_c_cond(Cop1Condition::UN, FR::F0, FR::F2);
         const INSTRUCTION_S: u32 = INSTRUCTION.s();
         const INSTRUCTION_D: u32 = INSTRUCTION.d();
 
@@ -330,7 +330,7 @@ impl Test for C_EQ {
     fn values(&self) -> Vec<Box<dyn Any>> { test_values() }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
-        const INSTRUCTION: FPUFloatInstruction = Assembler::make_c_cond(Cop1Condition::EQ, FR::F0, FR::F2);
+        const INSTRUCTION: FPUFloatInstruction = Assembler::make_cop1_c_cond(Cop1Condition::EQ, FR::F0, FR::F2);
         const INSTRUCTION_S: u32 = INSTRUCTION.s();
         const INSTRUCTION_D: u32 = INSTRUCTION.d();
 
@@ -356,7 +356,7 @@ impl Test for C_UEQ {
     fn values(&self) -> Vec<Box<dyn Any>> { test_values() }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
-        const INSTRUCTION: FPUFloatInstruction = Assembler::make_c_cond(Cop1Condition::UEQ, FR::F0, FR::F2);
+        const INSTRUCTION: FPUFloatInstruction = Assembler::make_cop1_c_cond(Cop1Condition::UEQ, FR::F0, FR::F2);
         const INSTRUCTION_S: u32 = INSTRUCTION.s();
         const INSTRUCTION_D: u32 = INSTRUCTION.d();
 
@@ -382,7 +382,7 @@ impl Test for C_OLT {
     fn values(&self) -> Vec<Box<dyn Any>> { test_values() }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
-        const INSTRUCTION: FPUFloatInstruction = Assembler::make_c_cond(Cop1Condition::OLT, FR::F0, FR::F2);
+        const INSTRUCTION: FPUFloatInstruction = Assembler::make_cop1_c_cond(Cop1Condition::OLT, FR::F0, FR::F2);
         const INSTRUCTION_S: u32 = INSTRUCTION.s();
         const INSTRUCTION_D: u32 = INSTRUCTION.d();
 
@@ -408,7 +408,7 @@ impl Test for C_ULT {
     fn values(&self) -> Vec<Box<dyn Any>> { test_values() }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
-        const INSTRUCTION: FPUFloatInstruction = Assembler::make_c_cond(Cop1Condition::ULT, FR::F0, FR::F2);
+        const INSTRUCTION: FPUFloatInstruction = Assembler::make_cop1_c_cond(Cop1Condition::ULT, FR::F0, FR::F2);
         const INSTRUCTION_S: u32 = INSTRUCTION.s();
         const INSTRUCTION_D: u32 = INSTRUCTION.d();
 
@@ -434,7 +434,7 @@ impl Test for C_OLE {
     fn values(&self) -> Vec<Box<dyn Any>> { test_values() }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
-        const INSTRUCTION: FPUFloatInstruction = Assembler::make_c_cond(Cop1Condition::OLE, FR::F0, FR::F2);
+        const INSTRUCTION: FPUFloatInstruction = Assembler::make_cop1_c_cond(Cop1Condition::OLE, FR::F0, FR::F2);
         const INSTRUCTION_S: u32 = INSTRUCTION.s();
         const INSTRUCTION_D: u32 = INSTRUCTION.d();
 
@@ -460,7 +460,7 @@ impl Test for C_ULE {
     fn values(&self) -> Vec<Box<dyn Any>> { test_values() }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
-        const INSTRUCTION: FPUFloatInstruction = Assembler::make_c_cond(Cop1Condition::ULE, FR::F0, FR::F2);
+        const INSTRUCTION: FPUFloatInstruction = Assembler::make_cop1_c_cond(Cop1Condition::ULE, FR::F0, FR::F2);
         const INSTRUCTION_S: u32 = INSTRUCTION.s();
         const INSTRUCTION_D: u32 = INSTRUCTION.d();
 
@@ -486,7 +486,7 @@ impl Test for C_SF {
     fn values(&self) -> Vec<Box<dyn Any>> { test_values() }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
-        const INSTRUCTION: FPUFloatInstruction = Assembler::make_c_cond(Cop1Condition::SF, FR::F0, FR::F2);
+        const INSTRUCTION: FPUFloatInstruction = Assembler::make_cop1_c_cond(Cop1Condition::SF, FR::F0, FR::F2);
         const INSTRUCTION_S: u32 = INSTRUCTION.s();
         const INSTRUCTION_D: u32 = INSTRUCTION.d();
 
@@ -512,7 +512,7 @@ impl Test for C_NGLE {
     fn values(&self) -> Vec<Box<dyn Any>> { test_values() }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
-        const INSTRUCTION: FPUFloatInstruction = Assembler::make_c_cond(Cop1Condition::NGLE, FR::F0, FR::F2);
+        const INSTRUCTION: FPUFloatInstruction = Assembler::make_cop1_c_cond(Cop1Condition::NGLE, FR::F0, FR::F2);
         const INSTRUCTION_S: u32 = INSTRUCTION.s();
         const INSTRUCTION_D: u32 = INSTRUCTION.d();
 
@@ -538,7 +538,7 @@ impl Test for C_SEQ {
     fn values(&self) -> Vec<Box<dyn Any>> { test_values() }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
-        const INSTRUCTION: FPUFloatInstruction = Assembler::make_c_cond(Cop1Condition::SEQ, FR::F0, FR::F2);
+        const INSTRUCTION: FPUFloatInstruction = Assembler::make_cop1_c_cond(Cop1Condition::SEQ, FR::F0, FR::F2);
         const INSTRUCTION_S: u32 = INSTRUCTION.s();
         const INSTRUCTION_D: u32 = INSTRUCTION.d();
 
@@ -564,7 +564,7 @@ impl Test for C_NGL {
     fn values(&self) -> Vec<Box<dyn Any>> { test_values() }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
-        const INSTRUCTION: FPUFloatInstruction = Assembler::make_c_cond(Cop1Condition::NGL, FR::F0, FR::F2);
+        const INSTRUCTION: FPUFloatInstruction = Assembler::make_cop1_c_cond(Cop1Condition::NGL, FR::F0, FR::F2);
         const INSTRUCTION_S: u32 = INSTRUCTION.s();
         const INSTRUCTION_D: u32 = INSTRUCTION.d();
 
@@ -590,7 +590,7 @@ impl Test for C_LT {
     fn values(&self) -> Vec<Box<dyn Any>> { test_values() }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
-        const INSTRUCTION: FPUFloatInstruction = Assembler::make_c_cond(Cop1Condition::LT, FR::F0, FR::F2);
+        const INSTRUCTION: FPUFloatInstruction = Assembler::make_cop1_c_cond(Cop1Condition::LT, FR::F0, FR::F2);
         const INSTRUCTION_S: u32 = INSTRUCTION.s();
         const INSTRUCTION_D: u32 = INSTRUCTION.d();
 
@@ -616,7 +616,7 @@ impl Test for C_NGE {
     fn values(&self) -> Vec<Box<dyn Any>> { test_values() }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
-        const INSTRUCTION: FPUFloatInstruction = Assembler::make_c_cond(Cop1Condition::NGE, FR::F0, FR::F2);
+        const INSTRUCTION: FPUFloatInstruction = Assembler::make_cop1_c_cond(Cop1Condition::NGE, FR::F0, FR::F2);
         const INSTRUCTION_S: u32 = INSTRUCTION.s();
         const INSTRUCTION_D: u32 = INSTRUCTION.d();
 
@@ -642,7 +642,7 @@ impl Test for C_LE {
     fn values(&self) -> Vec<Box<dyn Any>> { test_values() }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
-        const INSTRUCTION: FPUFloatInstruction = Assembler::make_c_cond(Cop1Condition::LE, FR::F0, FR::F2);
+        const INSTRUCTION: FPUFloatInstruction = Assembler::make_cop1_c_cond(Cop1Condition::LE, FR::F0, FR::F2);
         const INSTRUCTION_S: u32 = INSTRUCTION.s();
         const INSTRUCTION_D: u32 = INSTRUCTION.d();
 
@@ -668,7 +668,7 @@ impl Test for C_NGT {
     fn values(&self) -> Vec<Box<dyn Any>> { test_values() }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
-        const INSTRUCTION: FPUFloatInstruction = Assembler::make_c_cond(Cop1Condition::NGT, FR::F0, FR::F2);
+        const INSTRUCTION: FPUFloatInstruction = Assembler::make_cop1_c_cond(Cop1Condition::NGT, FR::F0, FR::F2);
         const INSTRUCTION_S: u32 = INSTRUCTION.s();
         const INSTRUCTION_D: u32 = INSTRUCTION.d();
 
