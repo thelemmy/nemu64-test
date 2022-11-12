@@ -3123,7 +3123,7 @@ impl Test for LWC1PreservingFCSR {
     fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        const INSTRUCTION: u32 = Assembler::make_lwc1(GPR::V0, 0, GPR::V0);
+        const INSTRUCTION: u32 = Assembler::make_lwc1(FR::F2, 0, GPR::V0);
         test_fcsr_unchanged::<INSTRUCTION>()
     }
 }
@@ -3138,7 +3138,7 @@ impl Test for SWC1PreservingFCSR {
     fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        const INSTRUCTION: u32 = Assembler::make_swc1(GPR::V0, 0, GPR::V0);
+        const INSTRUCTION: u32 = Assembler::make_swc1(FR::F2, 0, GPR::V0);
         test_fcsr_unchanged::<INSTRUCTION>()
     }
 }
@@ -3153,7 +3153,7 @@ impl Test for LDC1PreservingFCSR {
     fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        const INSTRUCTION: u32 = Assembler::make_ldc1(GPR::V0, 0, GPR::V0);
+        const INSTRUCTION: u32 = Assembler::make_ldc1(FR::F2, 0, GPR::V0);
         test_fcsr_unchanged::<INSTRUCTION>()
     }
 }
@@ -3168,7 +3168,7 @@ impl Test for SDC1PreservingFCSR {
     fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        const INSTRUCTION: u32 = Assembler::make_sdc1(GPR::V0, 0, GPR::V0);
+        const INSTRUCTION: u32 = Assembler::make_sdc1(FR::F2, 0, GPR::V0);
         test_fcsr_unchanged::<INSTRUCTION>()
     }
 }

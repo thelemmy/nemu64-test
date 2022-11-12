@@ -363,6 +363,50 @@ pub fn run() {
                 Some(v) => return format!(" with '{:x?}'", v),
                 None => {}
             }
+            match (*value).downcast_ref::<(&str, u32, u32, u32)>() {
+                Some(v) => return format!(" with '{:x?}'", v),
+                None => {}
+            }
+            match (*value).downcast_ref::<(&str, u32, u64, u32)>() {
+                Some(v) => return format!(" with '{:x?}'", v),
+                None => {}
+            }
+            match (*value).downcast_ref::<(&str, bool, u32, u32)>() {
+                Some(v) => return format!(" with '{:x?}'", v),
+                None => {}
+            }
+            match (*value).downcast_ref::<(&str, u32, f32, f32, u32)>() {
+                Some((context, cycles, f1, f2, instruction)) => {
+                    // Convert f32 to SoftF32 - it prints more nicely
+                    let temp = (context, cycles, SoftF32::new(*f1), SoftF32::new(*f2), instruction);
+                    return format!(" with '{:x?}'", temp);
+                }
+                None => {}
+            }
+            match (*value).downcast_ref::<(&str, u32, f32, f32, u32, u32)>() {
+                Some((context, cycles, f1, f2, instruction1, instruction2)) => {
+                    // Convert f32 to SoftF32 - it prints more nicely
+                    let temp = (context, cycles, SoftF32::new(*f1), SoftF32::new(*f2), instruction1, instruction2);
+                    return format!(" with '{:x?}'", temp);
+                }
+                None => {}
+            }
+            match (*value).downcast_ref::<(&str, u32, f64, f64, u32, u32)>() {
+                Some((context, cycles, f1, f2, instruction1, instruction2)) => {
+                    // Convert f64 to SoftF64 - it prints more nicely
+                    let temp = (context, cycles, SoftF64::new(*f1), SoftF64::new(*f2), instruction1, instruction2);
+                    return format!(" with '{:x?}'", temp);
+                }
+                None => {}
+            }
+            match (*value).downcast_ref::<(&str, u32, f64, f64, u32)>() {
+                Some((context, cycles, f1, f2, instruction)) => {
+                    // Convert f64 to SoftF64 - it prints more nicely
+                    let temp = (context, cycles, SoftF64::new(*f1), SoftF64::new(*f2), instruction);
+                    return format!(" with '{:x?}'", temp);
+                }
+                None => {}
+            }
             return " with unknown arguments".to_string();
         }
 

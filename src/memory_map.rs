@@ -59,6 +59,10 @@ impl MemoryMap {
         (address | 0xA000_0000) as *mut T
     }
 
+    pub fn physical_to_cached_mut<T>(address: usize) -> *mut T {
+        (address | 0x8000_0000) as *mut T
+    }
+
     pub fn physical_to_cached<T>(address: usize) -> *const T {
         (address | 0x8000_0000) as *const T
     }

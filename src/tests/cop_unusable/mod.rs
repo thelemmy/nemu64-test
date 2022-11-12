@@ -259,7 +259,7 @@ impl Test for COP1UsableLWC1 {
     fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        const INSTRUCTION: u32 = Assembler::make_lwc1(GPR::V0, 0, GPR::V0);
+        const INSTRUCTION: u32 = Assembler::make_lwc1(FR::F2, 0, GPR::V0);
         test_cop1_instruction_causes_unusable::<INSTRUCTION>()
     }
 }
@@ -274,7 +274,7 @@ impl Test for COP1UsableLDC1 {
     fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        const INSTRUCTION: u32 = Assembler::make_ldc1(GPR::V0, 0, GPR::V0);
+        const INSTRUCTION: u32 = Assembler::make_ldc1(FR::F2, 0, GPR::V0);
         test_cop1_instruction_causes_unusable::<INSTRUCTION>()
     }
 }
@@ -289,7 +289,7 @@ impl Test for COP1UsableSWC1 {
     fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        const INSTRUCTION: u32 = Assembler::make_swc1(GPR::V0, 0, GPR::V0);
+        const INSTRUCTION: u32 = Assembler::make_swc1(FR::F2, 0, GPR::V0);
         test_cop1_instruction_causes_unusable::<INSTRUCTION>()
     }
 }
@@ -304,7 +304,7 @@ impl Test for COP1UsableSDC1 {
     fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        const INSTRUCTION: u32 = Assembler::make_sdc1(GPR::V0, 0, GPR::V0);
+        const INSTRUCTION: u32 = Assembler::make_sdc1(FR::F2, 0, GPR::V0);
         test_cop1_instruction_causes_unusable::<INSTRUCTION>()
     }
 }

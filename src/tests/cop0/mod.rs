@@ -60,6 +60,7 @@ impl Test for RandomDecrement {
             unsafe {
                 asm!("
                     .set noat
+                    nop
                     mtc0 {gpr_in}, ${WIRED}
                     nop
                     nop
@@ -131,6 +132,7 @@ impl Test for RandomMasking {
         unsafe {
             asm!("
                .set noat
+                nop
                 mtc0 {gpr_wired}, ${WIRED}
                 nop
                 nop
@@ -145,7 +147,7 @@ impl Test for RandomMasking {
             WIRED = const RegisterIndex::Wired as usize,
             RANDOM = const RegisterIndex::Random as usize,
         )}
-        soft_assert_eq(readback, 27, "Random was written as 0xFFFFFFFF, Wired written as 0, expecting Random write to be ignored")?;
+        soft_assert_eq(readback, 27, "Random was written as 0xFFFFFFFF, Wired written as 32, expecting Random write to be ignored")?;
         
         Ok(())
     }
@@ -177,6 +179,7 @@ impl Test for RandomReadEarly {
         unsafe {
             asm!("
                 .set noat
+                nop
                 mtc0 {gpr_init_wired}, ${WIRED}
                 nop;
                 nop; nop; nop; nop; nop;
@@ -207,6 +210,7 @@ impl Test for RandomReadEarly {
         unsafe {
             asm!("
                 .set noat
+                nop
                 mtc0 {gpr_init_wired}, ${WIRED}
                 nop;
                 nop; nop; nop; nop; nop;

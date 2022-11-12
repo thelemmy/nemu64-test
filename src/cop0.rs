@@ -5,6 +5,7 @@ use bitbybit::{bitenum, bitfield};
 use crate::exception_handler::expect_exception;
 
 #[allow(dead_code)]
+#[bitenum(u5, exhaustive: false)]
 pub enum RegisterIndex {
     Index = 0x00,
     Random = 0x01,
@@ -13,6 +14,7 @@ pub enum RegisterIndex {
     Context = 0x04,
     PageMask = 0x05,
     Wired = 0x06,
+    _Unused7 = 0x07,
     BadVAddr = 0x08,
     Count = 0x09,
     EntryHi = 0x0A,
