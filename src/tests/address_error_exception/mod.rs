@@ -4,6 +4,7 @@ use alloc::vec::Vec;
 use core::any::Any;
 use core::arch::asm;
 use arbitrary_int::{u31, u41};
+use crate::assembler::{Assembler, FR, GPR};
 use crate::cop0;
 use crate::cop0::{CauseException, Context, preset_cause_to_copindex2, XContext};
 use crate::exception_handler::expect_exception;
@@ -17,7 +18,6 @@ use crate::tests::soft_asserts::soft_assert_eq;
 // TODO: Test unsigned
 // TODO: Test delay slot (in that case make sure to skip 2 instructions in the exception handler)
 // TODO: Test nested exceptions (address_error_exception access while exception is already happening)
-// TODO: Test 64 bit address mode. Some 64 bit addresses are valid, others aren't
 
 pub struct UnalignedLW {}
 
@@ -92,6 +92,46 @@ impl Test for UnalignedLW2 {
         soft_assert_eq(exception_context.k0_exception_vector, 0xFFFFFFFF_80000180, "Exception Vector")?;
         soft_assert_eq(exception_context.exceptpc & 0xFFFFFFFF_FF000000, 0xFFFFFFFF_80000000, "ExceptPC")?;
         soft_assert_eq(unsafe { *(exception_context.exceptpc as *const u32) }, 0x8C400000, "ExceptPC points to wrong instruction")?;
+        soft_assert_eq(exception_context.badvaddr, p as isize as u64, "BadVAddr during AdEL exception")?;
+        soft_assert_eq(exception_context.cause.raw_value(), 0x10, "Cause during AdEL exception")?;
+        soft_assert_eq(exception_context.status, 0x24000002, "Status during AdEL exception")?;
+        soft_assert_eq(exception_context.context, Context::from_virtual_address(p as u64).with_pte_base(u41::MAX), "Context during AdEL exception")?;
+        soft_assert_eq(exception_context.xcontext, XContext::from_virtual_address(p as u64).with_pte_base(u31::MAX), "XContext during AdEL exception")?;
+
+        Ok(())
+    }
+}
+
+pub struct UnalignedLWC1 {}
+
+impl Test for UnalignedLWC1 {
+    fn name(&self) -> &str { "Unaligned LWC1 exception (with high bits of context set)" }
+
+    fn level(&self) -> Level { Level::Weird }
+
+    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+
+    fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
+        let a = 0x12345678u32;
+        // Make unaligned pointer
+        let p = &a as *const u32 as isize + 3;
+
+        unsafe { cop0::set_context_64(0xFFFFFFFF_FFFFFFFF); }
+        unsafe { cop0::set_xcontext_64(0xFFFFFFFF_FFFFFFFF); }
+        let exception_context = expect_exception(CauseException::AdEL, 1, || {
+            unsafe {
+                asm!("
+                    .set noat
+                    LWC1 $0, 0($2)
+                ", in("$2") p)
+            }
+
+            Ok(())
+        })?;
+
+        soft_assert_eq(exception_context.k0_exception_vector, 0xFFFFFFFF_80000180, "Exception Vector")?;
+        soft_assert_eq(exception_context.exceptpc & 0xFFFFFFFF_FF000000, 0xFFFFFFFF_80000000, "ExceptPC")?;
+        soft_assert_eq(unsafe { *(exception_context.exceptpc as *const u32) }, Assembler::make_lwc1(FR::F0, 0, GPR::V0), "ExceptPC points to wrong instruction")?;
         soft_assert_eq(exception_context.badvaddr, p as isize as u64, "BadVAddr during AdEL exception")?;
         soft_assert_eq(exception_context.cause.raw_value(), 0x10, "Cause during AdEL exception")?;
         soft_assert_eq(exception_context.status, 0x24000002, "Status during AdEL exception")?;

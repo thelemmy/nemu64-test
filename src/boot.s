@@ -67,6 +67,10 @@ bss_clear_done:
     li $t1, FS_START
     sw $t0, 0($t1)
 
+    // Clear $k0 and $k1. These have to be 0 as these can be used for regular code to configure the exception handler
+    la $k0, 0
+    la $k1, 0
+
     // Jump to Rust
     jal rust_entrypoint
     nop

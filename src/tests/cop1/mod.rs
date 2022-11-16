@@ -2355,8 +2355,8 @@ impl Test for CvtS {
         vec! {
             // S ==> S (which doesn't exist)
             Box::new((false, FCSRRoundingMode::Nearest, 4f32, expected_unimplemented_f32())),
-            //
-            // // D => S
+
+            // D => S
             Box::new((false, FCSRRoundingMode::Nearest, 4f64, expected_result(FCSRFlags::new(), 4f32))),
             Box::new((false, FCSRRoundingMode::Nearest, -0f64, expected_result(FCSRFlags::new(), -0f32))),
             Box::new((false, FCSRRoundingMode::Nearest, 4.123456789123456f64, expected_result(FCSRFlags::new().with_inexact_operation(true), 4.123457f32))),
@@ -2890,11 +2890,14 @@ impl Test for ConvertToL {
             Box::new((9.00719871787e15f32, expected_result(FCSRFlags::new(), 9007198717870080i64))),
             Box::new((9.00719925474e15f32, expected_unimplemented_i64())),
             Box::new((9.00720032848e15f32, expected_unimplemented_i64())),
+            Box::new((i64::MAX as f32 * 1024f32, expected_unimplemented_i64())),
+            Box::new((f32::MAX, expected_unimplemented_i64())),
 
             Box::new((-9.007198e15f32, expected_result(FCSRFlags::new(), -9007198180999168i64))),
             Box::new((-9.00719871787e15f32, expected_result(FCSRFlags::new(), -9007198717870080i64))),
             Box::new((-9.00719925474e15f32, expected_unimplemented_i64())),
             Box::new((-9.00720032848e15f32, expected_unimplemented_i64())),
+            Box::new((f32::MIN, expected_unimplemented_i64())),
 
             Box::new((f32::INFINITY, expected_unimplemented_i64())),
             Box::new((f32::NEG_INFINITY, expected_unimplemented_i64())),
@@ -2957,6 +2960,9 @@ impl Test for ConvertToL {
             Box::new((-9007199254740991f64, expected_result(FCSRFlags::new(), -9007199254740991i64))),
             Box::new((-9007199254740992f64, expected_unimplemented_i64())),
             Box::new((-9007199254740993f64, expected_unimplemented_i64())),
+
+            Box::new((f64::MAX, expected_unimplemented_i64())),
+            Box::new((f64::MIN, expected_unimplemented_i64())),
 
             Box::new((f64::INFINITY, expected_unimplemented_i64())),
             Box::new((f64::NEG_INFINITY, expected_unimplemented_i64())),

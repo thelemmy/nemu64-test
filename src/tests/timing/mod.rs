@@ -1,4 +1,4 @@
-use arbitrary_int::u5;
+use arbitrary_int::{u26, u5};
 use alloc::boxed::Box;
 use alloc::format;
 use alloc::string::String;
@@ -8,18 +8,40 @@ use core::any::Any;
 use core::arch::asm;
 use core::mem::transmute;
 
-use crate::assembler::{Assembler, Cop1Condition, FR, GPR, RegimmOpcode};
-use crate::cop0::{count, RegisterIndex, set_count};
-use crate::cop1::{FConst, fcsr, set_fcsr};
+use crate::assembler::{Assembler, Cop1Condition, Cop1FloatInstruction, FR, GPR, Opcode, RegimmOpcode};
+use crate::cop0::{count, RegisterIndex, set_count, set_status, Status, status};
+use crate::cop1::{FConst, fcsr, FCSR, FCSRFlags, set_fcsr};
 use crate::memory_map::MemoryMap;
 use crate::tests::{Level, Test};
 use crate::tests::soft_asserts::{soft_assert_eq, soft_assert_eq_decimal, soft_assert_range};
 use crate::uncached_memory::{UncachedHeapMemory, UncachedHeapMemoryWriter};
 
-// TODO: Test exception timing. Put a MFC0 as the first/second instruction in the exception handlers
-// TODO: Test COMPARE followed by BC1T
-// TODO: Test COP1 exceptions. Can we install a temporary exception handler to catch and return as
-// quickly as possible?
+// TODO: Test BC1
+
+#[naked]
+extern "C" fn instant_return_function() {
+    unsafe {
+        asm!("
+            .set noat
+            .set noreorder
+            JR $31
+            NOP
+        ", options(noreturn))
+    }
+}
+
+#[naked]
+extern "C" fn one_nop_then_return_function() {
+    unsafe {
+        asm!("
+            .set noat
+            .set noreorder
+            NOP
+            JR $31
+            NOP
+        ", options(noreturn))
+    }
+}
 
 /// This test repeatedly reads COP0.Count and looks at the differences.
 /// It expects count to increase on every other call, so the differences should be 1, 0, 1, 0, 1...
@@ -39,6 +61,7 @@ impl Test for RepeatedMFC0Count {
             unsafe {
                 asm!("
             .set noat
+            .set noreorder
 1:
             MFC0 {c0}, ${cop0reg}
             MFC0 {c1}, ${cop0reg}
@@ -165,13 +188,25 @@ impl Test for HalfCycleExactCalibration {
 
             // The hazard test tests the specific values we're getting back, which are more difficult
             // to reproduce. Here we just care about the deltas
-
             soft_assert_eq(out1 - out0, 1, "2nd - 1st readback")?;
             soft_assert_eq(out2 - out1, 0, "3rd - 2nd readback")?;
             soft_assert_eq(out3 - out2, 1, "4th - 3rd readback")?;
         }
         Ok(())
     }
+}
+
+#[repr(u32)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum ExceptionTimingMode {
+    /// Don't do anything special about exceptions - if they fire, they will be shown as errors
+    Off = 0,
+
+    // If an exception fires, the "end" of the operation will be within the exception handler
+    JustFire = 1,
+
+    // If an exception fires, it will return but the total time will include the eret
+    Roundtrip = 2,
 }
 
 /// Runs the passed in naked function and measures its runtime precisely.
@@ -181,18 +216,19 @@ impl Test for HalfCycleExactCalibration {
 ///   - FPU registers F2 and F4 also have those two values. Don't overwrite
 ///   - Integer register $3 will hold a cached virtual address which can be read/written
 ///   - Integer register $5 will hold a uncached virtual address (to the same location as $3) which can be read/written
-///   - Registers $6-$18 are free to be used in any way. $6-$9 will be initialized to $2-$5 in each loop, so they can overwritten
+///   - Registers $6-$16 are free to be used in any way. $6-$9 will be initialized to $2-$5 in each loop, so they can overwritten
+/// if use_exception_timing is true, the end timestamp will be determined within the exception handler (so it will exclude the ERET)
 
 #[inline(never)]
-fn assert_cycles(expected_cycles: u32, value2: u64, value4: u64, f: extern "C" fn()) -> Result<(), String> {
+fn assert_cycles(expected_cycles: u32, value2: u64, value4: u64, test_status: Status, exception_timing: ExceptionTimingMode, f: extern "C" fn()) -> Result<(), String> {
     let mut memory = UncachedHeapMemory::<u64>::new_with_align(8, 64);
     // Make this a pointer to itself. That allows reading from the same register again
     let start_physical = memory.start_phyiscal();
     memory.write(0, MemoryMap::physical_to_cached_mut::<u64>(start_physical) as i32 as u64);
     memory.write(1, MemoryMap::physical_to_uncached_mut::<u64>(start_physical + 8) as i32 as u64);
-    memory.write(2, 0x23456789ABCDEF12u64);
-    memory.write(3, 0x3456789ABCDEF123u64);
-    memory.write(4, 0x456789ABCDEF1234u64);
+    memory.write(2, (f as u64 + 16) as i32 as u64);
+    memory.write(3, 0x89ABCDEF01234567u64); // when signed, this is negative
+    memory.write(4, 0x456789ABCDEF1234u64); // when signed, this is positive
     memory.write(5, 0x56789ABCDEF12345u64);
     memory.write(6, 0x6789ABCDEF123456u64);
     memory.write(7, 0x789ABCDEF1234567u64);
@@ -200,6 +236,8 @@ fn assert_cycles(expected_cycles: u32, value2: u64, value4: u64, f: extern "C" f
     let ticks1: u32;
     let ticks2: u32;
     unsafe {
+        let previous_status = status();
+
         // A couple of issues this test harness fixes:
         // - ICACHE: The first time the test runs, it is freshly loaded from ROM, introducing
         //   delays. Solve this by running twice
@@ -216,9 +254,11 @@ fn assert_cycles(expected_cycles: u32, value2: u64, value4: u64, f: extern "C" f
             DMFC1 $2, $2
             DMFC1 $4, $4
             NOP; NOP
+            MTC0 $16, ${STATUS}
 
             .align 5 // align so that the loop below fits within the fewest ICACHE cachelines as possible
 1:
+            ORI $26, $18, 0  // Configure exception handler
             OR $6, $2, $0
             OR $7, $3, $0
             OR $8, $4, $0
@@ -241,21 +281,30 @@ fn assert_cycles(expected_cycles: u32, value2: u64, value4: u64, f: extern "C" f
             JALR $25
             NOP
             MFC0 $21, ${COUNT}
+
+            // If enabled, don't use the timing value we just got but instead use k1, which is what the exception handler stored
+            ORI $17, $0, 1
+            BNE $17, $18, 3f
+            NOP
+            ORI $21, $27, 0
+3:
             ORI $23, $24, 0     // stash previous iteration's result in 23
             SUB $24, $21, $19
             ADDIU $22, $22, 0xFFFF
 
             // Loop a bit - this clears out the write-buffer if it was used by the test
             ORI $19, $0, 70
-3:
-            BNE $19, $0, 3b
+4:
+            BNE $19, $0, 4b
             ADDIU $19, $19, -1 // delay slot
 
             BNE $22, $0, 1b
             NOP // delay slot
             ORI $31, $20, 0  // restore RA
+            ORI $26, $0, 0  // restore normal exception handler behavior
         ",
         COUNT = const RegisterIndex::Count as usize,
+        STATUS = const RegisterIndex::Status as usize,
 
         // Pass in values as fpu registers - this allows passing them in as 64 bit (even if illegal float values)
         in("$f2") core::mem::transmute::<u64, f64>(value2),
@@ -278,11 +327,11 @@ fn assert_cycles(expected_cycles: u32, value2: u64, value4: u64, f: extern "C" f
         out("$13") _,
         out("$14") _,
         out("$15") _,
-        out("$16") _,
-        out("$17") _,
-        out("$18") _,
+        inout("$16") test_status.raw_value() => _,
 
         // These are for the test infra itself
+        out("$17") _,
+        in("$18") exception_timing as u32,
         out("$19") _,
         out("$20") _,
         out("$21") _,
@@ -291,23 +340,40 @@ fn assert_cycles(expected_cycles: u32, value2: u64, value4: u64, f: extern "C" f
         out("$24") ticks1,
         in("$25") f,
         options(nostack));
+
+        set_status(previous_status);
     }
 
     // ticks2 is either the same or 1 larger than ticks
-    soft_assert_range(ticks2, ticks1, ticks1 + 1, "Runtime with COUNT starting at half a cycle")?;
+    soft_assert_range(
+        ticks2, ticks1, ticks1 + 1, if exception_timing == ExceptionTimingMode::JustFire {
+            "Two measurements aren't close. Most likely, exception didn't fire"
+        } else {
+            "Two measurements aren't close. Most likely, the MTC0 COUNT initialization didn't work or something else (e.g. cache effect) kicked in"
+        }
+    )?;
 
-    // In addition to the code being measured, we need a few extra cycles:
-    // - 1 for the JALR
-    // - 1 for the JALR's NOP
-    // - 1 for the return JR RA
-    // - 1 for the delay of the JR RA
-    // - 1 for one of the MFC0 COUNT itself
-    soft_assert_eq_decimal((ticks1 + ticks2) - 5, expected_cycles, "Measured cycles")?;
+    let effective_ticks =
+        if exception_timing == ExceptionTimingMode::JustFire {
+            // In addition to the code being measured, we need a few extra cycles:
+            // - 1 for the JALR
+            // - 1 for the JALR's NOP
+            (ticks1 + ticks2) - 2
+        } else {
+            // In addition to the code being measured, we need a few extra cycles:
+            // - 1 for the JALR
+            // - 1 for the JALR's NOP
+            // - 1 for the return JR RA
+            // - 1 for the delay of the JR RA
+            // - 1 for one of the MFC0 COUNT itself
+            (ticks1 + ticks2) - 5
+        };
+    soft_assert_eq_decimal(effective_ticks, expected_cycles, "Measured cycles")?;
 
     Ok(())
 }
 
-fn assert_cycles_with_codegen<F: FnOnce(&mut UncachedHeapMemoryWriter<u32>)>(expected_cycles: u32, value2: u64, value4: u64, f: F) -> Result<(), String> {
+fn assert_cycles_with_codegen<F: FnOnce(&mut UncachedHeapMemoryWriter<u32>)>(expected_cycles: u32, value2: u64, value4: u64, test_status: Status, exception_timing: ExceptionTimingMode, f: F) -> Result<(), String> {
     // Dynamically generate code
     let mut code_memory = UncachedHeapMemory::<u32>::new_with_align(64, 64);
     let mut writer = UncachedHeapMemoryWriter::new(&mut code_memory);
@@ -323,11 +389,11 @@ fn assert_cycles_with_codegen<F: FnOnce(&mut UncachedHeapMemoryWriter<u32>)>(exp
     // Turn the pointer into a function pointer
     let function_ptr: extern "C" fn() = unsafe { transmute(cached_ptr) };
 
-    assert_cycles(expected_cycles, value2, value4, function_ptr)
+    assert_cycles(expected_cycles, value2, value4, test_status, exception_timing, function_ptr)
 }
 
-fn assert_cycles_with_codegen_one_instruction(expected_cycles: u32, value2: u64, value4: u64, instruction: u32) -> Result<(), String> {
-    assert_cycles_with_codegen(expected_cycles, value2, value4, |writer| writer.write(instruction))
+fn assert_cycles_with_codegen_one_instruction(expected_cycles: u32, value2: u64, value4: u64, test_status: Status, exception_timing: ExceptionTimingMode, instruction: u32) -> Result<(), String> {
+    assert_cycles_with_codegen(expected_cycles, value2, value4, test_status, exception_timing, |writer| writer.write(instruction))
 }
 
 /// Assemble a test program that just has a few NOPs
@@ -354,7 +420,7 @@ impl Test for PreciseMeasureJustNOPs {
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
         match (*value).downcast_ref::<u32>() {
             Some(number_of_nops) => {
-                assert_cycles_with_codegen(*number_of_nops, 0x12345678_ABCDEF, 0, |writer| {
+                assert_cycles_with_codegen(*number_of_nops, 0x12345678_ABCDEF, 0, Status::DEFAULT, ExceptionTimingMode::Off, |writer| {
                     for _ in 0..*number_of_nops {
                         writer.write(Assembler::make_nop());
                     }
@@ -427,10 +493,199 @@ impl Test for SingleInstructionCPUTiming {
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
         match (*value).downcast_ref::<(&str, u32, u32)>() {
             Some((_context, expected_cycles, instruction)) => {
-                assert_cycles_with_codegen_one_instruction(*expected_cycles, 0, 0, *instruction)
+                assert_cycles_with_codegen_one_instruction(*expected_cycles, 0, 0, Status::DEFAULT, ExceptionTimingMode::Off, *instruction)
             }
             _ => Err(format!("Unexpected pattern"))
         }
+    }
+}
+
+/// Exceptions are surprisingly quick
+pub struct Exceptions {
+
+}
+
+impl Test for Exceptions {
+    fn name(&self) -> &str { "Timing: Exceptions" }
+
+    fn level(&self) -> Level { Level::Timing }
+
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec! {
+            Box::new(("BREAK", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 5u32, Assembler::make_break())),
+            Box::new(("BREAK", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::Roundtrip, 15u32, Assembler::make_break())),
+            Box::new(("SYSCALL", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 5u32, Assembler::make_syscall())),
+            Box::new(("SYSCALL", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::Roundtrip, 15u32, Assembler::make_syscall())),
+
+            Box::new(("ADD", 0x7FFFFFFFu64, 1u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_add(GPR::R0, GPR::V0, GPR::A0))),
+            Box::new(("DADD", 0x7FFFFFFF_FFFFFFFFu64, 1u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_dadd(GPR::R0, GPR::V0, GPR::A0))),
+
+            Box::new(("SUB", 0x80000000u64, 0x7FFFFFFFu64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_sub(GPR::R0, GPR::V0, GPR::A0))),
+            Box::new(("DSUB", 0x80000000_00000000u64, 0x7FFFFFFF_FFFFFFFFu64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_dsub(GPR::R0, GPR::V0, GPR::A0))),
+
+            Box::new(("ADDI", 0x7FFFFFFFu64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_addi(GPR::R0, GPR::V0, 1))),
+            Box::new(("DADDI", 0x7FFFFFFF_FFFFFFFFu64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_daddi(GPR::R0, GPR::V0, 1))),
+
+            Box::new(("TNE", 1u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_tne(GPR::V0, GPR::A0))),
+            Box::new(("TNEI", 1u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_regimm_trap(RegimmOpcode::TNEI, GPR::V0.raw_value(), 0))),
+
+            Box::new(("TEQ", 1u64, 1u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_teq(GPR::V0, GPR::A0))),
+            Box::new(("TEQI", 1u64, 1u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_regimm_trap(RegimmOpcode::TEQI, GPR::V0.raw_value(), 1))),
+
+            Box::new(("TGE", 2u64, 1u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_tge(GPR::V0, GPR::A0))),
+            Box::new(("TGEI", 2u64, 1u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_regimm_trap(RegimmOpcode::TGEI, GPR::V0.raw_value(), 0))),
+
+            Box::new(("TGEU", 2u64, 1u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_tgeu(GPR::V0, GPR::A0))),
+            Box::new(("TGEIU", 2u64, 1u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_regimm_trap(RegimmOpcode::TGEIU, GPR::V0.raw_value(), 0))),
+
+            Box::new(("TLT", 1u64, 2u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_tlt(GPR::V0, GPR::A0))),
+            Box::new(("TLTI", 1u64, 1u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_regimm_trap(RegimmOpcode::TLTI, GPR::V0.raw_value(), 2))),
+
+            Box::new(("TLTU", 1u64, 2u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_tltu(GPR::V0, GPR::A0))),
+            Box::new(("TLTIU", 1u64, 1u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_regimm_trap(RegimmOpcode::TLTIU, GPR::V0.raw_value(), 2))),
+
+            // Address error (load from 0)
+            Box::new(("LB $0, 0 ($0) (address error)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_lb(GPR::R0, 0, GPR::R0))),
+            Box::new(("LBU $0, 0 ($0) (address error)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_lbu(GPR::R0, 0, GPR::R0))),
+            Box::new(("LH $0, 0 ($0) (address error)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_lh(GPR::R0, 0, GPR::R0))),
+            Box::new(("LHU $0, 0 ($0) (address error)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_lhu(GPR::R0, 0, GPR::R0))),
+            Box::new(("LW $0, 0 ($0) (address error)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_lw(GPR::R0, 0, GPR::R0))),
+            Box::new(("LWU $0, 0 ($0) (address error)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_lwu(GPR::R0, 0, GPR::R0))),
+            Box::new(("LWR $0, 0 ($0) (address error)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_lwr(GPR::R0, 0, GPR::R0))),
+            Box::new(("LWL $0, 0 ($0) (address error)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_lwl(GPR::R0, 0, GPR::R0))),
+            Box::new(("LD $0, 0 ($0) (address error)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_ld(GPR::R0, 0, GPR::R0))),
+            Box::new(("LDL $0, 0 ($0) (address error)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_ldl(GPR::R0, 0, GPR::R0))),
+            Box::new(("LDR $0, 0 ($0) (address error)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_ldr(GPR::R0, 0, GPR::R0))),
+            Box::new(("LL $0, 0 ($0) (address error)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_ll(GPR::R0, 0, GPR::R0))),
+            Box::new(("LLD $0, 0 ($0) (address error)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_lld(GPR::R0, 0, GPR::R0))),
+            Box::new(("LWC1 $0, 0 ($0) (address error)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_lwc1(FR::F0, 0, GPR::R0))),
+            Box::new(("LDC1 $0, 0 ($0) (address error)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_ldc1(FR::F0, 0, GPR::R0))),
+
+            // Misalign exception
+            Box::new(("LH $0, 1 ($V1) (misalign)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_lh(GPR::R0, 1, GPR::V1))),
+            Box::new(("LHU $0, 1 ($V1) (misalign)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_lhu(GPR::R0, 1, GPR::V1))),
+            Box::new(("LW $0, 1 ($V1) (misalign)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_lw(GPR::R0, 1, GPR::V1))),
+            Box::new(("LWU $0, 1 ($V1) (misalign)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_lwu(GPR::R0, 1, GPR::V1))),
+            Box::new(("LD $0, 1 ($V1) (misalign)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_ld(GPR::R0, 1, GPR::V1))),
+            Box::new(("LL $0, 1 ($V1) (misalign)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_ll(GPR::R0, 1, GPR::V1))),
+            Box::new(("LLD $0, 1 ($V1) (misalign)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_lld(GPR::R0, 1, GPR::V1))),
+            Box::new(("LWC1 $0, 1 ($V1) (misalign)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_lwc1(FR::F0, 1, GPR::V1))),
+            Box::new(("LDC1 $0, 1 ($V1) (misalign)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_ldc1(FR::F0, 1, GPR::V1))),
+
+            // Non-existing CPU instruction
+            Box::new(("_I28 (doesn't exit)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 5u32, Assembler::make_main_immediate(Opcode::_I28, GPR::R0, GPR::R0, 0))),
+
+            // COP1 unusable
+            Box::new(("ADD.S (COP1 unusable)", 0u64, 0u64, Status::DEFAULT.with_cop1usable(false), ExceptionTimingMode::JustFire, 5u32, Assembler::make_cop1_add(FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("SUB.S (COP1 unusable)", 0u64, 0u64, Status::DEFAULT.with_cop1usable(false), ExceptionTimingMode::JustFire, 5u32, Assembler::make_cop1_sub(FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("MUL.S (COP1 unusable)", 0u64, 0u64, Status::DEFAULT.with_cop1usable(false), ExceptionTimingMode::JustFire, 5u32, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("DIV.S (COP1 unusable)", 0u64, 0u64, Status::DEFAULT.with_cop1usable(false), ExceptionTimingMode::JustFire, 5u32, Assembler::make_cop1_div(FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("SQRT.S (COP1 unusable)", 0u64, 0u64, Status::DEFAULT.with_cop1usable(false), ExceptionTimingMode::JustFire, 5u32, Assembler::make_cop1_sqrt(FR::F0, FR::F2).s())),
+            Box::new(("ABS.S (COP1 unusable)", 0u64, 0u64, Status::DEFAULT.with_cop1usable(false), ExceptionTimingMode::JustFire, 5u32, Assembler::make_cop1_abs(FR::F0, FR::F2).s())),
+            Box::new(("NEG.S (COP1 unusable)", 0u64, 0u64, Status::DEFAULT.with_cop1usable(false), ExceptionTimingMode::JustFire, 5u32, Assembler::make_cop1_neg(FR::F0, FR::F2).s())),
+            Box::new(("MOV.S (COP1 unusable)", 0u64, 0u64, Status::DEFAULT.with_cop1usable(false), ExceptionTimingMode::JustFire, 5u32, Assembler::make_cop1_mov(FR::F0, FR::F2).s())),
+            Box::new(("CVT.W.S (COP1 unusable)", 0u64, 0u64, Status::DEFAULT.with_cop1usable(false), ExceptionTimingMode::JustFire, 5u32, Assembler::make_cop1_cvt_w(FR::F0, FR::F2).s())),
+            Box::new(("CVT.L.S (COP1 unusable)", 0u64, 0u64, Status::DEFAULT.with_cop1usable(false), ExceptionTimingMode::JustFire, 5u32, Assembler::make_cop1_cvt_l(FR::F0, FR::F2).s())),
+            Box::new(("CVT.D.S (COP1 unusable)", 0u64, 0u64, Status::DEFAULT.with_cop1usable(false), ExceptionTimingMode::JustFire, 5u32, Assembler::make_cop1_cvt_d(FR::F0, FR::F2).s())),
+            Box::new(("ROUND.W.S (COP1 unusable)", 0u64, 0u64, Status::DEFAULT.with_cop1usable(false), ExceptionTimingMode::JustFire, 5u32, Assembler::make_cop1_round_w(FR::F0, FR::F2).s())),
+            Box::new(("ROUND.L.S (COP1 unusable)", 0u64, 0u64, Status::DEFAULT.with_cop1usable(false), ExceptionTimingMode::JustFire, 5u32, Assembler::make_cop1_round_l(FR::F0, FR::F2).s())),
+            Box::new(("TRUNC.W.S (COP1 unusable)", 0u64, 0u64, Status::DEFAULT.with_cop1usable(false), ExceptionTimingMode::JustFire, 5u32, Assembler::make_cop1_trunc_w(FR::F0, FR::F2).s())),
+            Box::new(("TRUNC.L.S (COP1 unusable)", 0u64, 0u64, Status::DEFAULT.with_cop1usable(false), ExceptionTimingMode::JustFire, 5u32, Assembler::make_cop1_trunc_l(FR::F0, FR::F2).s())),
+            Box::new(("CEIL.W.S (COP1 unusable)", 0u64, 0u64, Status::DEFAULT.with_cop1usable(false), ExceptionTimingMode::JustFire, 5u32, Assembler::make_cop1_ceil_w(FR::F0, FR::F2).s())),
+            Box::new(("CEIL.L.S (COP1 unusable)", 0u64, 0u64, Status::DEFAULT.with_cop1usable(false), ExceptionTimingMode::JustFire, 5u32, Assembler::make_cop1_ceil_l(FR::F0, FR::F2).s())),
+            Box::new(("FLOOR.L.S (COP1 unusable)", 0u64, 0u64, Status::DEFAULT.with_cop1usable(false), ExceptionTimingMode::JustFire, 5u32, Assembler::make_cop1_floor_w(FR::F0, FR::F2).s())),
+            Box::new(("FLOOR.L.S (COP1 unusable)", 0u64, 0u64, Status::DEFAULT.with_cop1usable(false), ExceptionTimingMode::JustFire, 5u32, Assembler::make_cop1_floor_l(FR::F0, FR::F2).s())),
+            Box::new(("C.EQ.S (COP1 unusable)", 0u64, 0u64, Status::DEFAULT.with_cop1usable(false), ExceptionTimingMode::JustFire, 5u32, Assembler::make_cop1_c_cond(Cop1Condition::EQ, FR::F2, FR::F4).s())),
+
+            Box::new(("ADD.D (COP1 unusable)", 0u64, 0u64, Status::DEFAULT.with_cop1usable(false), ExceptionTimingMode::JustFire, 5u32, Assembler::make_cop1_add(FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("SUB.D (COP1 unusable)", 0u64, 0u64, Status::DEFAULT.with_cop1usable(false), ExceptionTimingMode::JustFire, 5u32, Assembler::make_cop1_sub(FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("MUL.D (COP1 unusable)", 0u64, 0u64, Status::DEFAULT.with_cop1usable(false), ExceptionTimingMode::JustFire, 5u32, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("DIV.D (COP1 unusable)", 0u64, 0u64, Status::DEFAULT.with_cop1usable(false), ExceptionTimingMode::JustFire, 5u32, Assembler::make_cop1_div(FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("SQRT.D (COP1 unusable)", 0u64, 0u64, Status::DEFAULT.with_cop1usable(false), ExceptionTimingMode::JustFire, 5u32, Assembler::make_cop1_sqrt(FR::F0, FR::F2).d())),
+            Box::new(("ABS.D (COP1 unusable)", 0u64, 0u64, Status::DEFAULT.with_cop1usable(false), ExceptionTimingMode::JustFire, 5u32, Assembler::make_cop1_abs(FR::F0, FR::F2).d())),
+            Box::new(("NEG.D (COP1 unusable)", 0u64, 0u64, Status::DEFAULT.with_cop1usable(false), ExceptionTimingMode::JustFire, 5u32, Assembler::make_cop1_neg(FR::F0, FR::F2).d())),
+            Box::new(("MOV.D (COP1 unusable)", 0u64, 0u64, Status::DEFAULT.with_cop1usable(false), ExceptionTimingMode::JustFire, 5u32, Assembler::make_cop1_mov(FR::F0, FR::F2).d())),
+            Box::new(("CVT.W.D (COP1 unusable)", 0u64, 0u64, Status::DEFAULT.with_cop1usable(false), ExceptionTimingMode::JustFire, 5u32, Assembler::make_cop1_cvt_w(FR::F0, FR::F2).d())),
+            Box::new(("CVT.L.D (COP1 unusable)", 0u64, 0u64, Status::DEFAULT.with_cop1usable(false), ExceptionTimingMode::JustFire, 5u32, Assembler::make_cop1_cvt_l(FR::F0, FR::F2).d())),
+            Box::new(("CVT.S.D (COP1 unusable)", 0u64, 0u64, Status::DEFAULT.with_cop1usable(false), ExceptionTimingMode::JustFire, 5u32, Assembler::make_cop1_cvt_s(FR::F0, FR::F2).d())),
+            Box::new(("ROUND.W.D (COP1 unusable)", 0u64, 0u64, Status::DEFAULT.with_cop1usable(false), ExceptionTimingMode::JustFire, 5u32, Assembler::make_cop1_round_w(FR::F0, FR::F2).d())),
+            Box::new(("ROUND.L.D (COP1 unusable)", 0u64, 0u64, Status::DEFAULT.with_cop1usable(false), ExceptionTimingMode::JustFire, 5u32, Assembler::make_cop1_round_l(FR::F0, FR::F2).d())),
+            Box::new(("TRUNC.W.D (COP1 unusable)", 0u64, 0u64, Status::DEFAULT.with_cop1usable(false), ExceptionTimingMode::JustFire, 5u32, Assembler::make_cop1_trunc_w(FR::F0, FR::F2).d())),
+            Box::new(("TRUNC.L.D (COP1 unusable)", 0u64, 0u64, Status::DEFAULT.with_cop1usable(false), ExceptionTimingMode::JustFire, 5u32, Assembler::make_cop1_trunc_l(FR::F0, FR::F2).d())),
+            Box::new(("CEIL.W.D (COP1 unusable)", 0u64, 0u64, Status::DEFAULT.with_cop1usable(false), ExceptionTimingMode::JustFire, 5u32, Assembler::make_cop1_ceil_w(FR::F0, FR::F2).d())),
+            Box::new(("CEIL.L.D (COP1 unusable)", 0u64, 0u64, Status::DEFAULT.with_cop1usable(false), ExceptionTimingMode::JustFire, 5u32, Assembler::make_cop1_ceil_l(FR::F0, FR::F2).d())),
+            Box::new(("FLOOR.L.D (COP1 unusable)", 0u64, 0u64, Status::DEFAULT.with_cop1usable(false), ExceptionTimingMode::JustFire, 5u32, Assembler::make_cop1_floor_w(FR::F0, FR::F2).d())),
+            Box::new(("FLOOR.L.D (COP1 unusable)", 0u64, 0u64, Status::DEFAULT.with_cop1usable(false), ExceptionTimingMode::JustFire, 5u32, Assembler::make_cop1_floor_l(FR::F0, FR::F2).d())),
+            Box::new(("C.EQ.D (COP1 unusable)", 0u64, 0u64, Status::DEFAULT.with_cop1usable(false), ExceptionTimingMode::JustFire, 5u32, Assembler::make_cop1_c_cond(Cop1Condition::EQ, FR::F2, FR::F4).d())),
+
+            Box::new(("CVT.S.W (COP1 unusable)", 0u64, 0u64, Status::DEFAULT.with_cop1usable(false), ExceptionTimingMode::JustFire, 5u32, Assembler::make_cop1_cvt_s(FR::F0, FR::F2).w())),
+            Box::new(("CVT.D.W (COP1 unusable)", 0u64, 0u64, Status::DEFAULT.with_cop1usable(false), ExceptionTimingMode::JustFire, 5u32, Assembler::make_cop1_cvt_d(FR::F0, FR::F2).w())),
+            Box::new(("CVT.S.L (COP1 unusable)", 0u64, 0u64, Status::DEFAULT.with_cop1usable(false), ExceptionTimingMode::JustFire, 5u32, Assembler::make_cop1_cvt_s(FR::F0, FR::F2).l())),
+            Box::new(("CVT.D.L (COP1 unusable)", 0u64, 0u64, Status::DEFAULT.with_cop1usable(false), ExceptionTimingMode::JustFire, 5u32, Assembler::make_cop1_cvt_d(FR::F0, FR::F2).l())),
+
+            Box::new(("MFC1 (COP1 unusable)", 0u64, 0u64, Status::DEFAULT.with_cop1usable(false), ExceptionTimingMode::JustFire, 5u32, Assembler::make_mfc1(GPR::R0, FR::F0))),
+            Box::new(("DMFC1 (COP1 unusable)", 0u64, 0u64, Status::DEFAULT.with_cop1usable(false), ExceptionTimingMode::JustFire, 5u32, Assembler::make_dmfc1(GPR::R0, FR::F0))),
+            Box::new(("MTC1 (COP1 unusable)", 0u64, 0u64, Status::DEFAULT.with_cop1usable(false), ExceptionTimingMode::JustFire, 5u32, Assembler::make_mtc1(GPR::R0, FR::F0))),
+            Box::new(("DMTC1 (COP1 unusable)", 0u64, 0u64, Status::DEFAULT.with_cop1usable(false), ExceptionTimingMode::JustFire, 5u32, Assembler::make_dmtc1(GPR::R0, FR::F0))),
+
+            Box::new(("LWC1 (COP1 unusable)", 0u64, 0u64, Status::DEFAULT.with_cop1usable(false), ExceptionTimingMode::JustFire, 5u32, Assembler::make_lwc1(FR::F0, 0, GPR::V1))),
+            Box::new(("LDC1 (COP1 unusable)", 0u64, 0u64, Status::DEFAULT.with_cop1usable(false), ExceptionTimingMode::JustFire, 5u32, Assembler::make_ldc1(FR::F0, 0, GPR::V1))),
+            Box::new(("SWC1 (COP1 unusable)", 0u64, 0u64, Status::DEFAULT.with_cop1usable(false), ExceptionTimingMode::JustFire, 5u32, Assembler::make_swc1(FR::F0, 0, GPR::V1))),
+            Box::new(("SDC1 (COP1 unusable)", 0u64, 0u64, Status::DEFAULT.with_cop1usable(false), ExceptionTimingMode::JustFire, 5u32, Assembler::make_ldc1(FR::F0, 0, GPR::V1))),
+
+            // Non-existing COP1 instruction. The rule seems to be:
+            // If an instruction is .S and .D (e.g. ADD, MUL, CVT.W) but used with W or L instead, it is 7 cycles. Any other situation the cost is 6 cycles
+            Box::new(("ADD.W (doesn't exit)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 7u32, Assembler::make_cop1_add(FR::F0, FR::F2, FR::F4).w())),
+            Box::new(("ADD.L (doesn't exit)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 7u32, Assembler::make_cop1_add(FR::F0, FR::F2, FR::F4).l())),
+            Box::new(("MUL.W (doesn't exit)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 7u32, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).w())),
+            Box::new(("MUL.L (doesn't exit)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 7u32, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).l())),
+            Box::new(("_F16.S (doesn't exit)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_cop1_float_instruction(Cop1FloatInstruction::_F16, FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("_F16.D (doesn't exit)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_cop1_float_instruction(Cop1FloatInstruction::_F16, FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("_F16.W (doesn't exit)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_cop1_float_instruction(Cop1FloatInstruction::_F16, FR::F0, FR::F2, FR::F4).w())),
+            Box::new(("_F16.L (doesn't exit)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_cop1_float_instruction(Cop1FloatInstruction::_F16, FR::F0, FR::F2, FR::F4).l())),
+            Box::new(("_F31.S (doesn't exit)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_cop1_float_instruction(Cop1FloatInstruction::_F31, FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("_F31.D (doesn't exit)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_cop1_float_instruction(Cop1FloatInstruction::_F31, FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("_F31.W (doesn't exit)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_cop1_float_instruction(Cop1FloatInstruction::_F31, FR::F0, FR::F2, FR::F4).w())),
+            Box::new(("_F31.L (doesn't exit)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_cop1_float_instruction(Cop1FloatInstruction::_F31, FR::F0, FR::F2, FR::F4).l())),
+            Box::new(("_F34.S (doesn't exit)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_cop1_float_instruction(Cop1FloatInstruction::_F34, FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("_F34.D (doesn't exit)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_cop1_float_instruction(Cop1FloatInstruction::_F34, FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("_F34.W (doesn't exit)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_cop1_float_instruction(Cop1FloatInstruction::_F34, FR::F0, FR::F2, FR::F4).w())),
+            Box::new(("_F34.L (doesn't exit)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_cop1_float_instruction(Cop1FloatInstruction::_F34, FR::F0, FR::F2, FR::F4).l())),
+            Box::new(("_F35.S (doesn't exit)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_cop1_float_instruction(Cop1FloatInstruction::_F35, FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("_F35.D (doesn't exit)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_cop1_float_instruction(Cop1FloatInstruction::_F35, FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("_F35.W (doesn't exit)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_cop1_float_instruction(Cop1FloatInstruction::_F35, FR::F0, FR::F2, FR::F4).w())),
+            Box::new(("_F35.L (doesn't exit)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_cop1_float_instruction(Cop1FloatInstruction::_F35, FR::F0, FR::F2, FR::F4).l())),
+            Box::new(("_F38.S (doesn't exit)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_cop1_float_instruction(Cop1FloatInstruction::_F38, FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("_F38.D (doesn't exit)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_cop1_float_instruction(Cop1FloatInstruction::_F38, FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("_F38.W (doesn't exit)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_cop1_float_instruction(Cop1FloatInstruction::_F38, FR::F0, FR::F2, FR::F4).w())),
+            Box::new(("_F38.L (doesn't exit)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_cop1_float_instruction(Cop1FloatInstruction::_F38, FR::F0, FR::F2, FR::F4).l())),
+            Box::new(("_F47.S (doesn't exit)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_cop1_float_instruction(Cop1FloatInstruction::_F47, FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("_F47.D (doesn't exit)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_cop1_float_instruction(Cop1FloatInstruction::_F47, FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("_F47.W (doesn't exit)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_cop1_float_instruction(Cop1FloatInstruction::_F47, FR::F0, FR::F2, FR::F4).w())),
+            Box::new(("_F47.L (doesn't exit)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_cop1_float_instruction(Cop1FloatInstruction::_F47, FR::F0, FR::F2, FR::F4).l())),
+            Box::new(("CVT.S.S (doesn't exit)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_cop1_cvt_s(FR::F0, FR::F2).s())),
+            Box::new(("CVT.D.D (doesn't exit)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 6u32, Assembler::make_cop1_cvt_d(FR::F0, FR::F2).d())),
+            Box::new(("CVT.W.W (doesn't exit)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 7u32, Assembler::make_cop1_cvt_w(FR::F0, FR::F2).w())),
+            Box::new(("CVT.L.L (doesn't exit)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 7u32, Assembler::make_cop1_cvt_l(FR::F0, FR::F2).l())),
+            Box::new(("CVT.W.L (doesn't exit)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 7u32, Assembler::make_cop1_cvt_w(FR::F0, FR::F2).l())),
+            Box::new(("CVT.L.W (doesn't exit)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 7u32, Assembler::make_cop1_cvt_l(FR::F0, FR::F2).w())),
+            Box::new(("ROUND.W.W (doesn't exit)", 0u64, 0u64, Status::DEFAULT, ExceptionTimingMode::JustFire, 7u32, Assembler::make_cop1_round_w(FR::F0, FR::F2).w())),
+
+            // Some of the most useless metrics
+            Box::new(("MFC2 (COP2 usable)", 0u64, 0u64, Status::DEFAULT.with_cop2usable(true), ExceptionTimingMode::Off, 1u32, Assembler::make_mfc2(GPR::R0, u5::new(0)))),
+            Box::new(("MFC2 (COP2 unusable)", 0u64, 0u64, Status::DEFAULT.with_cop2usable(false), ExceptionTimingMode::JustFire, 5u32, Assembler::make_mfc2(GPR::R0, u5::new(0)))),
+        }
+    }
+
+    fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
+        match (*value).downcast_ref::<(&str, u64, u64, Status, ExceptionTimingMode, u32, u32)>() {
+            Some((_context, value2, value4, status, exception_mode, expected_cycles, instruction)) => {
+                return assert_cycles_with_codegen_one_instruction(*expected_cycles, *value2, *value4, *status, *exception_mode, *instruction);
+            },
+            _ => { },
+        }
+
+        Err(format!("Unexpected pattern"))
     }
 }
 
@@ -486,7 +741,7 @@ impl Test for CachedLoadsAndStoreTiming {
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
         match (*value).downcast_ref::<(&str, u32, u32)>() {
             Some((_context, expected_cycles, instruction)) => {
-                assert_cycles_with_codegen_one_instruction(*expected_cycles, 0, 0, *instruction)
+                assert_cycles_with_codegen_one_instruction(*expected_cycles, 0, 0, Status::DEFAULT, ExceptionTimingMode::Off, *instruction)
             }
             _ => Err(format!("Unexpected pattern"))
         }
@@ -509,7 +764,7 @@ impl Test for COP1Instructions32 {
 
     fn values(&self) -> Vec<Box<dyn Any>> {
         vec! {
-            // ADD.S has these trivial cases: NAN, INFINITY, NEG_INFINITY, 0, -0
+            // ADD.S with all exceptions disabled. It has these trivial cases: NAN, INFINITY, NEG_INFINITY, 0, -0
             Box::new(("ADD.S", 3u32, 1.0f32, 1.0f32, Assembler::make_cop1_add(FR::F0, FR::F2, FR::F4).s())),
             Box::new(("ADD.S", 3u32, 1.0f32, -1.0f32, Assembler::make_cop1_add(FR::F0, FR::F2, FR::F4).s())),
             Box::new(("ADD.S", 3u32, 1.0f32, 1000.0f32, Assembler::make_cop1_add(FR::F0, FR::F2, FR::F4).s())),
@@ -531,6 +786,21 @@ impl Test for COP1Instructions32 {
             Box::new(("ADD.S", 3u32, 3e38f32, 8e37f32, Assembler::make_cop1_add(FR::F0, FR::F2, FR::F4).s())),
             // Underflow
             Box::new(("ADD.S", 3u32, 5285104e-37f32, -1.5391543e-37f32, Assembler::make_cop1_add(FR::F0, FR::F2, FR::F4).s())),
+
+            // ADD.S with all exceptions enabled: Normal, trivial (same as above), then the various exception
+            Box::new(("ADD.S", 3u32, 1f32, 3f32, ExceptionTimingMode::Off, Assembler::make_cop1_add(FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("ADD.S", 2u32, 0f32, 0f32, ExceptionTimingMode::Off, Assembler::make_cop1_add(FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("ADD.S", 8u32, f32::MIN, -1f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_add(FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("ADD.S", 7u32, f32::INFINITY, f32::NEG_INFINITY, ExceptionTimingMode::JustFire, Assembler::make_cop1_add(FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("ADD.S", 8u32, 3e38f32, 8e37f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_add(FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("ADD.S", 8u32, 5285104e-37f32, -1.5391543e-37f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_add(FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("ADD.S", 7u32, FConst::SUBNORMAL_MIN_POSITIVE_32, 1.1f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_add(FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("ADD.S", 7u32, 1.1f32, FConst::SUBNORMAL_MIN_POSITIVE_32, ExceptionTimingMode::JustFire, Assembler::make_cop1_add(FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("ADD.S", 7u32, 2f32, FConst::QUIET_NAN_START_32, ExceptionTimingMode::JustFire, Assembler::make_cop1_add(FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("ADD.S", 7u32, FConst::QUIET_NAN_START_32, 2f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_add(FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("ADD.S", 7u32, 2f32, FConst::SIGNALLING_NAN_START_32, ExceptionTimingMode::JustFire, Assembler::make_cop1_add(FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("ADD.S", 7u32, FConst::SIGNALLING_NAN_START_32, 2f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_add(FR::F0, FR::F2, FR::F4).s())),
+
 
             // SUB is just like ADD
             Box::new(("SUB.S", 3u32, 1.0f32, 1.0f32, Assembler::make_cop1_sub(FR::F0, FR::F2, FR::F4).s())),
@@ -555,6 +825,20 @@ impl Test for COP1Instructions32 {
             // Underflow
             Box::new(("SUB.S", 3u32, 5285104e-37f32, 1.5391543e-37f32, Assembler::make_cop1_sub(FR::F0, FR::F2, FR::F4).s())),
 
+            // SUB.S with all exceptions enabled: Normal, trivial (same as above), then the various exception
+            Box::new(("SUB.S", 3u32, 1f32, 3f32, ExceptionTimingMode::Off, Assembler::make_cop1_sub(FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("SUB.S", 2u32, 0f32, 0f32, ExceptionTimingMode::Off, Assembler::make_cop1_sub(FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("SUB.S", 8u32, f32::MIN, 1f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_sub(FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("SUB.S", 7u32, f32::INFINITY, f32::INFINITY, ExceptionTimingMode::JustFire, Assembler::make_cop1_sub(FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("SUB.S", 8u32, 3e38f32, -8e37f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_sub(FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("SUB.S", 8u32, 5285104e-37f32, 1.5391543e-37f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_sub(FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("SUB.S", 7u32, FConst::SUBNORMAL_MIN_POSITIVE_32, 1.1f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_sub(FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("SUB.S", 7u32, 1.1f32, FConst::SUBNORMAL_MIN_POSITIVE_32, ExceptionTimingMode::JustFire, Assembler::make_cop1_sub(FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("SUB.S", 7u32, 2f32, FConst::QUIET_NAN_START_32, ExceptionTimingMode::JustFire, Assembler::make_cop1_sub(FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("SUB.S", 7u32, FConst::QUIET_NAN_START_32, 2f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_sub(FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("SUB.S", 7u32, 2f32, FConst::SIGNALLING_NAN_START_32, ExceptionTimingMode::JustFire, Assembler::make_cop1_sub(FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("SUB.S", 7u32, FConst::SIGNALLING_NAN_START_32, 2f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_sub(FR::F0, FR::F2, FR::F4).s())),
+
             // MUL.S has these trivial cases: NAN, INFINITY, NEG_INFINITY, 0, -0, underflows and any power of two (e.g. 32)
             Box::new(("MUL.S", 5u32, 123f32, 0.66f32, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).s())),
             Box::new(("MUL.S", 2u32, 123f32, 1.0f32, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).s())),
@@ -576,16 +860,16 @@ impl Test for COP1Instructions32 {
             Box::new(("MUL.S", 2u32, 123f32, 16384.0f32, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).s())),
             Box::new(("MUL.S", 2u32, 123f32, 32768.0f32, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).s())),
             Box::new(("MUL.S", 2u32, 123f32, 65536.0f32, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).s())),
-            Box::new(("MUL.S", 2u32, 123f32, 65536.0f32*65536.0f32*65536.0f32, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("MUL.S", 2u32, 123f32, 65536.0f32 * 65536.0f32 * 65536.0f32, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).s())),
             Box::new(("MUL.S", 2u32, 124f32, 1.7014118346e+38f32, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).s())),
             Box::new(("MUL.S", 2u32, 123f32, 0.5f32, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).s())),
             Box::new(("MUL.S", 2u32, 123f32, 0.25f32, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).s())),
             Box::new(("MUL.S", 5u32, 123f32, 0.2f32, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).s())),
             Box::new(("MUL.S", 2u32, 123f32, 0.125f32, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).s())),
-            Box::new(("MUL.S", 2u32, 123f32, 1f32/8f32, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).s())),
-            Box::new(("MUL.S", 2u32, 123f32, 1f32/65536f32, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).s())),
-            Box::new(("MUL.S", 2u32, 123f32, 1f32/65536f32/65536f32, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).s())),
-            Box::new(("MUL.S", 2u32, 123f32, 1f32/65536f32/65536f32/65536f32, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("MUL.S", 2u32, 123f32, 1f32 / 8f32, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("MUL.S", 2u32, 123f32, 1f32 / 65536f32, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("MUL.S", 2u32, 123f32, 1f32 / 65536f32 / 65536f32, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("MUL.S", 2u32, 123f32, 1f32 / 65536f32 / 65536f32 / 65536f32, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).s())),
             Box::new(("MUL.S", 2u32, 123f32, 0f32, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).s())),
             Box::new(("MUL.S", 2u32, 0f32, 123f32, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).s())),
             Box::new(("MUL.S", 2u32, f32::INFINITY, -1000.0f32, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).s())),
@@ -600,6 +884,20 @@ impl Test for COP1Instructions32 {
             // Underflow
             Box::new(("MUL.S", 2u32, f32::MIN_POSITIVE, 0.5f32, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).s())),
             Box::new(("MUL.S", 2u32, f32::MIN_POSITIVE, 0.222f32, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).s())),
+
+            // MUL.S with exceptions on
+            Box::new(("MUL.S (inexact)", 10u32, 0.123456789f32, 10.123456789f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("MUL.S (underflow with other number being pow2)", 7u32, 1.17549449095e-38f32, 0.125f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("MUL.S (underflow)", 10u32, 1.17549449095e-38f32, 0.13f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("MUL.S (overflow)", 10u32, f32::MAX, f32::MAX, ExceptionTimingMode::JustFire, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("MUL.S (overflow trivial)", 7u32, f32::MAX, 128f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("MUL.S", 7u32, f32::INFINITY, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("MUL.S", 7u32, FConst::SUBNORMAL_MIN_POSITIVE_32, 1.1f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("MUL.S", 7u32, 1.1f32, FConst::SUBNORMAL_MIN_POSITIVE_32, ExceptionTimingMode::JustFire, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("MUL.S", 7u32, 1.1f32, FConst::QUIET_NAN_START_32, ExceptionTimingMode::JustFire, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("MUL.S", 7u32, FConst::QUIET_NAN_START_32, 1.1f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("MUL.S", 7u32, 1.1f32, FConst::SIGNALLING_NAN_START_32, ExceptionTimingMode::JustFire, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("MUL.S", 7u32, FConst::SIGNALLING_NAN_START_32, 1.1f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).s())),
 
             // DIV.S has these trivial cases: 0, NAN, INFINITY, NEG_INFINITY, 0, -0
             Box::new(("DIV.S", 29u32, 123f32, 0.66f32, Assembler::make_cop1_div(FR::F0, FR::F2, FR::F4).s())),
@@ -624,12 +922,29 @@ impl Test for COP1Instructions32 {
             Box::new(("DIV.S", 2u32, FConst::QUIET_NAN_START_32, 123f32, Assembler::make_cop1_div(FR::F0, FR::F2, FR::F4).s())),
             Box::new(("DIV.S", 2u32, 123f32, FConst::QUIET_NAN_START_32, Assembler::make_cop1_div(FR::F0, FR::F2, FR::F4).s())),
 
+            // DIV.S with exceptions on
+            Box::new(("DIV.S (inexact)", 34u32, 0.123456789f32, 10.123456789f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_div(FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("DIV.S (15/0)", 7u32, 15f32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_div(FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("DIV.S (overflow)", 34u32, f32::MAX, 0.125f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_div(FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("DIV.S (underflow)", 34u32, f32::MIN_POSITIVE, 128f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_div(FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("DIV.S (inf/inf)", 7u32, f32::INFINITY, f32::INFINITY, ExceptionTimingMode::JustFire, Assembler::make_cop1_div(FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("DIV.S (inf/-inf)", 7u32, f32::INFINITY, f32::NEG_INFINITY, ExceptionTimingMode::JustFire, Assembler::make_cop1_div(FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("DIV.S (subnormal/1)", 7u32, FConst::SUBNORMAL_MIN_POSITIVE_32, 1f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_div(FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("DIV.S (1/subnormal)", 7u32, 1f32, FConst::SUBNORMAL_MIN_POSITIVE_32, ExceptionTimingMode::JustFire, Assembler::make_cop1_div(FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("DIV.S (1/qNAN)", 7u32, 1f32, FConst::QUIET_NAN_START_32, ExceptionTimingMode::JustFire, Assembler::make_cop1_div(FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("DIV.S (qNAN/1)", 7u32, FConst::QUIET_NAN_START_32, 1f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_div(FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("DIV.S (1/sNAN)", 7u32, 1f32, FConst::SIGNALLING_NAN_START_32, ExceptionTimingMode::JustFire, Assembler::make_cop1_div(FR::F0, FR::F2, FR::F4).s())),
+            Box::new(("DIV.S (sNAN/1)", 7u32, FConst::SIGNALLING_NAN_START_32, 1f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_div(FR::F0, FR::F2, FR::F4).s())),
+
             // NEG.S is always 1 cycle
             Box::new(("NEG.S", 1u32, 123f32, 0f32, Assembler::make_cop1_neg(FR::F0, FR::F2).s())),
             Box::new(("NEG.S", 1u32, -123f32, 0f32, Assembler::make_cop1_neg(FR::F0, FR::F2).s())),
             Box::new(("NEG.S", 1u32, f32::INFINITY, 0f32, Assembler::make_cop1_neg(FR::F0, FR::F2).s())),
             Box::new(("NEG.S", 1u32, f32::NEG_INFINITY, 0f32, Assembler::make_cop1_neg(FR::F0, FR::F2).s())),
             Box::new(("NEG.S", 1u32, FConst::QUIET_NAN_START_32, 0f32, Assembler::make_cop1_neg(FR::F0, FR::F2).s())),
+            Box::new(("NEG.S", 6u32, FConst::SUBNORMAL_MIN_POSITIVE_32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_neg(FR::F0, FR::F2).s())),
+            Box::new(("NEG.S", 6u32, FConst::QUIET_NAN_START_32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_neg(FR::F0, FR::F2).s())),
+            Box::new(("NEG.S", 6u32, FConst::SIGNALLING_NAN_START_32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_neg(FR::F0, FR::F2).s())),
 
             // ABS.S is always 1 cycle
             Box::new(("ABS.S", 1u32, 123f32, 0f32, Assembler::make_cop1_abs(FR::F0, FR::F2).s())),
@@ -637,8 +952,11 @@ impl Test for COP1Instructions32 {
             Box::new(("ABS.S", 1u32, f32::INFINITY, 0f32, Assembler::make_cop1_abs(FR::F0, FR::F2).s())),
             Box::new(("ABS.S", 1u32, f32::NEG_INFINITY, 0f32, Assembler::make_cop1_abs(FR::F0, FR::F2).s())),
             Box::new(("ABS.S", 1u32, FConst::QUIET_NAN_START_32, 0f32, Assembler::make_cop1_abs(FR::F0, FR::F2).s())),
+            Box::new(("ABS.S", 6u32, FConst::SUBNORMAL_MIN_POSITIVE_32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_abs(FR::F0, FR::F2).s())),
+            Box::new(("ABS.S", 6u32, FConst::QUIET_NAN_START_32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_abs(FR::F0, FR::F2).s())),
+            Box::new(("ABS.S", 6u32, FConst::SIGNALLING_NAN_START_32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_abs(FR::F0, FR::F2).s())),
 
-            // SQRT.S has these trivial cases: negative input, 0, NAN, INFINITY
+            // SQRT.S has these trivial cases: negative input, 0, NAN, INFINITY.
             Box::new(("SQRT.S", 29u32, 123f32, 0f32, Assembler::make_cop1_sqrt(FR::F0, FR::F2).s())),
             Box::new(("SQRT.S", 29u32, 16f32, 0f32, Assembler::make_cop1_sqrt(FR::F0, FR::F2).s())),
             Box::new(("SQRT.S", 29u32, 4f32, 0f32, Assembler::make_cop1_sqrt(FR::F0, FR::F2).s())),
@@ -649,7 +967,12 @@ impl Test for COP1Instructions32 {
             Box::new(("SQRT.S", 2u32, -123f32, 0f32, Assembler::make_cop1_sqrt(FR::F0, FR::F2).s())),
             Box::new(("SQRT.S", 2u32, f32::INFINITY, 0f32, Assembler::make_cop1_sqrt(FR::F0, FR::F2).s())),
             Box::new(("SQRT.S", 2u32, f32::NEG_INFINITY, 0f32, Assembler::make_cop1_sqrt(FR::F0, FR::F2).s())),
-            Box::new(("SQRT.S", 2u32, FConst::QUIET_NAN_START_32, 0f32, Assembler::make_cop1_sqrt(FR::F0, FR::F2).s())),
+            Box::new(("SQRT.S (qNAN with exceptions disabled)", 2u32, FConst::QUIET_NAN_START_32, 0f32, Assembler::make_cop1_sqrt(FR::F0, FR::F2).s())),
+            Box::new(("SQRT.S (negative)", 7u32, -16f32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_sqrt(FR::F0, FR::F2).s())),
+            Box::new(("SQRT.S (inexact)", 34u32, f32::MAX, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_sqrt(FR::F0, FR::F2).s())),
+            Box::new(("SQRT.S", 7u32, FConst::SUBNORMAL_MIN_POSITIVE_32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_sqrt(FR::F0, FR::F2).s())),
+            Box::new(("SQRT.S", 7u32, FConst::QUIET_NAN_START_32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_sqrt(FR::F0, FR::F2).s())),
+            Box::new(("SQRT.S", 7u32, FConst::SIGNALLING_NAN_START_32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_sqrt(FR::F0, FR::F2).s())),
 
             // MOV.S is always 1 cycle
             Box::new(("MOV.S", 1u32, 123f32, 0f32, Assembler::make_cop1_mov(FR::F0, FR::F2).s())),
@@ -659,41 +982,97 @@ impl Test for COP1Instructions32 {
             Box::new(("MOV.S", 1u32, FConst::QUIET_NAN_START_32, 0f32, Assembler::make_cop1_mov(FR::F0, FR::F2).s())),
             Box::new(("MOV.S", 1u32, FConst::SIGNALLING_NAN_START_32, 0f32, Assembler::make_cop1_mov(FR::F0, FR::F2).s())),
 
-            // ROUND.W.S is always 5 cycles
+            // ROUND.W.S is 5 cycles. In the exception case, subnormal and nan are trivial. Too large numbers are trivial if exponent >= 0b10011111
             Box::new(("ROUND.W.S", 5u32, 0f32, 0f32, Assembler::make_cop1_round_w(FR::F0, FR::F2).s())),
             Box::new(("ROUND.W.S", 5u32, 1f32, 0f32, Assembler::make_cop1_round_w(FR::F0, FR::F2).s())),
             Box::new(("ROUND.W.S", 5u32, 123.15f32, 0f32, Assembler::make_cop1_round_w(FR::F0, FR::F2).s())),
             Box::new(("ROUND.W.S", 5u32, -123f32, 0f32, Assembler::make_cop1_round_w(FR::F0, FR::F2).s())),
+            Box::new(("ROUND.W.S (inexact)", 10u32, 0.5f32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_round_w(FR::F0, FR::F2).s())),
+            Box::new(("ROUND.W.S (a bit too large)", 10u32, 2147483600f32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_round_w(FR::F0, FR::F2).s())),
+            Box::new(("ROUND.W.S (largest non trivial)", 10u32, 4294967040f32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_round_w(FR::F0, FR::F2).s())),
+            Box::new(("ROUND.W.S (largest non trivial neg)", 10u32, -4294967040f32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_round_w(FR::F0, FR::F2).s())),
+            Box::new(("ROUND.W.S (smallest trivial)", 7u32, 4294967296f32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_round_w(FR::F0, FR::F2).s())),
+            Box::new(("ROUND.W.S (smallest trivial neg)", 7u32, -4294967296f32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_round_w(FR::F0, FR::F2).s())),
+            Box::new(("ROUND.W.S (max)", 7u32, f32::MAX, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_round_w(FR::F0, FR::F2).s())),
+            Box::new(("ROUND.W.S (inf)", 7u32, f32::INFINITY, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_round_w(FR::F0, FR::F2).s())),
+            Box::new(("ROUND.W.S", 7u32, FConst::SUBNORMAL_MIN_POSITIVE_32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_round_w(FR::F0, FR::F2).s())),
+            Box::new(("ROUND.W.S", 7u32, FConst::QUIET_NAN_START_32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_round_w(FR::F0, FR::F2).s())),
+            Box::new(("ROUND.W.S", 7u32, FConst::SIGNALLING_NAN_START_32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_round_w(FR::F0, FR::F2).s())),
             Box::new(("TRUNC.W.S", 5u32, 123.15f32, 0f32, Assembler::make_cop1_trunc_w(FR::F0, FR::F2).s())),
             Box::new(("TRUNC.W.S", 5u32, -123.15f32, 0f32, Assembler::make_cop1_trunc_w(FR::F0, FR::F2).s())),
             Box::new(("TRUNC.W.S", 5u32, 0f32, 0f32, Assembler::make_cop1_trunc_w(FR::F0, FR::F2).s())),
+            Box::new(("TRUNC.W.S", 10u32, 0.5f32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_trunc_w(FR::F0, FR::F2).s())),
+            Box::new(("TRUNC.W.S", 10u32, 2147483600f32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_trunc_w(FR::F0, FR::F2).s())),
+            Box::new(("TRUNC.W.S", 7u32, FConst::SUBNORMAL_MIN_POSITIVE_32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_trunc_w(FR::F0, FR::F2).s())),
+            Box::new(("TRUNC.W.S", 7u32, FConst::QUIET_NAN_START_32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_trunc_w(FR::F0, FR::F2).s())),
+            Box::new(("TRUNC.W.S", 7u32, FConst::SIGNALLING_NAN_START_32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_trunc_w(FR::F0, FR::F2).s())),
             Box::new(("CEIL.W.S", 5u32, 123.15f32, 0f32, Assembler::make_cop1_ceil_w(FR::F0, FR::F2).s())),
             Box::new(("CEIL.W.S", 5u32, -123.15f32, 0f32, Assembler::make_cop1_ceil_w(FR::F0, FR::F2).s())),
             Box::new(("CEIL.W.S", 5u32, 0f32, 0f32, Assembler::make_cop1_ceil_w(FR::F0, FR::F2).s())),
+            Box::new(("CEIL.W.S", 10u32, 0.5f32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_ceil_w(FR::F0, FR::F2).s())),
+            Box::new(("CEIL.W.S", 10u32, 2147483600f32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_ceil_w(FR::F0, FR::F2).s())),
+            Box::new(("CEIL.W.S", 7u32, FConst::SUBNORMAL_MIN_POSITIVE_32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_ceil_w(FR::F0, FR::F2).s())),
+            Box::new(("CEIL.W.S", 7u32, FConst::QUIET_NAN_START_32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_ceil_w(FR::F0, FR::F2).s())),
+            Box::new(("CEIL.W.S", 7u32, FConst::SIGNALLING_NAN_START_32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_ceil_w(FR::F0, FR::F2).s())),
             Box::new(("FLOOR.W.S", 5u32, 123.15f32, 0f32, Assembler::make_cop1_floor_w(FR::F0, FR::F2).s())),
             Box::new(("FLOOR.W.S", 5u32, -123.15f32, 0f32, Assembler::make_cop1_floor_w(FR::F0, FR::F2).s())),
             Box::new(("FLOOR.W.S", 5u32, 0f32, 0f32, Assembler::make_cop1_floor_w(FR::F0, FR::F2).s())),
+            Box::new(("FLOOR.W.S", 10u32, 0.5f32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_floor_w(FR::F0, FR::F2).s())),
+            Box::new(("FLOOR.W.S", 10u32, 2147483600f32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_floor_w(FR::F0, FR::F2).s())),
+            Box::new(("FLOOR.W.S", 7u32, FConst::SUBNORMAL_MIN_POSITIVE_32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_floor_w(FR::F0, FR::F2).s())),
+            Box::new(("FLOOR.W.S", 7u32, FConst::QUIET_NAN_START_32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_floor_w(FR::F0, FR::F2).s())),
+            Box::new(("FLOOR.W.S", 7u32, FConst::SIGNALLING_NAN_START_32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_floor_w(FR::F0, FR::F2).s())),
             Box::new(("CVT.W.S", 5u32, 0f32, 0f32, Assembler::make_cop1_cvt_w(FR::F0, FR::F2).s())),
             Box::new(("CVT.W.S", 5u32, 123.15f32, 0f32, Assembler::make_cop1_cvt_w(FR::F0, FR::F2).s())),
             Box::new(("CVT.W.S", 5u32, -123.15f32, 0f32, Assembler::make_cop1_cvt_w(FR::F0, FR::F2).s())),
+            Box::new(("CVT.W.S", 10u32, 0.5f32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_cvt_w(FR::F0, FR::F2).s())),
+            Box::new(("CVT.W.S", 10u32, 2147483600f32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_cvt_w(FR::F0, FR::F2).s())),
+            Box::new(("CVT.W.S", 7u32, FConst::SUBNORMAL_MIN_POSITIVE_32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_cvt_w(FR::F0, FR::F2).s())),
+            Box::new(("CVT.W.S", 7u32, FConst::QUIET_NAN_START_32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_cvt_w(FR::F0, FR::F2).s())),
+            Box::new(("CVT.W.S", 7u32, FConst::SIGNALLING_NAN_START_32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_cvt_w(FR::F0, FR::F2).s())),
 
-            // ROUND.L.S is always 5 cycles
+            // ROUND.L.S is 5 cycles. In the exception case, subnormal, nan and too-large-to-fit are trivial
             Box::new(("ROUND.L.S", 5u32, 0f32, 0f32, Assembler::make_cop1_round_l(FR::F0, FR::F2).s())),
             Box::new(("ROUND.L.S", 5u32, 1f32, 0f32, Assembler::make_cop1_round_l(FR::F0, FR::F2).s())),
             Box::new(("ROUND.L.S", 5u32, 123.15f32, 0f32, Assembler::make_cop1_round_l(FR::F0, FR::F2).s())),
             Box::new(("ROUND.L.S", 5u32, -123f32, 0f32, Assembler::make_cop1_round_l(FR::F0, FR::F2).s())),
+            Box::new(("ROUND.L.S (inexact)", 10u32, 0.5f32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_round_l(FR::F0, FR::F2).s())),
+            Box::new(("ROUND.L.S (too large)", 7u32, 9.00719925474e15f32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_round_l(FR::F0, FR::F2).s())),
+            Box::new(("ROUND.L.S", 7u32, FConst::SUBNORMAL_MIN_POSITIVE_32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_round_l(FR::F0, FR::F2).s())),
+            Box::new(("ROUND.L.S", 7u32, FConst::QUIET_NAN_START_32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_round_l(FR::F0, FR::F2).s())),
+            Box::new(("ROUND.L.S", 7u32, FConst::SIGNALLING_NAN_START_32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_round_l(FR::F0, FR::F2).s())),
             Box::new(("TRUNC.L.S", 5u32, 0f32, 0f32, Assembler::make_cop1_trunc_l(FR::F0, FR::F2).s())),
             Box::new(("TRUNC.L.S", 5u32, 100f32, 0f32, Assembler::make_cop1_trunc_l(FR::F0, FR::F2).s())),
             Box::new(("TRUNC.L.S", 5u32, -100f32, 0f32, Assembler::make_cop1_trunc_l(FR::F0, FR::F2).s())),
+            Box::new(("TRUNC.L.S", 10u32, 0.5f32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_trunc_l(FR::F0, FR::F2).s())),
+            Box::new(("TRUNC.L.S", 7u32, 9.00719925474e15f32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_trunc_l(FR::F0, FR::F2).s())),
+            Box::new(("TRUNC.L.S", 7u32, FConst::SUBNORMAL_MIN_POSITIVE_32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_trunc_l(FR::F0, FR::F2).s())),
+            Box::new(("TRUNC.L.S", 7u32, FConst::QUIET_NAN_START_32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_trunc_l(FR::F0, FR::F2).s())),
+            Box::new(("TRUNC.L.S", 7u32, FConst::SIGNALLING_NAN_START_32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_trunc_l(FR::F0, FR::F2).s())),
             Box::new(("CEIL.L.S", 5u32, 0f32, 0f32, Assembler::make_cop1_ceil_l(FR::F0, FR::F2).s())),
             Box::new(("CEIL.L.S", 5u32, 10f32, 0f32, Assembler::make_cop1_ceil_l(FR::F0, FR::F2).s())),
             Box::new(("CEIL.L.S", 5u32, -10f32, 0f32, Assembler::make_cop1_ceil_l(FR::F0, FR::F2).s())),
+            Box::new(("CEIL.L.S", 10u32, 0.5f32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_ceil_l(FR::F0, FR::F2).s())),
+            Box::new(("CEIL.L.S", 7u32, 9.00719925474e15f32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_ceil_l(FR::F0, FR::F2).s())),
+            Box::new(("CEIL.L.S", 7u32, FConst::SUBNORMAL_MIN_POSITIVE_32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_ceil_l(FR::F0, FR::F2).s())),
+            Box::new(("CEIL.L.S", 7u32, FConst::QUIET_NAN_START_32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_ceil_l(FR::F0, FR::F2).s())),
+            Box::new(("CEIL.L.S", 7u32, FConst::SIGNALLING_NAN_START_32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_ceil_l(FR::F0, FR::F2).s())),
             Box::new(("FLOOR.L.S", 5u32, 0f32, 0f32, Assembler::make_cop1_floor_l(FR::F0, FR::F2).s())),
             Box::new(("FLOOR.L.S", 5u32, 15f32, 0f32, Assembler::make_cop1_floor_l(FR::F0, FR::F2).s())),
             Box::new(("FLOOR.L.S", 5u32, -15f32, 0f32, Assembler::make_cop1_floor_l(FR::F0, FR::F2).s())),
+            Box::new(("FLOOR.L.S", 10u32, 0.5f32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_floor_l(FR::F0, FR::F2).s())),
+            Box::new(("FLOOR.L.S", 7u32, 9.00719925474e15f32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_floor_l(FR::F0, FR::F2).s())),
+            Box::new(("FLOOR.L.S", 7u32, FConst::SUBNORMAL_MIN_POSITIVE_32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_floor_l(FR::F0, FR::F2).s())),
+            Box::new(("FLOOR.L.S", 7u32, FConst::QUIET_NAN_START_32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_floor_l(FR::F0, FR::F2).s())),
+            Box::new(("FLOOR.L.S", 7u32, FConst::SIGNALLING_NAN_START_32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_floor_l(FR::F0, FR::F2).s())),
             Box::new(("CVT.L.S", 5u32, 0f32, 0f32, Assembler::make_cop1_cvt_l(FR::F0, FR::F2).s())),
             Box::new(("CVT.L.S", 5u32, 1f32, 0f32, Assembler::make_cop1_cvt_l(FR::F0, FR::F2).s())),
             Box::new(("CVT.L.S", 5u32, -1.5f32, 0f32, Assembler::make_cop1_cvt_l(FR::F0, FR::F2).s())),
+            Box::new(("CVT.L.S", 10u32, 0.5f32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_cvt_l(FR::F0, FR::F2).s())),
+            Box::new(("CVT.L.S", 7u32, 9.00719925474e15f32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_cvt_l(FR::F0, FR::F2).s())),
+            Box::new(("CVT.L.S", 7u32, FConst::SUBNORMAL_MIN_POSITIVE_32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_cvt_l(FR::F0, FR::F2).s())),
+            Box::new(("CVT.L.S", 7u32, FConst::QUIET_NAN_START_32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_cvt_l(FR::F0, FR::F2).s())),
+            Box::new(("CVT.L.S", 7u32, FConst::SIGNALLING_NAN_START_32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_cvt_l(FR::F0, FR::F2).s())),
 
             // CVT.D.S is always 1 cycle
             Box::new(("CVT.D.S", 1u32, 0f32, 0f32, Assembler::make_cop1_cvt_d(FR::F0, FR::F2).s())),
@@ -701,56 +1080,185 @@ impl Test for COP1Instructions32 {
             Box::new(("CVT.D.S", 1u32, 0.1111f32, 0f32, Assembler::make_cop1_cvt_d(FR::F0, FR::F2).s())),
             Box::new(("CVT.D.S", 1u32, -0.1111f32, 0f32, Assembler::make_cop1_cvt_d(FR::F0, FR::F2).s())),
             Box::new(("CVT.D.S", 1u32, FConst::QUIET_NAN_START_32, 0f32, Assembler::make_cop1_cvt_d(FR::F0, FR::F2).s())),
+            Box::new(("CVT.D.S", 6u32, FConst::SUBNORMAL_MIN_POSITIVE_32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_cvt_d(FR::F0, FR::F2).s())),
+            Box::new(("CVT.D.S", 6u32, FConst::QUIET_NAN_START_32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_cvt_d(FR::F0, FR::F2).s())),
+            Box::new(("CVT.D.S", 6u32, FConst::SIGNALLING_NAN_START_32, 0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_cvt_d(FR::F0, FR::F2).s())),
 
-            // CVT.S.W has one special case: 0. Otherwise it needs 5 cycles
-            Box::new(("CVT.S.W", 2u32, 0u32, Assembler::make_cop1_cvt_s(FR::F0, FR::F2).w())),
-            Box::new(("CVT.S.W", 5u32, u32::MAX, Assembler::make_cop1_cvt_s(FR::F0, FR::F2).w())),
-            Box::new(("CVT.S.W", 5u32, 1u32, Assembler::make_cop1_cvt_s(FR::F0, FR::F2).w())),
-            Box::new(("CVT.S.W", 5u32, 2u32, Assembler::make_cop1_cvt_s(FR::F0, FR::F2).w())),
-            Box::new(("CVT.S.W", 5u32, -2i32 as u32, Assembler::make_cop1_cvt_s(FR::F0, FR::F2).w())),
+            // CVT.S.W has one trivial case: 0. Otherwise it needs 5 cycles. The only possible exception is inexact, which isn't trivial.
+            Box::new(("CVT.S.W", 2u32, 0i32, Assembler::make_cop1_cvt_s(FR::F0, FR::F2).w())),
+            Box::new(("CVT.S.W", 5u32, i32::MAX, Assembler::make_cop1_cvt_s(FR::F0, FR::F2).w())),
+            Box::new(("CVT.S.W", 5u32, u32::MAX as i32, Assembler::make_cop1_cvt_s(FR::F0, FR::F2).w())),
+            Box::new(("CVT.S.W", 5u32, 1i32, Assembler::make_cop1_cvt_s(FR::F0, FR::F2).w())),
+            Box::new(("CVT.S.W", 5u32, 2i32, Assembler::make_cop1_cvt_s(FR::F0, FR::F2).w())),
+            Box::new(("CVT.S.W", 5u32, -2i32, Assembler::make_cop1_cvt_s(FR::F0, FR::F2).w())),
+            Box::new(("CVT.S.W", 5u32, 1234567891i32, Assembler::make_cop1_cvt_s(FR::F0, FR::F2).w())),
+            Box::new(("CVT.S.W (inexact)", 10u32, 1234567891i32, ExceptionTimingMode::JustFire, Assembler::make_cop1_cvt_s(FR::F0, FR::F2).w())),
 
-            // CVT.S.L has one special case: 0. Otherwise it needs 5 cycles
-            Box::new(("CVT.S.L", 2u32, 0u64, Assembler::make_cop1_cvt_s(FR::F0, FR::F2).l())),
-            Box::new(("CVT.S.L", 5u32, u32::MAX as u64, Assembler::make_cop1_cvt_s(FR::F0, FR::F2).l())),
-            Box::new(("CVT.S.L", 5u32, u64::MAX, Assembler::make_cop1_cvt_s(FR::F0, FR::F2).l())),
-            Box::new(("CVT.S.L", 5u32, 1u64, Assembler::make_cop1_cvt_s(FR::F0, FR::F2).l())),
-            Box::new(("CVT.S.L", 5u32, 2u64, Assembler::make_cop1_cvt_s(FR::F0, FR::F2).l())),
-            Box::new(("CVT.S.L", 5u32, -2i64 as u64, Assembler::make_cop1_cvt_s(FR::F0, FR::F2).l())),
-
-            // Compares are all single-cycle
-            Box::new(("C.F.S", 1u32, 0.0f32, 1.0f32, Assembler::make_cop1_c_cond(Cop1Condition::F, FR::F2, FR::F4).s())),
-            Box::new(("C.F.S", 1u32, 1.0f32, 1.0f32, Assembler::make_cop1_c_cond(Cop1Condition::F, FR::F2, FR::F4).s())),
-            Box::new(("C.EQ.S", 1u32, 0.0f32, 1.0f32, Assembler::make_cop1_c_cond(Cop1Condition::EQ, FR::F2, FR::F4).s())),
-            Box::new(("C.EQ.S", 1u32, 1.0f32, 1.0f32, Assembler::make_cop1_c_cond(Cop1Condition::EQ, FR::F2, FR::F4).s())),
-            Box::new(("C.NGLE.S", 1u32, 0.0f32, 1.0f32, Assembler::make_cop1_c_cond(Cop1Condition::NGLE, FR::F2, FR::F4).s())),
-            Box::new(("C.NGLE.S", 1u32, 1.0f32, 1.0f32, Assembler::make_cop1_c_cond(Cop1Condition::NGLE, FR::F2, FR::F4).s())),
-            Box::new(("C.NGLE.S", 1u32, FConst::SIGNALLING_NAN_START_32, 1.0f32, Assembler::make_cop1_c_cond(Cop1Condition::NGLE, FR::F2, FR::F4).s())),
-            Box::new(("C.NGLE.S", 1u32, FConst::QUIET_NAN_START_32, 1.0f32, Assembler::make_cop1_c_cond(Cop1Condition::NGLE, FR::F2, FR::F4).s())),
+            // CVT.S.L has one special case: 0. Otherwise it needs 5 cycles. Two exception cases: Too large is trivial, inexact is not.
+            Box::new(("CVT.S.L", 2u32, 0i64, Assembler::make_cop1_cvt_s(FR::F0, FR::F2).l())),
+            Box::new(("CVT.S.L", 5u32, 1i64, Assembler::make_cop1_cvt_s(FR::F0, FR::F2).l())),
+            Box::new(("CVT.S.L", 5u32, 128i64, Assembler::make_cop1_cvt_s(FR::F0, FR::F2).l())),
+            Box::new(("CVT.S.L", 5u32, 1i64, Assembler::make_cop1_cvt_s(FR::F0, FR::F2).l())),
+            Box::new(("CVT.S.L", 5u32, 2i64, Assembler::make_cop1_cvt_s(FR::F0, FR::F2).l())),
+            Box::new(("CVT.S.L", 5u32, -2i64, Assembler::make_cop1_cvt_s(FR::F0, FR::F2).l())),
+            Box::new(("CVT.S.L", 5u32, 1234567891i64, Assembler::make_cop1_cvt_s(FR::F0, FR::F2).l())),
+            Box::new(("CVT.S.L", 10u32, 1234567891i64, ExceptionTimingMode::JustFire, Assembler::make_cop1_cvt_s(FR::F0, FR::F2).l())),
+            Box::new(("CVT.S.L", 7u32, 1i64 << 55, ExceptionTimingMode::JustFire, Assembler::make_cop1_cvt_s(FR::F0, FR::F2).l())),
 
             // MTC1
             Box::new(("MTC1", 1u32, 0f32, 0f32, Assembler::make_mtc1(GPR::V0, FR::F0))),
+
+            // Compares are all single-cycle
+            Box::new(("C.F.S", 1u32, 0.0f32, -0.0f32, Assembler::make_cop1_c_cond(Cop1Condition::F, FR::F2, FR::F4).s())),
+            Box::new(("C.F.S", 1u32, 1.0f32, 1.0f32, Assembler::make_cop1_c_cond(Cop1Condition::F, FR::F2, FR::F4).s())),
+            Box::new(("C.F.S", 1u32, FConst::SIGNALLING_NAN_START_32, 1.0f32, ExceptionTimingMode::Off, Assembler::make_cop1_c_cond(Cop1Condition::F, FR::F2, FR::F4).s())),
+            Box::new(("C.F.S", 1u32, FConst::QUIET_NAN_START_32, 1.0f32, Assembler::make_cop1_c_cond(Cop1Condition::F, FR::F2, FR::F4).s())),
+            Box::new(("C.F.S", 6u32, FConst::QUIET_NAN_START_32, 1.0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_c_cond(Cop1Condition::F, FR::F2, FR::F4).s())),
+
+            Box::new(("C.UN.S", 1u32, 0.0f32, -0.0f32, Assembler::make_cop1_c_cond(Cop1Condition::UN, FR::F2, FR::F4).s())),
+            Box::new(("C.UN.S", 1u32, 1.0f32, 1.0f32, Assembler::make_cop1_c_cond(Cop1Condition::UN, FR::F2, FR::F4).s())),
+            Box::new(("C.UN.S", 1u32, FConst::SIGNALLING_NAN_START_32, 1.0f32, ExceptionTimingMode::Off, Assembler::make_cop1_c_cond(Cop1Condition::UN, FR::F2, FR::F4).s())),
+            Box::new(("C.UN.S", 1u32, FConst::QUIET_NAN_START_32, 1.0f32, Assembler::make_cop1_c_cond(Cop1Condition::UN, FR::F2, FR::F4).s())),
+            Box::new(("C.UN.S", 6u32, FConst::QUIET_NAN_START_32, 1.0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_c_cond(Cop1Condition::UN, FR::F2, FR::F4).s())),
+
+            Box::new(("C.EQ.S", 1u32, 0.0f32, -0.0f32, Assembler::make_cop1_c_cond(Cop1Condition::EQ, FR::F2, FR::F4).s())),
+            Box::new(("C.EQ.S", 1u32, 1.0f32, 1.0f32, Assembler::make_cop1_c_cond(Cop1Condition::EQ, FR::F2, FR::F4).s())),
+            Box::new(("C.EQ.S", 1u32, FConst::SIGNALLING_NAN_START_32, 1.0f32, ExceptionTimingMode::Off, Assembler::make_cop1_c_cond(Cop1Condition::EQ, FR::F2, FR::F4).s())),
+            Box::new(("C.EQ.S", 1u32, FConst::QUIET_NAN_START_32, 1.0f32, Assembler::make_cop1_c_cond(Cop1Condition::EQ, FR::F2, FR::F4).s())),
+            Box::new(("C.EQ.S", 6u32, FConst::QUIET_NAN_START_32, 1.0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_c_cond(Cop1Condition::EQ, FR::F2, FR::F4).s())),
+
+            Box::new(("C.UEQ.S", 1u32, 0.0f32, -0.0f32, Assembler::make_cop1_c_cond(Cop1Condition::UEQ, FR::F2, FR::F4).s())),
+            Box::new(("C.UEQ.S", 1u32, 1.0f32, 1.0f32, Assembler::make_cop1_c_cond(Cop1Condition::UEQ, FR::F2, FR::F4).s())),
+            Box::new(("C.UEQ.S", 1u32, FConst::SIGNALLING_NAN_START_32, 1.0f32, ExceptionTimingMode::Off, Assembler::make_cop1_c_cond(Cop1Condition::UEQ, FR::F2, FR::F4).s())),
+            Box::new(("C.UEQ.S", 1u32, FConst::QUIET_NAN_START_32, 1.0f32, Assembler::make_cop1_c_cond(Cop1Condition::UEQ, FR::F2, FR::F4).s())),
+            Box::new(("C.UEQ.S", 6u32, FConst::QUIET_NAN_START_32, 1.0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_c_cond(Cop1Condition::UEQ, FR::F2, FR::F4).s())),
+
+            Box::new(("C.OLT.S", 1u32, 0.0f32, -0.0f32, Assembler::make_cop1_c_cond(Cop1Condition::OLT, FR::F2, FR::F4).s())),
+            Box::new(("C.OLT.S", 1u32, 1.0f32, 1.0f32, Assembler::make_cop1_c_cond(Cop1Condition::OLT, FR::F2, FR::F4).s())),
+            Box::new(("C.OLT.S", 1u32, FConst::SIGNALLING_NAN_START_32, 1.0f32, ExceptionTimingMode::Off, Assembler::make_cop1_c_cond(Cop1Condition::OLT, FR::F2, FR::F4).s())),
+            Box::new(("C.OLT.S", 1u32, FConst::QUIET_NAN_START_32, 1.0f32, Assembler::make_cop1_c_cond(Cop1Condition::OLT, FR::F2, FR::F4).s())),
+            Box::new(("C.OLT.S", 6u32, FConst::QUIET_NAN_START_32, 1.0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_c_cond(Cop1Condition::OLT, FR::F2, FR::F4).s())),
+
+            Box::new(("C.ULT.S", 1u32, 0.0f32, -0.0f32, Assembler::make_cop1_c_cond(Cop1Condition::ULT, FR::F2, FR::F4).s())),
+            Box::new(("C.ULT.S", 1u32, 1.0f32, 1.0f32, Assembler::make_cop1_c_cond(Cop1Condition::ULT, FR::F2, FR::F4).s())),
+            Box::new(("C.ULT.S", 1u32, FConst::SIGNALLING_NAN_START_32, 1.0f32, ExceptionTimingMode::Off, Assembler::make_cop1_c_cond(Cop1Condition::ULT, FR::F2, FR::F4).s())),
+            Box::new(("C.ULT.S", 1u32, FConst::QUIET_NAN_START_32, 1.0f32, Assembler::make_cop1_c_cond(Cop1Condition::ULT, FR::F2, FR::F4).s())),
+            Box::new(("C.ULT.S", 6u32, FConst::QUIET_NAN_START_32, 1.0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_c_cond(Cop1Condition::ULT, FR::F2, FR::F4).s())),
+
+            Box::new(("C.OLE.S", 1u32, 0.0f32, -0.0f32, Assembler::make_cop1_c_cond(Cop1Condition::OLE, FR::F2, FR::F4).s())),
+            Box::new(("C.OLE.S", 1u32, 1.0f32, 1.0f32, Assembler::make_cop1_c_cond(Cop1Condition::OLE, FR::F2, FR::F4).s())),
+            Box::new(("C.OLE.S", 1u32, FConst::SIGNALLING_NAN_START_32, 1.0f32, ExceptionTimingMode::Off, Assembler::make_cop1_c_cond(Cop1Condition::OLE, FR::F2, FR::F4).s())),
+            Box::new(("C.OLE.S", 1u32, FConst::QUIET_NAN_START_32, 1.0f32, Assembler::make_cop1_c_cond(Cop1Condition::OLE, FR::F2, FR::F4).s())),
+            Box::new(("C.OLE.S", 6u32, FConst::QUIET_NAN_START_32, 1.0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_c_cond(Cop1Condition::OLE, FR::F2, FR::F4).s())),
+
+            Box::new(("C.OLE.S", 1u32, 0.0f32, -0.0f32, Assembler::make_cop1_c_cond(Cop1Condition::ULE, FR::F2, FR::F4).s())),
+            Box::new(("C.OLE.S", 1u32, 1.0f32, 1.0f32, Assembler::make_cop1_c_cond(Cop1Condition::ULE, FR::F2, FR::F4).s())),
+            Box::new(("C.OLE.S", 1u32, FConst::SIGNALLING_NAN_START_32, 1.0f32, ExceptionTimingMode::Off, Assembler::make_cop1_c_cond(Cop1Condition::ULE, FR::F2, FR::F4).s())),
+            Box::new(("C.OLE.S", 1u32, FConst::QUIET_NAN_START_32, 1.0f32, Assembler::make_cop1_c_cond(Cop1Condition::ULE, FR::F2, FR::F4).s())),
+            Box::new(("C.OLE.S", 6u32, FConst::QUIET_NAN_START_32, 1.0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_c_cond(Cop1Condition::ULE, FR::F2, FR::F4).s())),
+
+            Box::new(("C.SF.S", 1u32, 0.0f32, -0.0f32, Assembler::make_cop1_c_cond(Cop1Condition::SF, FR::F2, FR::F4).s())),
+            Box::new(("C.SF.S", 1u32, 1.0f32, 1.0f32, Assembler::make_cop1_c_cond(Cop1Condition::SF, FR::F2, FR::F4).s())),
+            Box::new(("C.SF.S", 1u32, FConst::SIGNALLING_NAN_START_32, 1.0f32, Assembler::make_cop1_c_cond(Cop1Condition::SF, FR::F2, FR::F4).s())),
+            Box::new(("C.SF.S", 6u32, FConst::SIGNALLING_NAN_START_32, 1.0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_c_cond(Cop1Condition::SF, FR::F2, FR::F4).s())),
+            Box::new(("C.SF.S", 1u32, FConst::QUIET_NAN_START_32, 1.0f32, Assembler::make_cop1_c_cond(Cop1Condition::SF, FR::F2, FR::F4).s())),
+            Box::new(("C.SF.S", 6u32, FConst::QUIET_NAN_START_32, 1.0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_c_cond(Cop1Condition::SF, FR::F2, FR::F4).s())),
+
+            Box::new(("C.NGLE.S", 1u32, 0.0f32, -0.0f32, Assembler::make_cop1_c_cond(Cop1Condition::NGLE, FR::F2, FR::F4).s())),
+            Box::new(("C.NGLE.S", 1u32, 1.0f32, 1.0f32, Assembler::make_cop1_c_cond(Cop1Condition::NGLE, FR::F2, FR::F4).s())),
+            Box::new(("C.NGLE.S", 1u32, FConst::SIGNALLING_NAN_START_32, 1.0f32, Assembler::make_cop1_c_cond(Cop1Condition::NGLE, FR::F2, FR::F4).s())),
+            Box::new(("C.NGLE.S", 6u32, FConst::SIGNALLING_NAN_START_32, 1.0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_c_cond(Cop1Condition::NGLE, FR::F2, FR::F4).s())),
+            Box::new(("C.NGLE.S", 1u32, FConst::QUIET_NAN_START_32, 1.0f32, Assembler::make_cop1_c_cond(Cop1Condition::NGLE, FR::F2, FR::F4).s())),
+            Box::new(("C.NGLE.S", 6u32, FConst::QUIET_NAN_START_32, 1.0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_c_cond(Cop1Condition::NGLE, FR::F2, FR::F4).s())),
+
+            Box::new(("C.SEQ.S", 1u32, 0.0f32, -0.0f32, Assembler::make_cop1_c_cond(Cop1Condition::SEQ, FR::F2, FR::F4).s())),
+            Box::new(("C.SEQ.S", 1u32, 1.0f32, 1.0f32, Assembler::make_cop1_c_cond(Cop1Condition::SEQ, FR::F2, FR::F4).s())),
+            Box::new(("C.SEQ.S", 1u32, FConst::SIGNALLING_NAN_START_32, 1.0f32, Assembler::make_cop1_c_cond(Cop1Condition::SEQ, FR::F2, FR::F4).s())),
+            Box::new(("C.SEQ.S", 6u32, FConst::SIGNALLING_NAN_START_32, 1.0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_c_cond(Cop1Condition::SEQ, FR::F2, FR::F4).s())),
+            Box::new(("C.SEQ.S", 1u32, FConst::QUIET_NAN_START_32, 1.0f32, Assembler::make_cop1_c_cond(Cop1Condition::SEQ, FR::F2, FR::F4).s())),
+            Box::new(("C.SEQ.S", 6u32, FConst::QUIET_NAN_START_32, 1.0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_c_cond(Cop1Condition::SEQ, FR::F2, FR::F4).s())),
+
+            Box::new(("C.NGL.S", 1u32, 0.0f32, -0.0f32, Assembler::make_cop1_c_cond(Cop1Condition::NGL, FR::F2, FR::F4).s())),
+            Box::new(("C.NGL.S", 1u32, 1.0f32, 1.0f32, Assembler::make_cop1_c_cond(Cop1Condition::NGL, FR::F2, FR::F4).s())),
+            Box::new(("C.NGL.S", 1u32, FConst::SIGNALLING_NAN_START_32, 1.0f32, Assembler::make_cop1_c_cond(Cop1Condition::NGL, FR::F2, FR::F4).s())),
+            Box::new(("C.NGL.S", 6u32, FConst::SIGNALLING_NAN_START_32, 1.0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_c_cond(Cop1Condition::NGL, FR::F2, FR::F4).s())),
+            Box::new(("C.NGL.S", 1u32, FConst::QUIET_NAN_START_32, 1.0f32, Assembler::make_cop1_c_cond(Cop1Condition::NGL, FR::F2, FR::F4).s())),
+            Box::new(("C.NGL.S", 6u32, FConst::QUIET_NAN_START_32, 1.0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_c_cond(Cop1Condition::NGL, FR::F2, FR::F4).s())),
+
+            Box::new(("C.LT.S", 1u32, 0.0f32, -0.0f32, Assembler::make_cop1_c_cond(Cop1Condition::LT, FR::F2, FR::F4).s())),
+            Box::new(("C.LT.S", 1u32, 1.0f32, 1.0f32, Assembler::make_cop1_c_cond(Cop1Condition::LT, FR::F2, FR::F4).s())),
+            Box::new(("C.LT.S", 1u32, FConst::SIGNALLING_NAN_START_32, 1.0f32, Assembler::make_cop1_c_cond(Cop1Condition::LT, FR::F2, FR::F4).s())),
+            Box::new(("C.LT.S", 6u32, FConst::SIGNALLING_NAN_START_32, 1.0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_c_cond(Cop1Condition::LT, FR::F2, FR::F4).s())),
+            Box::new(("C.LT.S", 1u32, FConst::QUIET_NAN_START_32, 1.0f32, Assembler::make_cop1_c_cond(Cop1Condition::LT, FR::F2, FR::F4).s())),
+            Box::new(("C.LT.S", 6u32, FConst::QUIET_NAN_START_32, 1.0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_c_cond(Cop1Condition::LT, FR::F2, FR::F4).s())),
+
+            Box::new(("C.NGE.S", 1u32, 0.0f32, -0.0f32, Assembler::make_cop1_c_cond(Cop1Condition::NGE, FR::F2, FR::F4).s())),
+            Box::new(("C.NGE.S", 1u32, 1.0f32, 1.0f32, Assembler::make_cop1_c_cond(Cop1Condition::NGE, FR::F2, FR::F4).s())),
+            Box::new(("C.NGE.S", 1u32, FConst::SIGNALLING_NAN_START_32, 1.0f32, Assembler::make_cop1_c_cond(Cop1Condition::NGE, FR::F2, FR::F4).s())),
+            Box::new(("C.NGE.S", 6u32, FConst::SIGNALLING_NAN_START_32, 1.0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_c_cond(Cop1Condition::NGE, FR::F2, FR::F4).s())),
+            Box::new(("C.NGE.S", 1u32, FConst::QUIET_NAN_START_32, 1.0f32, Assembler::make_cop1_c_cond(Cop1Condition::NGE, FR::F2, FR::F4).s())),
+            Box::new(("C.NGE.S", 6u32, FConst::QUIET_NAN_START_32, 1.0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_c_cond(Cop1Condition::NGE, FR::F2, FR::F4).s())),
+
+            Box::new(("C.LE.S", 1u32, 0.0f32, -0.0f32, Assembler::make_cop1_c_cond(Cop1Condition::LE, FR::F2, FR::F4).s())),
+            Box::new(("C.LE.S", 1u32, 1.0f32, 1.0f32, Assembler::make_cop1_c_cond(Cop1Condition::LE, FR::F2, FR::F4).s())),
+            Box::new(("C.LE.S", 1u32, FConst::SIGNALLING_NAN_START_32, 1.0f32, Assembler::make_cop1_c_cond(Cop1Condition::LE, FR::F2, FR::F4).s())),
+            Box::new(("C.LE.S", 6u32, FConst::SIGNALLING_NAN_START_32, 1.0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_c_cond(Cop1Condition::LE, FR::F2, FR::F4).s())),
+            Box::new(("C.LE.S", 1u32, FConst::QUIET_NAN_START_32, 1.0f32, Assembler::make_cop1_c_cond(Cop1Condition::LE, FR::F2, FR::F4).s())),
+            Box::new(("C.LE.S", 6u32, FConst::QUIET_NAN_START_32, 1.0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_c_cond(Cop1Condition::LE, FR::F2, FR::F4).s())),
+
+            Box::new(("C.NGT.S", 1u32, 0.0f32, -0.0f32, Assembler::make_cop1_c_cond(Cop1Condition::NGT, FR::F2, FR::F4).s())),
+            Box::new(("C.NGT.S", 1u32, 1.0f32, 1.0f32, Assembler::make_cop1_c_cond(Cop1Condition::NGT, FR::F2, FR::F4).s())),
+            Box::new(("C.NGT.S", 1u32, FConst::SIGNALLING_NAN_START_32, 1.0f32, Assembler::make_cop1_c_cond(Cop1Condition::NGT, FR::F2, FR::F4).s())),
+            Box::new(("C.NGT.S", 6u32, FConst::SIGNALLING_NAN_START_32, 1.0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_c_cond(Cop1Condition::NGT, FR::F2, FR::F4).s())),
+            Box::new(("C.NGT.S", 1u32, FConst::QUIET_NAN_START_32, 1.0f32, Assembler::make_cop1_c_cond(Cop1Condition::NGT, FR::F2, FR::F4).s())),
+            Box::new(("C.NGT.S", 6u32, FConst::QUIET_NAN_START_32, 1.0f32, ExceptionTimingMode::JustFire, Assembler::make_cop1_c_cond(Cop1Condition::NGT, FR::F2, FR::F4).s())),
         }
     }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
-        set_fcsr(fcsr().with_enable_invalid_operation(false).with_flush_denorm_to_zero(true));
         match (*value).downcast_ref::<(&str, u32, f32, f32, u32)>() {
             Some((_context, expected_cycles, value2, value4, instruction)) => {
+                set_fcsr(fcsr().with_enable_invalid_operation(false).with_flush_denorm_to_zero(true));
                 let value2_u64 = unsafe { transmute::<f32, u32>(*value2) } as u64;
                 let value4_u64 = unsafe { transmute::<f32, u32>(*value4) } as u64;
-                return assert_cycles_with_codegen_one_instruction(*expected_cycles, value2_u64, value4_u64, *instruction)
+                return assert_cycles_with_codegen_one_instruction(*expected_cycles, value2_u64, value4_u64, Status::DEFAULT, ExceptionTimingMode::Off, *instruction)
             },
             _ => {},
         }
-        match (*value).downcast_ref::<(&str, u32, u32, u32)>() {
+        match (*value).downcast_ref::<(&str, u32, f32, f32, ExceptionTimingMode, u32)>() {
+            Some((_context, expected_cycles, value2, value4, exception_mode, instruction)) => {
+                set_fcsr(FCSR::DEFAULT.with_enables(FCSRFlags::ALL));
+                let value2_u64 = unsafe { transmute::<f32, u32>(*value2) } as u64;
+                let value4_u64 = unsafe { transmute::<f32, u32>(*value4) } as u64;
+                return assert_cycles_with_codegen_one_instruction(*expected_cycles, value2_u64, value4_u64, Status::DEFAULT, *exception_mode, *instruction);
+            }
+            _ => { },
+        }
+        match (*value).downcast_ref::<(&str, u32, i32, u32)>() {
             Some((_context, expected_cycles, value2, instruction)) => {
-                return assert_cycles_with_codegen_one_instruction(*expected_cycles, *value2 as u64, 0, *instruction)
+                set_fcsr(fcsr().with_enable_invalid_operation(false).with_flush_denorm_to_zero(true));
+                return assert_cycles_with_codegen_one_instruction(*expected_cycles, *value2 as u64, 0, Status::DEFAULT, ExceptionTimingMode::Off, *instruction)
             },
             _ => {},
         }
-        match (*value).downcast_ref::<(&str, u32, u64, u32)>() {
+        match (*value).downcast_ref::<(&str, u32, i32, ExceptionTimingMode, u32)>() {
+            Some((_context, expected_cycles, value2, exception_mode, instruction)) => {
+                set_fcsr(FCSR::DEFAULT.with_enables(FCSRFlags::ALL));
+                return assert_cycles_with_codegen_one_instruction(*expected_cycles, *value2 as u64, 0, Status::DEFAULT, *exception_mode, *instruction)
+            },
+            _ => {},
+        }
+        match (*value).downcast_ref::<(&str, u32, i64, u32)>() {
             Some((_context, expected_cycles, value2, instruction)) => {
-                return assert_cycles_with_codegen_one_instruction(*expected_cycles, *value2, 0, *instruction)
+                set_fcsr(fcsr().with_enable_invalid_operation(false).with_flush_denorm_to_zero(true));
+                return assert_cycles_with_codegen_one_instruction(*expected_cycles, *value2 as u64, 0, Status::DEFAULT, ExceptionTimingMode::Off, *instruction)
+            },
+            _ => {},
+        }
+        match (*value).downcast_ref::<(&str, u32, i64, ExceptionTimingMode, u32)>() {
+            Some((_context, expected_cycles, value2, exception_mode, instruction)) => {
+                set_fcsr(FCSR::DEFAULT.with_enables(FCSRFlags::ALL));
+                return assert_cycles_with_codegen_one_instruction(*expected_cycles, *value2 as u64, 0, Status::DEFAULT, *exception_mode, *instruction)
             },
             _ => {},
         }
@@ -770,7 +1278,7 @@ impl Test for COP1Instructions64 {
 
     fn values(&self) -> Vec<Box<dyn Any>> {
         vec! {
-            // ADD.D has these trivial cases: NAN, INFINITY, NEG_INFINITY, 0, -0
+            // ADD.D with all exceptions disabled. It has these trivial cases: NAN, INFINITY, NEG_INFINITY, 0, -0
             Box::new(("ADD.D", 3u32, 1.0f64, 1.0f64, Assembler::make_cop1_add(FR::F0, FR::F2, FR::F4).d())),
             Box::new(("ADD.D", 3u32, 1.0f64, -1.0f64, Assembler::make_cop1_add(FR::F0, FR::F2, FR::F4).d())),
             Box::new(("ADD.D", 3u32, 1.0f64, 1000.0f64, Assembler::make_cop1_add(FR::F0, FR::F2, FR::F4).d())),
@@ -791,7 +1299,22 @@ impl Test for COP1Instructions64 {
             Box::new(("ADD.D", 3u32, f64::MAX, 100000f64, Assembler::make_cop1_add(FR::F0, FR::F2, FR::F4).d())),
             Box::new(("ADD.D", 3u32, 3e38f64, 8e37f64, Assembler::make_cop1_add(FR::F0, FR::F2, FR::F4).d())),
             // Underflow
-            Box::new(("ADD.D", 3u32, 3.18021e-307f64, -3.1622e-307f64, Assembler::make_cop1_add(FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("ADD.D", 3u32, 5285104e-37f64, -1.5391543e-37f64, Assembler::make_cop1_add(FR::F0, FR::F2, FR::F4).d())),
+
+            // ADD.D with all exceptions enabled: Normal, trivial (same as above), then the various exception
+            Box::new(("ADD.D", 3u32, 1f64, 3f64, ExceptionTimingMode::Off, Assembler::make_cop1_add(FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("ADD.D", 2u32, 0f64, 0f64, ExceptionTimingMode::Off, Assembler::make_cop1_add(FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("ADD.D", 8u32, f64::MIN, -1f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_add(FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("ADD.D", 7u32, f64::INFINITY, f64::NEG_INFINITY, ExceptionTimingMode::JustFire, Assembler::make_cop1_add(FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("ADD.D", 8u32, 3e38f64, 8e37f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_add(FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("ADD.D", 8u32, 5285104e-37f64, -1.5391543e-37f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_add(FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("ADD.D", 7u32, FConst::SUBNORMAL_MIN_POSITIVE_64, 1.1f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_add(FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("ADD.D", 7u32, 1.1f64, FConst::SUBNORMAL_MIN_POSITIVE_64, ExceptionTimingMode::JustFire, Assembler::make_cop1_add(FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("ADD.D", 7u32, 2f64, FConst::QUIET_NAN_START_64, ExceptionTimingMode::JustFire, Assembler::make_cop1_add(FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("ADD.D", 7u32, FConst::QUIET_NAN_START_64, 2f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_add(FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("ADD.D", 7u32, 2f64, FConst::SIGNALLING_NAN_START_64, ExceptionTimingMode::JustFire, Assembler::make_cop1_add(FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("ADD.D", 7u32, FConst::SIGNALLING_NAN_START_64, 2f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_add(FR::F0, FR::F2, FR::F4).d())),
+
 
             // SUB is just like ADD
             Box::new(("SUB.D", 3u32, 1.0f64, 1.0f64, Assembler::make_cop1_sub(FR::F0, FR::F2, FR::F4).d())),
@@ -814,7 +1337,21 @@ impl Test for COP1Instructions64 {
             Box::new(("SUB.D", 3u32, f64::MAX, -100000f64, Assembler::make_cop1_sub(FR::F0, FR::F2, FR::F4).d())),
             Box::new(("SUB.D", 3u32, 3e38f64, -8e37f64, Assembler::make_cop1_sub(FR::F0, FR::F2, FR::F4).d())),
             // Underflow
-            Box::new(("SUB.D", 3u32, 3.18021e-307f64, 3.1622e-307f64, Assembler::make_cop1_sub(FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("SUB.D", 3u32, 5285104e-37f64, 1.5391543e-37f64, Assembler::make_cop1_sub(FR::F0, FR::F2, FR::F4).d())),
+
+            // SUB.D with all exceptions enabled: Normal, trivial (same as above), then the various exception
+            Box::new(("SUB.D", 3u32, 1f64, 3f64, ExceptionTimingMode::Off, Assembler::make_cop1_sub(FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("SUB.D", 2u32, 0f64, 0f64, ExceptionTimingMode::Off, Assembler::make_cop1_sub(FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("SUB.D", 8u32, f64::MIN, 1f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_sub(FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("SUB.D", 7u32, f64::INFINITY, f64::INFINITY, ExceptionTimingMode::JustFire, Assembler::make_cop1_sub(FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("SUB.D", 8u32, 3e38f64, -8e37f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_sub(FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("SUB.D", 8u32, 5285104e-37f64, 1.5391543e-37f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_sub(FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("SUB.D", 7u32, FConst::SUBNORMAL_MIN_POSITIVE_64, 1.1f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_sub(FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("SUB.D", 7u32, 1.1f64, FConst::SUBNORMAL_MIN_POSITIVE_64, ExceptionTimingMode::JustFire, Assembler::make_cop1_sub(FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("SUB.D", 7u32, 2f64, FConst::QUIET_NAN_START_64, ExceptionTimingMode::JustFire, Assembler::make_cop1_sub(FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("SUB.D", 7u32, FConst::QUIET_NAN_START_64, 2f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_sub(FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("SUB.D", 7u32, 2f64, FConst::SIGNALLING_NAN_START_64, ExceptionTimingMode::JustFire, Assembler::make_cop1_sub(FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("SUB.D", 7u32, FConst::SIGNALLING_NAN_START_64, 2f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_sub(FR::F0, FR::F2, FR::F4).d())),
 
             // MUL.D has these trivial cases: NAN, INFINITY, NEG_INFINITY, 0, -0, underflows and any power of two (e.g. 32)
             Box::new(("MUL.D", 8u32, 123f64, 0.66f64, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).d())),
@@ -837,15 +1374,15 @@ impl Test for COP1Instructions64 {
             Box::new(("MUL.D", 2u32, 123f64, 16384.0f64, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).d())),
             Box::new(("MUL.D", 2u32, 123f64, 32768.0f64, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).d())),
             Box::new(("MUL.D", 2u32, 123f64, 65536.0f64, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).d())),
-            Box::new(("MUL.D", 2u32, 123f64, 65536.0f64*65536.0f64*65536.0f64, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("MUL.D", 2u32, 123f64, 65536.0f64 * 65536.0f64 * 65536.0f64, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).d())),
             Box::new(("MUL.D", 2u32, 123f64, 0.5f64, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).d())),
             Box::new(("MUL.D", 2u32, 123f64, 0.25f64, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).d())),
             Box::new(("MUL.D", 8u32, 123f64, 0.2f64, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).d())),
             Box::new(("MUL.D", 2u32, 123f64, 0.125f64, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).d())),
-            Box::new(("MUL.D", 2u32, 123f64, 1f64/8f64, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).d())),
-            Box::new(("MUL.D", 2u32, 123f64, 1f64/65536f64, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).d())),
-            Box::new(("MUL.D", 2u32, 123f64, 1f64/65536f64/65536f64, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).d())),
-            Box::new(("MUL.D", 2u32, 123f64, 1f64/65536f64/65536f64/65536f64, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("MUL.D", 2u32, 123f64, 1f64 / 8f64, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("MUL.D", 2u32, 123f64, 1f64 / 65536f64, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("MUL.D", 2u32, 123f64, 1f64 / 65536f64 / 65536f64, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("MUL.D", 2u32, 123f64, 1f64 / 65536f64 / 65536f64 / 65536f64, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).d())),
             Box::new(("MUL.D", 2u32, 123f64, 0f64, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).d())),
             Box::new(("MUL.D", 2u32, 0f64, 123f64, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).d())),
             Box::new(("MUL.D", 2u32, f64::INFINITY, -1000.0f64, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).d())),
@@ -861,11 +1398,26 @@ impl Test for COP1Instructions64 {
             Box::new(("MUL.D", 2u32, f64::MIN_POSITIVE, 0.5f64, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).d())),
             Box::new(("MUL.D", 2u32, f64::MIN_POSITIVE, 0.222f64, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).d())),
 
-            // DIV.D has these trivial cases: NAN, INFINITY, NEG_INFINITY, 0, -0
+            // MUL.D with exceptions on
+            Box::new(("MUL.D (inexact)", 13u32, 0.123456789f64, 10.123456789f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("MUL.D (underflow with other number pow2)", 7u32, 2.225073858507202e-308f64, 0.125f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("MUL.D (underflow)", 13u32, 2.225073858507202e-308f64, 0.13f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("MUL.D (overflow)", 13u32, f64::MAX, f64::MAX, ExceptionTimingMode::JustFire, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("MUL.D (overflow trivial)", 7u32, f64::MAX, 128f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("MUL.D", 7u32, f64::INFINITY, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("MUL.D", 7u32, FConst::SUBNORMAL_MIN_POSITIVE_64, 1.1f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("MUL.D", 7u32, 1.1f64, FConst::SUBNORMAL_MIN_POSITIVE_64, ExceptionTimingMode::JustFire, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("MUL.D", 7u32, 1.1f64, FConst::QUIET_NAN_START_64, ExceptionTimingMode::JustFire, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("MUL.D", 7u32, FConst::QUIET_NAN_START_64, 1.1f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("MUL.D", 7u32, 1.1f64, FConst::SIGNALLING_NAN_START_64, ExceptionTimingMode::JustFire, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("MUL.D", 7u32, FConst::SIGNALLING_NAN_START_64, 1.1f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).d())),
+
+            // DIV.D has these trivial cases: 0, NAN, INFINITY, NEG_INFINITY, 0, -0
             Box::new(("DIV.D", 58u32, 123f64, 0.66f64, Assembler::make_cop1_div(FR::F0, FR::F2, FR::F4).d())),
             Box::new(("DIV.D", 58u32, 123f64, 1f64, Assembler::make_cop1_div(FR::F0, FR::F2, FR::F4).d())),
             Box::new(("DIV.D", 58u32, 1f64, 123f64, Assembler::make_cop1_div(FR::F0, FR::F2, FR::F4).d())),
             Box::new(("DIV.D", 58u32, 1f64, 1f64, Assembler::make_cop1_div(FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("DIV.D", 58u32, 12f64, 12f64, Assembler::make_cop1_div(FR::F0, FR::F2, FR::F2).d())), // note the second argument is F2 to the same register
             Box::new(("DIV.D", 2u32, 0f64, 123f64, Assembler::make_cop1_div(FR::F0, FR::F2, FR::F4).d())),
             Box::new(("DIV.D", 2u32, -0f64, 123f64, Assembler::make_cop1_div(FR::F0, FR::F2, FR::F4).d())),
             Box::new(("DIV.D", 2u32, 123f64, 0f64, Assembler::make_cop1_div(FR::F0, FR::F2, FR::F4).d())),
@@ -883,12 +1435,30 @@ impl Test for COP1Instructions64 {
             Box::new(("DIV.D", 2u32, FConst::QUIET_NAN_START_64, 123f64, Assembler::make_cop1_div(FR::F0, FR::F2, FR::F4).d())),
             Box::new(("DIV.D", 2u32, 123f64, FConst::QUIET_NAN_START_64, Assembler::make_cop1_div(FR::F0, FR::F2, FR::F4).d())),
 
+            // DIV.D with exceptions on
+            Box::new(("DIV.D (inexact)", 63u32, 0.123456789f64, 10.123456789f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_div(FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("DIV.D (15/0)", 7u32, 15f64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_div(FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("DIV.D (overflow)", 63u32, f64::MAX, 0.125f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_div(FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("DIV.D (underflow)", 63u32, f64::MIN_POSITIVE, 128f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_div(FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("DIV.D (inf/inf)", 7u32, f64::INFINITY, f64::INFINITY, ExceptionTimingMode::JustFire, Assembler::make_cop1_div(FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("DIV.D (inf/-inf)", 7u32, f64::INFINITY, f64::NEG_INFINITY, ExceptionTimingMode::JustFire, Assembler::make_cop1_div(FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("DIV.D (subnormal/1)", 7u32, FConst::SUBNORMAL_MIN_POSITIVE_64, 1f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_div(FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("DIV.D (subnormal/0)", 7u32, FConst::SUBNORMAL_MIN_POSITIVE_64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_div(FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("DIV.D (1/subnormal)", 7u32, 1f64, FConst::SUBNORMAL_MIN_POSITIVE_64, ExceptionTimingMode::JustFire, Assembler::make_cop1_div(FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("DIV.D (1/qNAN)", 7u32, 1f64, FConst::QUIET_NAN_START_64, ExceptionTimingMode::JustFire, Assembler::make_cop1_div(FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("DIV.D (qNAN/1)", 7u32, FConst::QUIET_NAN_START_64, 1f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_div(FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("DIV.D (1/sNAN)", 7u32, 1f64, FConst::SIGNALLING_NAN_START_64, ExceptionTimingMode::JustFire, Assembler::make_cop1_div(FR::F0, FR::F2, FR::F4).d())),
+            Box::new(("DIV.D (sNAN/1)", 7u32, FConst::SIGNALLING_NAN_START_64, 1f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_div(FR::F0, FR::F2, FR::F4).d())),
+
             // NEG.D is always 1 cycle
             Box::new(("NEG.D", 1u32, 123f64, 0f64, Assembler::make_cop1_neg(FR::F0, FR::F2).d())),
             Box::new(("NEG.D", 1u32, -123f64, 0f64, Assembler::make_cop1_neg(FR::F0, FR::F2).d())),
             Box::new(("NEG.D", 1u32, f64::INFINITY, 0f64, Assembler::make_cop1_neg(FR::F0, FR::F2).d())),
             Box::new(("NEG.D", 1u32, f64::NEG_INFINITY, 0f64, Assembler::make_cop1_neg(FR::F0, FR::F2).d())),
             Box::new(("NEG.D", 1u32, FConst::QUIET_NAN_START_64, 0f64, Assembler::make_cop1_neg(FR::F0, FR::F2).d())),
+            Box::new(("NEG.D", 6u32, FConst::SUBNORMAL_MIN_POSITIVE_64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_neg(FR::F0, FR::F2).d())),
+            Box::new(("NEG.D", 6u32, FConst::QUIET_NAN_START_64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_neg(FR::F0, FR::F2).d())),
+            Box::new(("NEG.D", 6u32, FConst::SIGNALLING_NAN_START_64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_neg(FR::F0, FR::F2).d())),
 
             // ABS.D is always 1 cycle
             Box::new(("ABS.D", 1u32, 123f64, 0f64, Assembler::make_cop1_abs(FR::F0, FR::F2).d())),
@@ -896,6 +1466,9 @@ impl Test for COP1Instructions64 {
             Box::new(("ABS.D", 1u32, f64::INFINITY, 0f64, Assembler::make_cop1_abs(FR::F0, FR::F2).d())),
             Box::new(("ABS.D", 1u32, f64::NEG_INFINITY, 0f64, Assembler::make_cop1_abs(FR::F0, FR::F2).d())),
             Box::new(("ABS.D", 1u32, FConst::QUIET_NAN_START_64, 0f64, Assembler::make_cop1_abs(FR::F0, FR::F2).d())),
+            Box::new(("ABS.D", 6u32, FConst::SUBNORMAL_MIN_POSITIVE_64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_abs(FR::F0, FR::F2).d())),
+            Box::new(("ABS.D", 6u32, FConst::QUIET_NAN_START_64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_abs(FR::F0, FR::F2).d())),
+            Box::new(("ABS.D", 6u32, FConst::SIGNALLING_NAN_START_64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_abs(FR::F0, FR::F2).d())),
 
             // SQRT.D has these trivial cases: negative input, 0, NAN, INFINITY
             Box::new(("SQRT.D", 58u32, 123f64, 0f64, Assembler::make_cop1_sqrt(FR::F0, FR::F2).d())),
@@ -908,7 +1481,12 @@ impl Test for COP1Instructions64 {
             Box::new(("SQRT.D", 2u32, -123f64, 0f64, Assembler::make_cop1_sqrt(FR::F0, FR::F2).d())),
             Box::new(("SQRT.D", 2u32, f64::INFINITY, 0f64, Assembler::make_cop1_sqrt(FR::F0, FR::F2).d())),
             Box::new(("SQRT.D", 2u32, f64::NEG_INFINITY, 0f64, Assembler::make_cop1_sqrt(FR::F0, FR::F2).d())),
-            Box::new(("SQRT.D", 2u32, FConst::QUIET_NAN_START_64, 0f64, Assembler::make_cop1_sqrt(FR::F0, FR::F2).d())),
+            Box::new(("SQRT.D (qNAN with exceptions disabled)", 2u32, FConst::QUIET_NAN_START_64, 0f64, Assembler::make_cop1_sqrt(FR::F0, FR::F2).d())),
+            Box::new(("SQRT.D (negative)", 7u32, -16f64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_sqrt(FR::F0, FR::F2).d())),
+            Box::new(("SQRT.D (inexact)", 63u32, f64::MAX, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_sqrt(FR::F0, FR::F2).d())),
+            Box::new(("SQRT.D", 7u32, FConst::SUBNORMAL_MIN_POSITIVE_64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_sqrt(FR::F0, FR::F2).d())),
+            Box::new(("SQRT.D", 7u32, FConst::QUIET_NAN_START_64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_sqrt(FR::F0, FR::F2).d())),
+            Box::new(("SQRT.D", 7u32, FConst::SIGNALLING_NAN_START_64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_sqrt(FR::F0, FR::F2).d())),
 
             // MOV.D is always 1 cycle
             Box::new(("MOV.D", 1u32, 123f64, 0f64, Assembler::make_cop1_mov(FR::F0, FR::F2).d())),
@@ -918,74 +1496,263 @@ impl Test for COP1Instructions64 {
             Box::new(("MOV.D", 1u32, FConst::QUIET_NAN_START_64, 0f64, Assembler::make_cop1_mov(FR::F0, FR::F2).d())),
             Box::new(("MOV.D", 1u32, FConst::SIGNALLING_NAN_START_64, 0f64, Assembler::make_cop1_mov(FR::F0, FR::F2).d())),
 
-            // ROUND.W.D is always 5 cycles
+            // ROUND.W.D is 5 cycles. In the exception case, subnormal and nan are trivial. Too large numbers are trivial if exponent >= 0b10000011111
             Box::new(("ROUND.W.D", 5u32, 0f64, 0f64, Assembler::make_cop1_round_w(FR::F0, FR::F2).d())),
             Box::new(("ROUND.W.D", 5u32, 1f64, 0f64, Assembler::make_cop1_round_w(FR::F0, FR::F2).d())),
             Box::new(("ROUND.W.D", 5u32, 123.15f64, 0f64, Assembler::make_cop1_round_w(FR::F0, FR::F2).d())),
             Box::new(("ROUND.W.D", 5u32, -123f64, 0f64, Assembler::make_cop1_round_w(FR::F0, FR::F2).d())),
+            Box::new(("ROUND.W.D", 10u32, 0.5f64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_round_w(FR::F0, FR::F2).d())),
+            Box::new(("ROUND.W.D (too large)", 10u32, 2147483648f64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_round_w(FR::F0, FR::F2).d())),
+            Box::new(("ROUND.W.D (too large 2)", 10u32, 2147483649f64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_round_w(FR::F0, FR::F2).d())),
+            Box::new(("ROUND.W.D (largest non trivial)", 10u32, 4294967295.9999995f64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_round_w(FR::F0, FR::F2).d())),
+            Box::new(("ROUND.W.D (largest neg non trivial)", 10u32, -4294967295.9999995f64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_round_w(FR::F0, FR::F2).d())),
+            Box::new(("ROUND.W.D (way too large - trivial)", 7u32, 4294967296f64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_round_w(FR::F0, FR::F2).d())),
+            Box::new(("ROUND.W.D (way too large - trivial neg)", 7u32, -4294967296f64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_round_w(FR::F0, FR::F2).d())),
+            Box::new(("ROUND.W.D (way too large 2 - trivial)", 7u32, 4294967297f64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_round_w(FR::F0, FR::F2).d())),
+            Box::new(("ROUND.W.D (max)", 7u32, f64::MAX, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_round_w(FR::F0, FR::F2).d())),
+            Box::new(("ROUND.W.D (inf)", 7u32, f64::INFINITY, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_round_w(FR::F0, FR::F2).d())),
+            Box::new(("ROUND.W.D", 7u32, FConst::SUBNORMAL_MIN_POSITIVE_64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_round_w(FR::F0, FR::F2).d())),
+            Box::new(("ROUND.W.D", 7u32, FConst::QUIET_NAN_START_64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_round_w(FR::F0, FR::F2).d())),
+            Box::new(("ROUND.W.D", 7u32, FConst::SIGNALLING_NAN_START_64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_round_w(FR::F0, FR::F2).d())),
+            Box::new(("TRUNC.W.D", 5u32, 123.15f64, 0f64, Assembler::make_cop1_trunc_w(FR::F0, FR::F2).d())),
+            Box::new(("TRUNC.W.D", 5u32, -123.15f64, 0f64, Assembler::make_cop1_trunc_w(FR::F0, FR::F2).d())),
             Box::new(("TRUNC.W.D", 5u32, 0f64, 0f64, Assembler::make_cop1_trunc_w(FR::F0, FR::F2).d())),
-            Box::new(("TRUNC.W.D", 5u32, 1f64, 0f64, Assembler::make_cop1_trunc_w(FR::F0, FR::F2).d())),
-            Box::new(("TRUNC.W.D", 5u32, -1.2f64, 0f64, Assembler::make_cop1_trunc_w(FR::F0, FR::F2).d())),
+            Box::new(("TRUNC.W.D", 10u32, 0.5f64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_trunc_w(FR::F0, FR::F2).d())),
+            Box::new(("TRUNC.W.D", 10u32, 2147483648f64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_trunc_w(FR::F0, FR::F2).d())),
+            Box::new(("TRUNC.W.D (way too large - trivial)", 7u32, 4294967296f64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_trunc_w(FR::F0, FR::F2).d())),
+            Box::new(("TRUNC.W.D", 7u32, FConst::SUBNORMAL_MIN_POSITIVE_64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_trunc_w(FR::F0, FR::F2).d())),
+            Box::new(("TRUNC.W.D", 7u32, FConst::QUIET_NAN_START_64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_trunc_w(FR::F0, FR::F2).d())),
+            Box::new(("TRUNC.W.D", 7u32, FConst::SIGNALLING_NAN_START_64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_trunc_w(FR::F0, FR::F2).d())),
+            Box::new(("CEIL.W.D", 5u32, 123.15f64, 0f64, Assembler::make_cop1_ceil_w(FR::F0, FR::F2).d())),
+            Box::new(("CEIL.W.D", 5u32, -123.15f64, 0f64, Assembler::make_cop1_ceil_w(FR::F0, FR::F2).d())),
             Box::new(("CEIL.W.D", 5u32, 0f64, 0f64, Assembler::make_cop1_ceil_w(FR::F0, FR::F2).d())),
-            Box::new(("CEIL.W.D", 5u32, 10f64, 0f64, Assembler::make_cop1_ceil_w(FR::F0, FR::F2).d())),
-            Box::new(("CEIL.W.D", 5u32, -10f64, 0f64, Assembler::make_cop1_ceil_w(FR::F0, FR::F2).d())),
+            Box::new(("CEIL.W.D", 10u32, 0.5f64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_ceil_w(FR::F0, FR::F2).d())),
+            Box::new(("CEIL.W.D", 10u32, 2147483648f64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_ceil_w(FR::F0, FR::F2).d())),
+            Box::new(("CEIL.W.D (way too large - trivial)", 7u32, 4294967296f64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_ceil_w(FR::F0, FR::F2).d())),
+            Box::new(("CEIL.W.D", 7u32, FConst::SUBNORMAL_MIN_POSITIVE_64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_ceil_w(FR::F0, FR::F2).d())),
+            Box::new(("CEIL.W.D", 7u32, FConst::QUIET_NAN_START_64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_ceil_w(FR::F0, FR::F2).d())),
+            Box::new(("CEIL.W.D", 7u32, FConst::SIGNALLING_NAN_START_64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_ceil_w(FR::F0, FR::F2).d())),
+            Box::new(("FLOOR.W.D", 5u32, 123.15f64, 0f64, Assembler::make_cop1_floor_w(FR::F0, FR::F2).d())),
+            Box::new(("FLOOR.W.D", 5u32, -123.15f64, 0f64, Assembler::make_cop1_floor_w(FR::F0, FR::F2).d())),
             Box::new(("FLOOR.W.D", 5u32, 0f64, 0f64, Assembler::make_cop1_floor_w(FR::F0, FR::F2).d())),
-            Box::new(("FLOOR.W.D", 5u32, 55f64, 0f64, Assembler::make_cop1_floor_w(FR::F0, FR::F2).d())),
-            Box::new(("FLOOR.W.D", 5u32, -55f64, 0f64, Assembler::make_cop1_floor_w(FR::F0, FR::F2).d())),
+            Box::new(("FLOOR.W.D", 10u32, 0.5f64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_floor_w(FR::F0, FR::F2).d())),
+            Box::new(("FLOOR.W.D", 10u32, 2147483648f64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_floor_w(FR::F0, FR::F2).d())),
+            Box::new(("FLOOR.W.D (way too large - trivial)", 7u32, 4294967296f64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_floor_w(FR::F0, FR::F2).d())),
+            Box::new(("FLOOR.W.D", 7u32, FConst::SUBNORMAL_MIN_POSITIVE_64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_floor_w(FR::F0, FR::F2).d())),
+            Box::new(("FLOOR.W.D", 7u32, FConst::QUIET_NAN_START_64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_floor_w(FR::F0, FR::F2).d())),
+            Box::new(("FLOOR.W.D", 7u32, FConst::SIGNALLING_NAN_START_64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_floor_w(FR::F0, FR::F2).d())),
             Box::new(("CVT.W.D", 5u32, 0f64, 0f64, Assembler::make_cop1_cvt_w(FR::F0, FR::F2).d())),
-            Box::new(("CVT.W.D", 5u32, 60f64, 0f64, Assembler::make_cop1_cvt_w(FR::F0, FR::F2).d())),
-            Box::new(("CVT.W.D", 5u32, -60f64, 0f64, Assembler::make_cop1_cvt_w(FR::F0, FR::F2).d())),
+            Box::new(("CVT.W.D", 5u32, 123.15f64, 0f64, Assembler::make_cop1_cvt_w(FR::F0, FR::F2).d())),
+            Box::new(("CVT.W.D", 5u32, -123.15f64, 0f64, Assembler::make_cop1_cvt_w(FR::F0, FR::F2).d())),
+            Box::new(("CVT.W.D", 10u32, 0.5f64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_cvt_w(FR::F0, FR::F2).d())),
+            Box::new(("CVT.W.D", 10u32, 2147483648f64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_cvt_w(FR::F0, FR::F2).d())),
+            Box::new(("CVT.W.D (way too large - trivial)", 7u32, 4294967296f64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_cvt_w(FR::F0, FR::F2).d())),
+            Box::new(("CVT.W.D", 7u32, FConst::SUBNORMAL_MIN_POSITIVE_64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_cvt_w(FR::F0, FR::F2).d())),
+            Box::new(("CVT.W.D", 7u32, FConst::QUIET_NAN_START_64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_cvt_w(FR::F0, FR::F2).d())),
+            Box::new(("CVT.W.D", 7u32, FConst::SIGNALLING_NAN_START_64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_cvt_w(FR::F0, FR::F2).d())),
 
-            // ROUND.L.D is always 5 cycles
+            // ROUND.L.D is 5 cycles. In the exception case, subnormal, nan and too-large-to-fit are trivial
             Box::new(("ROUND.L.D", 5u32, 0f64, 0f64, Assembler::make_cop1_round_l(FR::F0, FR::F2).d())),
             Box::new(("ROUND.L.D", 5u32, 1f64, 0f64, Assembler::make_cop1_round_l(FR::F0, FR::F2).d())),
             Box::new(("ROUND.L.D", 5u32, 123.15f64, 0f64, Assembler::make_cop1_round_l(FR::F0, FR::F2).d())),
             Box::new(("ROUND.L.D", 5u32, -123f64, 0f64, Assembler::make_cop1_round_l(FR::F0, FR::F2).d())),
-            Box::new(("TRUNC.L.D", 5u32, 0f64, 0f64, Assembler::make_cop1_trunc_l(FR::F0, FR::F2).d())),
-            Box::new(("TRUNC.L.D", 5u32, 550f64, 0f64, Assembler::make_cop1_trunc_l(FR::F0, FR::F2).d())),
-            Box::new(("TRUNC.L.D", 5u32, -550f64, 0f64, Assembler::make_cop1_trunc_l(FR::F0, FR::F2).d())),
-            Box::new(("CEIL.L.D", 5u32, 0f64, 0f64, Assembler::make_cop1_ceil_l(FR::F0, FR::F2).d())),
-            Box::new(("CEIL.L.D", 5u32, 110f64, 0f64, Assembler::make_cop1_ceil_l(FR::F0, FR::F2).d())),
-            Box::new(("CEIL.L.D", 5u32, -110f64, 0f64, Assembler::make_cop1_ceil_l(FR::F0, FR::F2).d())),
-            Box::new(("FLOOR.L.D", 5u32, 0f64, 0f64, Assembler::make_cop1_floor_l(FR::F0, FR::F2).d())),
-            Box::new(("FLOOR.L.D", 5u32, 10f64, 0f64, Assembler::make_cop1_floor_l(FR::F0, FR::F2).d())),
-            Box::new(("FLOOR.L.D", 5u32, -10f64, 0f64, Assembler::make_cop1_floor_l(FR::F0, FR::F2).d())),
-            Box::new(("CVT.L.D", 5u32, 0f64, 0f64, Assembler::make_cop1_cvt_l(FR::F0, FR::F2).d())),
-            Box::new(("CVT.L.D", 5u32, 11f64, 0f64, Assembler::make_cop1_cvt_l(FR::F0, FR::F2).d())),
-            Box::new(("CVT.L.D", 5u32, -11f64, 0f64, Assembler::make_cop1_cvt_l(FR::F0, FR::F2).d())),
+            Box::new(("ROUND.L.D", 10u32, 0.5f64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_round_l(FR::F0, FR::F2).d())),
+            Box::new(("ROUND.L.D (too large)", 7u32, 9007199254740992f64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_round_l(FR::F0, FR::F2).d())),
+            Box::new(("ROUND.L.D (way too large)", 7u32, i64::MAX as f64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_round_l(FR::F0, FR::F2).d())),
+            Box::new(("ROUND.L.D (way way way too large)", 7u32, f64::MAX, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_round_l(FR::F0, FR::F2).d())),
+            Box::new(("ROUND.L.D (inf)", 7u32, f64::INFINITY, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_round_l(FR::F0, FR::F2).d())),
+            Box::new(("ROUND.L.D", 7u32, FConst::SUBNORMAL_MIN_POSITIVE_64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_round_l(FR::F0, FR::F2).d())),
+            Box::new(("ROUND.L.D", 7u32, FConst::QUIET_NAN_START_64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_round_l(FR::F0, FR::F2).d())),
+            Box::new(("ROUND.L.D", 7u32, FConst::SIGNALLING_NAN_START_64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_round_l(FR::F0, FR::F2).d())),
 
-            // CVT.S.D is always 2 cycles
+            Box::new(("TRUNC.L.D", 5u32, 0f64, 0f64, Assembler::make_cop1_trunc_l(FR::F0, FR::F2).d())),
+            Box::new(("TRUNC.L.D", 5u32, 100f64, 0f64, Assembler::make_cop1_trunc_l(FR::F0, FR::F2).d())),
+            Box::new(("TRUNC.L.D", 5u32, -100f64, 0f64, Assembler::make_cop1_trunc_l(FR::F0, FR::F2).d())),
+            Box::new(("TRUNC.L.D", 10u32, 0.5f64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_trunc_l(FR::F0, FR::F2).d())),
+            Box::new(("TRUNC.L.D (too large)", 7u32, 9007199254740992f64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_trunc_l(FR::F0, FR::F2).d())),
+            Box::new(("TRUNC.L.D (way too large)", 7u32, i64::MAX as f64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_trunc_l(FR::F0, FR::F2).d())),
+            Box::new(("TRUNC.L.D (way way way too large)", 7u32, f64::MAX, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_trunc_l(FR::F0, FR::F2).d())),
+            Box::new(("TRUNC.L.D (inf)", 7u32, f64::INFINITY, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_trunc_l(FR::F0, FR::F2).d())),
+            Box::new(("TRUNC.L.D", 7u32, FConst::SUBNORMAL_MIN_POSITIVE_64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_trunc_l(FR::F0, FR::F2).d())),
+            Box::new(("TRUNC.L.D", 7u32, FConst::QUIET_NAN_START_64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_trunc_l(FR::F0, FR::F2).d())),
+            Box::new(("TRUNC.L.D", 7u32, FConst::SIGNALLING_NAN_START_64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_trunc_l(FR::F0, FR::F2).d())),
+
+            Box::new(("CEIL.L.D", 5u32, 0f64, 0f64, Assembler::make_cop1_ceil_l(FR::F0, FR::F2).d())),
+            Box::new(("CEIL.L.D", 5u32, 10f64, 0f64, Assembler::make_cop1_ceil_l(FR::F0, FR::F2).d())),
+            Box::new(("CEIL.L.D", 5u32, -10f64, 0f64, Assembler::make_cop1_ceil_l(FR::F0, FR::F2).d())),
+            Box::new(("CEIL.L.D", 10u32, 0.5f64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_ceil_l(FR::F0, FR::F2).d())),
+            Box::new(("CEIL.L.D (too large)", 7u32, 9007199254740992f64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_ceil_l(FR::F0, FR::F2).d())),
+            Box::new(("CEIL.L.D (way too large)", 7u32, i64::MAX as f64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_ceil_l(FR::F0, FR::F2).d())),
+            Box::new(("CEIL.L.D (way way way too large)", 7u32, f64::MAX, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_ceil_l(FR::F0, FR::F2).d())),
+            Box::new(("CEIL.L.D (inf)", 7u32, f64::INFINITY as f64 * 1024f64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_ceil_l(FR::F0, FR::F2).d())),
+            Box::new(("CEIL.L.D", 7u32, FConst::SUBNORMAL_MIN_POSITIVE_64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_ceil_l(FR::F0, FR::F2).d())),
+            Box::new(("CEIL.L.D", 7u32, FConst::QUIET_NAN_START_64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_ceil_l(FR::F0, FR::F2).d())),
+            Box::new(("CEIL.L.D", 7u32, FConst::SIGNALLING_NAN_START_64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_ceil_l(FR::F0, FR::F2).d())),
+
+            Box::new(("FLOOR.L.D", 5u32, 0f64, 0f64, Assembler::make_cop1_floor_l(FR::F0, FR::F2).d())),
+            Box::new(("FLOOR.L.D", 5u32, 15f64, 0f64, Assembler::make_cop1_floor_l(FR::F0, FR::F2).d())),
+            Box::new(("FLOOR.L.D", 5u32, -15f64, 0f64, Assembler::make_cop1_floor_l(FR::F0, FR::F2).d())),
+            Box::new(("FLOOR.L.D", 10u32, 0.5f64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_floor_l(FR::F0, FR::F2).d())),
+            Box::new(("FLOOR.L.D (too large)", 7u32, 9007199254740992f64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_floor_l(FR::F0, FR::F2).d())),
+            Box::new(("FLOOR.L.D (way too large)", 7u32, i64::MAX as f64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_floor_l(FR::F0, FR::F2).d())),
+            Box::new(("FLOOR.L.D (way way way too large)", 7u32, f64::MAX, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_floor_l(FR::F0, FR::F2).d())),
+            Box::new(("FLOOR.L.D (inf)", 7u32, f64::INFINITY, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_floor_l(FR::F0, FR::F2).d())),
+            Box::new(("FLOOR.L.D", 7u32, FConst::SUBNORMAL_MIN_POSITIVE_64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_floor_l(FR::F0, FR::F2).d())),
+            Box::new(("FLOOR.L.D", 7u32, FConst::QUIET_NAN_START_64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_floor_l(FR::F0, FR::F2).d())),
+            Box::new(("FLOOR.L.D", 7u32, FConst::SIGNALLING_NAN_START_64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_floor_l(FR::F0, FR::F2).d())),
+
+            Box::new(("CVT.L.D", 5u32, 0f64, 0f64, Assembler::make_cop1_cvt_l(FR::F0, FR::F2).d())),
+            Box::new(("CVT.L.D", 5u32, 1f64, 0f64, Assembler::make_cop1_cvt_l(FR::F0, FR::F2).d())),
+            Box::new(("CVT.L.D", 5u32, -1.5f64, 0f64, Assembler::make_cop1_cvt_l(FR::F0, FR::F2).d())),
+            Box::new(("CVT.L.D", 10u32, 0.5f64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_cvt_l(FR::F0, FR::F2).d())),
+            Box::new(("CVT.L.D (too large)", 7u32, 9007199254740992f64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_cvt_l(FR::F0, FR::F2).d())),
+            Box::new(("CVT.L.D (way too large)", 7u32, i64::MAX as f64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_cvt_l(FR::F0, FR::F2).d())),
+            Box::new(("CVT.L.D (way way way too large)", 7u32, f64::MAX, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_cvt_l(FR::F0, FR::F2).d())),
+            Box::new(("CVT.L.D (inf)", 7u32, f64::INFINITY, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_cvt_l(FR::F0, FR::F2).d())),
+            Box::new(("CVT.L.D", 7u32, FConst::SUBNORMAL_MIN_POSITIVE_64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_cvt_l(FR::F0, FR::F2).d())),
+            Box::new(("CVT.L.D", 7u32, FConst::QUIET_NAN_START_64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_cvt_l(FR::F0, FR::F2).d())),
+            Box::new(("CVT.L.D", 7u32, FConst::SIGNALLING_NAN_START_64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_cvt_l(FR::F0, FR::F2).d())),
+
+            // CVT.D.S is always 2 cycle
             Box::new(("CVT.S.D", 2u32, 0f64, 0f64, Assembler::make_cop1_cvt_s(FR::F0, FR::F2).d())),
             Box::new(("CVT.S.D", 2u32, f64::INFINITY, 0f64, Assembler::make_cop1_cvt_s(FR::F0, FR::F2).d())),
             Box::new(("CVT.S.D", 2u32, 0.1111f64, 0f64, Assembler::make_cop1_cvt_s(FR::F0, FR::F2).d())),
+            Box::new(("CVT.S.D", 2u32, -0.1111f64, 0f64, Assembler::make_cop1_cvt_s(FR::F0, FR::F2).d())),
             Box::new(("CVT.S.D", 2u32, f64::MAX, 0f64, Assembler::make_cop1_cvt_s(FR::F0, FR::F2).d())),
+            Box::new(("CVT.S.D", 2u32, f64::INFINITY, 0f64, Assembler::make_cop1_cvt_s(FR::F0, FR::F2).d())),
             Box::new(("CVT.S.D", 2u32, FConst::QUIET_NAN_START_64, 0f64, Assembler::make_cop1_cvt_s(FR::F0, FR::F2).d())),
+            Box::new(("CVT.S.D", 7u32, FConst::SUBNORMAL_MIN_POSITIVE_64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_cvt_s(FR::F0, FR::F2).d())),
+            Box::new(("CVT.S.D", 7u32, f64::MAX, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_cvt_s(FR::F0, FR::F2).d())),
+            Box::new(("CVT.S.D", 7u32, FConst::QUIET_NAN_START_64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_cvt_s(FR::F0, FR::F2).d())),
+            Box::new(("CVT.S.D", 7u32, FConst::SIGNALLING_NAN_START_64, 0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_cvt_s(FR::F0, FR::F2).d())),
 
-            // CVT.D.W has one special case: 0. Otherwise it needs 5 cycles
-            Box::new(("CVT.D.W", 5u32, 1u32, Assembler::make_cop1_cvt_d(FR::F0, FR::F2).w())),
-            Box::new(("CVT.D.W", 5u32, -2i32 as u32, Assembler::make_cop1_cvt_d(FR::F0, FR::F2).w())),
-            Box::new(("CVT.D.W", 2u32, 0u32, Assembler::make_cop1_cvt_d(FR::F0, FR::F2).w())),
-            Box::new(("CVT.D.W", 5u32, u32::MAX, Assembler::make_cop1_cvt_d(FR::F0, FR::F2).w())),
+            // CVT.D.W has one trivial case: 0. Otherwise it needs 5 cycles. There are no exceptions
+            Box::new(("CVT.D.W", 2u32, 0i32, Assembler::make_cop1_cvt_d(FR::F0, FR::F2).w())),
+            Box::new(("CVT.D.W", 5u32, i32::MAX, Assembler::make_cop1_cvt_d(FR::F0, FR::F2).w())),
+            Box::new(("CVT.D.W", 5u32, u32::MAX as i32, Assembler::make_cop1_cvt_d(FR::F0, FR::F2).w())),
+            Box::new(("CVT.D.W", 5u32, 1i32, Assembler::make_cop1_cvt_d(FR::F0, FR::F2).w())),
+            Box::new(("CVT.D.W", 5u32, 2i32, Assembler::make_cop1_cvt_d(FR::F0, FR::F2).w())),
+            Box::new(("CVT.D.W", 5u32, -2i32, Assembler::make_cop1_cvt_d(FR::F0, FR::F2).w())),
+            Box::new(("CVT.D.W", 5u32, 1234567891i32, Assembler::make_cop1_cvt_d(FR::F0, FR::F2).w())),
 
-            // CVT.D.L has one special case: 0. Otherwise it needs 5 cycles
-            Box::new(("CVT.D.L", 5u32, 1u64, Assembler::make_cop1_cvt_d(FR::F0, FR::F2).l())),
-            Box::new(("CVT.D.L", 5u32, -2i64 as u64, Assembler::make_cop1_cvt_d(FR::F0, FR::F2).l())),
-            Box::new(("CVT.D.L", 2u32, 0u64, Assembler::make_cop1_cvt_d(FR::F0, FR::F2).l())),
-            Box::new(("CVT.D.L", 5u32, u32::MAX as u64, Assembler::make_cop1_cvt_d(FR::F0, FR::F2).l())),
-            Box::new(("CVT.D.L", 5u32, u64::MAX, Assembler::make_cop1_cvt_d(FR::F0, FR::F2).l())),
-
-            // Compares are all single-cycle
-            Box::new(("C.F.D", 1u32, 0.0f64, 1.0f64, Assembler::make_cop1_c_cond(Cop1Condition::F, FR::F2, FR::F4).d())),
-            Box::new(("C.F.D", 1u32, 1.0f64, 1.0f64, Assembler::make_cop1_c_cond(Cop1Condition::F, FR::F2, FR::F4).d())),
-            Box::new(("C.EQ.D", 1u32, 0.0f64, 1.0f64, Assembler::make_cop1_c_cond(Cop1Condition::EQ, FR::F2, FR::F4).d())),
-            Box::new(("C.EQ.D", 1u32, 1.0f64, 1.0f64, Assembler::make_cop1_c_cond(Cop1Condition::EQ, FR::F2, FR::F4).d())),
-            Box::new(("C.NGLE.D", 1u32, 0.0f64, 1.0f64, Assembler::make_cop1_c_cond(Cop1Condition::NGLE, FR::F2, FR::F4).d())),
-            Box::new(("C.NGLE.D", 1u32, 1.0f64, 1.0f64, Assembler::make_cop1_c_cond(Cop1Condition::NGLE, FR::F2, FR::F4).d())),
-            Box::new(("C.NGLE.D", 1u32, FConst::SIGNALLING_NAN_START_64, 1.0f64, Assembler::make_cop1_c_cond(Cop1Condition::NGLE, FR::F2, FR::F4).d())),
-            Box::new(("C.NGLE.D", 1u32, FConst::QUIET_NAN_START_64, 1.0f64, Assembler::make_cop1_c_cond(Cop1Condition::NGLE, FR::F2, FR::F4).d())),
+            // CVT.D.L has one trivial case: 0. Otherwise it needs 5 cycles. In the exception case, too large is trivial, but inexact is not
+            Box::new(("CVT.D.L", 2u32, 0i64, Assembler::make_cop1_cvt_d(FR::F0, FR::F2).l())),
+            Box::new(("CVT.D.L", 5u32, 1i64, Assembler::make_cop1_cvt_d(FR::F0, FR::F2).l())),
+            Box::new(("CVT.D.L", 5u32, 128i64, Assembler::make_cop1_cvt_d(FR::F0, FR::F2).l())),
+            Box::new(("CVT.D.L", 5u32, 1i64, Assembler::make_cop1_cvt_d(FR::F0, FR::F2).l())),
+            Box::new(("CVT.D.L", 5u32, 2i64, Assembler::make_cop1_cvt_d(FR::F0, FR::F2).l())),
+            Box::new(("CVT.D.L", 5u32, -2i64, Assembler::make_cop1_cvt_d(FR::F0, FR::F2).l())),
+            Box::new(("CVT.D.L", 5u32, 1234567891i64, Assembler::make_cop1_cvt_d(FR::F0, FR::F2).l())),
+            Box::new(("CVT.D.L (inexact)", 10u32, (1i64 << 55) - 3, ExceptionTimingMode::JustFire, Assembler::make_cop1_cvt_d(FR::F0, FR::F2).l())),
+            Box::new(("CVT.D.L (too large)", 7u32, 1i64 << 55, ExceptionTimingMode::JustFire, Assembler::make_cop1_cvt_d(FR::F0, FR::F2).l())),
 
             // DMTC1
             Box::new(("DMTC1", 1u32, 0f64, 0f64, Assembler::make_dmtc1(GPR::V0, FR::F0))),
+
+            // Compares are all single-cycle
+            Box::new(("C.F.D", 1u32, 0.0f64, -0.0f64, Assembler::make_cop1_c_cond(Cop1Condition::F, FR::F2, FR::F4).d())),
+            Box::new(("C.F.D", 1u32, 1.0f64, 1.0f64, Assembler::make_cop1_c_cond(Cop1Condition::F, FR::F2, FR::F4).d())),
+            Box::new(("C.F.D", 1u32, FConst::SIGNALLING_NAN_START_64, 1.0f64, ExceptionTimingMode::Off, Assembler::make_cop1_c_cond(Cop1Condition::F, FR::F2, FR::F4).d())),
+            Box::new(("C.F.D", 1u32, FConst::QUIET_NAN_START_64, 1.0f64, Assembler::make_cop1_c_cond(Cop1Condition::F, FR::F2, FR::F4).d())),
+            Box::new(("C.F.D", 6u32, FConst::QUIET_NAN_START_64, 1.0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_c_cond(Cop1Condition::F, FR::F2, FR::F4).d())),
+
+            Box::new(("C.UN.D", 1u32, 0.0f64, -0.0f64, Assembler::make_cop1_c_cond(Cop1Condition::UN, FR::F2, FR::F4).d())),
+            Box::new(("C.UN.D", 1u32, 1.0f64, 1.0f64, Assembler::make_cop1_c_cond(Cop1Condition::UN, FR::F2, FR::F4).d())),
+            Box::new(("C.UN.D", 1u32, FConst::SIGNALLING_NAN_START_64, 1.0f64, ExceptionTimingMode::Off, Assembler::make_cop1_c_cond(Cop1Condition::UN, FR::F2, FR::F4).d())),
+            Box::new(("C.UN.D", 1u32, FConst::QUIET_NAN_START_64, 1.0f64, Assembler::make_cop1_c_cond(Cop1Condition::UN, FR::F2, FR::F4).d())),
+            Box::new(("C.UN.D", 6u32, FConst::QUIET_NAN_START_64, 1.0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_c_cond(Cop1Condition::UN, FR::F2, FR::F4).d())),
+
+            Box::new(("C.EQ.D", 1u32, 0.0f64, -0.0f64, Assembler::make_cop1_c_cond(Cop1Condition::EQ, FR::F2, FR::F4).d())),
+            Box::new(("C.EQ.D", 1u32, 1.0f64, 1.0f64, Assembler::make_cop1_c_cond(Cop1Condition::EQ, FR::F2, FR::F4).d())),
+            Box::new(("C.EQ.D", 1u32, FConst::SIGNALLING_NAN_START_64, 1.0f64, ExceptionTimingMode::Off, Assembler::make_cop1_c_cond(Cop1Condition::EQ, FR::F2, FR::F4).d())),
+            Box::new(("C.EQ.D", 1u32, FConst::QUIET_NAN_START_64, 1.0f64, Assembler::make_cop1_c_cond(Cop1Condition::EQ, FR::F2, FR::F4).d())),
+            Box::new(("C.EQ.D", 6u32, FConst::QUIET_NAN_START_64, 1.0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_c_cond(Cop1Condition::EQ, FR::F2, FR::F4).d())),
+
+            Box::new(("C.UEQ.D", 1u32, 0.0f64, -0.0f64, Assembler::make_cop1_c_cond(Cop1Condition::UEQ, FR::F2, FR::F4).d())),
+            Box::new(("C.UEQ.D", 1u32, 1.0f64, 1.0f64, Assembler::make_cop1_c_cond(Cop1Condition::UEQ, FR::F2, FR::F4).d())),
+            Box::new(("C.UEQ.D", 1u32, FConst::SIGNALLING_NAN_START_64, 1.0f64, ExceptionTimingMode::Off, Assembler::make_cop1_c_cond(Cop1Condition::UEQ, FR::F2, FR::F4).d())),
+            Box::new(("C.UEQ.D", 1u32, FConst::QUIET_NAN_START_64, 1.0f64, Assembler::make_cop1_c_cond(Cop1Condition::UEQ, FR::F2, FR::F4).d())),
+            Box::new(("C.UEQ.D", 6u32, FConst::QUIET_NAN_START_64, 1.0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_c_cond(Cop1Condition::UEQ, FR::F2, FR::F4).d())),
+
+            Box::new(("C.OLT.D", 1u32, 0.0f64, -0.0f64, Assembler::make_cop1_c_cond(Cop1Condition::OLT, FR::F2, FR::F4).d())),
+            Box::new(("C.OLT.D", 1u32, 1.0f64, 1.0f64, Assembler::make_cop1_c_cond(Cop1Condition::OLT, FR::F2, FR::F4).d())),
+            Box::new(("C.OLT.D", 1u32, FConst::SIGNALLING_NAN_START_64, 1.0f64, ExceptionTimingMode::Off, Assembler::make_cop1_c_cond(Cop1Condition::OLT, FR::F2, FR::F4).d())),
+            Box::new(("C.OLT.D", 1u32, FConst::QUIET_NAN_START_64, 1.0f64, Assembler::make_cop1_c_cond(Cop1Condition::OLT, FR::F2, FR::F4).d())),
+            Box::new(("C.OLT.D", 6u32, FConst::QUIET_NAN_START_64, 1.0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_c_cond(Cop1Condition::OLT, FR::F2, FR::F4).d())),
+
+            Box::new(("C.ULT.D", 1u32, 0.0f64, -0.0f64, Assembler::make_cop1_c_cond(Cop1Condition::ULT, FR::F2, FR::F4).d())),
+            Box::new(("C.ULT.D", 1u32, 1.0f64, 1.0f64, Assembler::make_cop1_c_cond(Cop1Condition::ULT, FR::F2, FR::F4).d())),
+            Box::new(("C.ULT.D", 1u32, FConst::SIGNALLING_NAN_START_64, 1.0f64, ExceptionTimingMode::Off, Assembler::make_cop1_c_cond(Cop1Condition::ULT, FR::F2, FR::F4).d())),
+            Box::new(("C.ULT.D", 1u32, FConst::QUIET_NAN_START_64, 1.0f64, Assembler::make_cop1_c_cond(Cop1Condition::ULT, FR::F2, FR::F4).d())),
+            Box::new(("C.ULT.D", 6u32, FConst::QUIET_NAN_START_64, 1.0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_c_cond(Cop1Condition::ULT, FR::F2, FR::F4).d())),
+
+            Box::new(("C.OLE.D", 1u32, 0.0f64, -0.0f64, Assembler::make_cop1_c_cond(Cop1Condition::OLE, FR::F2, FR::F4).d())),
+            Box::new(("C.OLE.D", 1u32, 1.0f64, 1.0f64, Assembler::make_cop1_c_cond(Cop1Condition::OLE, FR::F2, FR::F4).d())),
+            Box::new(("C.OLE.D", 1u32, FConst::SIGNALLING_NAN_START_64, 1.0f64, ExceptionTimingMode::Off, Assembler::make_cop1_c_cond(Cop1Condition::OLE, FR::F2, FR::F4).d())),
+            Box::new(("C.OLE.D", 1u32, FConst::QUIET_NAN_START_64, 1.0f64, Assembler::make_cop1_c_cond(Cop1Condition::OLE, FR::F2, FR::F4).d())),
+            Box::new(("C.OLE.D", 6u32, FConst::QUIET_NAN_START_64, 1.0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_c_cond(Cop1Condition::OLE, FR::F2, FR::F4).d())),
+
+            Box::new(("C.OLE.D", 1u32, 0.0f64, -0.0f64, Assembler::make_cop1_c_cond(Cop1Condition::ULE, FR::F2, FR::F4).d())),
+            Box::new(("C.OLE.D", 1u32, 1.0f64, 1.0f64, Assembler::make_cop1_c_cond(Cop1Condition::ULE, FR::F2, FR::F4).d())),
+            Box::new(("C.OLE.D", 1u32, FConst::SIGNALLING_NAN_START_64, 1.0f64, ExceptionTimingMode::Off, Assembler::make_cop1_c_cond(Cop1Condition::ULE, FR::F2, FR::F4).d())),
+            Box::new(("C.OLE.D", 1u32, FConst::QUIET_NAN_START_64, 1.0f64, Assembler::make_cop1_c_cond(Cop1Condition::ULE, FR::F2, FR::F4).d())),
+            Box::new(("C.OLE.D", 6u32, FConst::QUIET_NAN_START_64, 1.0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_c_cond(Cop1Condition::ULE, FR::F2, FR::F4).d())),
+
+            Box::new(("C.SF.D", 1u32, 0.0f64, -0.0f64, Assembler::make_cop1_c_cond(Cop1Condition::SF, FR::F2, FR::F4).d())),
+            Box::new(("C.SF.D", 1u32, 1.0f64, 1.0f64, Assembler::make_cop1_c_cond(Cop1Condition::SF, FR::F2, FR::F4).d())),
+            Box::new(("C.SF.D", 1u32, FConst::SIGNALLING_NAN_START_64, 1.0f64, Assembler::make_cop1_c_cond(Cop1Condition::SF, FR::F2, FR::F4).d())),
+            Box::new(("C.SF.D", 6u32, FConst::SIGNALLING_NAN_START_64, 1.0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_c_cond(Cop1Condition::SF, FR::F2, FR::F4).d())),
+            Box::new(("C.SF.D", 1u32, FConst::QUIET_NAN_START_64, 1.0f64, Assembler::make_cop1_c_cond(Cop1Condition::SF, FR::F2, FR::F4).d())),
+            Box::new(("C.SF.D", 6u32, FConst::QUIET_NAN_START_64, 1.0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_c_cond(Cop1Condition::SF, FR::F2, FR::F4).d())),
+
+            Box::new(("C.NGLE.D", 1u32, 0.0f64, -0.0f64, Assembler::make_cop1_c_cond(Cop1Condition::NGLE, FR::F2, FR::F4).d())),
+            Box::new(("C.NGLE.D", 1u32, 1.0f64, 1.0f64, Assembler::make_cop1_c_cond(Cop1Condition::NGLE, FR::F2, FR::F4).d())),
+            Box::new(("C.NGLE.D", 1u32, FConst::SIGNALLING_NAN_START_64, 1.0f64, Assembler::make_cop1_c_cond(Cop1Condition::NGLE, FR::F2, FR::F4).d())),
+            Box::new(("C.NGLE.D", 6u32, FConst::SIGNALLING_NAN_START_64, 1.0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_c_cond(Cop1Condition::NGLE, FR::F2, FR::F4).d())),
+            Box::new(("C.NGLE.D", 1u32, FConst::QUIET_NAN_START_64, 1.0f64, Assembler::make_cop1_c_cond(Cop1Condition::NGLE, FR::F2, FR::F4).d())),
+            Box::new(("C.NGLE.D", 6u32, FConst::QUIET_NAN_START_64, 1.0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_c_cond(Cop1Condition::NGLE, FR::F2, FR::F4).d())),
+
+            Box::new(("C.SEQ.D", 1u32, 0.0f64, -0.0f64, Assembler::make_cop1_c_cond(Cop1Condition::SEQ, FR::F2, FR::F4).d())),
+            Box::new(("C.SEQ.D", 1u32, 1.0f64, 1.0f64, Assembler::make_cop1_c_cond(Cop1Condition::SEQ, FR::F2, FR::F4).d())),
+            Box::new(("C.SEQ.D", 1u32, FConst::SIGNALLING_NAN_START_64, 1.0f64, Assembler::make_cop1_c_cond(Cop1Condition::SEQ, FR::F2, FR::F4).d())),
+            Box::new(("C.SEQ.D", 6u32, FConst::SIGNALLING_NAN_START_64, 1.0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_c_cond(Cop1Condition::SEQ, FR::F2, FR::F4).d())),
+            Box::new(("C.SEQ.D", 1u32, FConst::QUIET_NAN_START_64, 1.0f64, Assembler::make_cop1_c_cond(Cop1Condition::SEQ, FR::F2, FR::F4).d())),
+            Box::new(("C.SEQ.D", 6u32, FConst::QUIET_NAN_START_64, 1.0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_c_cond(Cop1Condition::SEQ, FR::F2, FR::F4).d())),
+
+            Box::new(("C.NGL.D", 1u32, 0.0f64, -0.0f64, Assembler::make_cop1_c_cond(Cop1Condition::NGL, FR::F2, FR::F4).d())),
+            Box::new(("C.NGL.D", 1u32, 1.0f64, 1.0f64, Assembler::make_cop1_c_cond(Cop1Condition::NGL, FR::F2, FR::F4).d())),
+            Box::new(("C.NGL.D", 1u32, FConst::SIGNALLING_NAN_START_64, 1.0f64, Assembler::make_cop1_c_cond(Cop1Condition::NGL, FR::F2, FR::F4).d())),
+            Box::new(("C.NGL.D", 6u32, FConst::SIGNALLING_NAN_START_64, 1.0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_c_cond(Cop1Condition::NGL, FR::F2, FR::F4).d())),
+            Box::new(("C.NGL.D", 1u32, FConst::QUIET_NAN_START_64, 1.0f64, Assembler::make_cop1_c_cond(Cop1Condition::NGL, FR::F2, FR::F4).d())),
+            Box::new(("C.NGL.D", 6u32, FConst::QUIET_NAN_START_64, 1.0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_c_cond(Cop1Condition::NGL, FR::F2, FR::F4).d())),
+
+            Box::new(("C.LT.D", 1u32, 0.0f64, -0.0f64, Assembler::make_cop1_c_cond(Cop1Condition::LT, FR::F2, FR::F4).d())),
+            Box::new(("C.LT.D", 1u32, 1.0f64, 1.0f64, Assembler::make_cop1_c_cond(Cop1Condition::LT, FR::F2, FR::F4).d())),
+            Box::new(("C.LT.D", 1u32, FConst::SIGNALLING_NAN_START_64, 1.0f64, Assembler::make_cop1_c_cond(Cop1Condition::LT, FR::F2, FR::F4).d())),
+            Box::new(("C.LT.D", 6u32, FConst::SIGNALLING_NAN_START_64, 1.0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_c_cond(Cop1Condition::LT, FR::F2, FR::F4).d())),
+            Box::new(("C.LT.D", 1u32, FConst::QUIET_NAN_START_64, 1.0f64, Assembler::make_cop1_c_cond(Cop1Condition::LT, FR::F2, FR::F4).d())),
+            Box::new(("C.LT.D", 6u32, FConst::QUIET_NAN_START_64, 1.0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_c_cond(Cop1Condition::LT, FR::F2, FR::F4).d())),
+
+            Box::new(("C.NGE.D", 1u32, 0.0f64, -0.0f64, Assembler::make_cop1_c_cond(Cop1Condition::NGE, FR::F2, FR::F4).d())),
+            Box::new(("C.NGE.D", 1u32, 1.0f64, 1.0f64, Assembler::make_cop1_c_cond(Cop1Condition::NGE, FR::F2, FR::F4).d())),
+            Box::new(("C.NGE.D", 1u32, FConst::SIGNALLING_NAN_START_64, 1.0f64, Assembler::make_cop1_c_cond(Cop1Condition::NGE, FR::F2, FR::F4).d())),
+            Box::new(("C.NGE.D", 6u32, FConst::SIGNALLING_NAN_START_64, 1.0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_c_cond(Cop1Condition::NGE, FR::F2, FR::F4).d())),
+            Box::new(("C.NGE.D", 1u32, FConst::QUIET_NAN_START_64, 1.0f64, Assembler::make_cop1_c_cond(Cop1Condition::NGE, FR::F2, FR::F4).d())),
+            Box::new(("C.NGE.D", 6u32, FConst::QUIET_NAN_START_64, 1.0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_c_cond(Cop1Condition::NGE, FR::F2, FR::F4).d())),
+
+            Box::new(("C.LE.D", 1u32, 0.0f64, -0.0f64, Assembler::make_cop1_c_cond(Cop1Condition::LE, FR::F2, FR::F4).d())),
+            Box::new(("C.LE.D", 1u32, 1.0f64, 1.0f64, Assembler::make_cop1_c_cond(Cop1Condition::LE, FR::F2, FR::F4).d())),
+            Box::new(("C.LE.D", 1u32, FConst::SIGNALLING_NAN_START_64, 1.0f64, Assembler::make_cop1_c_cond(Cop1Condition::LE, FR::F2, FR::F4).d())),
+            Box::new(("C.LE.D", 6u32, FConst::SIGNALLING_NAN_START_64, 1.0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_c_cond(Cop1Condition::LE, FR::F2, FR::F4).d())),
+            Box::new(("C.LE.D", 1u32, FConst::QUIET_NAN_START_64, 1.0f64, Assembler::make_cop1_c_cond(Cop1Condition::LE, FR::F2, FR::F4).d())),
+            Box::new(("C.LE.D", 6u32, FConst::QUIET_NAN_START_64, 1.0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_c_cond(Cop1Condition::LE, FR::F2, FR::F4).d())),
+
+            Box::new(("C.NGT.D", 1u32, 0.0f64, -0.0f64, Assembler::make_cop1_c_cond(Cop1Condition::NGT, FR::F2, FR::F4).d())),
+            Box::new(("C.NGT.D", 1u32, 1.0f64, 1.0f64, Assembler::make_cop1_c_cond(Cop1Condition::NGT, FR::F2, FR::F4).d())),
+            Box::new(("C.NGT.D", 1u32, FConst::SIGNALLING_NAN_START_64, 1.0f64, Assembler::make_cop1_c_cond(Cop1Condition::NGT, FR::F2, FR::F4).d())),
+            Box::new(("C.NGT.D", 6u32, FConst::SIGNALLING_NAN_START_64, 1.0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_c_cond(Cop1Condition::NGT, FR::F2, FR::F4).d())),
+            Box::new(("C.NGT.D", 1u32, FConst::QUIET_NAN_START_64, 1.0f64, Assembler::make_cop1_c_cond(Cop1Condition::NGT, FR::F2, FR::F4).d())),
+            Box::new(("C.NGT.D", 6u32, FConst::QUIET_NAN_START_64, 1.0f64, ExceptionTimingMode::JustFire, Assembler::make_cop1_c_cond(Cop1Condition::NGT, FR::F2, FR::F4).d())),
         }
     }
 
@@ -995,19 +1762,42 @@ impl Test for COP1Instructions64 {
             Some((_context, expected_cycles, value2, value4, instruction)) => {
                 let value2_u64 = unsafe { transmute::<f64, u64>(*value2) };
                 let value4_u64 = unsafe { transmute::<f64, u64>(*value4) };
-                return assert_cycles_with_codegen_one_instruction(*expected_cycles, value2_u64, value4_u64, *instruction)
+                return assert_cycles_with_codegen_one_instruction(*expected_cycles, value2_u64, value4_u64, Status::DEFAULT, ExceptionTimingMode::Off, *instruction)
             },
             _ => {},
         }
-        match (*value).downcast_ref::<(&str, u32, u32, u32)>() {
+        match (*value).downcast_ref::<(&str, u32, f64, f64, ExceptionTimingMode, u32)>() {
+            Some((_context, expected_cycles, value2, value4, exception_mode, instruction)) => {
+                set_fcsr(FCSR::DEFAULT.with_enables(FCSRFlags::ALL));
+                let value2_u64 = unsafe { transmute::<f64, u64>(*value2) };
+                let value4_u64 = unsafe { transmute::<f64, u64>(*value4) };
+                return assert_cycles_with_codegen_one_instruction(*expected_cycles, value2_u64, value4_u64, Status::DEFAULT, *exception_mode, *instruction);
+            }
+            _ => { },
+        }
+        match (*value).downcast_ref::<(&str, u32, i32, u32)>() {
             Some((_context, expected_cycles, value2, instruction)) => {
-                return assert_cycles_with_codegen_one_instruction(*expected_cycles, *value2 as u64, 0, *instruction)
+                return assert_cycles_with_codegen_one_instruction(*expected_cycles, *value2 as u64, 0, Status::DEFAULT, ExceptionTimingMode::Off, *instruction)
             },
             _ => {},
         }
-        match (*value).downcast_ref::<(&str, u32, u64, u32)>() {
+        match (*value).downcast_ref::<(&str, u32, i32, ExceptionTimingMode, u32)>() {
+            Some((_context, expected_cycles, value2, exception_mode, instruction)) => {
+                set_fcsr(FCSR::DEFAULT.with_enables(FCSRFlags::ALL));
+                return assert_cycles_with_codegen_one_instruction(*expected_cycles, *value2 as u64, 0, Status::DEFAULT, *exception_mode, *instruction);
+            }
+            _ => { },
+        }
+        match (*value).downcast_ref::<(&str, u32, i64, u32)>() {
             Some((_context, expected_cycles, value2, instruction)) => {
-                return assert_cycles_with_codegen_one_instruction(*expected_cycles, *value2, 0, *instruction)
+                return assert_cycles_with_codegen_one_instruction(*expected_cycles, *value2 as u64, 0, Status::DEFAULT, ExceptionTimingMode::Off, *instruction)
+            },
+            _ => {},
+        }
+        match (*value).downcast_ref::<(&str, u32, i64, ExceptionTimingMode, u32)>() {
+            Some((_context, expected_cycles, value2, exception_mode, instruction)) => {
+                set_fcsr(FCSR::DEFAULT.with_enables(FCSRFlags::ALL));
+                return assert_cycles_with_codegen_one_instruction(*expected_cycles, *value2 as u64, 0, Status::DEFAULT, *exception_mode, *instruction)
             },
             _ => {},
         }
@@ -1053,7 +1843,7 @@ impl Test for UncachedWriteBufferTest {
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
         match (*value).downcast_ref::<(&str, u32, u32)>() {
             Some((_context, number_of_writes, instruction)) => {
-                assert_cycles_with_codegen(*number_of_writes, 0, 0, |writer| {
+                assert_cycles_with_codegen(*number_of_writes, 0, 0, Status::DEFAULT, ExceptionTimingMode::Off, |writer| {
                     for _ in 0..*number_of_writes as i16 {
                         writer.write(*instruction);
                     }
@@ -1066,13 +1856,13 @@ impl Test for UncachedWriteBufferTest {
 
 fn test_register_dependency(expected_cycles: u32, value2: u64, value4: u64, instruction1: u32, instruction2: u32) -> Result<(), String> {
     // Test both instructions directly
-    assert_cycles_with_codegen(expected_cycles, value2, value4, |writer| {
+    assert_cycles_with_codegen(expected_cycles, value2, value4, Status::DEFAULT, ExceptionTimingMode::Off, |writer| {
         writer.write(instruction1);
         writer.write(instruction2);
     })?;
 
     // Test first instruction in the delay slot of a branch taken
-    assert_cycles_with_codegen(expected_cycles + 1, value2, value4, |writer| {
+    assert_cycles_with_codegen(expected_cycles + 1, value2, value4, Status::DEFAULT, ExceptionTimingMode::Off, |writer| {
         // Branch (which is taken)
         writer.write(Assembler::make_beq(GPR::R0, GPR::R0, 4));
         // Delay slot
@@ -1085,7 +1875,7 @@ fn test_register_dependency(expected_cycles: u32, value2: u64, value4: u64, inst
     })?;
 
     // Test first instruction in the delay slot of a likely branch taken
-    assert_cycles_with_codegen(expected_cycles + 1, value2, value4, |writer| {
+    assert_cycles_with_codegen(expected_cycles + 1, value2, value4, Status::DEFAULT, ExceptionTimingMode::Off, |writer| {
         // Branch (which is taken)
         writer.write(Assembler::make_beql(GPR::R0, GPR::R0, 4));
         // Delay slot
@@ -1098,7 +1888,7 @@ fn test_register_dependency(expected_cycles: u32, value2: u64, value4: u64, inst
     })?;
 
     // Test first instruction in the delay slot of a branch not taken
-    assert_cycles_with_codegen(expected_cycles + 1, value2, value4, |writer| {
+    assert_cycles_with_codegen(expected_cycles + 1, value2, value4, Status::DEFAULT, ExceptionTimingMode::Off, |writer| {
         // Branch (which is not taken)
         writer.write(Assembler::make_beq(GPR::V1, GPR::R0, 1));
         // Delay slot
@@ -1108,7 +1898,7 @@ fn test_register_dependency(expected_cycles: u32, value2: u64, value4: u64, inst
     })?;
 
     // Test first instruction in the delay slot of a JR
-    assert_cycles_with_codegen(expected_cycles + 2, value2, value4, |writer| {
+    assert_cycles_with_codegen(expected_cycles + 2, value2, value4, Status::DEFAULT, ExceptionTimingMode::Off, |writer| {
         // T9 is the register that was used to call to here. Add to it to branch a few instructions forward
         writer.write(Assembler::make_addiu(GPR::A2, GPR::T9, 16));
         // Branch (which is taken)
@@ -1590,21 +2380,122 @@ impl Test for CPURegisterDependency {
             Box::new(("LD $T4; SWC1 F12, 12($V1)", 2u32, Assembler::make_ld(GPR::T4, 0, GPR::V1), Assembler::make_swc1(FR::F12, 12, GPR::V1))),
             Box::new(("LD $T4; SWC1 F0, 12($T4)", 3u32, Assembler::make_ld(GPR::T4, 0, GPR::V1), Assembler::make_swc1(FR::F0, 12, GPR::T4))),
 
+            Box::new(("LD $T4; NOP; BEQ $T4, $R0; NOP", 4u32, vec! { Assembler::make_ld(GPR::T4, 16, GPR::V1), Assembler::make_nop(), Assembler::make_beq(GPR::T4, GPR::R0, 1), Assembler::make_nop() })),
+            Box::new(("NOP; LD $T4; BEQ $T4, $R0; NOP", 5u32, vec! { Assembler::make_nop(), Assembler::make_ld(GPR::T4, 16, GPR::V1), Assembler::make_beq(GPR::T4, GPR::R0, 1), Assembler::make_nop() })),
+            Box::new(("NOP; LD $T4; BEQ $R0, $T4; NOP", 5u32, vec! { Assembler::make_nop(), Assembler::make_ld(GPR::T4, 16, GPR::V1), Assembler::make_beq(GPR::R0, GPR::T4, 1), Assembler::make_nop() })),
+            Box::new(("LD $T4; NOP; BEQ $T4, $T4; NOP", 4u32, vec! { Assembler::make_ld(GPR::T4, 16, GPR::V1), Assembler::make_nop(), Assembler::make_beq(GPR::T4, GPR::T4, 1), Assembler::make_nop() })),
+            Box::new(("NOP; LD $T4; BEQ $T4, $T4; NOP", 5u32, vec! { Assembler::make_nop(), Assembler::make_ld(GPR::T4, 16, GPR::V1), Assembler::make_beq(GPR::T4, GPR::T4, 1), Assembler::make_nop() })),
 
-            // TODO: Branches that need or overwrite registers. JAL, JR, JALR, BEQ, BNE, BLEZ, BGTZ, BEQL, BNEL, BLEZL, BGTZL
-            //       Does BGEZAL have a dependency on $31?
-            // TODO: CACHE
-            // TODO: Traps
+            Box::new(("LD $T4; NOP; BEQL $T4, $R0; NOP", 4u32, vec! { Assembler::make_ld(GPR::T4, 16, GPR::V1), Assembler::make_nop(), Assembler::make_beql(GPR::T4, GPR::R0, 1), Assembler::make_nop() })),
+            Box::new(("NOP; LD $T4; BEQL $T4, $R0; NOP", 5u32, vec! { Assembler::make_nop(), Assembler::make_ld(GPR::T4, 16, GPR::V1), Assembler::make_beql(GPR::T4, GPR::R0, 1), Assembler::make_nop() })),
+            Box::new(("NOP; LD $T4; BEQL $R0, $T4; NOP", 5u32, vec! { Assembler::make_nop(), Assembler::make_ld(GPR::T4, 16, GPR::V1), Assembler::make_beql(GPR::R0, GPR::T4, 1), Assembler::make_nop() })),
+            Box::new(("LD $T4; NOP; BEQL $T4, $T4; NOP", 4u32, vec! { Assembler::make_ld(GPR::T4, 16, GPR::V1), Assembler::make_nop(), Assembler::make_beql(GPR::T4, GPR::T4, 1), Assembler::make_nop() })),
+            Box::new(("NOP; LD $T4; BEQL $T4, $T4; NOP", 5u32, vec! { Assembler::make_nop(), Assembler::make_ld(GPR::T4, 16, GPR::V1), Assembler::make_beql(GPR::T4, GPR::T4, 1), Assembler::make_nop() })),
+
+            Box::new(("LD $T4; NOP; BNE $T4, $R0; NOP", 4u32, vec! { Assembler::make_ld(GPR::T4, 16, GPR::V1), Assembler::make_nop(), Assembler::make_bne(GPR::T4, GPR::R0, 1), Assembler::make_nop() })),
+            Box::new(("NOP; LD $T4; BNE $T4, $R0; NOP", 5u32, vec! { Assembler::make_nop(), Assembler::make_ld(GPR::T4, 16, GPR::V1), Assembler::make_bne(GPR::T4, GPR::R0, 1), Assembler::make_nop() })),
+            Box::new(("NOP; LD $T4; BNE $R0, $T4; NOP", 5u32, vec! { Assembler::make_nop(), Assembler::make_ld(GPR::T4, 16, GPR::V1), Assembler::make_bne(GPR::R0, GPR::T4, 1), Assembler::make_nop() })),
+            Box::new(("LD $T4; NOP; BNE $T4, $T4; NOP", 4u32, vec! { Assembler::make_ld(GPR::T4, 16, GPR::V1), Assembler::make_nop(), Assembler::make_bne(GPR::T4, GPR::T4, 1), Assembler::make_nop() })),
+            Box::new(("NOP; LD $T4; BNE $T4, $T4; NOP", 5u32, vec! { Assembler::make_nop(), Assembler::make_ld(GPR::T4, 16, GPR::V1), Assembler::make_bne(GPR::T4, GPR::T4, 1), Assembler::make_nop() })),
+
+            Box::new(("LD $T4; NOP; BNEL $T4, $R0; NOP", 4u32, vec! { Assembler::make_ld(GPR::T4, 16, GPR::V1), Assembler::make_nop(), Assembler::make_bnel(GPR::T4, GPR::R0, 1), Assembler::make_nop() })),
+            Box::new(("NOP; LD $T4; BNEL $T4, $R0; NOP", 5u32, vec! { Assembler::make_nop(), Assembler::make_ld(GPR::T4, 16, GPR::V1), Assembler::make_bnel(GPR::T4, GPR::R0, 1), Assembler::make_nop() })),
+            Box::new(("NOP; LD $T4; BNEL $R0, $T4; NOP", 5u32, vec! { Assembler::make_nop(), Assembler::make_ld(GPR::T4, 16, GPR::V1), Assembler::make_bnel(GPR::R0, GPR::T4, 1), Assembler::make_nop() })),
+            Box::new(("LD $T4; NOP; BNEL $T4, $T4; NOP", 4u32, vec! { Assembler::make_ld(GPR::T4, 16, GPR::V1), Assembler::make_nop(), Assembler::make_bnel(GPR::T4, GPR::T4, 1), Assembler::make_nop() })),
+            Box::new(("NOP; LD $T4; BNEL $T4, $T4; NOP", 5u32, vec! { Assembler::make_nop(), Assembler::make_ld(GPR::T4, 16, GPR::V1), Assembler::make_bnel(GPR::T4, GPR::T4, 1), Assembler::make_nop() })),
+
+            Box::new(("LD $T4; NOP; BLEZ $T4, NOP", 4u32, vec! { Assembler::make_ld(GPR::T4, 16, GPR::V1), Assembler::make_nop(), Assembler::make_blez(GPR::T4, 1), Assembler::make_nop() })),
+            Box::new(("NOP; LD $T4; BLEZ $T4, NOP", 5u32, vec! { Assembler::make_nop(), Assembler::make_ld(GPR::T4, 24, GPR::V1), Assembler::make_blez(GPR::T4, 1), Assembler::make_nop() })),
+            Box::new(("NOP; LD $T4; BLEZ $R0, NOP [rt=$T4]", 5u32, vec! { Assembler::make_nop(), Assembler::make_ld(GPR::T4, 16, GPR::V1), Assembler::make_blez_with_extras(GPR::R0, GPR::T4, 1), Assembler::make_nop() })),
+            Box::new(("LD $T4; NOP; BLEZ $T4, NOP", 4u32, vec! { Assembler::make_ld(GPR::T4, 16, GPR::V1), Assembler::make_nop(), Assembler::make_blez(GPR::T4, 1), Assembler::make_nop() })),
+            Box::new(("NOP; LD $T4; BLEZ $T4, NOP", 5u32, vec! { Assembler::make_nop(), Assembler::make_ld(GPR::T4, 32, GPR::V1), Assembler::make_blez(GPR::T4, 1), Assembler::make_nop() })),
+
+            Box::new(("LD $T4; NOP; BLEZL $T4, NOP", 4u32, vec! { Assembler::make_ld(GPR::T4, 16, GPR::V1), Assembler::make_nop(), Assembler::make_blezl(GPR::T4, 1), Assembler::make_nop() })),
+            Box::new(("NOP; LD $T4; BLEZL $T4, NOP", 5u32, vec! { Assembler::make_nop(), Assembler::make_ld(GPR::T4, 24, GPR::V1), Assembler::make_blezl(GPR::T4, 1), Assembler::make_nop() })),
+            Box::new(("NOP; LD $T4; BLEZL $R0, NOP [rt=$T4]", 5u32, vec! { Assembler::make_nop(), Assembler::make_ld(GPR::T4, 16, GPR::V1), Assembler::make_blezl_with_extras(GPR::R0, GPR::T4, 1), Assembler::make_nop() })),
+            Box::new(("LD $T4; NOP; BLEZL $T4, NOP", 4u32, vec! { Assembler::make_ld(GPR::T4, 16, GPR::V1), Assembler::make_nop(), Assembler::make_blezl(GPR::T4, 1), Assembler::make_nop() })),
+            Box::new(("NOP; LD $T4; BLEZL $T4, NOP", 5u32, vec! { Assembler::make_nop(), Assembler::make_ld(GPR::T4, 32, GPR::V1), Assembler::make_blezl(GPR::T4, 1), Assembler::make_nop() })),
+
+            Box::new(("LD $T4; NOP; BGTZ $T4, NOP", 4u32, vec! { Assembler::make_ld(GPR::T4, 16, GPR::V1), Assembler::make_nop(), Assembler::make_bgtz(GPR::T4, 1), Assembler::make_nop() })),
+            Box::new(("NOP; LD $T4; BGTZ $T4, NOP", 5u32, vec! { Assembler::make_nop(), Assembler::make_ld(GPR::T4, 24, GPR::V1), Assembler::make_bgtz(GPR::T4, 1), Assembler::make_nop() })),
+            Box::new(("NOP; LD $T4; BGTZ $R0, NOP [rt=$T4]", 5u32, vec! { Assembler::make_nop(), Assembler::make_ld(GPR::T4, 16, GPR::V1), Assembler::make_bgtz_with_extras(GPR::R0, GPR::T4, 1), Assembler::make_nop() })),
+            Box::new(("LD $T4; NOP; BGTZ $T4, NOP", 4u32, vec! { Assembler::make_ld(GPR::T4, 16, GPR::V1), Assembler::make_nop(), Assembler::make_bgtz(GPR::T4, 1), Assembler::make_nop() })),
+            Box::new(("NOP; LD $T4; BGTZ $T4, NOP", 5u32, vec! { Assembler::make_nop(), Assembler::make_ld(GPR::T4, 32, GPR::V1), Assembler::make_bgtz(GPR::T4, 1), Assembler::make_nop() })),
+
+            Box::new(("LD $T4; NOP; BGTZL $T4, NOP", 4u32, vec! { Assembler::make_ld(GPR::T4, 16, GPR::V1), Assembler::make_nop(), Assembler::make_bgtzl(GPR::T4, 1), Assembler::make_nop() })),
+            Box::new(("NOP; LD $T4; BGTZL $T4, NOP", 5u32, vec! { Assembler::make_nop(), Assembler::make_ld(GPR::T4, 24, GPR::V1), Assembler::make_bgtzl(GPR::T4, 1), Assembler::make_nop() })),
+            Box::new(("NOP; LD $T4; BGTZL $R0, NOP [rt=$T4]", 5u32, vec! { Assembler::make_nop(), Assembler::make_ld(GPR::T4, 16, GPR::V1), Assembler::make_bgtzl_with_extras(GPR::R0, GPR::T4, 1), Assembler::make_nop() })),
+            Box::new(("LD $T4; NOP; BGTZL $T4, NOP", 4u32, vec! { Assembler::make_ld(GPR::T4, 16, GPR::V1), Assembler::make_nop(), Assembler::make_bgtzl(GPR::T4, 1), Assembler::make_nop() })),
+            Box::new(("NOP; LD $T4; BGTZL $T4, NOP", 5u32, vec! { Assembler::make_nop(), Assembler::make_ld(GPR::T4, 32, GPR::V1), Assembler::make_bgtzl(GPR::T4, 1), Assembler::make_nop() })),
+
+            Box::new(("LD $T4; NOP; JR $T4; NOP", 4u32, vec! { Assembler::make_ld(GPR::T4, 16, GPR::V1), Assembler::make_nop(), Assembler::make_jr(GPR::T4), Assembler::make_nop() })),
+            Box::new(("NOP; LD $T4; JR $T4; NOP", 5u32, vec! { Assembler::make_nop(), Assembler::make_ld(GPR::T4, 16, GPR::V1), Assembler::make_jr(GPR::T4), Assembler::make_nop() })),
+
+            // JAL does not stall if the previous instruction just loaded $31
+            Box::new(("LD $T4; JAL (return-after-one-nop); NOP", 8u32, vec! {
+                // Backup RA
+                Assembler::make_ori(GPR::A2, GPR::RA, 0),
+                Assembler::make_ld(GPR::T4, 16, GPR::V1),
+                Assembler::make_jal(u26::extract_u32(one_nop_then_return_function as extern "C" fn() as u32, 2)),
+                Assembler::make_nop(),
+                // Restore RA
+                Assembler::make_ori(GPR::RA, GPR::A2, 0),
+            })),
+
+            Box::new(("LD $RA; JAL (return-after-one-nop); NOP", 8u32, vec! {
+                // Backup RA
+                Assembler::make_ori(GPR::A2, GPR::RA, 0),
+                Assembler::make_ld(GPR::RA, 16, GPR::V1),
+                Assembler::make_jal(u26::extract_u32(one_nop_then_return_function as extern "C" fn() as u32, 2)),
+                Assembler::make_nop(),
+                // Restore RA
+                Assembler::make_ori(GPR::RA, GPR::A2, 0),
+            })),
+
+            // It also doesn't itself create a dependency (not surprising, but was worth checking)
+            Box::new(("LD JAL (return-after-one-nop); NOP", 7u32, vec! {
+                // Backup RA
+                Assembler::make_ori(GPR::A2, GPR::RA, 0),
+                Assembler::make_jal(u26::extract_u32(one_nop_then_return_function as extern "C" fn() as u32, 2)),
+                Assembler::make_nop(),
+                // Restore RA
+                Assembler::make_ori(GPR::RA, GPR::A2, 0),
+            })),
+
+            Box::new(("LD JAL (instant-return); NOP", 6u32, vec! {
+                // Backup RA
+                Assembler::make_ori(GPR::A2, GPR::RA, 0),
+                Assembler::make_jal(u26::extract_u32(instant_return_function as extern "C" fn() as u32, 2)),
+                Assembler::make_nop(),
+                // Restore RA
+                Assembler::make_ori(GPR::RA, GPR::A2, 0),
+            })),
+
+            // TODO: Some special instructions (e.g. JALR) are missing; but given that even SYSCALL has a register dependency, this is likely universal code for all special instructions
         }
     }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
         match (*value).downcast_ref::<(&str, u32, u32, u32)>() {
-            Some((_context, expected_cycles, instruction1, instruction2)) => {
-                test_register_dependency(*expected_cycles, 0x123, 0x456, *instruction1, *instruction2)
-            }
-            _ => Err(format!("Unexpected pattern"))
+            Some((_context, expected_cycles, instruction0, instruction1)) => {
+                // If there are exactly two instructions, we can do a bigger set of tests that involve placing the first instruction
+                return test_register_dependency(*expected_cycles, 0x123, 0x456, *instruction0, *instruction1);
+            },
+            _ => { },
         }
+        match (*value).downcast_ref::<(&str, u32, Vec<u32>)>() {
+            Some((_context, expected_cycles, instructions)) => {
+                // If there are exactly two instructions, we can do a bigger set of tests that involve placing the first instruction
+                return assert_cycles_with_codegen(*expected_cycles, 0x123, 0x456, Status::DEFAULT, ExceptionTimingMode::Off, |writer| {
+                    for &instruction in instructions {
+                        writer.write(instruction);
+                    }
+                });
+            },
+            _ => { },
+        }
+
+        Err(format!("Unexpected pattern"))
     }
 }
 
@@ -1838,7 +2729,7 @@ pub struct LikelyBranchCycleCount {
 }
 
 impl Test for LikelyBranchCycleCount {
-    fn name(&self) -> &str { "Timing: Likely branch removes register dependency" }
+    fn name(&self) -> &str { "Timing: Likely branch has to count the skipped instruction" }
 
     fn level(&self) -> Level { Level::Timing }
 
@@ -1851,14 +2742,14 @@ impl Test for LikelyBranchCycleCount {
             Box::new(("NOP; BLEZL; NOP", Assembler::make_nop(), Assembler::make_blezl(GPR::A0, 1), Assembler::make_nop())),
 
             // This would be a dependency. Ensure this isn't incorrectly counted as one
-            Box::new(("LB $A2 (from cached); NOP; ADDIU $A3, $A2, 0", Assembler::make_lb(GPR::A2, 0, GPR::V1), Assembler::make_beql(GPR::V1, GPR::R0, 1), Assembler::make_addiu(GPR::A3, GPR::A2, 0))),
+            Box::new(("LB $A2 (from cached); BEQL $V1, $R0; ADDIU $A3, $A2, 0", Assembler::make_lb(GPR::A2, 0, GPR::V1), Assembler::make_beql(GPR::V1, GPR::R0, 1), Assembler::make_addiu(GPR::A3, GPR::A2, 0))),
         }
     }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
         match (*value).downcast_ref::<(&str, u32, u32, u32)>() {
             Some((_context, instruction1, instruction2, instruction3)) => {
-                assert_cycles_with_codegen(4, 0x123, 0x456, |writer| {
+                assert_cycles_with_codegen(4, 0x123, 0x456, Status::DEFAULT, ExceptionTimingMode::Off, |writer| {
                     writer.write(*instruction1);
                     writer.write(*instruction2);
                     writer.write(Assembler::make_nop());  // Delay slot (skipped)

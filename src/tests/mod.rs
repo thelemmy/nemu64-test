@@ -13,6 +13,7 @@ use crate::cop1::{FCSR, FCSRFlags, FCSRRoundingMode, set_fcsr};
 use crate::isviewer::text_out;
 use crate::math::soft_float::{SoftF32, SoftF64};
 use crate::tests::cop1::compares::FPUSpecialNumber;
+use crate::tests::timing::ExceptionTimingMode;
 use crate::tests::traps::Immediate;
 
 mod arithmetic;
@@ -367,7 +368,23 @@ pub fn run() {
                 Some(v) => return format!(" with '{:x?}'", v),
                 None => {}
             }
-            match (*value).downcast_ref::<(&str, u32, u64, u32)>() {
+            match (*value).downcast_ref::<(&str, u32, Vec<u32>)>() {
+                Some(v) => return format!(" with '{:x?}'", v),
+                None => {}
+            }
+            match (*value).downcast_ref::<(&str, u32, i32, u32)>() {
+                Some(v) => return format!(" with '{:x?}'", v),
+                None => {}
+            }
+            match (*value).downcast_ref::<(&str, u32, i32, ExceptionTimingMode, u32)>() {
+                Some(v) => return format!(" with '{:x?}'", v),
+                None => {}
+            }
+            match (*value).downcast_ref::<(&str, u32, i64, u32)>() {
+                Some(v) => return format!(" with '{:x?}'", v),
+                None => {}
+            }
+            match (*value).downcast_ref::<(&str, u32, i64, ExceptionTimingMode, u32)>() {
                 Some(v) => return format!(" with '{:x?}'", v),
                 None => {}
             }
@@ -403,6 +420,26 @@ pub fn run() {
                 Some((context, cycles, f1, f2, instruction)) => {
                     // Convert f64 to SoftF64 - it prints more nicely
                     let temp = (context, cycles, SoftF64::new(*f1), SoftF64::new(*f2), instruction);
+                    return format!(" with '{:x?}'", temp);
+                }
+                None => {}
+            }
+            match (*value).downcast_ref::<(&str, u64, u64, Status, ExceptionTimingMode, u32, u32)>() {
+                Some(v) => return format!(" with '{:x?}'", v),
+                None => {}
+            }
+            match (*value).downcast_ref::<(&str, u32, f32, f32, ExceptionTimingMode, u32)>() {
+                Some((context, cycles, f1, f2, exception_timing_mode, instruction)) => {
+                    // Convert f32 to SoftF32 - it prints more nicely
+                    let temp = (context, cycles, SoftF32::new(*f1), SoftF32::new(*f2), exception_timing_mode, instruction);
+                    return format!(" with '{:x?}'", temp);
+                }
+                None => {}
+            }
+            match (*value).downcast_ref::<(&str, u32, f64, f64, ExceptionTimingMode, u32)>() {
+                Some((context, cycles, f1, f2, exception_timing_mode, instruction)) => {
+                    // Convert f64 to SoftF64 - it prints more nicely
+                    let temp = (context, cycles, SoftF64::new(*f1), SoftF64::new(*f2), exception_timing_mode, instruction);
                     return format!(" with '{:x?}'", temp);
                 }
                 None => {}

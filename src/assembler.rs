@@ -1,5 +1,5 @@
 use core::iter::Step;
-use arbitrary_int::u5;
+use arbitrary_int::{u26, u5, u6};
 use bitbybit::bitenum;
 use crate::cop0::RegisterIndex;
 
@@ -26,7 +26,7 @@ impl Step for GPR {
 
     fn forward_checked(start: Self, count: usize) -> Option<Self> {
         let next = start.raw_value().value() as usize + count;
-        if next < 32 {
+        if next >= 32 {
             None
         } else {
             Some(Self::new_with_raw_value(u5::new(next as u8)))
@@ -35,7 +35,7 @@ impl Step for GPR {
 
     fn backward_checked(start: Self, count: usize) -> Option<Self> {
         let next = start.raw_value().value() as usize - count;
-        if next < 32 {
+        if next >= 32 {
             None
         } else {
             Some(Self::new_with_raw_value(u5::new(next as u8)))
@@ -66,7 +66,7 @@ impl Step for FR {
 
     fn forward_checked(start: Self, count: usize) -> Option<Self> {
         let next = start.raw_value().value() as usize + count;
-        if next < 32 {
+        if next >= 32 {
             None
         } else {
             Some(Self::new_with_raw_value(u5::new(next as u8)))
@@ -75,7 +75,7 @@ impl Step for FR {
 
     fn backward_checked(start: Self, count: usize) -> Option<Self> {
         let next = start.raw_value().value() as usize - count;
-        if next < 32 {
+        if next >= 32 {
             None
         } else {
             Some(Self::new_with_raw_value(u5::new(next as u8)))
@@ -114,6 +114,7 @@ pub enum Opcode {
     DADDIU = 25,
     LDL = 26,
     LDR = 27,
+    _I28 = 28,
     LB = 32,
     LH = 33,
     LWL = 34,
@@ -271,10 +272,16 @@ pub enum Cop1FloatInstruction {
     TRUNC_W = 13,
     CEIL_W = 14,
     FLOOR_W = 15,
+    _F16 = 16,
+    _F31 = 31,
     CVT_S = 32,
     CVT_D = 33,
+    _F34 = 34,
+    _F35 = 35,
     CVT_W = 36,
     CVT_L = 37,
+    _F38 = 38,
+    _F47 = 47,
     C_F = 48,
     C_UN = 49,
     C_EQ = 50,
@@ -296,7 +303,7 @@ pub enum Cop1FloatInstruction {
 #[bitenum(u6, exhaustive: false)]
 #[allow(non_camel_case_types)]
 #[allow(dead_code)]
-#[derive(Eq, PartialEq)]
+#[derive(Eq, PartialEq, Ord, PartialOrd, Debug)]
 pub enum Cop1Condition {
     F = 48,
     UN = 49,
@@ -315,6 +322,36 @@ pub enum Cop1Condition {
     LE = 62,
     NGT = 63,
 }
+
+impl Step for Cop1Condition {
+    fn steps_between(start: &Self, end: &Self) -> Option<usize> {
+        if (*start as usize) < (*end as usize) {
+            Some(*end as usize - *start as usize)
+        } else {
+            None
+        }
+    }
+
+    fn forward_checked(start: Self, count: usize) -> Option<Self> {
+        let next = start.raw_value().value() as usize + count;
+        if next >= 48 && next < 64 {
+            Self::new_with_raw_value(u6::new(next as u8)).ok()
+        } else {
+            None
+        }
+    }
+
+    fn backward_checked(start: Self, count: usize) -> Option<Self> {
+        let next = start.raw_value().value() as usize - count;
+        if next >= 48 && next < 64 {
+            Self::new_with_raw_value(u6::new(next as u8)).ok()
+        } else {
+            None
+        }
+    }
+}
+
+
 
 #[allow(dead_code)]
 pub enum Cop2Opcode {
@@ -356,14 +393,12 @@ impl FPUFloatInstruction {
 pub struct Assembler {}
 
 impl Assembler {
-    const fn make_main_immediate(op: Opcode, rt: GPR, rs: GPR, imm: u16) -> u32 {
+    pub const fn make_main_immediate(op: Opcode, rt: GPR, rs: GPR, imm: u16) -> u32 {
         (imm as u32) |
             ((rt.raw_value().value() as u32) << 16) |
             ((rs.raw_value().value() as u32) << 21) |
             ((op as u32) << 26)
     }
-
-    // TODO: Drop the public make_special, make_regimm_trap
 
     pub const fn make_special(op: SpecialOpcode, sa: u5, rd: u5, rs: u5, rt: u5) -> u32 {
         (op as u32) |
@@ -415,7 +450,7 @@ impl Assembler {
             ((Opcode::COP3 as u32) << 26)
     }
 
-    const fn make_cop1_float_instruction(instruction: Cop1FloatInstruction, fd: FR, fs: FR, ft: FR) -> FPUFloatInstruction {
+    pub const fn make_cop1_float_instruction(instruction: Cop1FloatInstruction, fd: FR, fs: FR, ft: FR) -> FPUFloatInstruction {
         FPUFloatInstruction::new(
             (instruction as u32) |
                 ((fd.raw_value().value() as u32) << 6) |
@@ -430,6 +465,10 @@ impl Assembler {
 
     pub const fn make_lui_with_rs(rt: GPR, rs:GPR, immediate: i16) -> u32 {
         Self::make_main_immediate(Opcode::LUI, rt, rs, immediate as u16)
+    }
+
+    pub const fn make_jal(imm26: u26) -> u32 {
+        (imm26.value()) | ((Opcode::JAL as u32) << 26)
     }
 
     pub const fn make_addi(rt: GPR, rs: GPR, immediate: i16) -> u32 {
@@ -476,16 +515,44 @@ impl Assembler {
         Self::make_main_immediate(Opcode::BEQL, rt, rs, offset_as_instruction_count as u16)
     }
 
+    pub const fn make_bne(rt: GPR, rs: GPR, offset_as_instruction_count: i16) -> u32 {
+        Self::make_main_immediate(Opcode::BNE, rt, rs, offset_as_instruction_count as u16)
+    }
+
     pub const fn make_bnel(rt: GPR, rs: GPR, offset_as_instruction_count: i16) -> u32 {
         Self::make_main_immediate(Opcode::BNEL, rt, rs, offset_as_instruction_count as u16)
     }
 
+    pub const fn make_bgtz(rs: GPR, offset_as_instruction_count: i16) -> u32 {
+        Self::make_bgtz_with_extras(rs, GPR::R0, offset_as_instruction_count)
+    }
+
+    pub const fn make_bgtz_with_extras(rs: GPR, rt: GPR, offset_as_instruction_count: i16) -> u32 {
+        Self::make_main_immediate(Opcode::BGTZ, rt, rs, offset_as_instruction_count as u16)
+    }
+
     pub const fn make_bgtzl(rs: GPR, offset_as_instruction_count: i16) -> u32 {
-        Self::make_main_immediate(Opcode::BGTZL, GPR::R0, rs, offset_as_instruction_count as u16)
+        Self::make_bgtzl_with_extras(rs, GPR::R0, offset_as_instruction_count)
+    }
+
+    pub const fn make_bgtzl_with_extras(rs: GPR, rt: GPR, offset_as_instruction_count: i16) -> u32 {
+        Self::make_main_immediate(Opcode::BGTZL, rt, rs, offset_as_instruction_count as u16)
+    }
+
+    pub const fn make_blez(rs: GPR, offset_as_instruction_count: i16) -> u32 {
+        Self::make_blez_with_extras(rs, GPR::R0, offset_as_instruction_count)
+    }
+
+    pub const fn make_blez_with_extras(rs: GPR, rt: GPR, offset_as_instruction_count: i16) -> u32 {
+        Self::make_main_immediate(Opcode::BLEZ, rt, rs, offset_as_instruction_count as u16)
     }
 
     pub const fn make_blezl(rs: GPR, offset_as_instruction_count: i16) -> u32 {
-        Self::make_main_immediate(Opcode::BLEZL, GPR::R0, rs, offset_as_instruction_count as u16)
+        Self::make_blezl_with_extras(rs, GPR::R0, offset_as_instruction_count)
+    }
+
+    pub const fn make_blezl_with_extras(rs: GPR, rt: GPR, offset_as_instruction_count: i16) -> u32 {
+        Self::make_main_immediate(Opcode::BLEZL, rt, rs, offset_as_instruction_count as u16)
     }
 
     pub const fn make_add(rd: GPR, rs: GPR, rt: GPR) -> u32 {
@@ -544,13 +611,36 @@ impl Assembler {
         Self::make_special(SpecialOpcode::DSUBU, u5::new(0), rd.raw_value(), rs.raw_value(), rt.raw_value())
     }
 
-    #[allow(dead_code)]
     pub const fn make_tne(rs: GPR, rt: GPR) -> u32 {
         Self::make_special(SpecialOpcode::TNE, u5::new(0), u5::new(0), rs.raw_value(), rt.raw_value())
     }
 
+    pub const fn make_teq(rs: GPR, rt: GPR) -> u32 {
+        Self::make_special(SpecialOpcode::TEQ, u5::new(0), u5::new(0), rs.raw_value(), rt.raw_value())
+    }
+
+    pub const fn make_tge(rs: GPR, rt: GPR) -> u32 {
+        Self::make_special(SpecialOpcode::TGE, u5::new(0), u5::new(0), rs.raw_value(), rt.raw_value())
+    }
+
+    pub const fn make_tlt(rs: GPR, rt: GPR) -> u32 {
+        Self::make_special(SpecialOpcode::TLT, u5::new(0), u5::new(0), rs.raw_value(), rt.raw_value())
+    }
+
+    pub const fn make_tgeu(rs: GPR, rt: GPR) -> u32 {
+        Self::make_special(SpecialOpcode::TGEU, u5::new(0), u5::new(0), rs.raw_value(), rt.raw_value())
+    }
+
+    pub const fn make_tltu(rs: GPR, rt: GPR) -> u32 {
+        Self::make_special(SpecialOpcode::TLTU, u5::new(0), u5::new(0), rs.raw_value(), rt.raw_value())
+    }
+
     pub const fn make_jr(rs: GPR) -> u32 {
-        Self::make_special(SpecialOpcode::JR, u5::new(0), u5::new(0), rs.raw_value(), u5::new(0))
+        Self::make_jr_with_extras(rs, GPR::R0)
+    }
+
+    pub const fn make_jr_with_extras(rs: GPR, rt: GPR) -> u32 {
+        Self::make_special(SpecialOpcode::JR, u5::new(0), u5::new(0), rs.raw_value(), rt.raw_value())
     }
 
     pub const fn make_sll(rd: GPR, rt: GPR, sa: u5) -> u32 {
@@ -707,6 +797,22 @@ impl Assembler {
 
     pub const fn make_sync_with_extras(rd: GPR, rs: GPR, rt: GPR, sa: u5) -> u32 {
         Self::make_special(SpecialOpcode::SYNC, sa, rd.raw_value(), rs.raw_value(), rt.raw_value())
+    }
+
+    pub const fn make_break() -> u32 {
+        Self::make_break_with_extras(GPR::R0, GPR::R0, GPR::R0, u5::new(0))
+    }
+
+    pub const fn make_break_with_extras(rd: GPR, rs: GPR, rt: GPR, sa: u5) -> u32 {
+        Self::make_special(SpecialOpcode::BREAK, sa, rd.raw_value(), rs.raw_value(), rt.raw_value())
+    }
+
+    pub const fn make_syscall() -> u32 {
+        Self::make_syscall_with_extras(GPR::R0, GPR::R0, GPR::R0, u5::new(0))
+    }
+
+    pub const fn make_syscall_with_extras(rd: GPR, rs: GPR, rt: GPR, sa: u5) -> u32 {
+        Self::make_special(SpecialOpcode::SYSCALL, sa, rd.raw_value(), rs.raw_value(), rt.raw_value())
     }
 
     pub const fn make_mfhi(rd: GPR) -> u32 {

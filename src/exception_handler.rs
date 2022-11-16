@@ -1,5 +1,5 @@
 use alloc::format;
-use core::arch::asm;
+use core::arch::{asm, global_asm};
 use core::ops::{Deref, DerefMut};
 
 use spinning_top::Spinlock;
@@ -26,6 +26,25 @@ static SEEN_EXCEPTION: Spinlock<Option<(ExceptionContext, u32)>> = Spinlock::new
 // However, we should rewrite the code so that we don't have to disable the warning named_asm_labels
 // Switching to global_asm would be an option here
 
+global_asm!("
+    .macro quick_exception_return
+    // if $26 is set to anything non-0, we'll get the count and return asap
+    // This is useful for timing tests that need to stay fully within icache
+    mfc0 $27, ${COUNT}
+    beq $26, $0, 1f
+    mfc0 $26, ${EXCEPTPC}
+    add $26, $26, 4
+    mtc0 $26, ${EXCEPTPC}
+    nop
+    nop
+    eret
+1:
+    .endm
+",
+    COUNT = const cop0::RegisterIndex::Count as usize,
+    EXCEPTPC = const cop0::RegisterIndex::ExceptPC as usize,
+);
+
 #[allow(named_asm_labels)]
 // This code will be copied to 0x80000000.
 #[naked]
@@ -35,6 +54,7 @@ extern "C" fn exception_handler_000() {
             .set noat
             .set noreorder
             exception_handler_000_start:
+            quick_exception_return
             la $26, 0x80000000
             j {exception_handler_generic}
             nop // delay slot
@@ -53,6 +73,7 @@ extern "C" fn exception_handler_080() {
             .set noat
             .set noreorder
             exception_handler_080_start:
+            quick_exception_return
             la $26, 0x80000080
             j {exception_handler_generic}
             nop // delay slot
@@ -71,12 +92,14 @@ extern "C" fn exception_handler_180() {
             .set noat
             .set noreorder
             exception_handler_180_start:
+            quick_exception_return
             la $26, 0x80000180
             j {exception_handler_generic}
             nop // delay slot
             exception_handler_180_size = . - exception_handler_180_start
             .global exception_handler_180_size
-   ", exception_handler_generic = sym exception_handler_generic, options(noreturn));
+   ", exception_handler_generic = sym exception_handler_generic,
+        options(noreturn));
     }
 }
 
@@ -291,7 +314,7 @@ pub fn expect_exception<F>(code: CauseException, skip_instructions_on_hit: u64, 
         Ok(_) => {
             match seen_exception_and_count {
                 None => {
-                    Err(format!("Exception expected but none seen"))
+                    Err(format!("Exception {:?} expected but none seen", code))
                 }
                 Some((context, count)) => {
                     let actual_exception = context.cause.exception();
