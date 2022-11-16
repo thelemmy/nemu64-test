@@ -6,7 +6,6 @@ use core::arch::asm;
 use arbitrary_int::{u2, u27};
 
 use crate::{cop0, MemoryMap, println};
-use crate::assembler::{Assembler, GPR};
 use crate::cop0::{Cause, CauseException, make_entry_hi, make_entry_lo};
 use crate::exception_handler::expect_exception;
 use crate::tests::{Level, Test};
@@ -515,43 +514,6 @@ impl Test for LWTLBMissTest32 {
         soft_assert_eq(exception_context.status, 0x24000002, "Status")?;
         soft_assert_eq(exception_context.context.raw_value(), 0x1000, "Context")?;
         soft_assert_eq(exception_context.xcontext.raw_value(), 0x1000, "XContext")?;
-
-        Ok(())
-    }
-}
-
-pub struct LWTLBMissTest32_2 {}
-
-impl Test for LWTLBMissTest32_2 {
-    fn name(&self) -> &str { "LW tlb miss test from nullptr (32 bit)" }
-
-    fn level(&self) -> Level { Level::BasicFunctionality }
-
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
-
-    fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        // Load from 0x00000000_00000000 causes TLBL, as upper bits are 0
-        unsafe { cop0::set_context_64(0); }
-        unsafe { cop0::set_xcontext_64(0); }
-        let exception_context = expect_exception(CauseException::TLBL, 1, || {
-            unsafe {
-                asm!("
-                    .set noat
-                    LW $0, 0($0)
-                ", out("$2") _)
-            }
-
-            Ok(())
-        })?;
-
-        soft_assert_eq(exception_context.k0_exception_vector, 0xFFFFFFFF_80000000, "Exception Vector")?;
-        soft_assert_eq(exception_context.exceptpc & 0xFFFFFFFF_FF000000, 0xFFFFFFFF_80000000, "ExceptPC")?;
-        soft_assert_eq(unsafe { *(exception_context.exceptpc as *const u32) }, Assembler::make_lw(GPR::R0, 0, GPR::R0), "ExceptPC points to wrong instruction")?;
-        soft_assert_eq(exception_context.badvaddr, 0, "BadVAddr")?;
-        soft_assert_eq(exception_context.cause.raw_value(), 0x8, "Cause")?;
-        soft_assert_eq(exception_context.status, 0x24000002, "Status")?;
-        soft_assert_eq(exception_context.context.raw_value(), 0x0, "Context")?;
-        soft_assert_eq(exception_context.xcontext.raw_value(), 0x0, "XContext")?;
 
         Ok(())
     }

@@ -958,7 +958,6 @@ fn default_tests() -> Vec<Box<dyn Test>> {
         Box::new(super::tlb::exceptions::StoreNonDirty4k {}),
         Box::new(super::tlb::exceptions::StoreNonDirtyAndNonValid4k {}),
         Box::new(super::tlb::exceptions::LWTLBMissTest32 {}),
-        Box::new(super::tlb::exceptions::LWTLBMissTest32_2 {}),
         Box::new(super::tlb64::AllLoads32BitAddress {}),
         Box::new(super::tlb64::AllLoads32BitAddressUncached {}),
         Box::new(super::tlb64::AllLoads0x90 {}),
