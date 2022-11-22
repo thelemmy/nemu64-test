@@ -29,6 +29,9 @@ impl Test for StartupTest {
         // PageMask can be anything at startup - don't test it
         //soft_assert_eq(crate::cop0::pagemask() & 0xFFF0_0FFF, 0x0100_0000, "Initial COP0 PageMask")?;
         soft_assert_eq(crate::cop0::config(), 0x7006E463, "Initial COP0 Config")?;
+        soft_assert_eq(crate::cop0::taglo64(), 0, "Initial COP0 TagLo")?;
+        soft_assert_eq(crate::cop0::taghi64(), 0, "Initial COP0 TagHi")?;
+        soft_assert_eq(crate::cop0::perr64(), 0, "Initial COP0 PErr")?;
 
         // Context can be anything at startup - don't test it
         //soft_assert_eq(crate::cop0::context_64() & 0xFFFEFFFF, 0x007E_FFF0, "Initial COP0 Context")?;

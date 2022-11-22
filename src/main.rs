@@ -47,10 +47,11 @@ mod uncached_memory;
 
 global_asm!(include_str!("boot.s"));
 
-static VIDEO: Spinlock<Video> = Spinlock::new(Video::new());
+pub static VIDEO: Spinlock<Video> = Spinlock::new(Video::new());
 
 #[no_mangle]
 unsafe extern "C" fn rust_entrypoint() -> ! {
+
     MemoryMap::init();
     allocator::init_allocator();
     main();

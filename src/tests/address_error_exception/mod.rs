@@ -3,10 +3,10 @@ use alloc::string::String;
 use alloc::vec::Vec;
 use core::any::Any;
 use core::arch::asm;
-use arbitrary_int::{u31, u41};
+use arbitrary_int::{u31, u41, u5};
 use crate::assembler::{Assembler, FR, GPR};
 use crate::cop0;
-use crate::cop0::{CauseException, Context, preset_cause_to_copindex2, XContext};
+use crate::cop0::{cache, CacheOp, CauseException, Context, preset_cause_to_copindex2, XContext};
 use crate::exception_handler::expect_exception;
 
 use crate::tests::{Level, Test};
@@ -224,6 +224,72 @@ impl Test for UnalignedSW {
         soft_assert_eq(exception_context.xcontext, XContext::from_virtual_address(p as u64), "XContext during AdEL exception")?;
 
         Ok(())
+    }
+}
+
+fn test_unaligned_cache<const OP: u8>() -> Result<(), String>{
+    preset_cause_to_copindex2()?;
+
+    let a = 0x12345678_89abcdefu64;
+
+    unsafe { cop0::set_context_64(0); }
+    unsafe { cop0::set_xcontext_64(0); }
+
+    // Aligned to 8 byte is ok
+    unsafe { cache::<OP, 0>(&a as *const u64 as usize); }
+
+    // Aligned to 4 byte is also ok
+    unsafe { cache::<OP, 0>(&a as *const u64 as usize + 4); }
+
+    // Aligned to 2 bytes raises an exception
+    let unaligned = &a as *const u64 as isize + 2;
+    let exception_context = expect_exception(CauseException::AdEL, 1, || {
+        unsafe {
+            asm!("cache {OP}, 0 ($2)", OP = const OP, in("$2") unaligned, options(nostack))
+        }
+
+        Ok(())
+    })?;
+
+    soft_assert_eq(exception_context.k0_exception_vector, 0xFFFFFFFF_80000180, "Exception Vector")?;
+    soft_assert_eq(exception_context.exceptpc & 0xFFFFFFFF_FF000000, 0xFFFFFFFF_80000000, "ExceptPC")?;
+    soft_assert_eq(unsafe { *(exception_context.exceptpc as *const u32) }, Assembler::make_cache(CacheOp::new_with_raw_value(u5::new(OP)).unwrap(), 0, GPR::V0), "ExceptPC points to wrong instruction")?;
+    soft_assert_eq(exception_context.badvaddr, unaligned as i32 as u64, "BadVAddr during AdEL exception")?;
+    soft_assert_eq(exception_context.cause.raw_value(), 0x10, "Cause during AdEL exception")?;
+    soft_assert_eq(exception_context.status, 0x24000002, "Status during AdEL exception")?;
+    soft_assert_eq(exception_context.context, Context::from_virtual_address(unaligned as u64), "Context during AdEL exception")?;
+    soft_assert_eq(exception_context.xcontext, XContext::from_virtual_address(unaligned as u64), "XContext during AdEL exception")?;
+
+    Ok(())
+}
+
+pub struct UnalignedCacheData {}
+
+impl Test for UnalignedCacheData {
+    fn name(&self) -> &str { "Unaligned CACHE (data) address" }
+
+    fn level(&self) -> Level { Level::Weird }
+
+    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+
+    fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
+        const OP: u8 = CacheOp::DataIndexWriteBackInvalidate.raw_value().value();
+        test_unaligned_cache::<OP>()
+    }
+}
+
+pub struct UnalignedCacheInstruction {}
+
+impl Test for UnalignedCacheInstruction {
+    fn name(&self) -> &str { "Unaligned CACHE (instruction) address" }
+
+    fn level(&self) -> Level { Level::Weird }
+
+    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+
+    fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
+        const OP: u8 = CacheOp::InstructionIndexInvalidate.raw_value().value();
+        test_unaligned_cache::<OP>()
     }
 }
 

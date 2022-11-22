@@ -1,6 +1,6 @@
 use alloc::string::{String, ToString};
 use core::arch::asm;
-use arbitrary_int::{u19, u2, u27, u31, u41};
+use arbitrary_int::{u19, u2, u20, u27, u31, u41};
 use bitbybit::{bitenum, bitfield};
 use crate::exception_handler::expect_exception;
 
@@ -167,6 +167,54 @@ impl Status {
     // Make sure to enable fpu64 by default as the compiled Rust is allowed to use all registers
     pub const DEFAULT: Status = Status::new().with_cop1usable(true).with_fpu64(true);
     pub const ADDRESSING_MODE_64_BIT: Status = Self::DEFAULT.with_kx(true).with_sx(true).with_ux(true);
+}
+
+#[bitenum(u2, exhaustive: true)]
+#[derive(PartialEq, Eq)]
+pub enum TagLoPState {
+    /// Instruction or Data: Cache line is invalid
+    Invalid = 0b00,
+
+    _Unused01 = 0b01,
+
+    /// Instruction: Cache line is valid; Data: This can be written to mark a cache line as Clean, but it is never read
+    Clean = 0b10,
+
+    // Instruction: Unused; Data: This is always read if not invalid
+    Dirty = 0b11,
+}
+
+#[bitfield(u32, default: 0)]
+#[derive(Debug, Eq, PartialEq)]
+pub struct TagLo {
+    #[bits(8..=27, rw)]
+    p_tag_lo : u20,
+
+    #[bits(6..=7, rw)]
+    p_state : TagLoPState,
+}
+
+#[bitenum(u5, exhaustive: false)]
+pub enum CacheOp {
+    InstructionIndexInvalidate = 0b000_00,
+    DataIndexWriteBackInvalidate = 0b000_01,
+
+    InstructionIndexLoadTag = 0b001_00,
+    DataIndexLoadTag = 0b001_01,
+
+    InstructionIndexStoreTag = 0b010_00,
+    DataIndexStoreTag = 0b010_01,
+
+    DataCreateDirtyExclusive = 0b011_01,
+
+    InstructionHitInvalidate = 0b100_00,
+    DataHitInvalidate = 0b100_01,
+
+    InstructionFill = 0b101_00,
+    DataHitWriteBackInvalidate = 0b101_01,
+
+    InstructionHitWriteBack = 0b110_00,
+    DataHitWriteBack = 0b110_01,
 }
 
 #[bitfield(u64, default: 0)]
@@ -562,6 +610,51 @@ pub unsafe fn set_xcontext_32_64(value: u64) {
     unsafe { write_cop0_32_64::<INDEX>(value) }
 }
 
+pub fn cacheerr64() -> u64 {
+    const INDEX: u32 = RegisterIndex::CacheErr as u32;
+    unsafe { read_cop0_64::<INDEX>() }
+}
+
+pub fn set_cacheerr64(value: u64) {
+    const INDEX: u32 = RegisterIndex::CacheErr as u32;
+    unsafe { write_cop0_64::<INDEX>(value) }
+}
+
+pub fn perr64() -> u64 {
+    const INDEX: u32 = RegisterIndex::PErr as u32;
+    unsafe { read_cop0_64::<INDEX>() }
+}
+
+pub fn set_perr64(value: u64) {
+    const INDEX: u32 = RegisterIndex::PErr as u32;
+    unsafe { write_cop0_64::<INDEX>(value) }
+}
+
+pub fn taglo64() -> u64 {
+    const INDEX: u32 = RegisterIndex::TagLo as u32;
+    unsafe { read_cop0_64::<INDEX>() }
+}
+
+pub fn set_taglo(value: TagLo) {
+    const INDEX: u32 = RegisterIndex::TagLo as u32;
+    unsafe { write_cop0::<INDEX>(value.raw_value()) }
+}
+
+pub fn set_taglo64(value: u64) {
+    const INDEX: u32 = RegisterIndex::TagLo as u32;
+    unsafe { write_cop0_64::<INDEX>(value) }
+}
+
+pub fn taghi64() -> u64 {
+    const INDEX: u32 = RegisterIndex::TagHi as u32;
+    unsafe { read_cop0_64::<INDEX>() }
+}
+
+pub fn set_taghi64(value: u64) {
+    const INDEX: u32 = RegisterIndex::TagHi as u32;
+    unsafe { write_cop0_64::<INDEX>(value) }
+}
+
 pub fn errorepc() -> u64 {
     const INDEX: u32 = RegisterIndex::ErrorEPC as u32;
     unsafe { read_cop0_64::<INDEX>() }
@@ -633,20 +726,44 @@ pub fn make_entry_hi(asid: u8, vpn: u27, r: u2) -> u64 {
 }
 
 #[inline(always)]
-pub unsafe fn cache<const OP: u8, const OFFSET: u16>(location: usize) {
+pub unsafe fn cache_data_index_load_tag<const OFFSET: i16>(base_address: usize) -> TagLo {
+    const INDEX_LOAD_TAG_OP: u8 = CacheOp::DataIndexLoadTag.raw_value().value();
+    const COP0REG: u8 = RegisterIndex::TagLo.raw_value().value();
+
+    let result: u32;
+    unsafe {
+        asm!("
+            .set noat
+            cache {INDEX_LOAD_TAG_OP}, {OFFSET} ({base_address})
+            // There has to be at least one instruction after cache before loading with MFC0 <taglo>
+            nop
+            mfc0 {result}, ${COP0REG}
+        ",
+        base_address = in(reg) base_address,
+        result = out(reg) result,
+        OFFSET = const OFFSET,
+        INDEX_LOAD_TAG_OP = const INDEX_LOAD_TAG_OP,
+        COP0REG = const COP0REG,
+        options(nostack))
+    }
+    TagLo::new_with_raw_value(result)
+}
+
+#[inline(always)]
+pub unsafe fn cache<const OP: u8, const OFFSET: i16>(location: usize) {
     unsafe {
         asm!(".set noat
-        cache {op}, {offset} ({gpr})",
+        cache {OP}, {OFFSET} ({gpr})",
         gpr = in(reg) location,
-        offset = const OFFSET,
-        op = const OP,
+        OFFSET = const OFFSET,
+        OP = const OP,
         options(nostack))
     }
 }
 
 /// Like cache, but accepts a u64 address
 #[inline(always)]
-pub unsafe fn cache64<const OP: u8, const OFFSET: u16>(location: u64) {
+pub unsafe fn cache64<const OP: u8, const OFFSET: i16>(location: u64) {
     unsafe {
         asm!("
             .set noat

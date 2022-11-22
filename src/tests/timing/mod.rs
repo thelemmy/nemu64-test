@@ -1,3 +1,5 @@
+pub mod cache;
+
 use arbitrary_int::{u26, u5};
 use alloc::boxed::Box;
 use alloc::format;
@@ -9,7 +11,7 @@ use core::arch::asm;
 use core::mem::transmute;
 
 use crate::assembler::{Assembler, Cop1Condition, Cop1FloatInstruction, FR, GPR, Opcode, RegimmOpcode};
-use crate::cop0::{count, RegisterIndex, set_count, set_status, Status, status};
+use crate::cop0::{CacheOp, count, RegisterIndex, set_count, set_status, Status, status};
 use crate::cop1::{FConst, fcsr, FCSR, FCSRFlags, set_fcsr};
 use crate::memory_map::MemoryMap;
 use crate::tests::{Level, Test};
@@ -721,20 +723,6 @@ impl Test for CachedLoadsAndStoreTiming {
             Box::new(("SWR (cached)", 1u32, Assembler::make_swr(GPR::R0, 0, GPR::V1))),
             Box::new(("SDL (cached)", 1u32, Assembler::make_sdl(GPR::R0, 0, GPR::V1))),
             Box::new(("SDR (cached)", 1u32, Assembler::make_sdr(GPR::R0, 0, GPR::V1))),
-
-            // Uncached reads are slow. They are reasonably predictable, but other system components (e.g. VI)
-            // can slow them down
-            // Box::new(("LB (uncached)", 33u32, Assembler::make_lb(GPR::R0, 4, GPR::A1))),
-            // Box::new(("LBU (uncached)", 33u32, Assembler::make_lbu(GPR::R0, 0, GPR::A1))),
-            // Box::new(("LH (uncached)", 33u32, Assembler::make_lh(GPR::R0, 0, GPR::A1))),
-            // Box::new(("LHU (uncached)", 33u32, Assembler::make_lhu(GPR::R0, 0, GPR::A1))),
-            // Box::new(("LW (uncached)", 33u32, Assembler::make_lw(GPR::R0, 0, GPR::A1))),
-            // Box::new(("LWU (uncached)", 33u32, Assembler::make_lwu(GPR::R0, 0, GPR::A1))),
-            // Box::new(("LD (uncached)", 34u32, Assembler::make_ld(GPR::R0, 0, GPR::A1))),
-            // Box::new(("LWL (uncached)", 33u32, Assembler::make_lwl(GPR::R0, 0, GPR::A1))),
-            // Box::new(("LWR (uncached)", 33u32, Assembler::make_lwr(GPR::R0, 0, GPR::A1))),
-            // Box::new(("LDR (uncached)", 33u32, Assembler::make_ldr(GPR::R0, 0, GPR::A1))),
-            // Box::new(("LDR (uncached)", 33u32, Assembler::make_ldr(GPR::R0, 0, GPR::A1))),
         }
     }
 
@@ -2379,6 +2367,10 @@ impl Test for CPURegisterDependency {
 
             Box::new(("LD $T4; SWC1 F12, 12($V1)", 2u32, Assembler::make_ld(GPR::T4, 0, GPR::V1), Assembler::make_swc1(FR::F12, 12, GPR::V1))),
             Box::new(("LD $T4; SWC1 F0, 12($T4)", 3u32, Assembler::make_ld(GPR::T4, 0, GPR::V1), Assembler::make_swc1(FR::F0, 12, GPR::T4))),
+
+            Box::new(("LD $T4; CACHE (DataIndexLoadTag) $V1", 7u32, Assembler::make_ld(GPR::T4, 0, GPR::V1), Assembler::make_cache(CacheOp::DataIndexLoadTag, 0, GPR::V1))),
+            Box::new(("LD $A0; CACHE (DataIndexLoadTag) $V1", 8u32, Assembler::make_ld(GPR::A1, 0, GPR::V1), Assembler::make_cache(CacheOp::DataIndexLoadTag, 0, GPR::V1))),
+            Box::new(("LD $T4; CACHE (DataIndexLoadTag) $T4", 8u32, Assembler::make_ld(GPR::T4, 0, GPR::V1), Assembler::make_cache(CacheOp::DataIndexLoadTag, 0, GPR::T4))),
 
             Box::new(("LD $T4; NOP; BEQ $T4, $R0; NOP", 4u32, vec! { Assembler::make_ld(GPR::T4, 16, GPR::V1), Assembler::make_nop(), Assembler::make_beq(GPR::T4, GPR::R0, 1), Assembler::make_nop() })),
             Box::new(("NOP; LD $T4; BEQ $T4, $R0; NOP", 5u32, vec! { Assembler::make_nop(), Assembler::make_ld(GPR::T4, 16, GPR::V1), Assembler::make_beq(GPR::T4, GPR::R0, 1), Assembler::make_nop() })),

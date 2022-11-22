@@ -1,12 +1,12 @@
 use core::iter::Step;
 use arbitrary_int::{u26, u5, u6};
 use bitbybit::bitenum;
-use crate::cop0::RegisterIndex;
+use crate::cop0::{CacheOp, RegisterIndex};
 
 // @formatter:off
 #[bitenum(u5, exhaustive: true)]
 #[allow(dead_code)]
-#[derive(PartialOrd, PartialEq, Eq)]
+#[derive(Debug, PartialOrd, PartialEq, Eq)]
 pub enum GPR {
     R0 = 0, AT = 1, V0 = 2, V1 = 3, A0 = 4, A1 = 5, A2 = 6, A3 = 7,
     T0 = 8, T1 = 9, T2 = 10, T3 = 11, T4 = 12, T5 = 13, T6 = 14, T7 = 15,
@@ -1069,6 +1069,10 @@ impl Assembler {
 
     pub const fn make_ld(rt: GPR, offset: i16, base: GPR) -> u32 {
         Self::make_main_immediate(Opcode::LD, rt, base, offset as u16)
+    }
+
+    pub const fn make_cache(op: CacheOp, offset: i16, base: GPR) -> u32 {
+        Self::make_main_immediate(Opcode::CACHE, GPR::new_with_raw_value(op.raw_value()), base, offset as u16)
     }
 
     pub const fn make_mfc0(rt: GPR, rd: RegisterIndex) -> u32 {

@@ -9,6 +9,7 @@ use arbitrary_int::{u2, u27, u5};
 use crate::cop0::{set_status, Status};
 use crate::exception_handler::drain_seen_exception;
 use crate::{FramebufferConsole, print, println};
+use crate::assembler::GPR;
 use crate::cop1::{FCSR, FCSRFlags, FCSRRoundingMode, set_fcsr};
 use crate::isviewer::text_out;
 use crate::math::soft_float::{SoftF32, SoftF64};
@@ -18,6 +19,7 @@ use crate::tests::traps::Immediate;
 
 mod arithmetic;
 mod address_error_exception;
+mod cache;
 mod cart_memory;
 mod cop_unusable;
 mod cop0;
@@ -145,6 +147,14 @@ pub fn run() {
                 Some(v) => return format!(" with '{:x?}'", v),
                 None => {},
             }
+            match (*value).downcast_ref::<GPR>() {
+                Some(v) => return format!(" with '{:x?}'", v),
+                None => {},
+            }
+            match (*value).downcast_ref::<(u32, u32)>() {
+                Some(v) => return format!(" with '{:x?}'", v),
+                None => {},
+            }
             match (*value).downcast_ref::<(u32, u32, u32)>() {
                 Some(v) => return format!(" with '{:x?}'", v),
                 None => {},
@@ -176,6 +186,14 @@ pub fn run() {
             match (*value).downcast_ref::<(bool, u64, Immediate)>() {
                 Some(v) => return format!(" with '{:x?}'", v),
                 None => {}
+            }
+            match (*value).downcast_ref::<(bool, u32, f32)>() {
+                Some((flag, number, f)) => {
+                    // Convert f32 to SoftF32 - it prints more nicely
+                    let temp = (*flag, *number, SoftF32::new(*f));
+                    return format!(" with '{:x?}'", temp);
+                }
+                None => {},
             }
             match (*value).downcast_ref::<(bool, FCSRRoundingMode, f32, Result<(FCSRFlags, f32), ()>)>() {
                 Some((flush_denorm_to_zero, rounding_mode, value, expected)) => {

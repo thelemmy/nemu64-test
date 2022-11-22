@@ -2,6 +2,7 @@ use alloc::format;
 use alloc::string::String;
 use core::fmt::{Debug, Display, LowerHex};
 use core::mem::transmute;
+use core::ops::{Add, RangeInclusive, Sub};
 use crate::math::vector::Vector;
 
 /// Tests if `v1 == v2`.
@@ -10,6 +11,15 @@ pub fn soft_assert_eq<T: Debug + PartialEq>(v1: T, v2: T, help: &str) -> Result<
         Ok(())
     } else {
         Err(format!("a == b expected, but a={:#x?} b={:#x?}. {}", v1, v2, help))
+    }
+}
+
+/// Tests if `v1 == v2` with a delta.
+pub fn soft_assert_eq_with_epsilon<T: Copy + Clone + Debug + PartialOrd + Add<Output = T> + Sub<Output = T>>(epsilon: T, actual: T, expected: T, help: &str) -> Result<(), String> {
+    if actual >= expected - epsilon && actual <= expected + epsilon {
+        Ok(())
+    } else {
+        Err(format!("Actual: {:?} but expected: {:?} (+/- {:?}). {}", actual, expected, epsilon, help))
     }
 }
 
@@ -113,6 +123,15 @@ pub fn soft_assert_less(v1: u32, v2: u32, help: &str) -> Result<(), String> {
         Ok(())
     } else {
         Err(format!("a < b expected, but a={} b={} (hex: a=0x{:x} b=0x{:x}). {}", v1, v2, v1, v2, help))
+    }
+}
+
+/// Tests if `v1 < v2`.
+pub fn soft_assert_range_contained_within_expected<T: PartialOrd + Ord + Debug>(expected_range: RangeInclusive<T>, seen_range: RangeInclusive<T>, help: &str) -> Result<(), String> {
+    if expected_range.start() <= seen_range.start() && expected_range.end() >= seen_range.end() {
+        Ok(())
+    } else {
+        Err(format!("Seen range {:?}, which was expected to be within range {:?}. {}", seen_range, expected_range, help))
     }
 }
 

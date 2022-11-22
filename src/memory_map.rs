@@ -10,7 +10,7 @@ pub struct MemoryMap {
 }
 
 impl MemoryMap {
-    pub const HEAP_END: usize = 3 * 1024 * 1024;
+    pub const HEAP_END: usize = 7 * 1024 * 1024;
     pub const HEAP_END_VIRTUAL_UNCACHED: usize = 0xA000_0000 | MemoryMap::HEAP_END;
 
     pub const PHYSICAL_SPMEM_BASE: usize = 0x0400_0000;
@@ -68,6 +68,8 @@ impl MemoryMap {
     }
 
     pub fn uncached_to_physical_mut<T>(p: *mut T) -> usize { (p as usize) & 0x1FFF_FFFF }
+
+    pub fn cached_to_physical_mut<T>(p: *mut T) -> usize { (p as usize) & 0x1FFF_FFFF }
 
     pub fn uncached_spmem_address<T>(offset: usize) -> *mut T {
         Self::physical_to_uncached_mut::<T>(Self::PHYSICAL_SPMEM_BASE + offset)

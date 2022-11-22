@@ -4,7 +4,7 @@ use core::ops::{Deref, DerefMut};
 
 use spinning_top::Spinlock;
 
-use crate::cop0::{Cause, CauseException, Context, XContext};
+use crate::cop0::{CacheOp, Cause, CauseException, Context, XContext};
 use crate::cop1::FCSR;
 use crate::graphics::color::Color;
 use crate::graphics::cursor::Cursor;
@@ -373,8 +373,8 @@ fn invalidate_instruction_cache(start: *const u32, bytes: usize) {
     assert_eq!(bytes & 31, 0);
     for i in (0..bytes).step_by(32) {
         unsafe {
-            // 0: Invalidate Instruction Cache
-            cop0::cache::<0, 0>((start as usize) + i);
+            const OP: u8 = CacheOp::InstructionIndexInvalidate.raw_value().value();
+            cop0::cache::<OP, 0>((start as usize) + i);
         }
     }
 
@@ -385,8 +385,8 @@ fn invalidate_data_cache(start: *const u32, bytes: usize) {
     assert_eq!(bytes & 15, 0);
     for i in (0..bytes).step_by(16) {
         unsafe {
-            // 1: Index_Write_Back_Invalidate
-            cop0::cache::<1, 0>((start as usize) + i);
+            const OP: u8 = CacheOp::DataIndexWriteBackInvalidate.raw_value().value();
+            cop0::cache::<OP, 0>((start as usize) + i);
         }
     }
 

@@ -108,6 +108,8 @@ impl<'a, T: Copy + Clone> UncachedHeapMemoryWriter<'a, T> {
         Self { memory, index: 0 }
     }
 
+    pub fn index(&self) -> usize { self.index }
+
     pub fn write(&mut self, value: T) {
         self.memory.write(self.index, value);
         self.index += 1

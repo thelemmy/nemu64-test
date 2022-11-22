@@ -536,6 +536,78 @@ impl Test for ProcessorRevisionIdMasking {
     }
 }
 
+pub struct TagLoMasking;
+
+impl Test for TagLoMasking {
+    fn name(&self) -> &str { "TagLo (masking)" }
+
+    fn level(&self) -> Level { Level::Weird }
+
+    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+
+    fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
+        for value in [0xF1234567_89ABCDEF, 0xFFFFFFFF_FFFFFFFF, 0x00000000_FFFFFFFF, 0x00000001_FFFFFFFF, 0] {
+            cop0::set_taglo64(value);
+            soft_assert_eq(cop0::taglo64(), value & 0xFFFFFFFF, format!("TagLo was written as {:x} and then readback", value).as_str())?;
+        }
+        Ok(())
+    }
+}
+
+pub struct TagHiMasking;
+
+impl Test for TagHiMasking {
+    fn name(&self) -> &str { "TagHi (masking)" }
+
+    fn level(&self) -> Level { Level::Weird }
+
+    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+
+    fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
+        for value in [0xF1234567_89ABCDEF, 0xFFFFFFFF_FFFFFFFF, 0x00000000_FFFFFFFF, 0x00000001_FFFFFFFF, 0] {
+            cop0::set_taghi64(value);
+            soft_assert_eq(cop0::taglo64(), 0, "TagHi can not be written to. It is always 0")?;
+        }
+        Ok(())
+    }
+}
+
+pub struct CacheErrMasking;
+
+impl Test for CacheErrMasking {
+    fn name(&self) -> &str { "CacheErr (masking)" }
+
+    fn level(&self) -> Level { Level::Weird }
+
+    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+
+    fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
+        for value in [0xF1234567_89ABCDEF, 0xFFFFFFFF_FFFFFFFF, 0x00000000_FFFFFFFF, 0x00000001_FFFFFFFF, 0] {
+            cop0::set_cacheerr64(value);
+            soft_assert_eq(cop0::cacheerr64(), 0, "CacheErr can not be written to. It is always 0")?;
+        }
+        Ok(())
+    }
+}
+
+pub struct PErrMasking;
+
+impl Test for PErrMasking {
+    fn name(&self) -> &str { "PErr (masking)" }
+
+    fn level(&self) -> Level { Level::Weird }
+
+    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+
+    fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
+        for value in [0xF1234567_89ABCDEF, 0xFFFFFFFF_FFFFFFFF, 0x00000000_FFFFFFFF, 0x00000001_FFFFFFFF, 0] {
+            cop0::set_perr64(value);
+            soft_assert_eq(cop0::perr64(), value & 0xFF, "PErr has the write mask 0xFF")?;
+        }
+        Ok(())
+    }
+}
+
 /// Tests write/read behavior for all unused COP0 registers, using an extra COP0 write.
 /// 
 /// Unused registers include number 7, 21, 22, 23, 24, 25, and 31. Writes to these registers exhibit
@@ -719,76 +791,6 @@ impl Test for UnusedRegistersWriteRead {
             perform_test!(25, write);
             perform_test!(31, write);
         }
-        
-        Ok(())
-    }
-}
-
-/// Tests if read/write masking is correct for the COP0 ParityError register.
-pub struct ParityErrorMasking;
-
-impl Test for ParityErrorMasking {
-    fn name(&self) -> &str { "ParityError (masking)" }
-
-    fn level(&self) -> Level { Level::Weird }
-
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
-    
-    fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        let readback: u32;
-        unsafe {
-            asm!("
-                .set noat
-                mtc0 {gpr_test}, $26
-                nop
-                nop
-                mtc0 {junk}, $11
-                nop
-                nop
-                mfc0 {gpr_readback}, $26
-                nop
-                nop
-            ",
-            gpr_test = in(reg) 0xFFFFFFFFu32,
-            junk = in(reg) 0xAA55AA55u32,
-            gpr_readback = out(reg) readback,
-        )}
-        soft_assert_eq(readback, 0xFF, "ParityError (26) was written as 0xFFFFFFFF")?;
-        
-        Ok(())
-    }
-}
-
-/// Tests if read/write masking is correct for the COP0 CacheError register.
-pub struct CacheErrorMasking;
-
-impl Test for CacheErrorMasking {
-    fn name(&self) -> &str { "CacheError (masking)" }
-
-    fn level(&self) -> Level { Level::Weird }
-
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
-    
-    fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        let readback: u32;
-        unsafe {
-            asm!("
-                .set noat
-                mtc0 {gpr_test}, $27
-                nop
-                nop
-                mtc0 {junk}, $11
-                nop
-                nop
-                mfc0 {gpr_readback}, $27
-                nop
-                nop
-            ",
-            gpr_test = in(reg) 0xFFFFFFFFu32,
-            junk = in(reg) 0xAA55AA55u32,
-            gpr_readback = out(reg) readback,
-        )}
-        soft_assert_eq(readback, 0, "CacheError (27) was written as 0xFFFFFFFF")?;
         
         Ok(())
     }
