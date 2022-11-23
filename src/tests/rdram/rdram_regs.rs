@@ -12,7 +12,7 @@ pub struct Read00 {}
 impl Test for Read00 {
     fn name(&self) -> &str { "rdram-regs: Read 0x00" }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level { Level::Weird }
 
     fn values(&self) -> Vec<Box<dyn Any>> {
         vec!(

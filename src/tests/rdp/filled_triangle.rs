@@ -111,7 +111,7 @@ fn render_on_cpu<T: Color + Copy + Clone + From<ARGB8888>, const WIDTH: usize, c
 }
 
 fn render_on_rdp<T: Color + Copy + Clone, const WIDTH: usize, const HEIGHT: usize>(triangle: &TriangleBase, scissor: &RDPRectangle, color: ARGB8888, coverage_mode: CoverageMode) -> [[T; WIDTH]; HEIGHT] {
-    let mut framebuffer = UncachedHeapMemory::<T>::new_with_init_value(WIDTH * HEIGHT, T::BLACK);
+    let mut framebuffer = UncachedHeapMemory::<T>::new_with_init_value(WIDTH * HEIGHT, 32, T::BLACK);
 
     let mut assembler = RDPAssembler::new();
 

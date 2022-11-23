@@ -150,7 +150,7 @@ impl Test for StatusFlagsDuringRun {
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const WIDTH: usize = 8;
         const HEIGHT: usize = 8;
-        let mut framebuffer = UncachedHeapMemory::<RGBA5551>::new_with_init_value(WIDTH * HEIGHT, RGBA5551::BLACK);
+        let mut framebuffer = UncachedHeapMemory::<RGBA5551>::new_with_init_value(WIDTH * HEIGHT, 32, RGBA5551::BLACK);
 
         // Assemble a simple RDP program that fulls the framebuffer with RGBA1555::BLUE
         let mut assembler = RDPAssembler::new();
@@ -204,7 +204,7 @@ impl Test for StatusFlagsDuringRun {
 fn run_from_dmem_test<F: FnOnce(u32) -> (u32, u32)>(get_dmem_range: F) -> Result<(), String> {
     const WIDTH: usize = 8;
     const HEIGHT: usize = 8;
-    let mut framebuffer = UncachedHeapMemory::<RGBA5551>::new_with_init_value(WIDTH * HEIGHT, RGBA5551::BLACK);
+    let mut framebuffer = UncachedHeapMemory::<RGBA5551>::new_with_init_value(WIDTH * HEIGHT, 32, RGBA5551::BLACK);
 
     // Assemble a simple RDP program that fills the framebuffer with RGBA1555::GREEN
     let mut assembler = RDPAssembler::new();

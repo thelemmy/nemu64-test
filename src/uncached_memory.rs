@@ -41,8 +41,8 @@ impl<T: Copy + Clone> UncachedHeapMemory<T> {
         }
     }
 
-    pub fn new_with_init_value(count: usize, init_value: T) -> Self {
-        let result = Self::new(count);
+    pub fn new_with_init_value(count: usize, align: usize, init_value: T) -> Self {
+        let result = Self::new_with_align(count, align);
 
         // To initialize we can't use alloc_zeroes, as we need to init uncached. On the plus side,
         // we can allow arbitrary init values
