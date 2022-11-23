@@ -16,6 +16,7 @@ use crate::tests::soft_asserts::soft_assert_eq;
 // - SD is broken: It only writes the upper 32 bit of the value, touching only 4 bytes
 // - LB/LH work as expected
 // - LD crashes outright (no test for that)
+// - Cached access crashes hardware (no test for that)
 // Going out of bounds wraps the memory around (until the real end of 0x04040000)
 
 pub struct SW {}

@@ -29,6 +29,7 @@ mod jumps;
 mod overflow_exception;
 mod pif_memory;
 mod rdp;
+mod rdram;
 mod rsp;
 mod startup;
 mod soft_asserts;

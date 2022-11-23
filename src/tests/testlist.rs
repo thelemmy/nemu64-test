@@ -478,6 +478,7 @@ fn default_tests() -> Vec<Box<dyn Test>> {
         Box::new(super::cache::HitWriteBackInvalidateKeepsDirtyFlag {}),
         Box::new(super::cache::IndexWriteBackInvalidateKeepsDirtyFlag {}),
         Box::new(super::cart_memory::LW {}),
+        Box::new(super::cart_memory::LWL {}),
         Box::new(super::cart_memory::LH {}),
         Box::new(super::cart_memory::LB {}),
         Box::new(super::cart_memory::write::WriteAndReadback {}),
@@ -716,6 +717,16 @@ fn default_tests() -> Vec<Box<dyn Test>> {
         // Box::new(super::rdp::filled_triangle::FilledTriangle1CycleNegativeXL {}),
         // Box::new(super::rdp::filled_triangle::FilledTriangle1CycleRandomized {}),
 
+        Box::new(super::rdram::LWL {}),
+        Box::new(super::rdram::LWR {}),
+        Box::new(super::rdram::LDL {}),
+        Box::new(super::rdram::LDR {}),
+        Box::new(super::rdram::SWL {}),
+        Box::new(super::rdram::SWR {}),
+        Box::new(super::rdram::SDL {}),
+        Box::new(super::rdram::SDR {}),
+        Box::new(super::rdram::rdram_regs::Read00 {}),
+        Box::new(super::rdram::rdram_regs::ReadMore {}),
         // This should be RSP test #1
         Box::new(super::rsp::PCRegMasking {}),
         // This should be RSP test #2

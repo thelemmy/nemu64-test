@@ -3,6 +3,7 @@ use alloc::format;
 use alloc::string::String;
 use alloc::vec::Vec;
 use core::any::Any;
+use core::arch::asm;
 
 use crate::MemoryMap;
 use crate::tests::{Level, Test};
@@ -13,6 +14,7 @@ pub mod write;
 // Reading from cart:
 // - LW works as expected
 // - LH/LB are broken: Every other 16-bit word is not reachable
+// - LWL: Similar to LH/LB
 // - LD: Crashes the console (unless the access is unaligned, in which case there's an AdEL)
 // - Addresses have to be uncached. Cached crashes the console
 
@@ -82,3 +84,35 @@ impl Test for LB {
         Ok(())
     }
 }
+
+/// Need to write more tests to understand this fully
+pub struct LWL {}
+
+impl Test for LWL {
+    fn name(&self) -> &str { "cart: Read32 (LWL)" }
+
+    fn level(&self) -> Level { Level::PoorlyUnderstoodQuirk }
+
+    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+
+    fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
+        for i in 0..8 {
+            let mut result: u64 = 0xFEDCBA98_76543210;
+            unsafe {
+                asm!("
+                    LD {scratch}, 0 ({result})
+                    LWL {scratch}, 0 ({address})
+                    SD {scratch}, 0 ({result})
+                ",
+                address = in(reg) MemoryMap::uncached_cart_address(&DATA[0] as *const u64 as *const u32) as usize + i,
+                scratch = out(reg) _,
+                result = in(reg) &mut result
+                )
+            }
+
+            crate::println!("{}: 0x{:x}", i, result);
+        }
+        Ok(())
+    }
+}
+
