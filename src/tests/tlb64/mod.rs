@@ -7,7 +7,7 @@ use core::arch::asm;
 use arbitrary_int::{u2, u27};
 
 use crate::{cop0, MemoryMap};
-use crate::cop0::{CauseException, make_entry_hi, make_entry_lo, Status};
+use crate::cop0::{CauseException, Coherency, make_entry_hi, make_entry_lo, Pagemask, Status};
 use crate::exception_handler::expect_exception;
 use crate::math::bits::Bitmasks64;
 use crate::tests::{Level, Test};
@@ -329,9 +329,9 @@ fn test(tlb_address: u64, vpn: u27, r: u2) -> Result<(), String> {
         cop0::clear_tlb();
         cop0::write_tlb(
             10,
-            0b11 << 13,
-            make_entry_lo(true, true, false, 0, (data.start_phyiscal() >> 12) as u32),
-            make_entry_lo(true, false, false, 0, 0),
+            Pagemask::M16K,
+            make_entry_lo(true, true, false, Coherency::Cached, (data.start_physical() >> 12) as u32),
+            make_entry_lo(true, false, false, Coherency::Cached, 0),
             make_entry_hi(0, vpn, r));
 
         cop0::cache64::<1, 0>(tlb_address);
@@ -413,7 +413,6 @@ impl Test for TLB64Execute {
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         // Enable 64 bit kernel addressing mode
         unsafe { cop0::set_status(Status::ADDRESSING_MODE_64_BIT); }
-        let pagemask = 0b11 << 13; // 16k
 
         let mut data64 = UncachedHeapMemory::<u32>::new_with_align((16 * 1024) >> 2, 16 * 1024);
         let mut data32 = UncachedHeapMemory::<u32>::new_with_align((16 * 1024) >> 2, 16 * 1024);
@@ -422,7 +421,7 @@ impl Test for TLB64Execute {
         unsafe { cop0::set_context_64(0); }
         unsafe { cop0::set_xcontext_64(0); }
 
-        let virtual_address = 0xFF_8000_0000u64 | (data32.start_phyiscal() as u32 as u64);
+        let virtual_address = 0xFF_8000_0000u64 | (data32.start_physical() as u32 as u64);
 
         // Setup two pages:
         // - A page using 64 bit addressing mode, which is the one that is supposed to be hit
@@ -431,17 +430,17 @@ impl Test for TLB64Execute {
             // The 64 bit mapping (the one we want to hit)
             cop0::write_tlb(
                 4,
-                pagemask,
-                make_entry_lo(true, true, false, 0, (data64.start_phyiscal() >> 12) as u32),
-                make_entry_lo(true, true, false, 0, (data64.start_phyiscal() >> 12) as u32),
+                Pagemask::M16K,
+                make_entry_lo(true, true, false, Coherency::Cached, (data64.start_physical() >> 12) as u32),
+                make_entry_lo(true, true, false, Coherency::Cached, (data64.start_physical() >> 12) as u32),
                 make_entry_hi(2, u27::extract_u64(virtual_address, 13), u2::new(0)));
 
             // The 32 bit fallback mapping (so that we don't just die)
             cop0::write_tlb(
                 5,
-                pagemask,
-                make_entry_lo(true, true, false, 0, (data32.start_phyiscal() >> 12) as u32),
-                make_entry_lo(true, true, false, 0, (data32.start_phyiscal() >> 12) as u32),
+                Pagemask::M16K,
+                make_entry_lo(true, true, false, Coherency::Cached, (data32.start_physical() >> 12) as u32),
+                make_entry_lo(true, true, false, Coherency::Cached, (data32.start_physical() >> 12) as u32),
                 make_entry_hi(2, u27::extract_u64(virtual_address as u32 as u64, 13), u2::new(0)));
         }
 

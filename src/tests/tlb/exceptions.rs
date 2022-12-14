@@ -6,25 +6,25 @@ use core::arch::asm;
 use arbitrary_int::{u2, u27};
 
 use crate::{cop0, MemoryMap, println};
-use crate::cop0::{Cause, CauseException, make_entry_hi, make_entry_lo};
+use crate::cop0::{Cause, CauseException, Coherency, make_entry_hi, make_entry_lo, Pagemask};
 use crate::exception_handler::expect_exception;
 use crate::tests::{Level, Test};
 use crate::tests::soft_asserts::soft_assert_eq;
 
-pub fn setup_tlb_page(pagemask: u32, valid: bool, dirty: bool) -> u32 {
+pub fn setup_tlb_page(pagemask: Pagemask, valid: bool, dirty: bool) -> u32 {
     unsafe { cop0::clear_tlb(); }
     unsafe { cop0::set_context_64(0); }
     unsafe { cop0::set_xcontext_64(0); }
 
-    let virtual_page_base = 0x012345678 & !0b1111111111111 & !pagemask;
+    let virtual_page_base = 0x012345678 & !0b1111111111111 & !(pagemask as u32);
 
     // Setup 16k mapping from 0x0DEA0000 to MemoryMap::HEAP_END
     unsafe {
         cop0::write_tlb(
             10,
             pagemask,
-            make_entry_lo(true, valid, dirty, 0, (MemoryMap::HEAP_END >> 12) as u32),
-            make_entry_lo(true, false, false, 0, 0),
+            make_entry_lo(true, valid, dirty, Coherency::Cached, (MemoryMap::HEAP_END >> 12) as u32),
+            make_entry_lo(true, false, false, Coherency::Cached, 0),
             make_entry_hi(2, u27::extract_u64(virtual_page_base as u64, 13), u2::new(0)));
 
         // Change EntryHi to confirm it gets set for the exception handler
@@ -34,7 +34,7 @@ pub fn setup_tlb_page(pagemask: u32, valid: bool, dirty: bool) -> u32 {
     virtual_page_base
 }
 
-pub fn test_miss_exception<F>(pagemask: u32, offset: u32, valid: bool, dirty: bool, skip_instructions: u64, code: CauseException, check_entry_hi: bool, delay: bool, f: F) -> Result<(), String>
+pub fn test_miss_exception<F>(pagemask: Pagemask, offset: u32, valid: bool, dirty: bool, skip_instructions: u64, code: CauseException, check_entry_hi: bool, delay: bool, f: F) -> Result<(), String>
     where F: FnOnce(u32) -> Result<(), String> {
 
     let virtual_page_base = setup_tlb_page(pagemask, valid, dirty);
@@ -66,7 +66,7 @@ pub fn test_miss_exception<F>(pagemask: u32, offset: u32, valid: bool, dirty: bo
     Ok(())
 }
 
-pub fn test_nomiss_exception<F>(pagemask: u32, offset: u32, valid: bool, dirty: bool, f: F) -> Result<(), String>
+pub fn test_nomiss_exception<F>(pagemask: Pagemask, offset: u32, valid: bool, dirty: bool, f: F) -> Result<(), String>
     where F: FnOnce(u32) -> Result<(), String> {
 
     let virtual_page_base = setup_tlb_page(pagemask, valid, dirty);
@@ -86,10 +86,9 @@ impl Test for ReadMiss4k {
     fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        let pagemask = 0; // 4k
         let f = |address| { unsafe { (address as *mut u32).read_volatile() }; Ok(()) };
-        test_nomiss_exception(pagemask, 4092, true, true, f)?;
-        test_miss_exception(pagemask, 4096, true, true, 1, CauseException::TLBL, false, false, f)?;
+        test_nomiss_exception(Pagemask::M4K, 4092, true, true, f)?;
+        test_miss_exception(Pagemask::M4K, 4096, true, true, 1, CauseException::TLBL, false, false, f)?;
         Ok(())
     }
 }
@@ -104,10 +103,9 @@ impl Test for ReadMiss16k {
     fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        let pagemask = 0b11 << 13; // 16k
         let f = |address| { unsafe { (address as *mut u32).read_volatile() }; Ok(()) };
-        test_nomiss_exception(pagemask, 16380, true, true, f)?;
-        test_miss_exception(pagemask, 16384, true, true, 1, CauseException::TLBL, false, false, f)?;
+        test_nomiss_exception(Pagemask::M16K, 16380, true, true, f)?;
+        test_miss_exception(Pagemask::M16K, 16384, true, true, 1, CauseException::TLBL, false, false, f)?;
         Ok(())
     }
 }
@@ -122,10 +120,9 @@ impl Test for ReadMiss64k {
     fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        let pagemask = 0b1111 << 13; // 64k
         let f = |address| { unsafe { (address as *mut u32).read_volatile() }; Ok(()) };
-        test_nomiss_exception(pagemask, 65532, true, true, f)?;
-        test_miss_exception(pagemask, 65536, true, true, 1, CauseException::TLBL, false, false, f)?;
+        test_nomiss_exception(Pagemask::M64K, 65532, true, true, f)?;
+        test_miss_exception(Pagemask::M64K, 65536, true, true, 1, CauseException::TLBL, false, false, f)?;
         Ok(())
     }
 }
@@ -140,10 +137,9 @@ impl Test for ReadMiss256k {
     fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        let pagemask = 0b111111 << 13; // 256k
         let f = |address| { unsafe { (address as *mut u32).read_volatile() }; Ok(()) };
-        test_nomiss_exception(pagemask, 262140, true, true, f)?;
-        test_miss_exception(pagemask, 262144, true, true, 1, CauseException::TLBL, false, false, f)?;
+        test_nomiss_exception(Pagemask::M256K, 262140, true, true, f)?;
+        test_miss_exception(Pagemask::M256K, 262144, true, true, 1, CauseException::TLBL, false, false, f)?;
         Ok(())
     }
 }
@@ -158,10 +154,9 @@ impl Test for ReadMiss1M {
     fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        let pagemask = 0b11111111 << 13; // 1M
         let f = |address| { unsafe { (address as *mut u32).read_volatile() }; Ok(()) };
-        test_nomiss_exception(pagemask, 1048572, true, true, f)?;
-        test_miss_exception(pagemask, 1048576, true, true, 1, CauseException::TLBL, false, false, f)?;
+        test_nomiss_exception(Pagemask::M1M, 1048572, true, true, f)?;
+        test_miss_exception(Pagemask::M1M, 1048576, true, true, 1, CauseException::TLBL, false, false, f)?;
         Ok(())
     }
 }
@@ -176,11 +171,10 @@ impl Test for ReadMiss4M {
     fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        let pagemask = 0b1111111111 << 13; // 4M
         let f = |address| { unsafe { (address as *mut u32).read_volatile() }; Ok(()) };
         // This will exceed RDRAM (unless there's an expansion pack), but that doesn't cause an error
-        test_nomiss_exception(pagemask, 4194300, true, true, f)?;
-        test_miss_exception(pagemask, 4194304, true, true, 1, CauseException::TLBL, false, false, f)?;
+        test_nomiss_exception(Pagemask::M4M, 4194300, true, true, f)?;
+        test_miss_exception(Pagemask::M4M, 4194304, true, true, 1, CauseException::TLBL, false, false, f)?;
         Ok(())
     }
 }
@@ -195,11 +189,10 @@ impl Test for ReadMiss16M {
     fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        let pagemask = 0b111111111111 << 13; // 16M
         let f = |address| { unsafe { (address as *mut u32).read_volatile() }; Ok(()) };
         // This will exceed RDRAM, but that doesn't cause an error
-        test_nomiss_exception(pagemask, 16777212, true, true, f)?;
-        test_miss_exception(pagemask, 16777216, true, true, 1, CauseException::TLBL, false, false, f)?;
+        test_nomiss_exception(Pagemask::M16M, 16777212, true, true, f)?;
+        test_miss_exception(Pagemask::M16M, 16777216, true, true, 1, CauseException::TLBL, false, false, f)?;
         Ok(())
     }
 }
@@ -214,10 +207,9 @@ impl Test for StoreMiss4k {
     fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        let pagemask = 0; // 4k
         let f = |address| { unsafe { (address as *mut u32).write_volatile(0) }; Ok(()) };
-        test_nomiss_exception(pagemask, 4092, true, true, f)?;
-        test_miss_exception(pagemask, 4096, true, true, 1, CauseException::TLBS, false, false, f)?;
+        test_nomiss_exception(Pagemask::M4K, 4092, true, true, f)?;
+        test_miss_exception(Pagemask::M4K, 4096, true, true, 1, CauseException::TLBS, false, false, f)?;
         Ok(())
     }
 }
@@ -233,8 +225,7 @@ impl Test for ExecuteTLBMapped4k {
     fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        let pagemask = 0; // 4k
-        test_nomiss_exception(pagemask, 4096, true, true, |address| {
+        test_nomiss_exception(Pagemask::M4K, 4096, true, true, |address| {
             unsafe {
                 // Write a small function into the tlb mapped area, at the end. It sets V0 and returns to A0
                 ((address - 12) as *mut u32).write_volatile(0x2402FACE); // ADDIU V0, R0, 0xFACE
@@ -271,7 +262,7 @@ impl Test for ExecuteTLBMappedMiss {
     fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        let virtual_page_base = setup_tlb_page(0, true, true);
+        let virtual_page_base = setup_tlb_page(Pagemask::M4K, true, true);
 
         let fault_address = virtual_page_base + 4096;
         let exception_context = expect_exception(CauseException::TLBL, -4i64 as u64, || {
@@ -327,7 +318,7 @@ impl Test for ExecuteTLBMappedMissInDelay {
     fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        let virtual_page_base = setup_tlb_page(0, true, true);
+        let virtual_page_base = setup_tlb_page(Pagemask::M4K, true, true);
 
         let fault_address = virtual_page_base + 4096;
         let exception_context = expect_exception(CauseException::TLBL, -4i64 as u64, || {
@@ -388,9 +379,8 @@ impl Test for ReadNonValid4k {
     fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        let pagemask = 0; // 4k
         let f = |address| { unsafe { (address as *mut u32).read_volatile() }; Ok(()) };
-        test_miss_exception(pagemask, 4092, false, true, 1, CauseException::TLBL, true, false, f)?;
+        test_miss_exception(Pagemask::M4K, 4092, false, true, 1, CauseException::TLBL, true, false, f)?;
         Ok(())
     }
 }
@@ -405,8 +395,7 @@ impl Test for ReadNonValid4kInDelay {
     fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        let pagemask = 0; // 4k
-        test_miss_exception(pagemask, 4092, false, true, 3, CauseException::TLBL, true, true, |address| {
+        test_miss_exception(Pagemask::M4K, 4092, false, true, 3, CauseException::TLBL, true, true, |address| {
             let mut result: u32;
             let mut unchanged: u32 = 0x12345678;
             unsafe {
@@ -439,9 +428,8 @@ impl Test for StoreNonValid4k {
     fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        let pagemask = 0; // 4k
         let f = |address| { unsafe { (address as *mut u32).write_volatile(0) }; Ok(()) };
-        test_miss_exception(pagemask, 4092, false, true, 1, CauseException::TLBS, true, false, f)?;
+        test_miss_exception(Pagemask::M4K, 4092, false, true, 1, CauseException::TLBS, true, false, f)?;
         Ok(())
     }
 }
@@ -456,9 +444,8 @@ impl Test for StoreNonDirty4k {
     fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        let pagemask = 0; // 4k
         let f = |address| { unsafe { (address as *mut u32).write_volatile(0) }; Ok(()) };
-        test_miss_exception(pagemask, 4092, true, false, 1, CauseException::Mod, true, false, f)?;
+        test_miss_exception(Pagemask::M4K, 4092, true, false, 1, CauseException::Mod, true, false, f)?;
         Ok(())
     }
 }
@@ -473,9 +460,8 @@ impl Test for StoreNonDirtyAndNonValid4k {
     fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        let pagemask = 0; // 4k
         let f = |address| { unsafe { (address as *mut u32).write_volatile(0) }; Ok(()) };
-        test_miss_exception(pagemask, 4092, false, false, 1, CauseException::TLBS, true, false, f)?;
+        test_miss_exception(Pagemask::M4K, 4092, false, false, 1, CauseException::TLBS, true, false, f)?;
         Ok(())
     }
 }

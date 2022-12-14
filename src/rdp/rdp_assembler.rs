@@ -155,9 +155,9 @@ impl<'a> RDPAssembler {
         }
     }
 
-    pub fn start(&mut self) -> usize { self.data.start_phyiscal() }
+    pub fn start(&mut self) -> usize { self.data.start_physical() }
 
-    pub fn end(&mut self) -> usize { self.data.start_phyiscal() + (self.index << 3) }
+    pub fn end(&mut self) -> usize { self.data.start_physical() + (self.index << 3) }
 
     fn write(&mut self, value: u64) {
         self.data.write(self.index, value);
@@ -212,7 +212,7 @@ impl<'a> RDPAssembler {
     }
 
     pub fn set_framebuffer_image<T: Copy + Clone>(&mut self, format: Format, pixel_size: PixelSize, width: u12, memory: &'a mut UncachedHeapMemory<T>) {
-        let value = ((memory.start_phyiscal() as u64) & Bitmasks64::M26) |
+        let value = ((memory.start_physical() as u64) & Bitmasks64::M26) |
             ((width.value() as u64) << 32) |
             ((pixel_size as u64) << 51) |
             ((format as u64) << 53);

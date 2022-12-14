@@ -8,7 +8,7 @@ use core::cmp::min;
 use arbitrary_int::{u2, u27};
 
 use crate::cop0;
-use crate::cop0::{make_entry_hi, make_entry_lo};
+use crate::cop0::{Coherency, make_entry_hi, make_entry_lo, Pagemask};
 use crate::memory_map::MemoryMap;
 use crate::tests::{Level, Test};
 use crate::tests::soft_asserts::{soft_assert_eq, soft_assert_greater_or_equal, soft_assert_less};
@@ -321,33 +321,33 @@ impl Test for TLBWriteReadPageMask {
         // Tuples of values to write and value that is expected when read back
         let values_expected = [
             // normal values
-            (0b0000000000 << 13, 0b0000000000 << 13),  // 4k
-            (0b0000000011 << 13, 0b0000000011 << 13),  // 16k
-            (0b0000001111 << 13, 0b0000001111 << 13),  // 64k
-            (0b0000111111 << 13, 0b0000111111 << 13),  // 256k
-            (0b0011111111 << 13, 0b0011111111 << 13),  // 1M
-            (0b1111111111 << 13, 0b1111111111 << 13),  // 4M
+            (0b0000000000u32 << 13, 0b0000000000 << 13),  // 4k
+            (0b0000000011u32 << 13, 0b0000000011 << 13),  // 16k
+            (0b0000001111u32 << 13, 0b0000001111 << 13),  // 64k
+            (0b0000111111u32 << 13, 0b0000111111 << 13),  // 256k
+            (0b0011111111u32 << 13, 0b0011111111 << 13),  // 1M
+            (0b1111111111u32 << 13, 0b1111111111 << 13),  // 4M
             // one bit missing - these get truncated
-            (0b00000000001 << 13, 0b00000000000 << 13),
-            (0b00000000111 << 13, 0b00000000011 << 13),
-            (0b00000011111 << 13, 0b00000001111 << 13),
-            (0b00001111111 << 13, 0b00000111111 << 13),
-            (0b00111111111 << 13, 0b00011111111 << 13),
+            (0b00000000001u32 << 13, 0b00000000000 << 13),
+            (0b00000000111u32 << 13, 0b00000000011 << 13),
+            (0b00000011111u32 << 13, 0b00000001111 << 13),
+            (0b00001111111u32 << 13, 0b00000111111 << 13),
+            (0b00111111111u32 << 13, 0b00011111111 << 13),
             // Just the higher bit of each pair is set - these count
-            (0b00000000010 << 13, 0b00000000011 << 13),
-            (0b00000000100 << 13, 0b00000000000 << 13),
-            (0b00000001000 << 13, 0b00000001100 << 13),
-            (0b00000100000 << 13, 0b00000110000 << 13),
+            (0b00000000010u32 << 13, 0b00000000011 << 13),
+            (0b00000000100u32 << 13, 0b00000000000 << 13),
+            (0b00000001000u32 << 13, 0b00000001100 << 13),
+            (0b00000100000u32 << 13, 0b00000110000 << 13),
             // Some higher bits set (which count) and some lower bits (which are ignored). First 11 is ignored (too many positions)
-            (0b00_11_00_01_10_10_01 << 13, 0b00_11_00_00_11_11_00 << 13),
-            (0x017fc000, 0x1ffe000),
+            (0b00_11_00_01_10_10_01u32 << 13, 0b00_11_00_00_11_11_00 << 13),
+            (0x017fc000u32, 0x1ffe000),
         ];
 
         assert!(values_expected.len() < 32);
 
         for index in 0..values_expected.len() {
             unsafe {
-                cop0::write_tlb(index as u32, values_expected[index].0, 0, 0, 0);
+                cop0::write_tlb_untyped(index as u32, values_expected[index].0, 0, 0, 0);
             }
         }
         for index in 0..values_expected.len() {
@@ -360,7 +360,7 @@ impl Test for TLBWriteReadPageMask {
         // Zero everything back out
         for index in 0..values_expected.len() {
             unsafe {
-                cop0::write_tlb(index as u32, 0, 0, 0, 0);
+                cop0::write_tlb(index as u32, Pagemask::M4K, 0, 0, 0);
             }
         }
         Ok(())
@@ -372,7 +372,7 @@ pub struct TLBWriteReadBackEntry {}
 impl TLBWriteReadBackEntry {
     fn test(&self, pagemask: u32, entry_lo0: (u32, u32), entry_lo1: (u32, u32), entry_hi: (u64, u64)) -> Result<(), String> {
         unsafe {
-            cop0::write_tlb(0, pagemask, entry_lo0.0, entry_lo1.0, entry_hi.0);
+            cop0::write_tlb_untyped(0, pagemask, entry_lo0.0, entry_lo1.0, entry_hi.0);
 
             cop0::set_index(0);
             // Set to something else to ensure it actually is read back
@@ -431,9 +431,9 @@ impl Test for TLBUseTestRead0 {
         unsafe {
             cop0::write_tlb(
                 10,
-                0b11 << 13,
-                make_entry_lo(true, true, false, 0, (MemoryMap::HEAP_END >> 12) as u32),
-                make_entry_lo(true, false, false, 0, 0),
+                Pagemask::M16K,
+                make_entry_lo(true, true, false, Coherency::Cached, (MemoryMap::HEAP_END >> 12) as u32),
+                make_entry_lo(true, false, false, Coherency::Cached, 0),
                 make_entry_hi(1, u27::new(0xDEA0 >> 1), u2::new(0)))
         }
 
@@ -471,9 +471,9 @@ impl Test for TLBUseTestRead1 {
         unsafe {
             cop0::write_tlb(
                 10,
-                0b11 << 13,
-                make_entry_lo(true, false, false, 0, 0),
-                make_entry_lo(true, true, false, 0, (MemoryMap::HEAP_END >> 12) as u32),
+                Pagemask::M16K,
+                make_entry_lo(true, false, false, Coherency::Cached, 0),
+                make_entry_lo(true, true, false, Coherency::Cached, (MemoryMap::HEAP_END >> 12) as u32),
                 make_entry_hi(1, u27::new(0xDEA0 >> 1), u2::new(0)))
         }
 
@@ -511,9 +511,9 @@ impl Test for TLBUseTestReadMatchViaASID {
         unsafe {
             cop0::write_tlb(
                 10,
-                0b11 << 13,
-                make_entry_lo(false, true, false, 0, (MemoryMap::HEAP_END >> 12) as u32),
-                make_entry_lo(false, false, false, 0, 0),
+                Pagemask::M16K,
+                make_entry_lo(false, true, false, Coherency::Cached, (MemoryMap::HEAP_END >> 12) as u32),
+                make_entry_lo(false, false, false, Coherency::Cached, 0),
                 make_entry_hi(1, u27::new(0xDEA0 >> 1), u2::new(0)))
         }
 
@@ -544,28 +544,28 @@ impl Test for TLBPMatch {
         unsafe {
             cop0::write_tlb(
                 4,
-                0b11 << 13,
-                make_entry_lo(false, false, false, 0, (MemoryMap::HEAP_END >> 12) as u32),
-                make_entry_lo(false, false, false, 0, (MemoryMap::HEAP_END >> 12) as u32),
+                Pagemask::M16K,
+                make_entry_lo(false, false, false, Coherency::Cached, (MemoryMap::HEAP_END >> 12) as u32),
+                make_entry_lo(false, false, false, Coherency::Cached, (MemoryMap::HEAP_END >> 12) as u32),
                 make_entry_hi(1, u27::new(0xDEA3), u2::new(1)));
 
             cop0::write_tlb(
                 29,
-                0b1111 << 13,
-                make_entry_lo(true, false, false, 0, (MemoryMap::HEAP_END >> 12) as u32),
-                make_entry_lo(false, false, false, 0, (MemoryMap::HEAP_END >> 12) as u32),
+                Pagemask::M64K,
+                make_entry_lo(true, false, false, Coherency::Cached, (MemoryMap::HEAP_END >> 12) as u32),
+                make_entry_lo(false, false, false, Coherency::Cached, (MemoryMap::HEAP_END >> 12) as u32),
                 make_entry_hi(1, u27::new(0x7FF_0000), u2::new(2)));
             cop0::write_tlb(
                 30,
-                0b1111 << 13,
-                make_entry_lo(false, false, false, 0, (MemoryMap::HEAP_END >> 12) as u32),
-                make_entry_lo(true, false, false, 0, (MemoryMap::HEAP_END >> 12) as u32),
+                Pagemask::M64K,
+                make_entry_lo(false, false, false, Coherency::Cached, (MemoryMap::HEAP_END >> 12) as u32),
+                make_entry_lo(true, false, false, Coherency::Cached, (MemoryMap::HEAP_END >> 12) as u32),
                 make_entry_hi(2, u27::new(0x0001), u2::new(3)));
             cop0::write_tlb(
                 31,
-                0b1111 << 13,
-                make_entry_lo(true, false, false, 0, (MemoryMap::HEAP_END >> 12) as u32),
-                make_entry_lo(true, false, false, 0, (MemoryMap::HEAP_END >> 12) as u32),
+                Pagemask::M64K,
+                make_entry_lo(true, false, false, Coherency::Cached, (MemoryMap::HEAP_END >> 12) as u32),
+                make_entry_lo(true, false, false, Coherency::Cached, (MemoryMap::HEAP_END >> 12) as u32),
                 make_entry_hi(3, u27::new(0x7FF_0002), u2::new(0)));
         }
 

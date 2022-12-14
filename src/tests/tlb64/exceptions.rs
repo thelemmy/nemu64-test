@@ -7,7 +7,7 @@ use core::arch::asm;
 use arbitrary_int::{u19, u2, u27};
 
 use crate::cop0;
-use crate::cop0::{Cause, CauseException, Context, make_entry_hi, make_entry_lo, Status, XContext};
+use crate::cop0::{Cause, CauseException, Coherency, Context, make_entry_hi, make_entry_lo, Pagemask, Status, XContext};
 use crate::exception_handler::expect_exception;
 use crate::math::bits::Bitmasks64;
 use crate::tests::{Level, Test};
@@ -206,9 +206,9 @@ fn test_tlb_miss(address: u64, vpn: u27, r: u2) -> Result<(), String> {
         cop0::clear_tlb();
         cop0::write_tlb(
             10,
-            0b11 << 13,
-            make_entry_lo(true, true, false, 0, (data.start_phyiscal() >> 12) as u32),
-            make_entry_lo(true, false, false, 0, 0),
+            Pagemask::M16K,
+            make_entry_lo(true, true, false, Coherency::Cached, (data.start_physical() >> 12) as u32),
+            make_entry_lo(true, false, false, Coherency::Cached, 0),
             make_entry_hi(0, vpn, r));
     }
 

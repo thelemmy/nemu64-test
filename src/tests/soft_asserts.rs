@@ -118,11 +118,11 @@ pub fn soft_assert_greater_or_equal(v1: u32, v2: u32, help: &str) -> Result<(), 
 }
 
 /// Tests if `v1 < v2`.
-pub fn soft_assert_less(v1: u32, v2: u32, help: &str) -> Result<(), String> {
+pub fn soft_assert_less<T: Debug + PartialOrd>(v1: T, v2: T, help: &str) -> Result<(), String> {
     if v1 < v2 {
         Ok(())
     } else {
-        Err(format!("a < b expected, but a={} b={} (hex: a=0x{:x} b=0x{:x}). {}", v1, v2, v1, v2, help))
+        Err(format!("a < b expected, but a={:?} b={:?} (hex: a=0x{:#x?} b=0x{:#x?}). {}", v1, v2, v1, v2, help))
     }
 }
 

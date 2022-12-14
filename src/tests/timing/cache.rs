@@ -168,8 +168,8 @@ fn get_cycles(memory: &mut UncachedHeapMemory<u64>, configure_preconditions: ext
         ",
         COUNT = const RegisterIndex::Count as usize,
 
-        in("$3") MemoryMap::physical_to_cached_mut::<u64>(memory.start_phyiscal()),
-        in("$5") MemoryMap::physical_to_uncached_mut::<u64>(memory.start_phyiscal()),
+        in("$3") MemoryMap::physical_to_cached_mut::<u64>(memory.start_physical()),
+        in("$5") MemoryMap::physical_to_uncached_mut::<u64>(memory.start_physical()),
 
         // These are freely to be used to by test
         out("$6") _,
@@ -232,8 +232,8 @@ fn get_averaged_cycles_with_codegen<F: FnOnce(&mut UncachedHeapMemoryWriter<u32>
     writer.write(Assembler::make_nop());   // delay slot
 
     // Turn the pointer into a function pointer
-    let preconditions_ptr: extern "C" fn() = unsafe { transmute(MemoryMap::physical_to_cached::<u8>(code_memory.start_phyiscal())) };
-    let execute_ptr: extern "C" fn() = unsafe { transmute(MemoryMap::physical_to_cached::<u8>(code_memory.start_phyiscal() + execute_offset)) };
+    let preconditions_ptr: extern "C" fn() = unsafe { transmute(MemoryMap::physical_to_cached::<u8>(code_memory.start_physical())) };
+    let execute_ptr: extern "C" fn() = unsafe { transmute(MemoryMap::physical_to_cached::<u8>(code_memory.start_physical() + execute_offset)) };
 
     let mut memory = UncachedHeapMemory::<u64>::new_with_align(16 * 1024, 64);
     let mut sum = 0u64;

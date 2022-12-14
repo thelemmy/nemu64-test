@@ -409,11 +409,15 @@ impl Assembler {
             ((Opcode::SPECIAL as u32) << 26)
     }
 
-    pub const fn make_regimm_trap(op: RegimmOpcode, rs: u5, imm: u16) -> u32 {
+    const fn make_regimm(op: RegimmOpcode, rs: GPR, imm: u16) -> u32 {
         (imm as u32) |
             ((op as u32) << 16) |
-            ((rs.value() as u32) << 21) |
+            ((rs.raw_value().value() as u32) << 21) |
             ((Opcode::REGIMM as u32) << 26)
+    }
+
+    pub const fn make_regimm_trap(op: RegimmOpcode, rs: u5, imm: u16) -> u32 {
+        Self::make_regimm(op, GPR::new_with_raw_value(rs), imm)
     }
 
     const fn make_cop0instruction(instruction: Cop0Opcode, rt: u5, rd: u5) -> u32 {
@@ -643,6 +647,10 @@ impl Assembler {
         Self::make_special(SpecialOpcode::JR, u5::new(0), u5::new(0), rs.raw_value(), rt.raw_value())
     }
 
+    pub const fn make_jalr(return_reg: GPR, rs: GPR) -> u32 {
+        Self::make_special(SpecialOpcode::JALR, u5::new(0), return_reg.raw_value(), rs.raw_value(), u5::new(0))
+    }
+
     pub const fn make_sll(rd: GPR, rt: GPR, sa: u5) -> u32 {
         Self::make_sll_with_extras(rd, rt, GPR::R0, sa)
     }
@@ -813,6 +821,10 @@ impl Assembler {
 
     pub const fn make_syscall_with_extras(rd: GPR, rs: GPR, rt: GPR, sa: u5) -> u32 {
         Self::make_special(SpecialOpcode::SYSCALL, sa, rd.raw_value(), rs.raw_value(), rt.raw_value())
+    }
+
+    pub const fn make_bgezal(rs: GPR, offset_as_instruction_count: i16) -> u32 {
+        Self::make_regimm(RegimmOpcode::BGEZAL, rs, offset_as_instruction_count as u16)
     }
 
     pub const fn make_mfhi(rd: GPR) -> u32 {

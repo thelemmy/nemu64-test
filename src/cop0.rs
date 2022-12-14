@@ -683,13 +683,29 @@ pub fn tlbp() {
     }
 }
 
-pub unsafe fn write_tlb(index: u32, pagemask: u32, entry_lo0: u32, entry_lo1: u32, entry_hi: u64) {
+#[repr(u32)]
+#[derive(Copy, Clone)]
+pub enum Pagemask {
+    M4K = 0,
+    M16K = 0b11 << 13,
+    M64K = 0b1111 << 13,
+    M256K = 0b111111 << 13,
+    M1M = 0b11111111 << 13,
+    M4M = 0b1111111111 << 13,
+    M16M = 0b111111111111 << 13,
+}
+
+pub unsafe fn write_tlb(index: u32, pagemask: Pagemask, entry_lo0: u32, entry_lo1: u32, entry_hi: u64) {
+    unsafe { write_tlb_untyped(index, pagemask as u32, entry_lo0, entry_lo1, entry_hi) }
+}
+
+pub unsafe fn write_tlb_untyped(index: u32, pagemask: u32, entry_lo0: u32, entry_lo1: u32, entry_hi: u64) {
     unsafe {
         set_index(index);
         set_entry_lo0(entry_lo0);
         set_entry_lo1(entry_lo1);
         set_entry_hi(entry_hi);
-        set_pagemask(pagemask);
+        set_pagemask(pagemask as u32);
         tlbwi();
     }
 }
@@ -709,13 +725,25 @@ pub unsafe fn clear_tlb() {
     }
 }
 
-pub fn make_entry_lo(global: bool, valid: bool, dirty: bool, coherency: u8, pfn: u32) -> u32 {
-    assert!(coherency <= 7);
+#[allow(dead_code)]
+#[bitenum(u3, exhaustive: true)]
+pub enum Coherency {
+    Cached = 0,
+    _Cached1 = 1,
+    Uncached = 2,
+    _Cached3 = 3,
+    _Cached4 = 4,
+    _Cached5 = 5,
+    _Cached6 = 6,
+    _Cached7 = 7,
+}
+
+pub fn make_entry_lo(global: bool, valid: bool, dirty: bool, coherency: Coherency, pfn: u32) -> u32 {
     assert!(pfn <= 0xFFFFFF);
     (global as u32) |
         ((valid as u32) << 1) |
         ((dirty as u32) << 2) |
-        ((coherency as u32) << 3) |
+        ((coherency.raw_value().value() as u32) << 3) |
         (pfn << 6)
 }
 

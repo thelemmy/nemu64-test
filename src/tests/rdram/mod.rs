@@ -211,7 +211,7 @@ fn test_unaligned_store<const INSTRUCTION: u32>(cached: bool, expected: [u64; 8]
         // Also write some data 8kb later...that happens to be the next cache line
         data.write(4 + 2 * 1024, 0xCBBCCBBC);
         data.write(5 + 2 * 1024, 0xBAABBAAB);
-        let physical = data.start_phyiscal() + 16;
+        let physical = data.start_physical() + 16;
         let cached_address = MemoryMap::physical_to_cached_mut::<u8>(physical) as usize;
         let address = if cached { cached_address } else { MemoryMap::physical_to_uncached_mut::<u8>(physical) as usize };
         let mut value_and_result: u64 = 0xFEDCBA98_76543210;

@@ -225,7 +225,7 @@ pub enum ExceptionTimingMode {
 fn assert_cycles(expected_cycles: u32, value2: u64, value4: u64, test_status: Status, exception_timing: ExceptionTimingMode, f: extern "C" fn()) -> Result<(), String> {
     let mut memory = UncachedHeapMemory::<u64>::new_with_align(8, 64);
     // Make this a pointer to itself. That allows reading from the same register again
-    let start_physical = memory.start_phyiscal();
+    let start_physical = memory.start_physical();
     memory.write(0, MemoryMap::physical_to_cached_mut::<u64>(start_physical) as i32 as u64);
     memory.write(1, MemoryMap::physical_to_uncached_mut::<u64>(start_physical + 8) as i32 as u64);
     memory.write(2, (f as u64 + 16) as i32 as u64);
@@ -314,9 +314,9 @@ fn assert_cycles(expected_cycles: u32, value2: u64, value4: u64, test_status: St
 
         // $2 and $4 will be copied from the FPU via DMFC1
         out("$2") _,
-        in("$3") MemoryMap::physical_to_cached_mut::<u64>(memory.start_phyiscal()),
+        in("$3") MemoryMap::physical_to_cached_mut::<u64>(memory.start_physical()),
         out("$4") _,
-        in("$5") MemoryMap::physical_to_uncached_mut::<u64>(memory.start_phyiscal()),
+        in("$5") MemoryMap::physical_to_uncached_mut::<u64>(memory.start_physical()),
 
         // These are freely to be used to by test
         out("$6") _,
@@ -386,7 +386,7 @@ fn assert_cycles_with_codegen<F: FnOnce(&mut UncachedHeapMemoryWriter<u32>)>(exp
 
     // To execute, we'll run from a 0x8xxxxxxx address as otherwise the CPU will mostly
     // spend time reading from memory
-    let cached_ptr = MemoryMap::physical_to_cached::<u8>(code_memory.start_phyiscal());
+    let cached_ptr = MemoryMap::physical_to_cached::<u8>(code_memory.start_physical());
 
     // Turn the pointer into a function pointer
     let function_ptr: extern "C" fn() = unsafe { transmute(cached_ptr) };
