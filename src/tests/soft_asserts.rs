@@ -126,6 +126,15 @@ pub fn soft_assert_less<T: Debug + PartialOrd>(v1: T, v2: T, help: &str) -> Resu
     }
 }
 
+/// Tests if `v1 <= v2`.
+pub fn soft_assert_less_or_equal<T: Debug + PartialOrd>(v1: T, v2: T, help: &str) -> Result<(), String> {
+    if v1 <= v2 {
+        Ok(())
+    } else {
+        Err(format!("a <= b expected, but a={:?} b={:?} (hex: a=0x{:#x?} b=0x{:#x?}). {}", v1, v2, v1, v2, help))
+    }
+}
+
 /// Tests if `v1 < v2`.
 pub fn soft_assert_range_contained_within_expected<T: PartialOrd + Ord + Debug>(expected_range: RangeInclusive<T>, seen_range: RangeInclusive<T>, help: &str) -> Result<(), String> {
     if expected_range.start() <= seen_range.start() && expected_range.end() >= seen_range.end() {

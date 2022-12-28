@@ -148,6 +148,10 @@ pub fn run() {
                 Some(v) => return format!(" with '{:x?}'", v),
                 None => {},
             }
+            match (*value).downcast_ref::<(bool, usize, usize)>() {
+                Some(v) => return format!(" with '{:x?}'", v),
+                None => {},
+            }
             match (*value).downcast_ref::<GPR>() {
                 Some(v) => return format!(" with '{:x?}'", v),
                 None => {},
