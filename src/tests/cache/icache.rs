@@ -511,10 +511,10 @@ impl Test for ModifyWithinBasicBlockExplicitDCacheHitWriteBackCycle {
     }
 }
 
-pub struct ModifyWithinBasicBlockImplicitDCacheWriteBack {}
+pub struct ModifyWithinBasicBlockImplicitDCacheWriteBackSW {}
 
-impl Test for ModifyWithinBasicBlockImplicitDCacheWriteBack {
-    fn name(&self) -> &str { "icache: Self-modifying code within basic block (with implicit dcache write back)" }
+impl Test for ModifyWithinBasicBlockImplicitDCacheWriteBackSW {
+    fn name(&self) -> &str { "icache: Self-modifying code within basic block (with implicit dcache write back (SW))" }
 
     fn level(&self) -> Level { Level::Weird }
 
@@ -533,6 +533,70 @@ impl Test for ModifyWithinBasicBlockImplicitDCacheWriteBack {
                 test_modify_within_basic_block(
                     Assembler::make_sw(GPR::A1, 0 << 2, GPR::A0),
                     Assembler::make_sw(GPR::A1, 8192 << 2, GPR::A0),
+                    *generator_index, *generated_index, *expected_modified_code)?;
+            }
+            None => {
+                Err("Unhandled pattern")?;
+            }
+        }
+        Ok(())
+    }
+}
+
+pub struct ModifyWithinBasicBlockImplicitDCacheWriteBackSWL {}
+
+impl Test for ModifyWithinBasicBlockImplicitDCacheWriteBackSWL {
+    fn name(&self) -> &str { "icache: Self-modifying code within basic block (with implicit dcache write back (SWL))" }
+
+    fn level(&self) -> Level { Level::Weird }
+
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec! {
+            Box::new((true, 3usize, 8usize)),
+            Box::new((true, 4usize, 8usize)),
+            Box::new((true, 5usize, 8usize)),
+            Box::new((true, 6usize, 8usize)),
+        }
+    }
+
+    fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
+        match (*value).downcast_ref::<(bool, usize, usize)>() {
+            Some((expected_modified_code, generator_index, generated_index)) => {
+                test_modify_within_basic_block(
+                    Assembler::make_sw(GPR::A1, 0 << 2, GPR::A0),
+                    Assembler::make_swl(GPR::A1, 8192 << 2, GPR::A0),
+                    *generator_index, *generated_index, *expected_modified_code)?;
+            }
+            None => {
+                Err("Unhandled pattern")?;
+            }
+        }
+        Ok(())
+    }
+}
+
+pub struct ModifyWithinBasicBlockImplicitDCacheWriteBackLW {}
+
+impl Test for ModifyWithinBasicBlockImplicitDCacheWriteBackLW {
+    fn name(&self) -> &str { "icache: Self-modifying code within basic block (with implicit dcache write back (LW))" }
+
+    fn level(&self) -> Level { Level::Weird }
+
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec! {
+            Box::new((true, 3usize, 8usize)),
+            Box::new((true, 4usize, 8usize)),
+            Box::new((true, 5usize, 8usize)),
+            Box::new((true, 6usize, 8usize)),
+        }
+    }
+
+    fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
+        match (*value).downcast_ref::<(bool, usize, usize)>() {
+            Some((expected_modified_code, generator_index, generated_index)) => {
+                test_modify_within_basic_block(
+                    Assembler::make_sw(GPR::A1, 0 << 2, GPR::A0),
+                    Assembler::make_lw(GPR::A1, 8192 << 2, GPR::A0),
                     *generator_index, *generated_index, *expected_modified_code)?;
             }
             None => {
