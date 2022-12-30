@@ -19,6 +19,13 @@ use crate::tests::soft_asserts::{soft_assert_eq, soft_assert_eq_decimal, soft_as
 use crate::uncached_memory::{UncachedHeapMemory, UncachedHeapMemoryWriter};
 
 // TODO: Test BC1
+// TODO: This test harness isn't entirely stable:
+//     The main test runner (assert_cycles) calls into a function, with some hand-written assembly.
+//     That function in turn might raise an exception (e.g. BREAK). Therefore, there are some
+//     possibilities for icache problems if two or three of those areas need the same icache line.
+//     In that case, the test becomes a lot slower.
+//     To properly fix this, the main test runner should be generated into an array that is allocated
+//     with precise alignment.
 
 #[naked]
 extern "C" fn instant_return_function() {
