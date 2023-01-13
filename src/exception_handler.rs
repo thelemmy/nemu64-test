@@ -260,7 +260,7 @@ extern "C" fn exception_handler_compiled(stackpointer: usize) -> usize {
     if guard.is_none() || avoid_bluescreen {
         // Skip the offending instruction(s) and return
         if skip_guard.is_some() {
-            context.return_to = context.exceptpc + skip_guard.unwrap() * 4;
+            context.return_to = context.exceptpc.wrapping_add(skip_guard.unwrap().wrapping_mul(4));
         } else {
             crate::isviewer::text_out("Got unhandled exception. Attempting to continue\n");
             context.return_to = context.exceptpc + (if context.cause.branch_delay() { 8 } else { 4 });

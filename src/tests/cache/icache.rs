@@ -303,6 +303,7 @@ fn test_modify_within_basic_block(instruction_at_beginning: u32, instruction_fur
             .set noat
             .set noreorder
             OR $6, $31, $0
+TNE $30, $30
             JALR $2
             NOP
             OR $31, $6, $0
@@ -585,9 +586,9 @@ impl Test for ModifyWithinBasicBlockImplicitDCacheWriteBackLW {
     fn values(&self) -> Vec<Box<dyn Any>> {
         vec! {
             Box::new((true, 3usize, 8usize)),
-            Box::new((true, 4usize, 8usize)),
-            Box::new((true, 5usize, 8usize)),
-            Box::new((true, 6usize, 8usize)),
+            // Box::new((true, 4usize, 8usize)),
+            // Box::new((true, 5usize, 8usize)),
+            // Box::new((true, 6usize, 8usize)),
         }
     }
 

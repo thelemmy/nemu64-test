@@ -99,7 +99,7 @@ pub const fn rcp(value: u32) -> u32 {
     let is_negative = (adjusted_value as i32).is_negative();
     let positive_value = if is_negative { !adjusted_value } else { adjusted_value };
     let shift = positive_value.leading_zeros() + 1;
-    let index = ((positive_value << shift) >> 23) as usize;
+    let index = positive_value.wrapping_shl(shift).wrapping_shr(23) as usize;
     let positive_result = (0x4000_0000 | ((RCP_DATA[index] as u32) << 14)) >> (32 - shift);
     if is_negative { !positive_result } else { positive_result }
 }
@@ -117,7 +117,7 @@ pub fn rsq(value: u32) -> u32 {
     let positive_value = if is_negative { !adjusted_value } else { adjusted_value };
     let shift = positive_value.leading_zeros() + 1;
     // For uneven shifts, take the second half of the table
-    let index = (((positive_value << shift) >> 24) | ((shift & 1) << 8)) as usize;
+    let index = (positive_value.wrapping_shl(shift).wrapping_shr(24) | ((shift & 1) << 8)) as usize;
     let positive_result = (0x4000_0000 | ((RSQ_DATA[index] as u32) << 14)) >> ((32 - shift) >> 1);
     if is_negative { !positive_result } else { positive_result }
 }
@@ -294,7 +294,15 @@ impl Test for VRCPRegisterCombinations {
                             run_test(
                                 false,
                                 true,
-                                Vector::from_u16([i, i + 1, i + 2, i + 3, i + 4, i + 5, i + 6, i + 7]),
+                                Vector::from_u16(
+                                    [i,
+                                        i.wrapping_add(1),
+                                        i.wrapping_add(2),
+                                        i.wrapping_add(3),
+                                        i.wrapping_add(4),
+                                        i.wrapping_add(5),
+                                        i.wrapping_add(6),
+                                        i.wrapping_add(7)]),
                                 vd,
                                 vs,
                                 vt,
@@ -330,7 +338,15 @@ impl Test for VRCPHRegisterCombinations {
                             run_test(
                                 false,
                                 true,
-                                Vector::from_u16([i, i + 1, i + 2, i + 3, i + 4, i + 5, i + 6, i + 7]),
+                                Vector::from_u16(
+                                    [i,
+                                        i.wrapping_add(1),
+                                        i.wrapping_add(2),
+                                        i.wrapping_add(3),
+                                        i.wrapping_add(4),
+                                        i.wrapping_add(5),
+                                        i.wrapping_add(6),
+                                        i.wrapping_add(7)]),
                                 vd,
                                 vs,
                                 vt,
@@ -369,7 +385,15 @@ impl Test for VRCPLRegisterCombinations {
                             run_test(
                                 false,
                                 true,
-                                Vector::from_u16([i, i + 1, i + 2, i + 3, i + 4, i + 5, i + 6, i + 7]),
+                                Vector::from_u16(
+                                    [i,
+                                        i.wrapping_add(1),
+                                        i.wrapping_add(2),
+                                        i.wrapping_add(3),
+                                        i.wrapping_add(4),
+                                        i.wrapping_add(5),
+                                        i.wrapping_add(6),
+                                        i.wrapping_add(7)]),
                                 vd,
                                 vs,
                                 vt,
@@ -408,7 +432,15 @@ impl Test for VRSQRegisterCombinations {
                             run_test(
                                 false,
                                 true,
-                                Vector::from_u16([i, i + 1, i + 2, i + 3, i + 4, i + 5, i + 6, i + 7]),
+                                Vector::from_u16(
+                                    [i,
+                                        i.wrapping_add(1),
+                                        i.wrapping_add(2),
+                                        i.wrapping_add(3),
+                                        i.wrapping_add(4),
+                                        i.wrapping_add(5),
+                                        i.wrapping_add(6),
+                                        i.wrapping_add(7)]),
                                 vd,
                                 vs,
                                 vt,
@@ -444,7 +476,15 @@ impl Test for VRSQLRegisterCombinations {
                             run_test(
                                 false,
                                 true,
-                                Vector::from_u16([i, i + 1, i + 2, i + 3, i + 4, i + 5, i + 6, i + 7]),
+                                Vector::from_u16(
+                                    [i,
+                                        i.wrapping_add(1),
+                                        i.wrapping_add(2),
+                                        i.wrapping_add(3),
+                                        i.wrapping_add(4),
+                                        i.wrapping_add(5),
+                                        i.wrapping_add(6),
+                                        i.wrapping_add(7)]),
                                 vd,
                                 vs,
                                 vt,
@@ -483,7 +523,15 @@ impl Test for VRSQHRegisterCombinations {
                             run_test(
                                 false,
                                 true,
-                                Vector::from_u16([i, i + 1, i + 2, i + 3, i + 4, i + 5, i + 6, i + 7]),
+                                Vector::from_u16(
+                                    [i,
+                                        i.wrapping_add(1),
+                                        i.wrapping_add(2),
+                                        i.wrapping_add(3),
+                                        i.wrapping_add(4),
+                                        i.wrapping_add(5),
+                                        i.wrapping_add(6),
+                                        i.wrapping_add(7)]),
                                 vd,
                                 vs,
                                 vt,

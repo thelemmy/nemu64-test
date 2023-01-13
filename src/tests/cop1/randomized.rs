@@ -49,8 +49,8 @@ fn randomized_test<FLOAT, INT: From<u32> + Into<u64>, FPERFORM: FnMut(u32) -> IN
             result_fcsr = exception.fcsr;
         }
 
-        hash = hash * 397 ^ result.into();
-        hash = hash * 397 ^ (result_fcsr.raw_value() as u64);
+        hash = hash.wrapping_mul(397) ^ result.into();
+        hash = hash.wrapping_mul(397) ^ (result_fcsr.raw_value() as u64);
 
         if progress_indicator {
             if (i & 65535) == 0 {

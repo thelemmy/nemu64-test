@@ -514,7 +514,7 @@ impl RSPAssembler {
     }
 
     pub fn write_bgtz_backwards(&mut self, rs: GPR, target: &RSMAssemblerJumpTarget) {
-        let offset = (((target.offset - self.writer.offset()) & 0xFFF) >> 2) - 1;
+        let offset = (((target.offset.wrapping_sub(self.writer.offset())) & 0xFFF) >> 2) - 1;
         self.write_bgtz(rs, offset as i16);
     }
 

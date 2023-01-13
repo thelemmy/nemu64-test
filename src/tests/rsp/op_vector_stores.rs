@@ -412,7 +412,7 @@ impl Test for STV {
                     }
 
                     // Do the actual write that's being tested
-                    assembler.write_li(GPR::A0, offset - 0x10);
+                    assembler.write_li(GPR::A0, offset.wrapping_sub(0x10));
                     assembler.write_stv(vt, e, 0x10, GPR::A0);
 
                     assembler.write_break();
@@ -425,7 +425,7 @@ impl Test for STV {
 
                     let base_vt_index = vt.index() & !7;
                     for i in 0..16 {
-                        let source_register_index = base_vt_index + (((i >> 1) - (((offset & !0x7) as usize) >> 1) + (e.index() >> 1)) & 0x7);
+                        let source_register_index = base_vt_index + ((((i >> 1) as usize).wrapping_sub(((offset & !0x7) as usize) >> 1).wrapping_add(e.index() >> 1)) & 0x7);
                         let source_element_index = i + ((offset & !0x7) as usize);
 
                         let address = ((offset & !0x7) as usize) + ((offset as usize + i) & 15);

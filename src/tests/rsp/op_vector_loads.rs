@@ -410,14 +410,14 @@ impl Test for LFV {
                  let misalignment = address & 0x7;
                  let e_ = e as usize;
 
-                 temp.set16(0, (test_data[aligned_address + ((misalignment + e_) & 0xF)] as u16) << 7);
-                 temp.set16(1, (test_data[aligned_address + ((misalignment + 4 - e_) & 0xF)] as u16) << 7);
-                 temp.set16(2, (test_data[aligned_address + ((misalignment + 8 - e_) & 0xF)] as u16) << 7);
-                 temp.set16(3, (test_data[aligned_address + ((misalignment + 12 - e_) & 0xF)] as u16) << 7);
-                 temp.set16(4, (test_data[aligned_address + ((misalignment + 8 - e_) & 0xF)] as u16) << 7);
-                 temp.set16(5, (test_data[aligned_address + ((misalignment + 12 - e_) & 0xF)] as u16) << 7);
-                 temp.set16(6, (test_data[aligned_address + ((misalignment - e_) & 0xF)] as u16) << 7);
-                 temp.set16(7, (test_data[aligned_address + ((misalignment + 4 - e_) & 0xF)] as u16) << 7);
+                 temp.set16(0, (test_data[aligned_address + ((misalignment.wrapping_add( e_)) & 0xF)] as u16) << 7);
+                 temp.set16(1, (test_data[aligned_address + ((misalignment.wrapping_add( 4).wrapping_sub(e_)) & 0xF)] as u16) << 7);
+                 temp.set16(2, (test_data[aligned_address + ((misalignment.wrapping_add( 8).wrapping_sub(e_)) & 0xF)] as u16) << 7);
+                 temp.set16(3, (test_data[aligned_address + ((misalignment.wrapping_add( 12).wrapping_sub(e_)) & 0xF)] as u16) << 7);
+                 temp.set16(4, (test_data[aligned_address + ((misalignment.wrapping_add( 8).wrapping_sub(e_)) & 0xF)] as u16) << 7);
+                 temp.set16(5, (test_data[aligned_address + ((misalignment.wrapping_add( 12).wrapping_sub(e_)) & 0xF)] as u16) << 7);
+                 temp.set16(6, (test_data[aligned_address + ((misalignment.wrapping_sub(e_)) & 0xF)] as u16) << 7);
+                 temp.set16(7, (test_data[aligned_address + ((misalignment.wrapping_add(4).wrapping_sub(e_)) & 0xF)] as u16) << 7);
                  let length = min(8, 16 - e_);
                  for i in e_..length + e_ {
                      expected[i] = temp.get8(i);

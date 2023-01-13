@@ -260,7 +260,7 @@ fn run_vzero<FEmitter: Fn(&mut RSPAssembler, VR, VR, VR, Element)>(emitter: &'st
         make_test_case(
             emitter,
             |elements| {
-                elements.accum_0_16 = elements.source1 + elements.source2;
+                elements.accum_0_16 = elements.source1.wrapping_add(elements.source2);
                 elements.target = 0;
             }).as_ref(),
         Vector::from_u16([0, 1, 0x0010, 0xFFFF, 0x7FFF, 0x7FFF, 0x7FFF, 0xFFFF]),
@@ -1033,7 +1033,7 @@ impl Test for VCL {
                         if !elements.vco_high {
                             elements.vcc_low = (((sum == 0) && !carry)) || (elements.vce && ((sum == 0) || !carry));
                         }
-                        elements.target = if elements.vcc_low { -(elements.source1 as i16) as u16 } else { elements.source2 };
+                        elements.target = if elements.vcc_low { (elements.source1 as i16).wrapping_neg() as u16 } else { elements.source2 };
                     } else {
                         if !elements.vco_high {
                             elements.vcc_high = elements.source2 >= elements.source1;
@@ -1074,7 +1074,7 @@ impl Test for VCH {
                         elements.vcc_low = sum <= 0;
                         elements.vce = sum == -1;
                         elements.vco_high = sum != 0 && (i1 != !i2);
-                        elements.target = (if elements.vcc_low { -i1 } else { i2 }) as u16;
+                        elements.target = (if elements.vcc_low { i1.wrapping_neg() } else { i2 }) as u16;
                     } else {
                         elements.vcc_low = i1 < 0;
                         let diff = i2 - i1;
