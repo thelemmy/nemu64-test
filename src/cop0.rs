@@ -72,6 +72,13 @@ pub struct Cause {
     exception : Option<CauseException>,
 }
 
+impl Cause {
+    pub unsafe fn write(&self) {
+        const INDEX: u32 = RegisterIndex::Cause as u32;
+        unsafe { write_cop0::<INDEX>(self.raw_value()) }
+    }
+}
+
 #[allow(dead_code)]
 #[bitenum(u2, exhaustive: false)]
 pub enum StatusKSU {
@@ -135,10 +142,10 @@ pub struct Status {
     #[bit(10, r)]
     interrupt_mask_int0 : bool,
 
-    #[bit(9, r)]
+    #[bit(9, rw)]
     interrupt_mask_sw2 : bool,
 
-    #[bit(8, r)]
+    #[bit(8, rw)]
     interrupt_mask_sw1 : bool,
 
     #[bit(7, rw)]

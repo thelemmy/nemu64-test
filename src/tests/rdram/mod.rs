@@ -45,6 +45,7 @@ impl Test for LWL {
             let mut result: u64 = 0xFEDCBA98_76543210;
             unsafe {
                 asm!("
+                    .set noat
                     LD {scratch}, 0 ({result})
                     LWL {scratch}, 0 ({address})
                     SD {scratch}, 0 ({result})
@@ -92,6 +93,7 @@ impl Test for LWR {
             let mut result: u64 = 0xFEDCBA98_76543210;
             unsafe {
                 asm!("
+                    .set noat
                     LD {scratch}, 0 ({result})
                     LWR {scratch}, 0 ({address})
                     SD {scratch}, 0 ({result})
@@ -140,6 +142,7 @@ impl Test for LDL {
             let mut result: u64 = 0xFEDCBA98_76543210;
             unsafe {
                 asm!("
+                    .set noat
                     LD {scratch}, 0 ({result})
                     LDL {scratch}, 0 ({address})
                     SD {scratch}, 0 ({result})
@@ -187,6 +190,7 @@ impl Test for LDR {
             let mut result: u64 = 0xFEDCBA98_76543210;
             unsafe {
                 asm!("
+                    .set noat
                     LD {scratch}, 0 ({result})
                     LDR {scratch}, 0 ({address})
                     SD {scratch}, 0 ({result})
@@ -217,6 +221,7 @@ fn test_unaligned_store<const INSTRUCTION: u32>(cached: bool, expected: [u64; 8]
         let mut value_and_result: u64 = 0xFEDCBA98_76543210;
         unsafe {
             asm!("
+                .set noat
                 LD $3, 0 ({value_and_result})
 
                 // Load next cache line

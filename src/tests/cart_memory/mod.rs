@@ -100,6 +100,7 @@ impl Test for LWL {
             let mut result: u64 = 0xFEDCBA98_76543210;
             unsafe {
                 asm!("
+                    .set noat
                     LD {scratch}, 0 ({result})
                     LWL {scratch}, 0 ({address})
                     SD {scratch}, 0 ({result})

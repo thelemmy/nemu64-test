@@ -255,6 +255,11 @@ extern "C" fn exception_handler_compiled(stackpointer: usize) -> usize {
 
     let context = unsafe { &mut *(stackpointer as *mut ExceptionContext) };
 
+    // If we got here through a software interrupt, ack it now. If both, ack both
+    if context.cause.interrupt_sw1() || context.cause.interrupt_sw2() {
+        unsafe { context.cause.with_interrupt_sw1(false).with_interrupt_sw2(false).write() };
+    }
+
     let mut guard = SEEN_EXCEPTION.lock();
     let skip_guard = EXCEPTION_SKIP.lock();
     if guard.is_none() || avoid_bluescreen {

@@ -32,6 +32,7 @@ impl Test for Read00 {
         let mut result6: u64 = 0xFEDCBA98_76543210;
         unsafe {
             asm!("
+                .set noat
                 LD {scratch}, 0 ({address})
                 SD {scratch}, 0 ({result1})
 
