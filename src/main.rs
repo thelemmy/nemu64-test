@@ -6,7 +6,6 @@
 #![feature(alloc_error_handler)]
 #![feature(asm_const)]
 #![feature(asm_experimental_arch)]
-#![feature(asm_sym)]
 #![feature(naked_functions)]
 #![feature(type_name_of_val)]
 #![feature(step_trait)]

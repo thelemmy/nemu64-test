@@ -49,7 +49,7 @@ impl SPMEM {
         let mut vec: [u16; 8] = Default::default();
         for i in 0..4 {
             let v = Self::read((addr + (i << 2)) & 0xFFC);
-            vec[(i << 1)] = (v >> 16) as u16;
+            vec[i << 1] = (v >> 16) as u16;
             vec[(i << 1) + 1] = v as u16;
         }
         vec
@@ -60,7 +60,7 @@ impl SPMEM {
         let mut vec: [u16; 8] = Default::default();
         for i in 0..4 {
             let v = Self::read(addr + (i << 2));
-            vec[(i << 1)] = (v >> 16) as u16;
+            vec[i << 1] = (v >> 16) as u16;
             vec[(i << 1) + 1] = v as u16;
         }
         vec
@@ -71,7 +71,7 @@ impl SPMEM {
         let mut vec: [u8; 16] = Default::default();
         for i in 0..4 {
             let v = Self::read((addr + (i << 2)) & 0xFFC);
-            vec[(i << 2)] = (v >> 24) as u8;
+            vec[i << 2] = (v >> 24) as u8;
             vec[(i << 2) + 1] = (v >> 16) as u8;
             vec[(i << 2) + 2] = (v >> 8) as u8;
             vec[(i << 2) + 3] = v as u8;

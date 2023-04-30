@@ -49,7 +49,7 @@ mod configuration {
 }
 
 /// The importance level of a [test](Test).
-#[derive(Eq, PartialEq)]
+#[derive(Copy, Clone, Eq, PartialEq)]
 #[repr(u8)]
 pub enum Level {
     /// Very basic functionality. If this is broken, expect things to go bad.
