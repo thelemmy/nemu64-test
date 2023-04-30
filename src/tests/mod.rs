@@ -6,7 +6,7 @@ use core::any::Any;
 use core::cmp::{min, Ordering};
 use arbitrary_int::{u2, u27, u5};
 
-use crate::cop0::{set_status, Status};
+use crate::cop0::{count, set_status, Status};
 use crate::exception_handler::drain_seen_exception;
 use crate::{FramebufferConsole, print, println};
 use crate::assembler::GPR;
@@ -477,9 +477,9 @@ pub fn run() {
             set_fcsr(FCSR::DEFAULT);
         }
 
-        let counter_before = cop0::count();
+        let counter_before = count();
         let test_result = test.run(&value);
-        let counter_after = cop0::count();
+        let counter_after = count();
         *time += counter_after - counter_before;
 
         unsafe { set_status(Status::DEFAULT); }
@@ -512,7 +512,7 @@ pub fn run() {
     let tests = testlist::tests();
     let mut test_times: Vec<(usize, u32)> = Vec::new();
     let dummy_test_value: Box<dyn Any> = Box::new(());
-    let counter_before = cop0::count();
+    let counter_before = count();
     for (index, test) in tests.iter().enumerate() {
         let values = test.values();
         let level = test.level();
@@ -547,7 +547,7 @@ pub fn run() {
             test_times.push((index, time));
         }
     }
-    let counter_after = cop0::count();
+    let counter_after = count();
 
     println!();
     let succeeded_total: u32 = succeeded.iter().sum();
