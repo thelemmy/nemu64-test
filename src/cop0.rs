@@ -298,36 +298,28 @@ unsafe fn read_cop0<const INDEX: u32>() -> u32 {
 
 #[inline]
 pub unsafe fn read_cop0_64<const INDEX: u32>() -> u64 {
-    // The inline assembler isn't properly setup for 64 bit - workaround in asm
-    let raw_value_lo: u32;
-    let raw_value_hi: u32;
+    let result: u64;
     unsafe {
         asm!("
         .set noat
-        dmfc0 {tmp}, ${cop0reg}
-        add {gpr_lo}, $0, {tmp}
-        dsrl32 {gpr_hi}, {tmp}, 0
-    ", gpr_lo = out(reg) raw_value_lo, gpr_hi = out(reg) raw_value_hi, tmp = out(reg) _, cop0reg = const INDEX)
+        dmfc0 {gpr}, ${cop0reg}
+        ", gpr = out(reg) result, cop0reg = const INDEX)
     }
-    ((raw_value_hi as u64) << 32) | (raw_value_lo as u64)
+    result
 }
 
 /// Uses mfc0 to read a 32 bit value but returns the whole value (useful to verify proper sign
 /// extension)
 #[inline]
 pub unsafe fn read_cop0_32_64<const INDEX: u32>() -> u64 {
-    // The inline assembler isn't properly setup for 64 bit - workaround in asm
-    let raw_value_lo: u32;
-    let raw_value_hi: u32;
+    let result: u64;
     unsafe {
         asm!("
         .set noat
-        mfc0 {tmp}, ${cop0reg}
-        add {gpr_lo}, $0, {tmp}
-        dsrl32 {gpr_hi}, {tmp}, 0
-    ", gpr_lo = out(reg) raw_value_lo, gpr_hi = out(reg) raw_value_hi, tmp = out(reg) _, cop0reg = const INDEX)
+        mfc0 {gpr}, ${cop0reg}
+    ", gpr = out(reg) result, cop0reg = const INDEX)
     }
-    ((raw_value_hi as u64) << 32) | (raw_value_lo as u64)
+    result
 }
 
 #[inline]
@@ -347,15 +339,9 @@ unsafe fn write_cop0_64<const INDEX: u32>(value: u64) {
     unsafe {
         asm!("
         .set noat
-        dsll32 {tmp}, {gpr_hi}, 0
-        // Zero extend gpr_lo
-        dsll32 {tmp2}, {gpr_lo}, 0
-        dsrl32 {tmp2}, {tmp2}, 0
-        or {tmp}, {tmp}, {tmp2}
-        dmtc0 {tmp}, ${cop0reg}
+        dmtc0 {gpr}, ${cop0reg}
         nop
-    ", gpr_lo = in(reg) (value as u32), gpr_hi = in(reg) ((value >> 32) as u32),
-        tmp = out(reg) _, tmp2 = out(reg) _, cop0reg = const INDEX)
+        ", gpr = in(reg) value, cop0reg = const INDEX)
     }
 }
 
@@ -366,15 +352,9 @@ pub unsafe fn write_cop0_32_64<const INDEX: u32>(value: u64) {
     unsafe {
         asm!("
         .set noat
-        dsll32 {tmp}, {gpr_hi}, 0
-        // Zero extend gpr_lo
-        dsll32 {tmp2}, {gpr_lo}, 0
-        dsrl32 {tmp2}, {tmp2}, 0
-        or {tmp}, {tmp}, {tmp2}
-        mtc0 {tmp}, ${cop0reg}
+        mtc0 {gpr}, ${cop0reg}
         nop
-    ", gpr_lo = in(reg) (value as u32), gpr_hi = in(reg) ((value >> 32) as u32),
-        tmp = out(reg) _, tmp2 = out(reg) _, cop0reg = const INDEX)
+        ", gpr = in(reg) value, cop0reg = const INDEX)
     }
 }
 

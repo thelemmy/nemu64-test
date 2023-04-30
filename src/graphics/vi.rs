@@ -1,6 +1,7 @@
 use arbitrary_int::{u10, u12, u24, u4};
 use bitbybit::{bitenum, bitfield};
 use crate::graphics::framebuffer_images::FramebufferImages;
+use crate::memory_map::MemoryMap;
 
 // Supported: RGBA1555
 pub type PixelType = crate::graphics::color::RGBA5551;
@@ -64,7 +65,7 @@ struct DRAMAddress {
 }
 
 
-const VI_BASE_REG: *mut u32 = 0xA440_0000 as *mut u32;
+const VI_BASE_REG: *mut u32 = MemoryMap::addr32_to_usize(0xA440_0000) as *mut u32;
 
 pub struct Video {
     framebuffers: FramebufferImages<PixelType>,

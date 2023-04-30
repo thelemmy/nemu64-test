@@ -229,8 +229,8 @@ fn test_sw_interrupt(status_before: Status, cause: Cause, status_after: Status, 
             asm!("
                 .set noat
                 mtc0 {status_before_value}, ${Status}
-                la {addr0}, 0f
-                la {addr1}, 1f
+                dla {addr0}, 0f
+                dla {addr1}, 1f
                 mtc0 {cause_value}, ${Cause}
                 nop
 0:
@@ -496,7 +496,7 @@ impl Test for SoftwareInterrupt1EnableAndDisableAfterOneNop {
                 asm!("
                     .set noat
                     mtc0 {status}, ${Status}
-                    la {addr0}, 0f
+                    dla {addr0}, 0f
                     mtc0 {fire}, ${Cause}
                     nop
 0:

@@ -42,8 +42,8 @@ wait_for_dma_finished:
     or $sp, $t0, $t1
 
     // Clear .bss section
-    la $t0, __bss_start
-    la $t1, __bss_end
+    dla $t0, __bss_start
+    dla $t1, __bss_end
 bss_clear_loop:
     bge $t0, $t1, bss_clear_done
     nop
@@ -63,13 +63,13 @@ bss_clear_done:
     sw $t1, PIF_CONTROL($t0)
 
     // Store the FS location for the OS
-    la $t0, __rom_end
+    dla $t0, __rom_end
     li $t1, FS_START
     sw $t0, 0($t1)
 
     // Clear $k0 and $k1. These have to be 0 as these can be used for regular code to configure the exception handler
-    la $k0, 0
-    la $k1, 0
+    lui $k0, 0
+    lui $k1, 0
 
     // Jump to Rust
     jal rust_entrypoint

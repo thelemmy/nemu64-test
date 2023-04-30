@@ -1,4 +1,6 @@
-const MI_BASE_REG: *mut u32 = 0xA430_0000 as *mut u32;
+use crate::memory_map::MemoryMap;
+
+const MI_BASE_REG: *mut u32 = MemoryMap::addr32_to_usize(0xA430_0000) as *mut u32;
 
 const INTR_SP: u32 = 1;
 

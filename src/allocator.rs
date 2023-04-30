@@ -19,7 +19,7 @@ pub fn init_allocator() {
     }
 
     let heap_start = unsafe { &__bss_end as *const u8 as usize };
-    let heap_end = 0x8000_0000 + MemoryMap::HEAP_END;
+    let heap_end = MemoryMap::addr32_to_usize(0x8000_0000) + MemoryMap::HEAP_END;
 
     unsafe {
         let mut guard = ALLOCATOR.lock();

@@ -161,7 +161,7 @@ impl Test for FireUnimplementedExceptionViaCTC1 {
                 asm!("
                     .set noat
                     .set noreorder
-                    la {address}, 1f
+                    dla {address}, 1f
 1:
                     CTC1 $2, $31
                     NOP

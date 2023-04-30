@@ -38,20 +38,22 @@ impl Test for UnalignedLW {
         unsafe { cop0::set_context_64(0); }
         unsafe { cop0::set_xcontext_64(0); }
 
+        let mut fault_address: isize = 0;
         let exception_context = expect_exception(CauseException::AdEL, 1, || {
             unsafe {
                 asm!("
                     .set noat
+                    DLA {fault_address}, 1f
+1:
                     LW $0, 0({gpr})
-                ", gpr = in(reg) p)
+                ", gpr = in(reg) p, fault_address = out(reg) fault_address)
             }
 
             Ok(())
         })?;
 
         soft_assert_eq(exception_context.k0_exception_vector, 0xFFFFFFFF_80000180, "Exception Vector")?;
-        soft_assert_eq(exception_context.exceptpc & 0xFFFFFFFF_FF000000, 0xFFFFFFFF_80000000, "ExceptPC")?;
-        soft_assert_eq(unsafe { *(exception_context.exceptpc as *const u32) }, 0x8C600000, "ExceptPC points to wrong instruction")?;
+        soft_assert_eq(exception_context.exceptpc, fault_address as u64, "ExceptPC")?;
         soft_assert_eq(exception_context.badvaddr, p as u64, "BadVAddr during AdEL exception")?;
         soft_assert_eq(exception_context.cause.raw_value(), 0x10, "Cause during AdEL exception")?;
         soft_assert_eq(exception_context.status, 0x24000002, "Status during AdEL exception")?;

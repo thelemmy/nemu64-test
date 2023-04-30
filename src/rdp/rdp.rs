@@ -1,6 +1,7 @@
+use crate::memory_map::MemoryMap;
 use crate::rdp::rdp_assembler::RDPAssembler;
 
-const DP_BASE_REG: *mut u32 = 0xA410_0000 as *mut u32;
+const DP_BASE_REG: *mut u32 = MemoryMap::addr32_to_usize(0xA410_0000) as *mut u32;
 
 #[allow(dead_code)]
 enum RegisterOffset {

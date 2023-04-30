@@ -23,6 +23,7 @@ fn mtc1<const REG: usize>(value: u32) {
             mtc1 {value}, ${cop1Reg}
         ", value = in(reg) value, cop1Reg = const REG)}
 }
+
 fn mfc1<const REG: usize>() -> u32 {
     let result: u32;
     unsafe {
@@ -34,31 +35,25 @@ fn mfc1<const REG: usize>() -> u32 {
     }
     result
 }
+
 fn dmtc1<const REG: usize>(value: u64) {
     unsafe {
         asm!("
             .set noat
             .set noreorder
-            dsll32 {lower}, {lower}, 0
-            dsrl32 {lower}, {lower}, 0
-            dsll32 {upper}, {upper}, 0
-            or {lower}, {lower}, {upper}
-            dmtc1 {lower}, ${cop1Reg}
-        ", lower = inout(reg) (value as u32) => _, upper = inout(reg) ((value >> 32) as u32) => _, cop1Reg = const REG)
+            dmtc1 {value}, ${cop1Reg}
+        ", value = in(reg) value, cop1Reg = const REG)
     }
 }
+
 fn dmfc1<const REG: usize>() -> u64 {
-    let lower: u32;
-    let upper: u32;
+    let result: u64;
     unsafe {
         asm!("
-            dmfc1 {lower}, ${cop1Reg}
-            dsrl32 {upper}, {lower}, 0
-            dsll32 {lower}, 0
-            dsrl32 {lower}, 0
-        ", lower = out(reg) lower, upper = out(reg) upper, cop1Reg = const REG)
+            dmfc1 {result}, ${cop1Reg}
+        ", result = out(reg) result, cop1Reg = const REG)
     }
-    ((upper as u64) << 32) | (lower as u64)
+    result
 }
 
 pub struct FullMode;
@@ -323,7 +318,7 @@ impl Test for UpperBitsOf32BitOperationFull {
         soft_assert_eq(dmfc1::<15>(), 16u64, "DMFC1 after FLOOR.W.S (15)")?;
 
         soft_assert_eq(dmfc1::<16>(), 0x50505050_00000000u64 | (1234.5f32.to_bits() as u64), "DMFC1 after LWC1 (16)")?;
-        soft_assert_eq(dmfc1::<17>(), 0x70707070_00000000u64 | (&a as *const f32 as u64), "DMFC1 after MTC1 (17)")?;
+        soft_assert_eq(dmfc1::<17>(), 0x70707070_00000000u64 | (&a as *const f32 as u32 as u64), "DMFC1 after MTC1 (17)")?;
 
         Ok(())
     }

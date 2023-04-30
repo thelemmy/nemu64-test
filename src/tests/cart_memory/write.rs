@@ -85,7 +85,7 @@ impl Test for WriteAndReadback3 {
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let p_cart = MemoryMap::uncached_cart_address(&DATA[0] as *const u64 as *const u32) as *mut u32;
 
-        unsafe { (0xB000_0000usize as *mut u32).write_volatile(0xBADC0FFE) }
+        unsafe { (MemoryMap::addr32_to_usize(0xB000_0000) as *mut u32).write_volatile(0xBADC0FFE) }
         unsafe { p_cart.write_volatile(0xDECAF) }
         let v1 = unsafe { p_cart.read_volatile() };
         let v2 = unsafe { p_cart.read_volatile() };
@@ -110,7 +110,7 @@ impl Test for WriteAndReadback4 {
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let p_cart = MemoryMap::uncached_cart_address(&DATA[0] as *const u64 as *const u32) as *mut u32;
 
-        unsafe { (0xBFBF_FFFCusize as *mut u32).write_volatile(0xBADC0FFE) }
+        unsafe { (MemoryMap::addr32_to_usize(0xBFBF_FFFC) as *mut u32).write_volatile(0xBADC0FFE) }
         unsafe { p_cart.write_volatile(0xDECAF) }
         let v1 = unsafe { p_cart.read_volatile() };
         let v2 = unsafe { p_cart.read_volatile() };
@@ -135,7 +135,7 @@ impl Test for WriteAndReadback5 {
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let p_cart = MemoryMap::uncached_cart_address(&DATA[0] as *const u64 as *const u32) as *mut u32;
 
-        unsafe { (0xBFC0_0000usize as *mut u32).write_volatile(0xBADC0FFE) }
+        unsafe { (MemoryMap::addr32_to_usize(0xBFC0_0000) as *mut u32).write_volatile(0xBADC0FFE) }
         unsafe { p_cart.write_volatile(0xDECAF) }
         let v1 = unsafe { p_cart.read_volatile() };
         let v2 = unsafe { p_cart.read_volatile() };
@@ -247,7 +247,7 @@ impl Test for Write32AndReadback8 {
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let p_cart = MemoryMap::uncached_cart_address(&DATA[0] as *const u64 as *const u32) as *mut u32;
 
-        unsafe { (0xB000_0000usize as *mut u32).write_volatile(0xBADC0FFE) }
+        unsafe { (MemoryMap::addr32_to_usize(0xB000_0000) as *mut u32).write_volatile(0xBADC0FFE) }
         unsafe { p_cart.write_volatile(0xDECAF) }
         let v1 = unsafe { (p_cart as *mut u8).read_volatile() };
         let v2 = unsafe { (p_cart as *mut u8).read_volatile() };
@@ -270,7 +270,7 @@ impl Test for Write32AndReadback16 {
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let p_cart = MemoryMap::uncached_cart_address(&DATA[0] as *const u64 as *const u32) as *mut u32;
 
-        unsafe { (0xB000_0000usize as *mut u32).write_volatile(0xBADC0FFE) }
+        unsafe { (MemoryMap::addr32_to_usize(0xB000_0000) as *mut u32).write_volatile(0xBADC0FFE) }
         unsafe { p_cart.write_volatile(0xDECAF) }
         let v1 = unsafe { (p_cart as *mut u16).read_volatile() };
         let v2 = unsafe { (p_cart as *mut u16).read_volatile() };
@@ -293,7 +293,7 @@ impl Test for Write8AndReadback32 {
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let p_cart = MemoryMap::uncached_cart_address(&DATA[0] as *const u64 as *const u32) as *mut u32;
 
-        unsafe { (0xB000_0000usize as *mut u8).write_volatile(0xBA) }
+        unsafe { (MemoryMap::addr32_to_usize(0xB000_0000) as *mut u8).write_volatile(0xBA) }
         unsafe { p_cart.write_volatile(0xDECAF) }
         let v1 = unsafe { p_cart.read_volatile() };
         let v2 = unsafe { p_cart.read_volatile() };
@@ -350,7 +350,7 @@ impl Test for Write16AndReadback32 {
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let p_cart = MemoryMap::uncached_cart_address(&DATA[0] as *const u64 as *const u32) as *mut u32;
 
-        unsafe { (0xB000_0000usize as *mut u16).write_volatile(0xBADC) }
+        unsafe { (MemoryMap::addr32_to_usize(0xB000_0000) as *mut u16).write_volatile(0xBADC) }
         unsafe { p_cart.write_volatile(0xDECAF) }
         let v1 = unsafe { p_cart.read_volatile() };
         let v2 = unsafe { p_cart.read_volatile() };
@@ -373,7 +373,7 @@ impl Test for Write64AndReadback32 {
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let p_cart = MemoryMap::uncached_cart_address(&DATA[0] as *const u64 as *const u32) as *mut u32;
 
-        unsafe { (0xB000_0000usize as *mut u64).write_volatile(0x98765432_1AF1231A) }
+        unsafe { (MemoryMap::addr32_to_usize(0xB000_0000) as *mut u64).write_volatile(0x98765432_1AF1231A) }
         unsafe { (p_cart as *mut u64).write_volatile(0x01010101_23232323) }
         let v1 = unsafe { (p_cart as *mut u32).read_volatile() };
         let v2 = unsafe { (p_cart as *mut u32).read_volatile() };

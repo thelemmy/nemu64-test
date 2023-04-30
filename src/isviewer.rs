@@ -1,10 +1,11 @@
+use crate::memory_map::MemoryMap;
 use crate::pi;
 
 /// Write the length of the text here
-const ISVIEWER_WRITE_LEN: *mut u32 = 0xB3FF0014 as *mut u32;
+const ISVIEWER_WRITE_LEN: *mut u32 = MemoryMap::addr32_to_usize(0xB3FF0014) as *mut u32;
 
 // Write text data into this buffer
-const ISVIEWER_BUFFER_START: *mut u32 = 0xB3FF0020 as *mut u32;
+const ISVIEWER_BUFFER_START: *mut u32 = MemoryMap::addr32_to_usize(0xB3FF0020) as *mut u32;
 const ISVIEWER_BUFFER_LENGTH: usize = 0x200;
 
 fn pi_wait() {

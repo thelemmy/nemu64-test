@@ -4,6 +4,7 @@ use alloc::string::String;
 use alloc::vec::Vec;
 use core::any::Any;
 use core::arch::asm;
+use crate::memory_map::MemoryMap;
 use crate::tests::{Level, Test};
 use crate::tests::soft_asserts::soft_assert_eq;
 
@@ -23,7 +24,7 @@ impl Test for Read00 {
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
         let cached = value.downcast_ref::<bool>().unwrap();
-        let address = if *cached { 0x83F00000usize } else { 0xA3F00000usize };
+        let address = MemoryMap::addr32_to_usize(if *cached { 0x83F00000 } else { 0xA3F00000 });
         let mut result1: u64 = 0xFEDCBA98_76543210;
         let mut result2: u64 = 0xFEDCBA98_76543210;
         let mut result3: u64 = 0xFEDCBA98_76543210;
@@ -121,7 +122,7 @@ impl Test for ReadMore {
             0,
         ];
 
-        let mut p = 0xA3F00000usize as *const u32;
+        let mut p = MemoryMap::addr32_to_usize(0xA3F00000) as *const u32;
         for _ in 0..8 {
             expect_array(&mut p, &EXPECTED_A)?;
         }

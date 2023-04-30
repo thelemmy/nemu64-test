@@ -1,4 +1,6 @@
-const PI_BASE_REG: *mut u32 = 0xA460_0000 as *mut u32;
+use crate::memory_map::MemoryMap;
+
+const PI_BASE_REG: *mut u32 = MemoryMap::addr32_to_usize(0xA460_0000) as *mut u32;
 
 #[allow(dead_code)]
 enum RegisterOffset {

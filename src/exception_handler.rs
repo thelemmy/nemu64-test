@@ -11,6 +11,7 @@ use crate::graphics::cursor::Cursor;
 use crate::graphics::font::Font;
 use crate::graphics::system_font::FONT_GENEVA_9;
 use crate::graphics::vi::PixelType;
+use crate::memory_map::MemoryMap;
 use crate::VIDEO;
 
 use super::cop0;
@@ -55,7 +56,7 @@ extern "C" fn exception_handler_000() {
             .set noreorder
             exception_handler_000_start:
             quick_exception_return
-            la $26, 0x80000000
+            li $26, 0x80000000
             j {exception_handler_generic}
             nop // delay slot
             exception_handler_000_size = . - exception_handler_000_start
@@ -74,7 +75,7 @@ extern "C" fn exception_handler_080() {
             .set noreorder
             exception_handler_080_start:
             quick_exception_return
-            la $26, 0x80000080
+            li $26, 0x80000080
             j {exception_handler_generic}
             nop // delay slot
             exception_handler_080_size = . - exception_handler_080_start
@@ -93,7 +94,7 @@ extern "C" fn exception_handler_180() {
             .set noreorder
             exception_handler_180_start:
             quick_exception_return
-            la $26, 0x80000180
+            li $26, 0x80000180
             j {exception_handler_generic}
             nop // delay slot
             exception_handler_180_size = . - exception_handler_180_start
@@ -363,15 +364,16 @@ pub fn install_exception_handlers() {
     let size_000 = unsafe { &exception_handler_000_size as *const u8 as usize };
     let size_080 = unsafe { &exception_handler_080_size as *const u8 as usize };
     let size_180 = unsafe { &exception_handler_180_size as *const u8 as usize };
-    install_handler(exception_handler_000 as *mut u8, 0x8000_0000 as *mut u8, size_000, 0x080);
-    install_handler(exception_handler_080 as *mut u8, 0x8000_0080 as *mut u8, size_080, 0x100);
-    install_handler(exception_handler_180 as *mut u8, 0x8000_0180 as *mut u8, size_180, 0x180);
+    install_handler(exception_handler_000 as *mut u8, MemoryMap::addr32_to_usize(0x8000_0000) as *mut u8, size_000, 0x080);
+    install_handler(exception_handler_080 as *mut u8, MemoryMap::addr32_to_usize(0x8000_0080) as *mut u8, size_080, 0x100);
+    install_handler(exception_handler_180 as *mut u8, MemoryMap::addr32_to_usize(0x8000_0180) as *mut u8, size_180, 0x180);
 
     // Invalidate the full 8Kbytes in the Data Cache
-    invalidate_data_cache(0x8000_0000 as *const u32, 8 * 1024);
+    invalidate_data_cache(MemoryMap::addr32_to_usize(0x8000_0000) as *const u32, 8 * 1024);
 
     // Invalidate the full 16Kbytes in the Instruction Cache
-    invalidate_instruction_cache(0x8000_0000 as *const u32, 16 * 1024);
+    invalidate_instruction_cache(MemoryMap::addr32_to_usize(0x8000_0000) as *const u32, 16 * 1024);
+    invalidate_instruction_cache(MemoryMap::addr32_to_usize(0x8000_0000) as *const u32, 16 * 1024);
 }
 
 fn invalidate_instruction_cache(start: *const u32, bytes: usize) {

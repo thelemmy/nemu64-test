@@ -1,5 +1,7 @@
-const SP_BASE_REG: *mut u32 = 0xA404_0000 as *mut u32;
-const SP_PC_REG: *mut u32 = 0xA408_0000 as *mut u32;
+use crate::memory_map::MemoryMap;
+
+const SP_BASE_REG: *mut u32 = MemoryMap::addr32_to_usize(0xA404_0000) as *mut u32;
+const SP_PC_REG: *mut u32 = MemoryMap::addr32_to_usize(0xA408_0000) as *mut u32;
 
 #[allow(dead_code)]
 enum RegisterOffset {

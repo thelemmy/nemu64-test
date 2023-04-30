@@ -7,10 +7,8 @@ use crate::tests::{Level, Test};
 use crate::tests::soft_asserts::{soft_assert_eq, soft_assert_neq};
 
 fn bgezal_basic<const VALUE: u64>(expected_jump: bool) -> Result<(), String> {
-    let low: u32 = VALUE as u32;
-    let high: u32 = (VALUE >> 32) as u32;
     let mut result: u32;
-    let mut ra_result: u32;
+    let mut ra_result: u64;
     unsafe {
         asm!("
             .set noat
@@ -18,13 +16,6 @@ fn bgezal_basic<const VALUE: u64>(expected_jump: bool) -> Result<(), String> {
 
             DADDIU $25, $31, 0  // Stash RA in $25
             LUI $31, 0          // Clear RA
-
-            // Merge low and high into $4
-            DSLL32 $4, $6, 0
-            DSRL32 $4, $4, 0
-
-            DSLL32 $3, $7, 0
-            OR $4, $4, $3
 
             LUI $3, 0x0000
 
@@ -35,8 +26,7 @@ fn bgezal_basic<const VALUE: u64>(expected_jump: bool) -> Result<(), String> {
 1:          ORI $3, $3, 4
             DADDIU $5, $31, 0
             DADDIU $31, $25, 0  // Restore original RA
-        ", in("$6") low, in("$7") high,
-            out("$3") result, out("$4") _, out("$5") ra_result)
+        ", out("$3") result, in("$4") VALUE, out("$5") ra_result)
     }
 
     soft_assert_eq(result, if expected_jump { 5 } else { 7 }, "BGEZAL should have jumped")?;
@@ -96,7 +86,7 @@ impl Test for BGEZALThatChangesItsOwnCondition {
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut result: u32;
-        let mut ra_result: u32;
+        let mut ra_result: u64;
         unsafe {
             asm!("
             .set noat
@@ -115,7 +105,7 @@ impl Test for BGEZALThatChangesItsOwnCondition {
 1:          ORI $3, $3, 4
             DADDIU $5, $31, 0
             DADDIU $31, $25, 0  // Restore original RA
-        ", out("$3") result, out("$4") _, out("$5") ra_result)
+        ", out("$3") result, out("$5") ra_result)
         }
 
         soft_assert_eq(result, 5, "BGEZAL should have jumped")?;
@@ -127,10 +117,8 @@ impl Test for BGEZALThatChangesItsOwnCondition {
 }
 
 fn bgezall_basic<const VALUE: u64>(expected_jump: bool) -> Result<(), String> {
-    let low: u32 = VALUE as u32;
-    let high: u32 = (VALUE >> 32) as u32;
     let mut result: u32;
-    let mut ra_result: u32;
+    let mut ra_result: u64;
     unsafe {
         asm!("
             .set noat
@@ -138,13 +126,6 @@ fn bgezall_basic<const VALUE: u64>(expected_jump: bool) -> Result<(), String> {
 
             DADDIU $25, $31, 0  // Stash RA in $25
             LUI $31, 0          // Clear RA
-
-            // Merge low and high into $4
-            DSLL32 $4, $6, 0
-            DSRL32 $4, $4, 0
-
-            DSLL32 $3, $7, 0
-            OR $4, $4, $3
 
             LUI $3, 0x0000
 
@@ -155,8 +136,7 @@ fn bgezall_basic<const VALUE: u64>(expected_jump: bool) -> Result<(), String> {
 1:          ORI $3, $3, 4
             DADDIU $5, $31, 0
             DADDIU $31, $25, 0  // Restore original RA
-        ", in("$6") low, in("$7") high,
-        out("$3") result, out("$4") _, out("$5") ra_result)
+        ", in("$4") VALUE, out("$3") result, out("$5") ra_result)
     }
 
     soft_assert_eq(result, if expected_jump { 5 } else { 6 }, "BGEZALL should have jumped")?;

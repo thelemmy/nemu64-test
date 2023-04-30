@@ -1,7 +1,7 @@
 ENTRY(_start)
 
 SECTIONS {
-    . = 0x80000400;
+    . = 0xFFFFFFFF80000400;
     __boot_start = .;
 
     .boot : {
