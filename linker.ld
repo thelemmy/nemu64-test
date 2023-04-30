@@ -24,6 +24,9 @@ SECTIONS {
         . = ALIGN(16);
     }
 
+    # Everything until here needs to be loaded into RAM
+    __binary_size = . - __boot_start;
+
     .bss : {
         __bss_start = .;
         *(.bss .bss.*)

@@ -896,6 +896,7 @@ impl Test for ComparisonInHalfModeWithOddRegisters {
         let different55: u32;
         unsafe {
             asm!("
+                .set noat
                 // Do comparisons use the upper 32 bits?
                 ORI {different02}, $0, 0
                 C.EQ.S $0, $2

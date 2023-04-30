@@ -122,7 +122,7 @@ pub fn run() {
     let mut succeeded = [0u32; LEVEL_COUNT];
     let mut failed = [0u32; LEVEL_COUNT];
 
-    fn test_value(test: &Box<dyn Test>, value: &Box::<dyn Any>, failed: &mut u32, succeeded: &mut u32, time: &mut u32) {
+    fn test_value(test: &Box<dyn Test>, value: &Box<dyn Any>, failed: &mut u32, succeeded: &mut u32, time: &mut u32) {
         fn value_desc(value: &Box<dyn Any>) -> String {
             match (*value).downcast_ref::<()>() {
                 Some(_) => return String::new(),
@@ -477,9 +477,9 @@ pub fn run() {
             set_fcsr(FCSR::DEFAULT);
         }
 
-        let counter_before = crate::cop0::count();
+        let counter_before = cop0::count();
         let test_result = test.run(&value);
-        let counter_after = crate::cop0::count();
+        let counter_after = cop0::count();
         *time += counter_after - counter_before;
 
         unsafe { set_status(Status::DEFAULT); }
@@ -512,7 +512,7 @@ pub fn run() {
     let tests = testlist::tests();
     let mut test_times: Vec<(usize, u32)> = Vec::new();
     let dummy_test_value: Box<dyn Any> = Box::new(());
-    let counter_before = crate::cop0::count();
+    let counter_before = cop0::count();
     for (index, test) in tests.iter().enumerate() {
         let values = test.values();
         let level = test.level();
@@ -547,7 +547,7 @@ pub fn run() {
             test_times.push((index, time));
         }
     }
-    let counter_after = crate::cop0::count();
+    let counter_after = cop0::count();
 
     println!();
     let succeeded_total: u32 = succeeded.iter().sum();
@@ -596,7 +596,7 @@ Finished in {:0.2}s. {}{}{}{}{}",
         FramebufferConsole::instance().lock().prepend(&debug_msg);
 
         test_times.sort_by(|(_, a), (_, b)| { a.cmp(b).reverse() });
-        println!("");
+        println!();
         print!("Slowest tests: ");
         for i in 0..min(5, test_times.len()) {
             let (test_index, test_time) = test_times[i];
@@ -606,6 +606,6 @@ Finished in {:0.2}s. {}{}{}{}{}",
             }
             print!("{} ({:0.2}s)", test_name, cycles_to_seconds(test_time));
         }
-        println!("");
+        println!();
     }
 }

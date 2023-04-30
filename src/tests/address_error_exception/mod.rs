@@ -312,7 +312,7 @@ impl Test for UnalignedJump {
             unsafe {
                 asm!("
                     .set noat
-                    LA $2, 1f
+                    DLA $2, 1f
                     ADDIU $2, 2
                     JR $2
                 1:

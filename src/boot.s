@@ -18,12 +18,21 @@
 .set FS_START,              0x8000031C
 
 _start:
-    // IPL3 copied over the first 1MB. Copy over the next MB
-    // TODO: Any way to determine the actual size of the binary? We're overcopying quite a bit here
-    li $t1, 0x10101000
-    li $t3, 0x80100400
-    li $t2, 0x1FFFFF
+    // IPL3 copied over only the first MB which might not be enough. Copy the remainder, if there is any
+    li $t0, 0x100000
+    dla $t2, __binary_size
+    subu $t2, $t2, $t0
+    bltz $t2, loading_done
+    nop
+    dla $t3, __boot_start
+    li $t1, 0x10001000
 
+    // Remove the first MB (already removed from size above already)
+    addu $t3, $t3, $t0
+    addu $t1, $t1, $t0
+
+    // DMA is initiated once length is written to (the number of bytes is length+1)
+    addiu $t2, $t2, -1
     lui $t0, 0xA460
     sw $t1, 0x4($t0)  // cart
     sw $t3, 0x0($t0)  // dram
@@ -35,6 +44,7 @@ wait_for_dma_finished:
     bnez $t1, wait_for_dma_finished
     nop
 
+loading_done:
     // Initialize stack
     li $t0, OS_MEM_SIZE
     lw $t0, 0($t0)

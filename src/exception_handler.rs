@@ -181,7 +181,7 @@ extern "C" fn exception_handler_generic() {
             sw $11, 336 ($sp)
 
             // Call into compiled code. Pass stackpointer as argument
-            la $at, {CompiledFunction}
+            dla $at, {CompiledFunction}
             jalr $at
             ori $a0, $sp, 0x0  // delay slot
 

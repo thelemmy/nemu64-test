@@ -46,11 +46,17 @@ impl MemoryMap {
 
     /// Returns the cartridge (rom) address of a given constant
     pub fn uncached_cart_address<T>(p: *const T) -> *const T {
+        extern "C" {
+            static __binary_size: u8;
+        }
         // The bootcode copies from 0x10001000 to 0x8000_0400. If we have some other pointer,
         // it doesn't come from the cart
         let memory_address = p as usize;
         assert!(memory_address >= Self::addr32_to_usize(0x8000_0400));
-        assert!(memory_address < Self::addr32_to_usize(0x8000_0400) + 3 * 1024 * 1024);
+        unsafe {
+            let ram_end = Self::addr32_to_usize(0x8000_0400) + (&__binary_size as *const u8 as usize);
+            assert!(memory_address < ram_end);
+        }
 
         Self::uncached((memory_address + 0x10001000 - 0x400) as *const T)
     }
