@@ -27,21 +27,9 @@ fn trap<const INSTRUCTION: u32>(v1: u64, v2: u64) {
         asm!("
             .set noat
             .set noreorder
-            dsll32 $2, {gpr_hi_1}, 0
-            dsll32 $3, {gpr_hi_2}, 0
-            // Zero extend gpr_lo
-            dsll32 {tmp1b}, {gpr_lo_1}, 0
-            dsll32 {tmp2b}, {gpr_lo_2}, 0
-            dsrl32 {tmp1b}, {tmp1b}, 0
-            dsrl32 {tmp2b}, {tmp2b}, 0
-            or $2, $2, {tmp1b}
-            or $3, $3, {tmp2b}
             .word {INSTRUCTION}
-        ", gpr_lo_1 = in(reg) (v1 as u32), gpr_hi_1 = in(reg) ((v1 >> 32) as u32),
-        gpr_lo_2 = in(reg) (v2 as u32), gpr_hi_2 = in(reg) ((v2 >> 32) as u32),
-        INSTRUCTION = const INSTRUCTION,
-        tmp1b = out(reg) _, tmp2b = out(reg) _,
-        out("$2") _, out("$3") _)
+        ", in("$2") v1, in("$3") v2,
+        INSTRUCTION = const INSTRUCTION)
     }
 }
 
@@ -68,16 +56,8 @@ fn trap_imm<const INSTRUCTION: u32>(v1: u64) {
         asm!("
             .set noat
             .set noreorder
-            dsll32 $2, {gpr_hi_1}, 0
-            // Zero extend gpr_lo
-            dsll32 {tmp1b}, {gpr_lo_1}, 0
-            dsrl32 {tmp1b}, {tmp1b}, 0
-            or $2, $2, {tmp1b}
             .word {INSTRUCTION}
-        ", gpr_lo_1 = in(reg) (v1 as u32), gpr_hi_1 = in(reg) ((v1 >> 32) as u32),
-        INSTRUCTION = const INSTRUCTION,
-        tmp1b = out(reg) _,
-        out("$2") _)
+        ", in("$2") v1, INSTRUCTION = const INSTRUCTION)
     }
 }
 
