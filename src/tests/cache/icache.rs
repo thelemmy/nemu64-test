@@ -303,7 +303,6 @@ fn test_modify_within_basic_block(instruction_at_beginning: u32, instruction_fur
             .set noat
             .set noreorder
             OR $6, $31, $0
-TNE $30, $30
             JALR $2
             NOP
             OR $31, $6, $0
@@ -533,7 +532,7 @@ impl Test for ModifyWithinBasicBlockImplicitDCacheWriteBackSW {
             Some((expected_modified_code, generator_index, generated_index)) => {
                 test_modify_within_basic_block(
                     Assembler::make_sw(GPR::A1, 0 << 2, GPR::A0),
-                    Assembler::make_sw(GPR::A1, 8192 << 2, GPR::A0),
+                    Assembler::make_sw(GPR::A1, 8192, GPR::A0),
                     *generator_index, *generated_index, *expected_modified_code)?;
             }
             None => {
@@ -565,7 +564,7 @@ impl Test for ModifyWithinBasicBlockImplicitDCacheWriteBackSWL {
             Some((expected_modified_code, generator_index, generated_index)) => {
                 test_modify_within_basic_block(
                     Assembler::make_sw(GPR::A1, 0 << 2, GPR::A0),
-                    Assembler::make_swl(GPR::A1, 8192 << 2, GPR::A0),
+                    Assembler::make_swl(GPR::A1, 8192, GPR::A0),
                     *generator_index, *generated_index, *expected_modified_code)?;
             }
             None => {
@@ -597,7 +596,7 @@ impl Test for ModifyWithinBasicBlockImplicitDCacheWriteBackLW {
             Some((expected_modified_code, generator_index, generated_index)) => {
                 test_modify_within_basic_block(
                     Assembler::make_sw(GPR::A1, 0 << 2, GPR::A0),
-                    Assembler::make_lw(GPR::A1, 8192 << 2, GPR::A0),
+                    Assembler::make_lw(GPR::A1, 8192, GPR::A0),
                     *generator_index, *generated_index, *expected_modified_code)?;
             }
             None => {
@@ -627,7 +626,7 @@ impl Test for ModifyWithinBasicBlockImplicitDCacheWriteBackCycle {
             Some((expected_modified_code, generator_index, generated_index)) => {
                 test_modify_within_basic_block(
                     Assembler::make_sw(GPR::A1, 0 << 2, GPR::A0),
-                    Assembler::make_sw(GPR::A1, 8192 << 2, GPR::A0),
+                    Assembler::make_sw(GPR::A1, 8192, GPR::A0),
                     *generator_index, *generated_index, *expected_modified_code)?;
             }
             None => {
