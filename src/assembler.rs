@@ -252,7 +252,7 @@ pub enum Cop1Opcode {
     L = 21,
 }
 
-#[bitenum(u6, exhaustive: false)]
+#[bitenum(u6, exhaustive: true)]
 #[allow(non_camel_case_types)]
 #[allow(dead_code)]
 pub enum Cop1FloatInstruction {
@@ -273,6 +273,20 @@ pub enum Cop1FloatInstruction {
     CEIL_W = 14,
     FLOOR_W = 15,
     _F16 = 16,
+    _Invalid_17 = 17,
+    _Invalid_18 = 18,
+    _Invalid_19 = 19,
+    _Invalid_20 = 20,
+    _Invalid_21 = 21,
+    _Invalid_22 = 22,
+    _Invalid_23 = 23,
+    _Invalid_24 = 24,
+    _Invalid_25 = 25,
+    _Invalid_26 = 26,
+    _Invalid_27 = 27,
+    _Invalid_28 = 28,
+    _Invalid_29 = 29,
+    _Invalid_30 = 30,
     _F31 = 31,
     CVT_S = 32,
     CVT_D = 33,
@@ -281,6 +295,14 @@ pub enum Cop1FloatInstruction {
     CVT_W = 36,
     CVT_L = 37,
     _F38 = 38,
+    _Invalid_39 = 39,
+    _Invalid_40 = 40,
+    _Invalid_41 = 41,
+    _Invalid_42 = 42,
+    _Invalid_43 = 43,
+    _Invalid_44 = 44,
+    _Invalid_45 = 45,
+    _Invalid_46 = 46,
     _F47 = 47,
     C_F = 48,
     C_UN = 49,
@@ -860,7 +882,7 @@ impl Assembler {
     }
 
     pub const fn make_cop1_c_cond(condition: Cop1Condition, fs: FR, ft: FR) -> FPUFloatInstruction {
-        Self::make_cop1_float_instruction(Cop1FloatInstruction::new_with_raw_value(condition.raw_value()).ok().unwrap(), FR::F0, fs, ft)
+        Self::make_cop1_float_instruction(Cop1FloatInstruction::new_with_raw_value(condition.raw_value()), FR::F0, fs, ft)
     }
 
     pub const fn make_cfc1(rt: GPR, rd: u5) -> u32 {
