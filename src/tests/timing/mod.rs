@@ -316,8 +316,8 @@ fn assert_cycles(expected_cycles: u32, value2: u64, value4: u64, test_status: St
         STATUS = const RegisterIndex::Status as usize,
 
         // Pass in values as fpu registers - this allows passing them in as 64 bit (even if illegal float values)
-        in("$f2") core::mem::transmute::<u64, f64>(value2),
-        in("$f4") core::mem::transmute::<u64, f64>(value4),
+        in("$f2") transmute::<u64, f64>(value2),
+        in("$f4") transmute::<u64, f64>(value4),
 
         // $2 and $4 will be copied from the FPU via DMFC1
         out("$2") _,
