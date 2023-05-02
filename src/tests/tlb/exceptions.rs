@@ -11,12 +11,12 @@ use crate::exception_handler::expect_exception;
 use crate::tests::{Level, Test};
 use crate::tests::soft_asserts::soft_assert_eq;
 
-pub fn setup_tlb_page(pagemask: Pagemask, valid: bool, dirty: bool) -> u32 {
+pub fn setup_tlb_page(pagemask: Pagemask, valid: bool, dirty: bool) -> usize {
     unsafe { cop0::clear_tlb(); }
     unsafe { cop0::set_context_64(0); }
     unsafe { cop0::set_xcontext_64(0); }
 
-    let virtual_page_base = 0x012345678 & !0b1111111111111 & !(pagemask as u32);
+    let virtual_page_base = 0x012345678 & !0b1111111111111 & !(pagemask as usize);
 
     // Setup 16k mapping from 0x0DEA0000 to MemoryMap::HEAP_END
     unsafe {
@@ -34,8 +34,8 @@ pub fn setup_tlb_page(pagemask: Pagemask, valid: bool, dirty: bool) -> u32 {
     virtual_page_base
 }
 
-pub fn test_miss_exception<F>(pagemask: Pagemask, offset: u32, valid: bool, dirty: bool, skip_instructions: u64, code: CauseException, check_entry_hi: bool, delay: bool, f: F) -> Result<(), String>
-    where F: FnOnce(u32) -> Result<(), String> {
+pub fn test_miss_exception<F>(pagemask: Pagemask, offset: usize, valid: bool, dirty: bool, skip_instructions: u64, code: CauseException, check_entry_hi: bool, delay: bool, f: F) -> Result<(), String>
+    where F: FnOnce(usize) -> Result<(), String> {
 
     let virtual_page_base = setup_tlb_page(pagemask, valid, dirty);
 
@@ -66,8 +66,8 @@ pub fn test_miss_exception<F>(pagemask: Pagemask, offset: u32, valid: bool, dirt
     Ok(())
 }
 
-pub fn test_nomiss_exception<F>(pagemask: Pagemask, offset: u32, valid: bool, dirty: bool, f: F) -> Result<(), String>
-    where F: FnOnce(u32) -> Result<(), String> {
+pub fn test_nomiss_exception<F>(pagemask: Pagemask, offset: usize, valid: bool, dirty: bool, f: F) -> Result<(), String>
+    where F: FnOnce(usize) -> Result<(), String> {
 
     let virtual_page_base = setup_tlb_page(pagemask, valid, dirty);
 
@@ -225,10 +225,10 @@ impl Test for StoreMissMisaligned4k {
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let pagemask = Pagemask::M4K;
-        let swl = |address: u32| {
+        let swl = |address: usize| {
             unsafe { asm!("swl $0, 0($2)", in("$2") address); }; Ok(())
         };
-        let swr = |address: u32| {
+        let swr = |address: usize| {
             unsafe { asm!("swr $0, 0($2)", in("$2") address); }; Ok(())
         };
         test_miss_exception(pagemask, 4096, true, true, 1, CauseException::TLBS, false, false, swl)?;
@@ -369,7 +369,7 @@ impl Test for ExecuteTLBMappedMissInDelay {
 
                 // Call into the next page. The exception handler will then resume by applying a negative offset so that we exit out gracefully
                 let mut result: u32;
-                let mut fault_jalr_ra: u32;
+                let mut fault_jalr_ra: usize;
                 asm!("
                     LI $2, 0
                     LI $6, 0
