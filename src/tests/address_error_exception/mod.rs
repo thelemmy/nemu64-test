@@ -3,7 +3,7 @@ use alloc::string::String;
 use alloc::vec::Vec;
 use core::any::Any;
 use core::arch::asm;
-use arbitrary_int::{u31, u41, u5};
+use arbitrary_int::{u31, u41, u5, Number};
 use crate::assembler::{Assembler, FR, GPR};
 use crate::cop0;
 use crate::cop0::{cache, CacheOp, CauseException, Context, preset_cause_to_copindex2, XContext};

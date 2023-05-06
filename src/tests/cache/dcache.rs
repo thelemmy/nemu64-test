@@ -1,4 +1,4 @@
-use arbitrary_int::{u2, u20, u27, u29};
+use arbitrary_int::{u2, u20, u27, u29, Number};
 use alloc::alloc::{alloc, dealloc, Layout};
 use alloc::boxed::Box;
 use alloc::format;
