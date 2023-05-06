@@ -131,7 +131,7 @@ fn test_load_and_catch_exception(address: u64, tlb_miss: bool) -> Result<(), Str
         Ok(())
     })?;
 
-    soft_assert_eq(exception_context.cause,  Cause::new().with_exception(cause_exception), "Cause")?;
+    soft_assert_eq(exception_context.cause,  Cause::DEFAULT.with_exception(cause_exception), "Cause")?;
     soft_assert_eq(exception_context.k0_exception_vector, if tlb_miss { 0xFFFFFFFF_80000080 } else { 0xFFFFFFFF_80000180 }, "Exception Vector")?;
     soft_assert_eq(exception_context.exceptpc & 0xFFFFFFFF_FF000000, 0xFFFFFFFF_80000000, "ExceptPC")?;
     soft_assert_eq(unsafe { *(exception_context.exceptpc as *const u32) }, 0x8C400000, "ExceptPC points to wrong instruction")?;
@@ -225,7 +225,7 @@ fn test_tlb_miss(address: u64, vpn: u27, r: u2) -> Result<(), String> {
         Ok(())
     })?;
 
-    soft_assert_eq(exception_context.cause, Cause::new().with_exception(CauseException::TLBL), "Cause")?;
+    soft_assert_eq(exception_context.cause, Cause::DEFAULT.with_exception(CauseException::TLBL), "Cause")?;
     soft_assert_eq(exception_context.k0_exception_vector, 0xFFFFFFFF_80000080, "Exception Vector")?;
     soft_assert_eq(exception_context.exceptpc & 0xFFFFFFFF_FF000000, 0xFFFFFFFF_80000000, "ExceptPC")?;
     soft_assert_eq(unsafe { *(exception_context.exceptpc as *const u32) }, 0x8C440000, "ExceptPC points to wrong instruction")?;
@@ -234,8 +234,8 @@ fn test_tlb_miss(address: u64, vpn: u27, r: u2) -> Result<(), String> {
     let vpn19 = u19::extract_u64(address, 13);
     let vpn27 = u27::extract_u64(address, 13);
     let r = u2::extract_u64(address, 62);
-    soft_assert_eq(exception_context.context, Context::new().with_bad_vpn2(vpn19), "Context")?;
-    soft_assert_eq(exception_context.xcontext, XContext::new().with_bad_vpn2(vpn27).with_r(r), "XContext")?;
+    soft_assert_eq(exception_context.context, Context::DEFAULT.with_bad_vpn2(vpn19), "Context")?;
+    soft_assert_eq(exception_context.xcontext, XContext::DEFAULT.with_bad_vpn2(vpn27).with_r(r), "XContext")?;
     soft_assert_eq(exception_context.entry_hi , make_entry_hi(0, vpn27, r), "EntryHi")?;
 
     Ok(())

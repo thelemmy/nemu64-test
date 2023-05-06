@@ -54,7 +54,7 @@ pub fn test_miss_exception<F>(pagemask: Pagemask, offset: usize, valid: bool, di
     // Testing for the exact ExceptPC is difficult as we can't easily find out the PC of the LW above. Test ballpark and sign-extension at least
     soft_assert_eq(exception_context.exceptpc & 0xFFFFFFFF_FF000000, 0xFFFFFFFF_80000000, "ExceptPC during TLB exception")?;
     soft_assert_eq(exception_context.badvaddr, (virtual_page_base + offset) as u64, "BadVAddr during TLB exception")?;
-    soft_assert_eq(exception_context.cause, Cause::new().with_exception(code).with_branch_delay(delay), "Cause during TLB exception")?;
+    soft_assert_eq(exception_context.cause, Cause::DEFAULT.with_exception(code).with_branch_delay(delay), "Cause during TLB exception")?;
     soft_assert_eq(exception_context.status, 0x24000002, "Status during TLB exception")?;
     soft_assert_eq(exception_context.context.raw_value(), expected_context, "Context during TLB exception")?;
     soft_assert_eq(exception_context.xcontext.raw_value(), expected_context, "XContext during TLB exception")?;
@@ -328,7 +328,7 @@ impl Test for ExecuteTLBMappedMiss {
         soft_assert_eq(exception_context.k0_exception_vector, 0xFFFFFFFF_80000180, "Exception Vector for TLB exception")?;
         soft_assert_eq(exception_context.exceptpc, fault_address as u64, "ExceptPC during TLB exception")?;
         soft_assert_eq(exception_context.badvaddr, fault_address as u64, "BadVAddr during TLB exception")?;
-        soft_assert_eq(exception_context.cause, Cause::new().with_exception(CauseException::TLBL), "Cause during TLB exception")?;
+        soft_assert_eq(exception_context.cause, Cause::DEFAULT.with_exception(CauseException::TLBL), "Cause during TLB exception")?;
         soft_assert_eq(exception_context.status, 0x24000002, "Status during TLB exception")?;
         soft_assert_eq(exception_context.context.raw_value(), expected_context, "Context during TLB exception")?;
         soft_assert_eq(exception_context.xcontext.raw_value(), expected_context, "XContext during TLB exception")?;

@@ -285,7 +285,7 @@ impl Test for SoftwareInterrupt1Enabled {
         let previous_status = status();
         test_sw_interrupt(
             previous_status.with_interrupt_mask_sw1(true).with_ie(true),
-            Cause::new().with_interrupt_sw1(true),
+            Cause::DEFAULT.with_interrupt_sw1(true),
             previous_status,
             0,
             false
@@ -306,7 +306,7 @@ impl Test for SoftwareInterrupt1Masked {
         let previous_status = status();
         test_sw_interrupt(
             previous_status.with_interrupt_mask_sw1(false).with_ie(true),
-            Cause::new().with_interrupt_sw1(true),
+            Cause::DEFAULT.with_interrupt_sw1(true),
             previous_status.with_interrupt_mask_sw1(true).with_ie(true),
             1,
             false
@@ -327,7 +327,7 @@ impl Test for SoftwareInterrupt1InterruptsDisabled {
         let previous_status = status();
         test_sw_interrupt(
             previous_status.with_interrupt_mask_sw1(true).with_ie(false),
-            Cause::new().with_interrupt_sw1(true),
+            Cause::DEFAULT.with_interrupt_sw1(true),
             previous_status.with_interrupt_mask_sw1(true).with_ie(true),
             1,
             false
@@ -348,7 +348,7 @@ impl Test for SoftwareInterrupt2Enabled {
         let previous_status = status();
         test_sw_interrupt(
             previous_status.with_interrupt_mask_sw2(true).with_ie(true),
-            Cause::new().with_interrupt_sw2(true),
+            Cause::DEFAULT.with_interrupt_sw2(true),
             previous_status,
             0,
             false
@@ -369,7 +369,7 @@ impl Test for SoftwareInterrupt2Masked {
         let previous_status = status();
         test_sw_interrupt(
             previous_status.with_interrupt_mask_sw2(false).with_ie(true),
-            Cause::new().with_interrupt_sw2(true),
+            Cause::DEFAULT.with_interrupt_sw2(true),
             previous_status.with_interrupt_mask_sw2(true).with_ie(true),
             1,
             false
@@ -390,7 +390,7 @@ impl Test for SoftwareInterrupt2InterruptsDisabled {
         let previous_status = status();
         test_sw_interrupt(
             previous_status.with_interrupt_mask_sw2(true).with_ie(false),
-            Cause::new().with_interrupt_sw2(true),
+            Cause::DEFAULT.with_interrupt_sw2(true),
             previous_status.with_interrupt_mask_sw2(true).with_ie(true),
             1,
             false
@@ -411,7 +411,7 @@ impl Test for SoftwareInterrupt12Enabled {
         let previous_status = status();
         test_sw_interrupt(
             previous_status.with_interrupt_mask_sw1(true).with_interrupt_mask_sw2(true).with_ie(true),
-            Cause::new().with_interrupt_sw1(true).with_interrupt_sw2(true),
+            Cause::DEFAULT.with_interrupt_sw1(true).with_interrupt_sw2(true),
             previous_status,
             0,
             false
@@ -432,7 +432,7 @@ impl Test for SoftwareInterrupt1EnabledHazard {
         let previous_status = status();
         test_sw_interrupt(
             previous_status.with_interrupt_mask_sw1(true).with_ie(true),
-            Cause::new().with_interrupt_sw1(true),
+            Cause::DEFAULT.with_interrupt_sw1(true),
             previous_status,
             0,
             true
@@ -465,8 +465,8 @@ impl Test for SoftwareInterrupt1EnableAndDisableInstantly {
             ",
             Cause = const RegisterIndex::Cause as u32,
             Status = const RegisterIndex::Status as u32,
-            fire = in(reg) Cause::new().with_interrupt_sw1(true).raw_value(),
-            dontfire = in(reg) Cause::new().raw_value(),
+            fire = in(reg) Cause::DEFAULT.with_interrupt_sw1(true).raw_value(),
+            dontfire = in(reg) Cause::DEFAULT.raw_value(),
             status = in(reg) previous_status.with_interrupt_mask_sw1(true).with_ie(true).raw_value())
         }
 
@@ -505,8 +505,8 @@ impl Test for SoftwareInterrupt1EnableAndDisableAfterOneNop {
                 ",
                 Cause = const RegisterIndex::Cause as u32,
                 Status = const RegisterIndex::Status as u32,
-                fire = in(reg) Cause::new().with_interrupt_sw1(true).raw_value(),
-                dontfire = in(reg) Cause::new().raw_value(),
+                fire = in(reg) Cause::DEFAULT.with_interrupt_sw1(true).raw_value(),
+                dontfire = in(reg) Cause::DEFAULT.raw_value(),
                 status = in(reg) previous_status.with_interrupt_mask_sw1(true).with_ie(true).raw_value(),
                 addr0 = out(reg) addr0)
             }
@@ -517,7 +517,7 @@ impl Test for SoftwareInterrupt1EnableAndDisableAfterOneNop {
         unsafe { set_status(previous_status); }
 
         soft_assert_eq(exception_context.k0_exception_vector, 0xFFFFFFFF_80000180, "Exception Vector")?;
-        soft_assert_eq(exception_context.cause, Cause::new().with_interrupt_sw1(true), "Cause")?;
+        soft_assert_eq(exception_context.cause, Cause::DEFAULT.with_interrupt_sw1(true), "Cause")?;
         soft_assert_eq(exception_context.status, 0x2400_0103, "Status")?;
         soft_assert_eq(exception_context.exceptpc, addr0 as u64, "ExceptPC points to wrong instruction")?;
 

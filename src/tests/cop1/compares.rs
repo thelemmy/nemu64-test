@@ -26,11 +26,11 @@ fn test_compare<FIn: Copy, FAsmBlock: Fn(FIn, FIn)>(
         // Run once with all exceptions enabled that we don't care about and once with all disabled
         for enabled in [ FCSRFlags::NONE, expected_flags.invert() ] {
             for condition_before in [false, true] {
-                set_fcsr(FCSR::new().with_condition(condition_before).with_rounding_mode(rounding_mode).with_enables(enabled));
+                set_fcsr(FCSR::ZERO.with_condition(condition_before).with_rounding_mode(rounding_mode).with_enables(enabled));
                 f(value1, value2);
                 let result_fcsr = fcsr();
                 // Copy cause bits into flag bits for no-exception case
-                let expected_fcsr = FCSR::new()
+                let expected_fcsr = FCSR::ZERO
                     .with_condition(expected_result)
                     .with_rounding_mode(rounding_mode)
                     .with_flags(expected_flags)
@@ -51,25 +51,25 @@ fn test_compare<FIn: Copy, FAsmBlock: Fn(FIn, FIn)>(
 
     // Exception test. Start with figuring out which combinations of enabled-flags to run
     let (enabled_flags, expected_cause) = if let Ok((expected_flags, _)) = expected {
-        (expected_flags, FCSR::new().with_maskable_causes(expected_flags))
+        (expected_flags, FCSR::ZERO.with_maskable_causes(expected_flags))
     } else {
-        (FCSRFlags::NONE, FCSR::new().with_cause_unimplemented_operation(true))
+        (FCSRFlags::NONE, FCSR::ZERO.with_cause_unimplemented_operation(true))
     };
 
     for condition_before in [false, true] {
         let exception_context = expect_exception(CauseException::FPE, 1, || {
-            set_fcsr(FCSR::new().with_condition(condition_before).with_rounding_mode(rounding_mode).with_enables(enabled_flags));
+            set_fcsr(FCSR::ZERO.with_condition(condition_before).with_rounding_mode(rounding_mode).with_enables(enabled_flags));
 
             f(value1, value2);
 
-            set_fcsr(FCSR::new());
+            set_fcsr(FCSR::ZERO);
             Ok(())
         })?;
 
         soft_assert_eq(exception_context.k0_exception_vector, 0xFFFFFFFF_80000180, "Exception Vector")?;
         soft_assert_eq(exception_context.exceptpc & 0xFFFFFFFF_FF000000, 0xFFFFFFFF_80000000, "ExceptPC")?;
         soft_assert_eq(unsafe { *(exception_context.exceptpc as *const u32) }, instruction, "ExceptPC points to wrong instruction")?;
-        soft_assert_eq(exception_context.cause, Cause::new().with_coprocessor_error(u2::new(0)).with_exception(CauseException::FPE), "Cause")?;
+        soft_assert_eq(exception_context.cause, Cause::DEFAULT.with_coprocessor_error(u2::new(0)).with_exception(CauseException::FPE), "Cause")?;
         soft_assert_eq(exception_context.status, 0x24000002, "Status")?;
         let expected_fcsr = expected_cause.with_condition(condition_before).with_rounding_mode(rounding_mode).with_enables(enabled_flags);
         soft_assert_eq(exception_context.fcsr, expected_fcsr, "FCSR after operation with exceptions enabled")?;
@@ -284,11 +284,11 @@ impl Test for C_F {
 
         test_impl::<_, INSTRUCTION_S, INSTRUCTION_D>(value, |_order, special| match special {
             FPUSpecialNumber::Nope => Ok((FCSRFlags::NONE, false)),
-            FPUSpecialNumber::QuietNAN => Ok((FCSRFlags::new().with_invalid_operation(true), false)),
+            FPUSpecialNumber::QuietNAN => Ok((FCSRFlags::DEFAULT.with_invalid_operation(true), false)),
             FPUSpecialNumber::SignallingNAN => Ok((FCSRFlags::NONE, false)),
             FPUSpecialNumber::Subnormal => Ok((FCSRFlags::NONE, false)),
-            FPUSpecialNumber::BothNAN => Ok((FCSRFlags::new().with_invalid_operation(true), false)),
-            FPUSpecialNumber::QuietNANAndSubnormal => Ok((FCSRFlags::new().with_invalid_operation(true), false)),
+            FPUSpecialNumber::BothNAN => Ok((FCSRFlags::DEFAULT.with_invalid_operation(true), false)),
+            FPUSpecialNumber::QuietNANAndSubnormal => Ok((FCSRFlags::DEFAULT.with_invalid_operation(true), false)),
         })
     }
 }
@@ -310,11 +310,11 @@ impl Test for C_UN {
 
         test_impl::<_, INSTRUCTION_S, INSTRUCTION_D>(value, |_order, special| match special {
             FPUSpecialNumber::Nope => Ok((FCSRFlags::NONE, false)),
-            FPUSpecialNumber::QuietNAN => Ok((FCSRFlags::new().with_invalid_operation(true), true)),
-            FPUSpecialNumber::SignallingNAN => Ok((FCSRFlags::new(), true)),
-            FPUSpecialNumber::Subnormal => Ok((FCSRFlags::new(), false)),
-            FPUSpecialNumber::BothNAN => Ok((FCSRFlags::new().with_invalid_operation(true), true)),
-            FPUSpecialNumber::QuietNANAndSubnormal => Ok((FCSRFlags::new().with_invalid_operation(true), true)),
+            FPUSpecialNumber::QuietNAN => Ok((FCSRFlags::DEFAULT.with_invalid_operation(true), true)),
+            FPUSpecialNumber::SignallingNAN => Ok((FCSRFlags::DEFAULT, true)),
+            FPUSpecialNumber::Subnormal => Ok((FCSRFlags::DEFAULT, false)),
+            FPUSpecialNumber::BothNAN => Ok((FCSRFlags::DEFAULT.with_invalid_operation(true), true)),
+            FPUSpecialNumber::QuietNANAndSubnormal => Ok((FCSRFlags::DEFAULT.with_invalid_operation(true), true)),
         })
     }
 }
@@ -336,11 +336,11 @@ impl Test for C_EQ {
 
         test_impl::<_, INSTRUCTION_S, INSTRUCTION_D>(value, |order, special| match special {
             FPUSpecialNumber::Nope => Ok((FCSRFlags::NONE, order == Ordering::Equal)),
-            FPUSpecialNumber::QuietNAN => Ok((FCSRFlags::new().with_invalid_operation(true), false)),
-            FPUSpecialNumber::SignallingNAN => Ok((FCSRFlags::new(), false)),
-            FPUSpecialNumber::Subnormal => Ok((FCSRFlags::new(), order == Ordering::Equal)),
-            FPUSpecialNumber::BothNAN => Ok((FCSRFlags::new().with_invalid_operation(true), false)),
-            FPUSpecialNumber::QuietNANAndSubnormal => Ok((FCSRFlags::new().with_invalid_operation(true), false)),
+            FPUSpecialNumber::QuietNAN => Ok((FCSRFlags::DEFAULT.with_invalid_operation(true), false)),
+            FPUSpecialNumber::SignallingNAN => Ok((FCSRFlags::DEFAULT, false)),
+            FPUSpecialNumber::Subnormal => Ok((FCSRFlags::DEFAULT, order == Ordering::Equal)),
+            FPUSpecialNumber::BothNAN => Ok((FCSRFlags::DEFAULT.with_invalid_operation(true), false)),
+            FPUSpecialNumber::QuietNANAndSubnormal => Ok((FCSRFlags::DEFAULT.with_invalid_operation(true), false)),
         })
     }
 }
@@ -362,11 +362,11 @@ impl Test for C_UEQ {
 
         test_impl::<_, INSTRUCTION_S, INSTRUCTION_D>(value, |order, special| match special {
             FPUSpecialNumber::Nope => Ok((FCSRFlags::NONE, order == Ordering::Equal)),
-            FPUSpecialNumber::QuietNAN => Ok((FCSRFlags::new().with_invalid_operation(true), true)),
-            FPUSpecialNumber::SignallingNAN => Ok((FCSRFlags::new(), true)),
-            FPUSpecialNumber::Subnormal => Ok((FCSRFlags::new(), order == Ordering::Equal)),
-            FPUSpecialNumber::BothNAN => Ok((FCSRFlags::new().with_invalid_operation(true), true)),
-            FPUSpecialNumber::QuietNANAndSubnormal => Ok((FCSRFlags::new().with_invalid_operation(true), true)),
+            FPUSpecialNumber::QuietNAN => Ok((FCSRFlags::DEFAULT.with_invalid_operation(true), true)),
+            FPUSpecialNumber::SignallingNAN => Ok((FCSRFlags::DEFAULT, true)),
+            FPUSpecialNumber::Subnormal => Ok((FCSRFlags::DEFAULT, order == Ordering::Equal)),
+            FPUSpecialNumber::BothNAN => Ok((FCSRFlags::DEFAULT.with_invalid_operation(true), true)),
+            FPUSpecialNumber::QuietNANAndSubnormal => Ok((FCSRFlags::DEFAULT.with_invalid_operation(true), true)),
         })
     }
 }
@@ -388,11 +388,11 @@ impl Test for C_OLT {
 
         test_impl::<_, INSTRUCTION_S, INSTRUCTION_D>(value, |order, special| match special {
             FPUSpecialNumber::Nope => Ok((FCSRFlags::NONE, order == Ordering::Less)),
-            FPUSpecialNumber::QuietNAN => Ok((FCSRFlags::new().with_invalid_operation(true), false)),
-            FPUSpecialNumber::SignallingNAN => Ok((FCSRFlags::new(), false)),
-            FPUSpecialNumber::Subnormal => Ok((FCSRFlags::new(), order == Ordering::Less)),
-            FPUSpecialNumber::BothNAN => Ok((FCSRFlags::new().with_invalid_operation(true), false)),
-            FPUSpecialNumber::QuietNANAndSubnormal => Ok((FCSRFlags::new().with_invalid_operation(true), false)),
+            FPUSpecialNumber::QuietNAN => Ok((FCSRFlags::DEFAULT.with_invalid_operation(true), false)),
+            FPUSpecialNumber::SignallingNAN => Ok((FCSRFlags::DEFAULT, false)),
+            FPUSpecialNumber::Subnormal => Ok((FCSRFlags::DEFAULT, order == Ordering::Less)),
+            FPUSpecialNumber::BothNAN => Ok((FCSRFlags::DEFAULT.with_invalid_operation(true), false)),
+            FPUSpecialNumber::QuietNANAndSubnormal => Ok((FCSRFlags::DEFAULT.with_invalid_operation(true), false)),
         })
     }
 }
@@ -414,11 +414,11 @@ impl Test for C_ULT {
 
         test_impl::<_, INSTRUCTION_S, INSTRUCTION_D>(value, |order, special| match special {
             FPUSpecialNumber::Nope => Ok((FCSRFlags::NONE, order == Ordering::Less)),
-            FPUSpecialNumber::QuietNAN => Ok((FCSRFlags::new().with_invalid_operation(true), true)),
-            FPUSpecialNumber::SignallingNAN => Ok((FCSRFlags::new(), true)),
-            FPUSpecialNumber::Subnormal => Ok((FCSRFlags::new(), order == Ordering::Less)),
-            FPUSpecialNumber::BothNAN => Ok((FCSRFlags::new().with_invalid_operation(true), true)),
-            FPUSpecialNumber::QuietNANAndSubnormal => Ok((FCSRFlags::new().with_invalid_operation(true), true)),
+            FPUSpecialNumber::QuietNAN => Ok((FCSRFlags::DEFAULT.with_invalid_operation(true), true)),
+            FPUSpecialNumber::SignallingNAN => Ok((FCSRFlags::DEFAULT, true)),
+            FPUSpecialNumber::Subnormal => Ok((FCSRFlags::DEFAULT, order == Ordering::Less)),
+            FPUSpecialNumber::BothNAN => Ok((FCSRFlags::DEFAULT.with_invalid_operation(true), true)),
+            FPUSpecialNumber::QuietNANAndSubnormal => Ok((FCSRFlags::DEFAULT.with_invalid_operation(true), true)),
         })
     }
 }
@@ -440,11 +440,11 @@ impl Test for C_OLE {
 
         test_impl::<_, INSTRUCTION_S, INSTRUCTION_D>(value, |order, special| match special {
             FPUSpecialNumber::Nope => Ok((FCSRFlags::NONE, order == Ordering::Less || order == Ordering::Equal)),
-            FPUSpecialNumber::QuietNAN => Ok((FCSRFlags::new().with_invalid_operation(true), false)),
-            FPUSpecialNumber::SignallingNAN => Ok((FCSRFlags::new(), false)),
-            FPUSpecialNumber::Subnormal => Ok((FCSRFlags::new(), order == Ordering::Less || order == Ordering::Equal)),
-            FPUSpecialNumber::BothNAN => Ok((FCSRFlags::new().with_invalid_operation(true), false)),
-            FPUSpecialNumber::QuietNANAndSubnormal => Ok((FCSRFlags::new().with_invalid_operation(true), false)),
+            FPUSpecialNumber::QuietNAN => Ok((FCSRFlags::DEFAULT.with_invalid_operation(true), false)),
+            FPUSpecialNumber::SignallingNAN => Ok((FCSRFlags::DEFAULT, false)),
+            FPUSpecialNumber::Subnormal => Ok((FCSRFlags::DEFAULT, order == Ordering::Less || order == Ordering::Equal)),
+            FPUSpecialNumber::BothNAN => Ok((FCSRFlags::DEFAULT.with_invalid_operation(true), false)),
+            FPUSpecialNumber::QuietNANAndSubnormal => Ok((FCSRFlags::DEFAULT.with_invalid_operation(true), false)),
         })
     }
 }
@@ -466,11 +466,11 @@ impl Test for C_ULE {
 
         test_impl::<_, INSTRUCTION_S, INSTRUCTION_D>(value, |order, special| match special {
             FPUSpecialNumber::Nope => Ok((FCSRFlags::NONE, order == Ordering::Less || order == Ordering::Equal)),
-            FPUSpecialNumber::QuietNAN => Ok((FCSRFlags::new().with_invalid_operation(true), true)),
-            FPUSpecialNumber::SignallingNAN => Ok((FCSRFlags::new(), true)),
-            FPUSpecialNumber::Subnormal => Ok((FCSRFlags::new(), order == Ordering::Less || order == Ordering::Equal)),
-            FPUSpecialNumber::BothNAN => Ok((FCSRFlags::new().with_invalid_operation(true), true)),
-            FPUSpecialNumber::QuietNANAndSubnormal => Ok((FCSRFlags::new().with_invalid_operation(true), true)),
+            FPUSpecialNumber::QuietNAN => Ok((FCSRFlags::DEFAULT.with_invalid_operation(true), true)),
+            FPUSpecialNumber::SignallingNAN => Ok((FCSRFlags::DEFAULT, true)),
+            FPUSpecialNumber::Subnormal => Ok((FCSRFlags::DEFAULT, order == Ordering::Less || order == Ordering::Equal)),
+            FPUSpecialNumber::BothNAN => Ok((FCSRFlags::DEFAULT.with_invalid_operation(true), true)),
+            FPUSpecialNumber::QuietNANAndSubnormal => Ok((FCSRFlags::DEFAULT.with_invalid_operation(true), true)),
         })
     }
 }
@@ -492,11 +492,11 @@ impl Test for C_SF {
 
         test_impl::<_, INSTRUCTION_S, INSTRUCTION_D>(value, |_order, special| match special {
             FPUSpecialNumber::Nope => Ok((FCSRFlags::NONE, false)),
-            FPUSpecialNumber::QuietNAN => Ok((FCSRFlags::new().with_invalid_operation(true), false)),
-            FPUSpecialNumber::SignallingNAN => Ok((FCSRFlags::new().with_invalid_operation(true), false)),
+            FPUSpecialNumber::QuietNAN => Ok((FCSRFlags::DEFAULT.with_invalid_operation(true), false)),
+            FPUSpecialNumber::SignallingNAN => Ok((FCSRFlags::DEFAULT.with_invalid_operation(true), false)),
             FPUSpecialNumber::Subnormal => Ok((FCSRFlags::NONE, false)),
-            FPUSpecialNumber::BothNAN => Ok((FCSRFlags::new().with_invalid_operation(true), false)),
-            FPUSpecialNumber::QuietNANAndSubnormal => Ok((FCSRFlags::new().with_invalid_operation(true), false)),
+            FPUSpecialNumber::BothNAN => Ok((FCSRFlags::DEFAULT.with_invalid_operation(true), false)),
+            FPUSpecialNumber::QuietNANAndSubnormal => Ok((FCSRFlags::DEFAULT.with_invalid_operation(true), false)),
         })
     }
 }
@@ -518,11 +518,11 @@ impl Test for C_NGLE {
 
         test_impl::<_, INSTRUCTION_S, INSTRUCTION_D>(value, |_order, special| match special {
             FPUSpecialNumber::Nope => Ok((FCSRFlags::NONE, false)),
-            FPUSpecialNumber::QuietNAN => Ok((FCSRFlags::new().with_invalid_operation(true), true)),
-            FPUSpecialNumber::SignallingNAN => Ok((FCSRFlags::new().with_invalid_operation(true), true)),
-            FPUSpecialNumber::Subnormal => Ok((FCSRFlags::new(), false)),
-            FPUSpecialNumber::BothNAN => Ok((FCSRFlags::new().with_invalid_operation(true), true)),
-            FPUSpecialNumber::QuietNANAndSubnormal => Ok((FCSRFlags::new().with_invalid_operation(true), true)),
+            FPUSpecialNumber::QuietNAN => Ok((FCSRFlags::DEFAULT.with_invalid_operation(true), true)),
+            FPUSpecialNumber::SignallingNAN => Ok((FCSRFlags::DEFAULT.with_invalid_operation(true), true)),
+            FPUSpecialNumber::Subnormal => Ok((FCSRFlags::DEFAULT, false)),
+            FPUSpecialNumber::BothNAN => Ok((FCSRFlags::DEFAULT.with_invalid_operation(true), true)),
+            FPUSpecialNumber::QuietNANAndSubnormal => Ok((FCSRFlags::DEFAULT.with_invalid_operation(true), true)),
         })
     }
 }
@@ -544,11 +544,11 @@ impl Test for C_SEQ {
 
         test_impl::<_, INSTRUCTION_S, INSTRUCTION_D>(value, |order, special| match special {
             FPUSpecialNumber::Nope => Ok((FCSRFlags::NONE, order == Ordering::Equal)),
-            FPUSpecialNumber::QuietNAN => Ok((FCSRFlags::new().with_invalid_operation(true), false)),
-            FPUSpecialNumber::SignallingNAN => Ok((FCSRFlags::new().with_invalid_operation(true), false)),
-            FPUSpecialNumber::Subnormal => Ok((FCSRFlags::new(), order == Ordering::Equal)),
-            FPUSpecialNumber::BothNAN => Ok((FCSRFlags::new().with_invalid_operation(true), false)),
-            FPUSpecialNumber::QuietNANAndSubnormal => Ok((FCSRFlags::new().with_invalid_operation(true), false)),
+            FPUSpecialNumber::QuietNAN => Ok((FCSRFlags::DEFAULT.with_invalid_operation(true), false)),
+            FPUSpecialNumber::SignallingNAN => Ok((FCSRFlags::DEFAULT.with_invalid_operation(true), false)),
+            FPUSpecialNumber::Subnormal => Ok((FCSRFlags::DEFAULT, order == Ordering::Equal)),
+            FPUSpecialNumber::BothNAN => Ok((FCSRFlags::DEFAULT.with_invalid_operation(true), false)),
+            FPUSpecialNumber::QuietNANAndSubnormal => Ok((FCSRFlags::DEFAULT.with_invalid_operation(true), false)),
         })
     }
 }
@@ -570,11 +570,11 @@ impl Test for C_NGL {
 
         test_impl::<_, INSTRUCTION_S, INSTRUCTION_D>(value, |order, special| match special {
             FPUSpecialNumber::Nope => Ok((FCSRFlags::NONE, order == Ordering::Equal)),
-            FPUSpecialNumber::QuietNAN => Ok((FCSRFlags::new().with_invalid_operation(true), true)),
-            FPUSpecialNumber::SignallingNAN => Ok((FCSRFlags::new().with_invalid_operation(true), true)),
-            FPUSpecialNumber::Subnormal => Ok((FCSRFlags::new(), order == Ordering::Equal)),
-            FPUSpecialNumber::BothNAN => Ok((FCSRFlags::new().with_invalid_operation(true), true)),
-            FPUSpecialNumber::QuietNANAndSubnormal => Ok((FCSRFlags::new().with_invalid_operation(true), true)),
+            FPUSpecialNumber::QuietNAN => Ok((FCSRFlags::DEFAULT.with_invalid_operation(true), true)),
+            FPUSpecialNumber::SignallingNAN => Ok((FCSRFlags::DEFAULT.with_invalid_operation(true), true)),
+            FPUSpecialNumber::Subnormal => Ok((FCSRFlags::DEFAULT, order == Ordering::Equal)),
+            FPUSpecialNumber::BothNAN => Ok((FCSRFlags::DEFAULT.with_invalid_operation(true), true)),
+            FPUSpecialNumber::QuietNANAndSubnormal => Ok((FCSRFlags::DEFAULT.with_invalid_operation(true), true)),
         })
     }
 }
@@ -596,11 +596,11 @@ impl Test for C_LT {
 
         test_impl::<_, INSTRUCTION_S, INSTRUCTION_D>(value, |order, special| match special {
             FPUSpecialNumber::Nope => Ok((FCSRFlags::NONE, order == Ordering::Less)),
-            FPUSpecialNumber::QuietNAN => Ok((FCSRFlags::new().with_invalid_operation(true), false)),
-            FPUSpecialNumber::SignallingNAN => Ok((FCSRFlags::new().with_invalid_operation(true), false)),
-            FPUSpecialNumber::Subnormal => Ok((FCSRFlags::new(), order == Ordering::Less)),
-            FPUSpecialNumber::BothNAN => Ok((FCSRFlags::new().with_invalid_operation(true), false)),
-            FPUSpecialNumber::QuietNANAndSubnormal => Ok((FCSRFlags::new().with_invalid_operation(true), false)),
+            FPUSpecialNumber::QuietNAN => Ok((FCSRFlags::DEFAULT.with_invalid_operation(true), false)),
+            FPUSpecialNumber::SignallingNAN => Ok((FCSRFlags::DEFAULT.with_invalid_operation(true), false)),
+            FPUSpecialNumber::Subnormal => Ok((FCSRFlags::DEFAULT, order == Ordering::Less)),
+            FPUSpecialNumber::BothNAN => Ok((FCSRFlags::DEFAULT.with_invalid_operation(true), false)),
+            FPUSpecialNumber::QuietNANAndSubnormal => Ok((FCSRFlags::DEFAULT.with_invalid_operation(true), false)),
         })
     }
 }
@@ -622,11 +622,11 @@ impl Test for C_NGE {
 
         test_impl::<_, INSTRUCTION_S, INSTRUCTION_D>(value, |order, special| match special {
             FPUSpecialNumber::Nope => Ok((FCSRFlags::NONE, order == Ordering::Less)),
-            FPUSpecialNumber::QuietNAN => Ok((FCSRFlags::new().with_invalid_operation(true), true)),
-            FPUSpecialNumber::SignallingNAN => Ok((FCSRFlags::new().with_invalid_operation(true), true)),
-            FPUSpecialNumber::Subnormal => Ok((FCSRFlags::new(), order == Ordering::Less)),
-            FPUSpecialNumber::BothNAN => Ok((FCSRFlags::new().with_invalid_operation(true), true)),
-            FPUSpecialNumber::QuietNANAndSubnormal => Ok((FCSRFlags::new().with_invalid_operation(true), true)),
+            FPUSpecialNumber::QuietNAN => Ok((FCSRFlags::DEFAULT.with_invalid_operation(true), true)),
+            FPUSpecialNumber::SignallingNAN => Ok((FCSRFlags::DEFAULT.with_invalid_operation(true), true)),
+            FPUSpecialNumber::Subnormal => Ok((FCSRFlags::DEFAULT, order == Ordering::Less)),
+            FPUSpecialNumber::BothNAN => Ok((FCSRFlags::DEFAULT.with_invalid_operation(true), true)),
+            FPUSpecialNumber::QuietNANAndSubnormal => Ok((FCSRFlags::DEFAULT.with_invalid_operation(true), true)),
         })
     }
 }
@@ -648,11 +648,11 @@ impl Test for C_LE {
 
         test_impl::<_, INSTRUCTION_S, INSTRUCTION_D>(value, |order, special| match special {
             FPUSpecialNumber::Nope => Ok((FCSRFlags::NONE, order == Ordering::Less || order == Ordering::Equal)),
-            FPUSpecialNumber::QuietNAN => Ok((FCSRFlags::new().with_invalid_operation(true), false)),
-            FPUSpecialNumber::SignallingNAN => Ok((FCSRFlags::new().with_invalid_operation(true), false)),
-            FPUSpecialNumber::Subnormal => Ok((FCSRFlags::new(), order == Ordering::Less || order == Ordering::Equal)),
-            FPUSpecialNumber::BothNAN => Ok((FCSRFlags::new().with_invalid_operation(true), false)),
-            FPUSpecialNumber::QuietNANAndSubnormal => Ok((FCSRFlags::new().with_invalid_operation(true), false)),
+            FPUSpecialNumber::QuietNAN => Ok((FCSRFlags::DEFAULT.with_invalid_operation(true), false)),
+            FPUSpecialNumber::SignallingNAN => Ok((FCSRFlags::DEFAULT.with_invalid_operation(true), false)),
+            FPUSpecialNumber::Subnormal => Ok((FCSRFlags::DEFAULT, order == Ordering::Less || order == Ordering::Equal)),
+            FPUSpecialNumber::BothNAN => Ok((FCSRFlags::DEFAULT.with_invalid_operation(true), false)),
+            FPUSpecialNumber::QuietNANAndSubnormal => Ok((FCSRFlags::DEFAULT.with_invalid_operation(true), false)),
         })
     }
 }
@@ -674,11 +674,11 @@ impl Test for C_NGT {
 
         test_impl::<_, INSTRUCTION_S, INSTRUCTION_D>(value, |order, special| match special {
             FPUSpecialNumber::Nope => Ok((FCSRFlags::NONE, order == Ordering::Less || order == Ordering::Equal)),
-            FPUSpecialNumber::QuietNAN => Ok((FCSRFlags::new().with_invalid_operation(true), true)),
-            FPUSpecialNumber::SignallingNAN => Ok((FCSRFlags::new().with_invalid_operation(true), true)),
-            FPUSpecialNumber::Subnormal => Ok((FCSRFlags::new(), order == Ordering::Less || order == Ordering::Equal)),
-            FPUSpecialNumber::BothNAN => Ok((FCSRFlags::new().with_invalid_operation(true), true)),
-            FPUSpecialNumber::QuietNANAndSubnormal => Ok((FCSRFlags::new().with_invalid_operation(true), true)),
+            FPUSpecialNumber::QuietNAN => Ok((FCSRFlags::DEFAULT.with_invalid_operation(true), true)),
+            FPUSpecialNumber::SignallingNAN => Ok((FCSRFlags::DEFAULT.with_invalid_operation(true), true)),
+            FPUSpecialNumber::Subnormal => Ok((FCSRFlags::DEFAULT, order == Ordering::Less || order == Ordering::Equal)),
+            FPUSpecialNumber::BothNAN => Ok((FCSRFlags::DEFAULT.with_invalid_operation(true), true)),
+            FPUSpecialNumber::QuietNANAndSubnormal => Ok((FCSRFlags::DEFAULT.with_invalid_operation(true), true)),
         })
     }
 }

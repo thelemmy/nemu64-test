@@ -52,8 +52,8 @@ impl Test for StartupTest {
         // TearDownTest will report it
         let status = crate::cop0::status();
         soft_assert_eq(crate::cop0::status_64(), status.raw_value() as u64, "COP0 Status DMFC0 has to return same value as MFC0")?;
-        const STATUS_EXPECTED: Status = Status::new().with_cop1usable(true).with_cop0usable(true).with_fpu64(true);
-        const STATUS_EVERDRIVE64: Status = Status::new().with_cop1usable(true).with_fpu64(true).with_soft_reset(true).with_kx(true).with_sx(true).with_ux(true);
+        const STATUS_EXPECTED: Status = Status::ZERO.with_cop1usable(true).with_cop0usable(true).with_fpu64(true);
+        const STATUS_EVERDRIVE64: Status = Status::ZERO.with_cop1usable(true).with_fpu64(true).with_soft_reset(true).with_kx(true).with_sx(true).with_ux(true);
 
         soft_assert_eq(crate::cop0::status_64(), status.raw_value() as u64, "COP0 Status DMFC0 has to return same value as MFC0")?;
         if status.with_soft_reset(false) == STATUS_EXPECTED {

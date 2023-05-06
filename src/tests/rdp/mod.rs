@@ -157,7 +157,7 @@ impl Test for StatusFlagsDuringRun {
         let rect = RDPRectangle::new(U10_2::from_u32(0), U10_2::from_u32(0), U10_2::from_u32(WIDTH as u32 - 1), U10_2::from_u32(HEIGHT as u32 - 1));
         assembler.set_framebuffer_image(Format::RGBA, PixelSize::Bits16, u12::new((WIDTH - 1).try_into().unwrap()), &mut framebuffer);
         assembler.set_scissor(&rect);
-        assembler.set_othermode(Othermode::new()
+        assembler.set_othermode(Othermode::DEFAULT
             .with_cycle_type(CycleType::Fill));
         assembler.set_fillcolor16(RGBA5551::BLUE, RGBA5551::BLUE);
         assembler.filled_rectangle(&rect);
@@ -211,7 +211,7 @@ fn run_from_dmem_test<F: FnOnce(u32) -> (u32, u32)>(get_dmem_range: F) -> Result
     let rect = RDPRectangle::new(U10_2::from_u32(0), U10_2::from_u32(0), U10_2::from_u32(WIDTH as u32 - 1), U10_2::from_u32(HEIGHT as u32 - 1));
     assembler.set_framebuffer_image(Format::RGBA, PixelSize::Bits16, u12::new((WIDTH - 1).try_into().unwrap()), &mut framebuffer);
     assembler.set_scissor(&rect);
-    assembler.set_othermode(Othermode::new()
+    assembler.set_othermode(Othermode::DEFAULT
         .with_cycle_type(CycleType::Fill));
     assembler.set_fillcolor16(RGBA5551::GREEN, RGBA5551::GREEN);
     assembler.filled_rectangle(&rect);

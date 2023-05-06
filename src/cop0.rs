@@ -87,7 +87,7 @@ pub enum StatusKSU {
     User = 2,
 }
 
-#[bitfield(u32, default: 0)]
+#[bitfield(u32)]
 #[derive(Debug, Eq, PartialEq)]
 pub struct Status {
     #[bit(31, rw)]
@@ -172,7 +172,8 @@ pub struct Status {
 
 impl Status {
     // Make sure to enable fpu64 by default as the compiled Rust is allowed to use all registers
-    pub const DEFAULT: Status = Status::new().with_cop1usable(true).with_fpu64(true);
+    pub const ZERO: Status = Status::new_with_raw_value(0);
+    pub const DEFAULT: Status = Self::ZERO.with_cop1usable(true).with_fpu64(true);
     pub const ADDRESSING_MODE_64_BIT: Status = Self::DEFAULT.with_kx(true).with_sx(true).with_ux(true);
 }
 
@@ -236,7 +237,7 @@ pub struct Context {
 
 impl Context {
     pub fn from_virtual_address(a: u64) -> Self {
-        Self::new().with_bad_vpn2(u19::extract_u64(a, 13))
+        Self::DEFAULT.with_bad_vpn2(u19::extract_u64(a, 13))
     }
 }
 
@@ -255,7 +256,7 @@ pub struct XContext {
 
 impl XContext {
     pub fn from_virtual_address(a: u64) -> Self {
-        Self::new()
+        Self::DEFAULT
             .with_bad_vpn2(u27::extract_u64(a, 13))
             .with_r(u2::extract_u64(a, 62))
     }

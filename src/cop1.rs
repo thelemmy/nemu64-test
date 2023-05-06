@@ -73,10 +73,10 @@ pub struct FCSRFlags {
 }
 
 impl FCSRFlags {
-    pub const ALL: FCSRFlags = FCSRFlags::new().with_invalid_operation(true).with_division_by_zero(true).with_overflow(true).with_underflow(true).with_inexact_operation(true);
-    pub const NONE: FCSRFlags = FCSRFlags::new();
+    pub const ALL: FCSRFlags = FCSRFlags::DEFAULT.with_invalid_operation(true).with_division_by_zero(true).with_overflow(true).with_underflow(true).with_inexact_operation(true);
+    pub const NONE: FCSRFlags = FCSRFlags::DEFAULT;
     pub const fn invert(&self) -> Self {
-        FCSRFlags::new()
+        FCSRFlags::DEFAULT
             .with_invalid_operation(!self.invalid_operation())
             .with_division_by_zero(!self.division_by_zero())
             .with_overflow(!self.overflow())
@@ -115,7 +115,7 @@ impl Debug for FCSRFlags {
     }
 }
 
-#[bitfield(u32, default: 0)]
+#[bitfield(u32)]
 #[derive(PartialEq, Eq)]
 pub struct FCSR {
     #[bit(24, rw)]
@@ -165,7 +165,8 @@ pub struct FCSR {
 }
 
 impl FCSR {
-    pub const DEFAULT: Self = Self::new().with_enable_invalid_operation(true).with_flush_denorm_to_zero(true);
+    pub const ZERO: Self = Self::new_with_raw_value(0);
+    pub const DEFAULT: Self = Self::ZERO.with_enable_invalid_operation(true).with_flush_denorm_to_zero(true);
 
     pub const fn with_maskable_causes(self, value: FCSRFlags) -> Self {
         self.with_cause_invalid_operation(value.invalid_operation())
@@ -175,7 +176,7 @@ impl FCSR {
             .with_cause_inexact_operation(value.inexact_operation())
     }
     pub const fn maskable_causes(self) -> FCSRFlags {
-        FCSRFlags::new()
+        FCSRFlags::DEFAULT
             .with_invalid_operation(self.cause_invalid_operation())
             .with_division_by_zero(self.cause_division_by_zero())
             .with_overflow(self.cause_overflow())
@@ -191,7 +192,7 @@ impl FCSR {
             .with_enable_inexact_operation(value.inexact_operation())
     }
     pub const fn enables(self) -> FCSRFlags {
-        FCSRFlags::new()
+        FCSRFlags::DEFAULT
             .with_invalid_operation(self.enable_invalid_operation())
             .with_division_by_zero(self.enable_division_by_zero())
             .with_overflow(self.enable_overflow())
@@ -207,7 +208,7 @@ impl FCSR {
             .with_inexact_operation(value.inexact_operation())
     }
     pub const fn flags(self) -> FCSRFlags {
-        FCSRFlags::new()
+        FCSRFlags::DEFAULT
             .with_invalid_operation(self.invalid_operation())
             .with_division_by_zero(self.division_by_zero())
             .with_overflow(self.overflow())

@@ -891,7 +891,7 @@ fn test_invalidate<F1: Fn(u20, u20) -> TagLo, F2: Fn(u20, u20) -> TagLo, F3: Fn(
     let ptag_next = u20::extract_u32((memory.start_physical() + (GENERATED << 2) + 16384) as u32, 12);
     soft_assert_eq(result1, 0x1111_1111, "Result value 1 (execute dynamically generated (but never modified) code)")?;
     soft_assert_eq(result2, 0x1111_1111, "Result value 2 (run before cache instruction)")?;
-    soft_assert_eq(line_before3, TagLo::new().with_p_tag_lo(ptag).with_p_state(TagLoPState::Clean).raw_value(), "Instruction Cache line before cache instruction")?;
+    soft_assert_eq(line_before3, TagLo::DEFAULT.with_p_tag_lo(ptag).with_p_state(TagLoPState::Clean).raw_value(), "Instruction Cache line before cache instruction")?;
     soft_assert_eq(result3, 0x1111_2222, "Result value 3 (run after cache instruction)")?;
     soft_assert_eq(line_after3, expected_after_cache(ptag, ptag_next).raw_value(), "Instruction Cache line after cache instruction")?;
 
@@ -915,9 +915,9 @@ impl Test for InstructionCacheIndexInvalidate {
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         test_invalidate(
             CacheOp::InstructionIndexInvalidate,
-            |ptag, _ptag_next| TagLo::new().with_p_tag_lo(ptag).with_p_state(TagLoPState::Invalid),
-            |_ptag, ptag_next| TagLo::new().with_p_tag_lo(ptag_next).with_p_state(TagLoPState::Invalid),
-            |ptag, _ptag_next| TagLo::new().with_p_tag_lo(ptag).with_p_state(TagLoPState::Invalid),
+            |ptag, _ptag_next| TagLo::DEFAULT.with_p_tag_lo(ptag).with_p_state(TagLoPState::Invalid),
+            |_ptag, ptag_next| TagLo::DEFAULT.with_p_tag_lo(ptag_next).with_p_state(TagLoPState::Invalid),
+            |ptag, _ptag_next| TagLo::DEFAULT.with_p_tag_lo(ptag).with_p_state(TagLoPState::Invalid),
             0x1111_4444
         )
     }
@@ -935,9 +935,9 @@ impl Test for InstructionCacheHitInvalidate {
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         test_invalidate(
             CacheOp::InstructionHitInvalidate,
-            |ptag, _ptag_next| TagLo::new().with_p_tag_lo(ptag).with_p_state(TagLoPState::Invalid),
-            |ptag, _ptag_next| TagLo::new().with_p_tag_lo(ptag).with_p_state(TagLoPState::Clean),
-            |ptag, _ptag_next| TagLo::new().with_p_tag_lo(ptag).with_p_state(TagLoPState::Invalid),
+            |ptag, _ptag_next| TagLo::DEFAULT.with_p_tag_lo(ptag).with_p_state(TagLoPState::Invalid),
+            |ptag, _ptag_next| TagLo::DEFAULT.with_p_tag_lo(ptag).with_p_state(TagLoPState::Clean),
+            |ptag, _ptag_next| TagLo::DEFAULT.with_p_tag_lo(ptag).with_p_state(TagLoPState::Invalid),
             0x1111_4444
         )
     }
@@ -955,9 +955,9 @@ impl Test for InstructionCacheFill {
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         test_invalidate(
             CacheOp::InstructionFill,
-            |ptag, _ptag_next| TagLo::new().with_p_tag_lo(ptag).with_p_state(TagLoPState::Clean),
-            |_ptag, ptag_next| TagLo::new().with_p_tag_lo(ptag_next).with_p_state(TagLoPState::Clean),
-            |ptag, _ptag_next| TagLo::new().with_p_tag_lo(ptag).with_p_state(TagLoPState::Clean),
+            |ptag, _ptag_next| TagLo::DEFAULT.with_p_tag_lo(ptag).with_p_state(TagLoPState::Clean),
+            |_ptag, ptag_next| TagLo::DEFAULT.with_p_tag_lo(ptag_next).with_p_state(TagLoPState::Clean),
+            |ptag, _ptag_next| TagLo::DEFAULT.with_p_tag_lo(ptag).with_p_state(TagLoPState::Clean),
             0x1111_3333
         )
     }
@@ -1030,21 +1030,21 @@ impl Test for InstructionCacheIndexStoreTag {
             out("$7") _,
             // temp for return value from inner generated function
             out("$8") _,
-            in("$9") TagLo::new().with_p_tag_lo(ptag).with_p_state(TagLoPState::Invalid).raw_value(),
+            in("$9") TagLo::DEFAULT.with_p_tag_lo(ptag).with_p_state(TagLoPState::Invalid).raw_value(),
             out("$10") result1,
-            in("$11") TagLo::new().with_p_tag_lo(ptag_next).with_p_state(TagLoPState::_Unused01).raw_value(),
+            in("$11") TagLo::DEFAULT.with_p_tag_lo(ptag_next).with_p_state(TagLoPState::_Unused01).raw_value(),
             out("$12") result2,
-            in("$13") TagLo::new().with_p_tag_lo(ptag).with_p_state(TagLoPState::Clean).raw_value(),
+            in("$13") TagLo::DEFAULT.with_p_tag_lo(ptag).with_p_state(TagLoPState::Clean).raw_value(),
             out("$14") result3,
-            in("$15") TagLo::new().with_p_tag_lo(ptag_next).with_p_state(TagLoPState::Dirty).raw_value(),
+            in("$15") TagLo::DEFAULT.with_p_tag_lo(ptag_next).with_p_state(TagLoPState::Dirty).raw_value(),
             out("$16") result4,
             )
         }
 
-        soft_assert_eq(result1, TagLo::new().with_p_tag_lo(ptag).with_p_state(TagLoPState::Invalid).raw_value(), "TagLo after writing Invalid")?;
-        soft_assert_eq(result2, TagLo::new().with_p_tag_lo(ptag_next).with_p_state(TagLoPState::Invalid).raw_value(), "TagLo after writing 0b01")?;
-        soft_assert_eq(result3, TagLo::new().with_p_tag_lo(ptag).with_p_state(TagLoPState::Clean).raw_value(), "TagLo after writing Clean")?;
-        soft_assert_eq(result4, TagLo::new().with_p_tag_lo(ptag_next).with_p_state(TagLoPState::Clean).raw_value(), "TagLo after writing Dirty")?;
+        soft_assert_eq(result1, TagLo::DEFAULT.with_p_tag_lo(ptag).with_p_state(TagLoPState::Invalid).raw_value(), "TagLo after writing Invalid")?;
+        soft_assert_eq(result2, TagLo::DEFAULT.with_p_tag_lo(ptag_next).with_p_state(TagLoPState::Invalid).raw_value(), "TagLo after writing 0b01")?;
+        soft_assert_eq(result3, TagLo::DEFAULT.with_p_tag_lo(ptag).with_p_state(TagLoPState::Clean).raw_value(), "TagLo after writing Clean")?;
+        soft_assert_eq(result4, TagLo::DEFAULT.with_p_tag_lo(ptag_next).with_p_state(TagLoPState::Clean).raw_value(), "TagLo after writing Dirty")?;
 
         Ok(())
     }
@@ -1161,7 +1161,7 @@ impl Test for InstructionCacheHitWriteBack {
         }
 
         soft_assert_eq(result1, Assembler::make_lui(GPR::T0, 0x2222), "Cache(InstructionHitWriteBack) shouldn't do anything if the tag doesn't match")?;
-        soft_assert_eq(result2_tag_lo, TagLo::new().with_p_tag_lo(ptag).with_p_state(TagLoPState::Clean).raw_value(), "TagLo after Cache(InstructionHitWriteBack)")?;
+        soft_assert_eq(result2_tag_lo, TagLo::DEFAULT.with_p_tag_lo(ptag).with_p_state(TagLoPState::Clean).raw_value(), "TagLo after Cache(InstructionHitWriteBack)")?;
         soft_assert_eq(result2, Assembler::make_lui(GPR::T0, 0x1111), "Cache(InstructionHitWriteBack) should write back if the tag matches")?;
         soft_assert_eq(result3, Assembler::make_lui(GPR::T0, 0x6666), "Cache(InstructionHitWriteBack) should not write back to the address after the block")?;
         soft_assert_eq(result4, Assembler::make_lui(GPR::T0, 0x2323), "Cache(InstructionHitWriteBack) should not write back if invalid")?;

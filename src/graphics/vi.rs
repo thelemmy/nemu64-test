@@ -101,7 +101,7 @@ impl Video {
 
         unsafe {
             VI_BASE_REG.add(RegisterOffset::Status as usize >> 2).write_volatile(
-                Status::new()
+                Status::DEFAULT
                     .with_framebuffer_type(StatusFramebufferType::Bits16)
                     .with_gamma_dither(true)
                     .with_gamma_boost(true)
@@ -111,7 +111,7 @@ impl Video {
                     .with_pixel_advance(u4::new(3))
                     .raw_value(), );
             VI_BASE_REG.add(RegisterOffset::VIntr as usize >> 2).write_volatile(
-                VIIntr::new().with_row(u10::new(2)).raw_value());
+                VIIntr::DEFAULT.with_row(u10::new(2)).raw_value());
             VI_BASE_REG.add(RegisterOffset::Timing as usize >> 2).write_volatile(0x03E5_2239);
             VI_BASE_REG.add(RegisterOffset::VSync as usize >> 2).write_volatile(0x0000_020D);
             VI_BASE_REG.add(RegisterOffset::HSync as usize >> 2).write_volatile(0x0000_0C15);

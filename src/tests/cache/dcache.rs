@@ -511,17 +511,17 @@ impl Test for DataCacheIndexLoadTag {
                 cache::<HIT_WRITE_BACK_INVALIDATE_OP, 0>(p as usize);
                 let tag1 = cache_data_index_load_tag::<0>(p as usize);
 
-                soft_assert_eq(tag1, TagLo::new().with_p_state(TagLoPState::Invalid).with_p_tag_lo(expected_ptaglo), "TagLo after CACHE (invalid)")?;
+                soft_assert_eq(tag1, TagLo::DEFAULT.with_p_state(TagLoPState::Invalid).with_p_tag_lo(expected_ptaglo), "TagLo after CACHE (invalid)")?;
 
                 // Read - Even though it is clear, it will come back as dirty
                 let _ = p.read_volatile();
                 let tag2 = cache_data_index_load_tag::<0>(p as usize);
-                soft_assert_eq(tag2, TagLo::new().with_p_state(TagLoPState::Dirty).with_p_tag_lo(expected_ptaglo), "TagLo after CACHE (clean)")?;
+                soft_assert_eq(tag2, TagLo::DEFAULT.with_p_state(TagLoPState::Dirty).with_p_tag_lo(expected_ptaglo), "TagLo after CACHE (clean)")?;
 
                 // Write to make it dirty - TagLo won't tell us though
                 p.write_volatile(0);
                 let tag3 = cache_data_index_load_tag::<0>(p as usize);
-                soft_assert_eq(tag3, TagLo::new().with_p_state(TagLoPState::Dirty).with_p_tag_lo(expected_ptaglo), "TagLo after CACHE (dirty)")?;
+                soft_assert_eq(tag3, TagLo::DEFAULT.with_p_state(TagLoPState::Dirty).with_p_tag_lo(expected_ptaglo), "TagLo after CACHE (dirty)")?;
             }
         }
 
@@ -794,7 +794,7 @@ fn test_write_cache_line_manually(p_state: TagLoPState) -> Result<(), String> {
     let layout = Layout::from_size_align(64, 8 * 1024).unwrap();
     let data = unsafe { alloc(layout) } as *mut u8;
 
-    set_taglo(TagLo::new().with_p_state(p_state).with_p_tag_lo(u20::extract_u32(MemoryMap::cached_to_physical_mut(data) as u32, 12)));
+    set_taglo(TagLo::DEFAULT.with_p_state(p_state).with_p_tag_lo(u20::extract_u32(MemoryMap::cached_to_physical_mut(data) as u32, 12)));
 
     const CACHED_VALUE: u32 = 1;
     const UNCACHED_VALUE: u32 = 2;
@@ -953,7 +953,7 @@ impl Test for MoveCacheLine {
         let layout = Layout::from_size_align(16 * 1024, 8 * 1024).unwrap();
         let data = unsafe { alloc(layout) } as *mut u8;
 
-        let taglo_dirty = TagLo::new().with_p_state(TagLoPState::Dirty).with_p_tag_lo(u20::extract_u32(MemoryMap::cached_to_physical_mut(data) as u32 + 8*1024, 12));
+        let taglo_dirty = TagLo::DEFAULT.with_p_state(TagLoPState::Dirty).with_p_tag_lo(u20::extract_u32(MemoryMap::cached_to_physical_mut(data) as u32 + 8*1024, 12));
         let taglo_invalid = taglo_dirty.with_p_state(TagLoPState::Invalid);
 
         let moved0: u32;
@@ -1103,7 +1103,7 @@ fn test_invalidate_keeps_dirty_flag<const INVALIDATE_CACHE_OP: u8>() -> Result<(
     let layout = Layout::from_size_align(16 * 1024, 8 * 1024).unwrap();
     let data = unsafe { alloc(layout) } as *mut u8;
 
-    let taglo_dirty = TagLo::new().with_p_state(TagLoPState::Dirty).with_p_tag_lo(u20::extract_u32(MemoryMap::cached_to_physical_mut(data) as u32, 12));
+    let taglo_dirty = TagLo::DEFAULT.with_p_state(TagLoPState::Dirty).with_p_tag_lo(u20::extract_u32(MemoryMap::cached_to_physical_mut(data) as u32, 12));
     let taglo_invalid = taglo_dirty.with_p_state(TagLoPState::Invalid);
 
     let result0: u32;

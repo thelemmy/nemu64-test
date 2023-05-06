@@ -125,7 +125,7 @@ fn render_on_rdp<T: Color + Copy + Clone, const WIDTH: usize, const HEIGHT: usiz
 
     // Clear everything
     let clear_rect = RDPRectangle::new(U10_2::from_u32(0), U10_2::from_u32(0), U10_2::from_u32(WIDTH as u32 - 1), U10_2::from_u32(HEIGHT as u32 - 1));
-    assembler.set_othermode(Othermode::new()
+    assembler.set_othermode(Othermode::DEFAULT
         .with_cycle_type(CycleType::Fill));
     assembler.set_fillcolor32(ARGB8888::BLACK);
     assembler.filled_rectangle(&clear_rect);
@@ -133,7 +133,7 @@ fn render_on_rdp<T: Color + Copy + Clone, const WIDTH: usize, const HEIGHT: usiz
 
     // Draw triangle
     assembler.set_framebuffer_image(Format::RGBA, image_size, u12::new((WIDTH - 1).try_into().unwrap()), &mut framebuffer);
-    assembler.set_othermode(Othermode::new()
+    assembler.set_othermode(Othermode::DEFAULT
         .with_cycle_type(CycleType::SingleCycle)
         .with_coverage_mode(coverage_mode)
         .with_blender_0(Blender::new(A::CombineAlpha, PM::BlendColor, B::Zero, PM::MemoryColor)));

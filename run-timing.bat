@@ -1,0 +1,1 @@
+cargo run --release --no-default-features --features timing && usb64 -rom=target\mips-nintendo64-none\release\n64-systemtest.z64 -start

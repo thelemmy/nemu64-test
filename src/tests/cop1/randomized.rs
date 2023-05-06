@@ -32,12 +32,12 @@ fn randomized_test<FLOAT, INT: From<u32> + Into<u64>, FPERFORM: FnMut(u32) -> IN
 
     for i in 0..iterations {
         let mut result: INT = i.into();  // in case of exception this won't be written to
-        let mut result_fcsr = FCSR::new();
+        let mut result_fcsr = FCSR::ZERO;
 
         // Disable exception firing, but toggle flush denorm to zero
         let ftz = (i & 1) != 0;
         let rounding_mode = FCSRRoundingMode::new_with_raw_value(u2::extract_u32(i, 1));
-        set_fcsr(FCSR::new().with_flush_denorm_to_zero(ftz).with_rounding_mode(rounding_mode));
+        set_fcsr(FCSR::ZERO.with_flush_denorm_to_zero(ftz).with_rounding_mode(rounding_mode));
         let maybe_exception = expect_exception(CauseException::FPE, 1, || {
             result = perform(i);
             result_fcsr = fcsr();
