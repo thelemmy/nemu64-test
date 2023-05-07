@@ -1,7 +1,9 @@
 use alloc::string::{String, ToString};
 use core::arch::asm;
+
 use arbitrary_int::{u19, u2, u20, u27, u31, u41};
 use bitbybit::{bitenum, bitfield};
+
 use crate::exception_handler::expect_exception;
 
 #[allow(dead_code)]
@@ -39,37 +41,37 @@ pub enum RegisterIndex {
 #[derive(Debug, PartialEq, Eq)]
 pub struct Cause {
     #[bit(31, rw)]
-    branch_delay : bool,
+    branch_delay: bool,
 
     #[bits(28..=29, rw)]
-    coprocessor_error : u2,
+    coprocessor_error: u2,
 
     #[bit(15, rw)]
-    interrupt_compare : bool,
+    interrupt_compare: bool,
 
     #[bit(14, rw)]
-    interrupt_int4 : bool,
+    interrupt_int4: bool,
 
     #[bit(13, rw)]
-    interrupt_int3 : bool,
+    interrupt_int3: bool,
 
     #[bit(12, rw)]
-    interrupt_int2 : bool,
+    interrupt_int2: bool,
 
     #[bit(11, rw)]
-    interrupt_int1 : bool,
+    interrupt_int1: bool,
 
     #[bit(10, rw)]
-    interrupt_int0 : bool,
+    interrupt_int0: bool,
 
     #[bit(9, rw)]
-    interrupt_sw2 : bool,
+    interrupt_sw2: bool,
 
     #[bit(8, rw)]
-    interrupt_sw1 : bool,
+    interrupt_sw1: bool,
 
     #[bits(2..=6, rw)]
-    exception : Option<CauseException>,
+    exception: Option<CauseException>,
 }
 
 impl Cause {
@@ -91,90 +93,91 @@ pub enum StatusKSU {
 #[derive(Debug, Eq, PartialEq)]
 pub struct Status {
     #[bit(31, rw)]
-    cop3usable : bool,
+    cop3usable: bool,
 
     #[bit(30, rw)]
-    cop2usable : bool,
+    cop2usable: bool,
 
     #[bit(29, rw)]
-    cop1usable : bool,
+    cop1usable: bool,
 
     #[bit(28, rw)]
-    cop0usable : bool,
+    cop0usable: bool,
 
     #[bit(27, rw)]
-    reduced_power : bool,
+    reduced_power: bool,
 
     #[bit(26, rw)]
-    fpu64 : bool,
+    fpu64: bool,
 
     /// User mode has reverse endian compare to kernel/supervisor (which itself is configured by Config.BE)
     #[bit(25, rw)]
-    reverse_endian : bool,
+    reverse_endian: bool,
 
     #[bit(22, rw)]
-    tlb_miss_vectors : bool,
+    tlb_miss_vectors: bool,
 
     #[bit(21, rw)]
-    tlb_shutdown : bool,
+    tlb_shutdown: bool,
 
     #[bit(20, rw)]
-    soft_reset : bool,
+    soft_reset: bool,
 
     #[bit(18, rw)]
-    cop0_condition : bool,
+    cop0_condition: bool,
 
     #[bit(15, r)]
-    interrupt_mask_compare : bool,
+    interrupt_mask_compare: bool,
 
     #[bit(14, r)]
-    interrupt_mask_int4 : bool,
+    interrupt_mask_int4: bool,
 
     #[bit(13, r)]
-    interrupt_mask_int3 : bool,
+    interrupt_mask_int3: bool,
 
     #[bit(12, r)]
-    interrupt_mask_int2 : bool,
+    interrupt_mask_int2: bool,
 
     #[bit(11, r)]
-    interrupt_mask_int1 : bool,
+    interrupt_mask_int1: bool,
 
     #[bit(10, r)]
-    interrupt_mask_int0 : bool,
+    interrupt_mask_int0: bool,
 
     #[bit(9, rw)]
-    interrupt_mask_sw2 : bool,
+    interrupt_mask_sw2: bool,
 
     #[bit(8, rw)]
-    interrupt_mask_sw1 : bool,
+    interrupt_mask_sw1: bool,
 
     #[bit(7, rw)]
-    kx : bool,
+    kx: bool,
 
     #[bit(6, rw)]
-    sx : bool,
+    sx: bool,
 
     #[bit(5, rw)]
-    ux : bool,
+    ux: bool,
 
     #[bits(3..=4, rw)]
-    ksu : Option<StatusKSU>,
+    ksu: Option<StatusKSU>,
 
     #[bit(2, rw)]
-    erl : bool,
+    erl: bool,
 
     #[bit(1, rw)]
-    exl : bool,
+    exl: bool,
 
     #[bit(0, rw)]
-    ie : bool,
+    ie: bool,
 }
 
 impl Status {
     // Make sure to enable fpu64 by default as the compiled Rust is allowed to use all registers
     pub const ZERO: Status = Status::new_with_raw_value(0);
     pub const DEFAULT: Status = Self::ZERO.with_cop1usable(true).with_fpu64(true);
-    pub const ADDRESSING_MODE_64_BIT: Status = Self::DEFAULT.with_kx(true).with_sx(true).with_ux(true);
+    pub const ADDRESSING_MODE_64_BIT: Status =
+        Self::DEFAULT.with_kx(true).with_sx(true).with_ux(true);
 }
 
 #[bitenum(u2, exhaustive: true)]
@@ -196,10 +199,10 @@ pub enum TagLoPState {
 #[derive(Debug, Eq, PartialEq)]
 pub struct TagLo {
     #[bits(8..=27, rw)]
-    p_tag_lo : u20,
+    p_tag_lo: u20,
 
     #[bits(6..=7, rw)]
-    p_state : TagLoPState,
+    p_state: TagLoPState,
 }
 
 #[bitenum(u5, exhaustive: false)]
@@ -261,7 +264,6 @@ impl XContext {
             .with_r(u2::extract_u64(a, 62))
     }
 }
-
 
 #[bitenum(u5, exhaustive: false)]
 #[derive(PartialEq, Eq, Debug)]
@@ -654,21 +656,15 @@ pub unsafe fn set_errorepc(value: u64) {
 }
 
 pub unsafe fn tlbwi() {
-    unsafe {
-        asm!("tlbwi; nop; nop;")
-    }
+    unsafe { asm!("tlbwi; nop; nop;") }
 }
 
 pub unsafe fn tlbr() {
-    unsafe {
-        asm!("tlbr; nop; nop;")
-    }
+    unsafe { asm!("tlbr; nop; nop;") }
 }
 
 pub fn tlbp() {
-    unsafe {
-        asm!("nop; tlbp; nop;")
-    }
+    unsafe { asm!("nop; tlbp; nop;") }
 }
 
 #[repr(u32)]
@@ -683,11 +679,23 @@ pub enum Pagemask {
     M16M = 0b111111111111 << 13,
 }
 
-pub unsafe fn write_tlb(index: u32, pagemask: Pagemask, entry_lo0: u32, entry_lo1: u32, entry_hi: u64) {
+pub unsafe fn write_tlb(
+    index: u32,
+    pagemask: Pagemask,
+    entry_lo0: u32,
+    entry_lo1: u32,
+    entry_hi: u64,
+) {
     unsafe { write_tlb_untyped(index, pagemask as u32, entry_lo0, entry_lo1, entry_hi) }
 }
 
-pub unsafe fn write_tlb_untyped(index: u32, pagemask: u32, entry_lo0: u32, entry_lo1: u32, entry_hi: u64) {
+pub unsafe fn write_tlb_untyped(
+    index: u32,
+    pagemask: u32,
+    entry_lo0: u32,
+    entry_lo1: u32,
+    entry_hi: u64,
+) {
     unsafe {
         set_index(index);
         set_entry_lo0(entry_lo0);
@@ -726,19 +734,23 @@ pub enum Coherency {
     _Cached7 = 7,
 }
 
-pub fn make_entry_lo(global: bool, valid: bool, dirty: bool, coherency: Coherency, pfn: u32) -> u32 {
+pub fn make_entry_lo(
+    global: bool,
+    valid: bool,
+    dirty: bool,
+    coherency: Coherency,
+    pfn: u32,
+) -> u32 {
     assert!(pfn <= 0xFFFFFF);
-    (global as u32) |
-        ((valid as u32) << 1) |
-        ((dirty as u32) << 2) |
-        ((coherency.raw_value().value() as u32) << 3) |
-        (pfn << 6)
+    (global as u32)
+        | ((valid as u32) << 1)
+        | ((dirty as u32) << 2)
+        | ((coherency.raw_value().value() as u32) << 3)
+        | (pfn << 6)
 }
 
 pub fn make_entry_hi(asid: u8, vpn: u27, r: u2) -> u64 {
-    (asid as u64) |
-        ((vpn.value() as u64) << 13) |
-        ((r.value() as u64) << 62)
+    (asid as u64) | ((vpn.value() as u64) << 13) | ((r.value() as u64) << 62)
 }
 
 #[inline(always)]
@@ -796,10 +808,14 @@ pub unsafe fn cache64<const OP: u8, const OFFSET: i16>(location: u64) {
 pub fn preset_cause_to_copindex2() -> Result<(), String> {
     // Fire a COP2 unusable exception. This is to write something into Cause.copindex so that we can see whether it gets overwritten
     let temp_context = expect_exception(CauseException::CopUnusable, 1, || {
-        unsafe { asm!("MFC2 $0, $0"); }
+        unsafe {
+            asm!("MFC2 $0, $0");
+        }
         Ok(())
     })?;
-    if temp_context.cause.exception() != Ok(CauseException::CopUnusable) || temp_context.cause.coprocessor_error() != u2::new(2) {
+    if temp_context.cause.exception() != Ok(CauseException::CopUnusable)
+        || temp_context.cause.coprocessor_error() != u2::new(2)
+    {
         crate::println!("Cause is 0x{:x}", temp_context.cause.raw_value());
         return Err("Presetting Cause.copindex to 2 failed".to_string());
     };

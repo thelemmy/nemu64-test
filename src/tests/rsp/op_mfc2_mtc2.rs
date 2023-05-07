@@ -6,10 +6,10 @@ use core::any::Any;
 
 use crate::math::vector::Vector;
 use crate::rsp::rsp::RSP;
-use crate::rsp::rsp_assembler::{E, GPR, RSPAssembler, VR};
+use crate::rsp::rsp_assembler::{RSPAssembler, E, GPR, VR};
 use crate::rsp::spmem::SPMEM;
-use crate::tests::{Level, Test};
 use crate::tests::soft_asserts::{soft_assert_eq2, soft_assert_eq_vector};
+use crate::tests::{Level, Test};
 
 // Lessons learned:
 // - MTC2:
@@ -21,15 +21,23 @@ use crate::tests::soft_asserts::{soft_assert_eq2, soft_assert_eq_vector};
 pub struct MTC2 {}
 
 impl Test for MTC2 {
-    fn name(&self) -> &str { "RSP MTC2" }
+    fn name(&self) -> &str {
+        "RSP MTC2"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         // Preload the vector with this
-        const CLEARED_VECTOR: Vector = Vector::from_u16([0xAABB, 0xCCDD, 0xEEFF, 0xABBA, 0xBCCB, 0xCDDC, 0xEFFE, 0xACCA]);
+        const CLEARED_VECTOR: Vector = Vector::from_u16([
+            0xAABB, 0xCCDD, 0xEEFF, 0xABBA, 0xBCCB, 0xCDDC, 0xEFFE, 0xACCA,
+        ]);
         SPMEM::write_vector_into_dmem(0x00, &CLEARED_VECTOR);
 
         // Assemble RSP program
@@ -61,9 +69,17 @@ impl Test for MTC2 {
             if i < 15 {
                 expected.set8((i + 1) & 0xF, 0x78);
             }
-            soft_assert_eq_vector(SPMEM::read_vector_from_dmem(0x100 + i * 0x10), expected, || format!("MTC2 (e={})", i))?;
+            soft_assert_eq_vector(
+                SPMEM::read_vector_from_dmem(0x100 + i * 0x10),
+                expected,
+                || format!("MTC2 (e={})", i),
+            )?;
         }
-        soft_assert_eq_vector(SPMEM::read_vector_from_dmem(0x100 + 16 * 0x10), CLEARED_VECTOR, || format!("MTC2 (with e=15) spilled into unrelated vector"))?;
+        soft_assert_eq_vector(
+            SPMEM::read_vector_from_dmem(0x100 + 16 * 0x10),
+            CLEARED_VECTOR,
+            || format!("MTC2 (with e=15) spilled into unrelated vector"),
+        )?;
 
         Ok(())
     }
@@ -72,16 +88,26 @@ impl Test for MTC2 {
 pub struct MFC2 {}
 
 impl Test for MFC2 {
-    fn name(&self) -> &str { "RSP MFC2" }
+    fn name(&self) -> &str {
+        "RSP MFC2"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         // Preload the vector with this
-        const TEST_VECTOR1: Vector = Vector::from_u16([0x1122, 0x3344, 0x5566, 0x7788, 0x9887, 0x7665, 0x5443, 0x3221]);
-        const TEST_VECTOR2: Vector = Vector::from_u16([0xDEAD, 0xDEAD, 0xDEAD, 0xDEAD, 0xDEAD, 0xDEAD, 0xDEAD, 0xDEAD]);
+        const TEST_VECTOR1: Vector = Vector::from_u16([
+            0x1122, 0x3344, 0x5566, 0x7788, 0x9887, 0x7665, 0x5443, 0x3221,
+        ]);
+        const TEST_VECTOR2: Vector = Vector::from_u16([
+            0xDEAD, 0xDEAD, 0xDEAD, 0xDEAD, 0xDEAD, 0xDEAD, 0xDEAD, 0xDEAD,
+        ]);
         SPMEM::write_vector_into_dmem(0x00, &TEST_VECTOR1);
         SPMEM::write_vector_into_dmem(0x10, &TEST_VECTOR2);
 
@@ -113,10 +139,15 @@ impl Test for MFC2 {
         RSP::run_and_wait(0);
 
         for i in 0..=15 {
-            let expected = ((TEST_VECTOR1.get8(i) as i16) << 8) | (TEST_VECTOR1.get8((i + 1) & 0xF) as i16);
-            soft_assert_eq2(SPMEM::read(i * 4), expected as u32, || format!("MFC2 (e={})", i))?;
+            let expected =
+                ((TEST_VECTOR1.get8(i) as i16) << 8) | (TEST_VECTOR1.get8((i + 1) & 0xF) as i16);
+            soft_assert_eq2(SPMEM::read(i * 4), expected as u32, || {
+                format!("MFC2 (e={})", i)
+            })?;
         }
-        soft_assert_eq2(SPMEM::read(16 * 4), 0, || format!("MFC2 into R0 mustn't change R0"))?;
+        soft_assert_eq2(SPMEM::read(16 * 4), 0, || {
+            format!("MFC2 into R0 mustn't change R0")
+        })?;
 
         Ok(())
     }

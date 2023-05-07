@@ -4,13 +4,14 @@ use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use core::any::Any;
 use core::cmp::min;
+
 use arbitrary_int::u5;
 
 use crate::rsp::rsp::RSP;
-use crate::rsp::rsp_assembler::{CP2FlagsRegister, GPR, RSPAssembler};
+use crate::rsp::rsp_assembler::{CP2FlagsRegister, RSPAssembler, GPR};
 use crate::rsp::spmem::SPMEM;
-use crate::tests::{Level, Test};
 use crate::tests::soft_asserts::{soft_assert_eq, soft_assert_eq2};
+use crate::tests::{Level, Test};
 
 // Lessons learned:
 // There are three registers: VCO, VCC, VCE. When copying, CFC2 only looks at the bottom two
@@ -20,11 +21,17 @@ use crate::tests::soft_asserts::{soft_assert_eq, soft_assert_eq2};
 pub struct CTC2CFC2 {}
 
 impl Test for CTC2CFC2 {
-    fn name(&self) -> &str { "RSP CTC2/CFC2" }
+    fn name(&self) -> &str {
+        "RSP CTC2/CFC2"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         // Assemble RSP program
@@ -63,13 +70,37 @@ impl Test for CTC2CFC2 {
 
         RSP::run_and_wait(0);
 
-        soft_assert_eq(SPMEM::read(0x00), 0x00005678, "CTC2 0, 0x12345678, then read back")?;
-        soft_assert_eq(SPMEM::read(0x04), 0x00004321, "CTC2 1, 0x87654321, then read back")?;
-        soft_assert_eq(SPMEM::read(0x08), 0x00000044, "CTC2 2, 0x11223344, then read back")?;
+        soft_assert_eq(
+            SPMEM::read(0x00),
+            0x00005678,
+            "CTC2 0, 0x12345678, then read back",
+        )?;
+        soft_assert_eq(
+            SPMEM::read(0x04),
+            0x00004321,
+            "CTC2 1, 0x87654321, then read back",
+        )?;
+        soft_assert_eq(
+            SPMEM::read(0x08),
+            0x00000044,
+            "CTC2 2, 0x11223344, then read back",
+        )?;
 
-        soft_assert_eq(SPMEM::read(0x0C), 0xFFFF8678, "CTC2 0, 0x12348678, then read back")?;
-        soft_assert_eq(SPMEM::read(0x10), 0xFFFF8321, "CTC2 1, 0x87658321, then read back")?;
-        soft_assert_eq(SPMEM::read(0x14), 0x00000084, "CTC2 2, 0x11223384, then read back")?;
+        soft_assert_eq(
+            SPMEM::read(0x0C),
+            0xFFFF8678,
+            "CTC2 0, 0x12348678, then read back",
+        )?;
+        soft_assert_eq(
+            SPMEM::read(0x10),
+            0xFFFF8321,
+            "CTC2 1, 0x87658321, then read back",
+        )?;
+        soft_assert_eq(
+            SPMEM::read(0x14),
+            0x00000084,
+            "CTC2 2, 0x11223384, then read back",
+        )?;
 
         Ok(())
     }
@@ -78,11 +109,17 @@ impl Test for CTC2CFC2 {
 pub struct CFC2WeirdIndexes {}
 
 impl Test for CFC2WeirdIndexes {
-    fn name(&self) -> &str { "RSP CFC2 (index higher than three)" }
+    fn name(&self) -> &str {
+        "RSP CFC2 (index higher than three)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         // Assemble RSP program
@@ -115,7 +152,9 @@ impl Test for CFC2WeirdIndexes {
                 1 => 0xFFFF8321,
                 _ => 0x00000084,
             };
-            soft_assert_eq2(SPMEM::read(i * 4), expected, || format!("CTC2 {}, then read back", i).to_string())?;
+            soft_assert_eq2(SPMEM::read(i * 4), expected, || {
+                format!("CTC2 {}, then read back", i).to_string()
+            })?;
         }
 
         Ok(())
@@ -125,11 +164,17 @@ impl Test for CFC2WeirdIndexes {
 pub struct CTC2WeirdIndexes {}
 
 impl Test for CTC2WeirdIndexes {
-    fn name(&self) -> &str { "RSP CTC2 (index higher than three)" }
+    fn name(&self) -> &str {
+        "RSP CTC2 (index higher than three)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         // Assemble RSP program
@@ -156,7 +201,9 @@ impl Test for CTC2WeirdIndexes {
         RSP::run_and_wait(0);
 
         for i in 0..32 {
-            soft_assert_eq2(SPMEM::read(i * 4), i as u32, || format!("CTC2 {}, then read back via CFC2 {}", i, min(i & 3, 3)).to_string())?;
+            soft_assert_eq2(SPMEM::read(i * 4), i as u32, || {
+                format!("CTC2 {}, then read back via CFC2 {}", i, min(i & 3, 3)).to_string()
+            })?;
         }
 
         Ok(())

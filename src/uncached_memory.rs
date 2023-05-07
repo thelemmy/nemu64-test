@@ -1,8 +1,10 @@
-use linked_list_allocator::align_up;
 use alloc::alloc::{alloc, dealloc};
 use core::alloc::Layout;
 use core::cmp::max;
 use core::mem::size_of;
+
+use linked_list_allocator::align_up;
+
 use crate::{cop0, MemoryMap};
 
 /// A dynamically allocated chunk of memory that is accessed as uncached memory. This is
@@ -28,7 +30,8 @@ impl<T: Copy + Clone> UncachedHeapMemory<T> {
         let byte_size = count * element_size;
         let effective_align = max(align, element_size);
         assert!(effective_align.is_power_of_two());
-        let layout = Layout::from_size_align(align_up(byte_size, effective_align), effective_align).unwrap();
+        let layout =
+            Layout::from_size_align(align_up(byte_size, effective_align), effective_align).unwrap();
         let original_data = unsafe { alloc(layout) };
         Self::invalidate_caches(original_data, byte_size);
         let uncached_data = MemoryMap::uncached_mut(original_data) as *mut T;
@@ -70,7 +73,9 @@ impl<T: Copy + Clone> UncachedHeapMemory<T> {
         }
     }
 
-    pub const fn count(&self) -> usize { self.count }
+    pub const fn count(&self) -> usize {
+        self.count
+    }
 
     pub fn write(&mut self, index: usize, value: T) {
         assert!(index < self.count);
@@ -81,9 +86,7 @@ impl<T: Copy + Clone> UncachedHeapMemory<T> {
 
     pub fn read(&mut self, index: usize) -> T {
         assert!(index < self.count);
-        unsafe {
-            self.uncached_data.add(index).read_volatile()
-        }
+        unsafe { self.uncached_data.add(index).read_volatile() }
     }
 
     /// Pointer to physical start of memory
@@ -94,7 +97,9 @@ impl<T: Copy + Clone> UncachedHeapMemory<T> {
 
 impl<T: Copy + Clone> Drop for UncachedHeapMemory<T> {
     fn drop(&mut self) {
-        unsafe { dealloc(self.original_data, self.layout); }
+        unsafe {
+            dealloc(self.original_data, self.layout);
+        }
     }
 }
 
@@ -108,11 +113,12 @@ impl<'a, T: Copy + Clone> UncachedHeapMemoryWriter<'a, T> {
         Self { memory, index: 0 }
     }
 
-    pub fn index(&self) -> usize { self.index }
+    pub fn index(&self) -> usize {
+        self.index
+    }
 
     pub fn write(&mut self, value: T) {
         self.memory.write(self.index, value);
         self.index += 1
     }
-
 }

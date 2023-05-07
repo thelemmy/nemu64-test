@@ -3,17 +3,24 @@ use alloc::string::String;
 use alloc::vec::Vec;
 use core::any::Any;
 use core::arch::asm;
-use crate::tests::{Level, Test};
+
 use crate::tests::soft_asserts::{soft_assert_eq, soft_assert_neq};
+use crate::tests::{Level, Test};
 
 pub struct JWithinDelay {}
 
 impl Test for JWithinDelay {
-    fn name(&self) -> &str { "J: Within delay slot of another J" }
+    fn name(&self) -> &str {
+        "J: Within delay slot of another J"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         // This test answers the age old question: What happens to a J within a delay slot of another J?
@@ -46,11 +53,17 @@ impl Test for JWithinDelay {
 pub struct JALWithinDelay {}
 
 impl Test for JALWithinDelay {
-    fn name(&self) -> &str { "JAL: Within delay slot of J" }
+    fn name(&self) -> &str {
+        "JAL: Within delay slot of J"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         // JWithinDelay showed that the first J wins over the second. Is this also true for the
@@ -96,8 +109,16 @@ impl Test for JALWithinDelay {
             ", out("$3") result, out("$4") ra_was_set, out("$25") _)
         }
 
-        soft_assert_eq(result, 0xF, "J within a delay slot should not take over target jump address")?;
-        soft_assert_eq(ra_was_set, 44, "JAL in delay slot writes target address+4 of original jump into delay slot")?;
+        soft_assert_eq(
+            result,
+            0xF,
+            "J within a delay slot should not take over target jump address",
+        )?;
+        soft_assert_eq(
+            ra_was_set,
+            44,
+            "JAL in delay slot writes target address+4 of original jump into delay slot",
+        )?;
 
         Ok(())
     }
@@ -106,11 +127,17 @@ impl Test for JALWithinDelay {
 pub struct JALDelayRAVisibility {}
 
 impl Test for JALDelayRAVisibility {
-    fn name(&self) -> &str { "JAL: Read RA within delay slot" }
+    fn name(&self) -> &str {
+        "JAL: Read RA within delay slot"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         // If the delay slot reads RA, will it see the new or the old value?
@@ -133,7 +160,11 @@ impl Test for JALDelayRAVisibility {
         }
 
         soft_assert_neq(ra_after, ra_before, "JAL didn't update RA")?;
-        soft_assert_eq(ra_delay, ra_after, "New RA value should be visible within delay slot")?;
+        soft_assert_eq(
+            ra_delay,
+            ra_after,
+            "New RA value should be visible within delay slot",
+        )?;
 
         Ok(())
     }
@@ -142,11 +173,17 @@ impl Test for JALDelayRAVisibility {
 pub struct JALWithinDelayOfJALR {}
 
 impl Test for JALWithinDelayOfJALR {
-    fn name(&self) -> &str { "JAL: Within delay slot of JALR" }
+    fn name(&self) -> &str {
+        "JAL: Within delay slot of JALR"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         // This one is tricky for recompilers: RA within delay has to set $31 to a value
@@ -190,11 +227,22 @@ impl Test for JALWithinDelayOfJALR {
             ", out("$3") result, out("$4") ra_after_jalr, out("$5") ra_after_jal, out("$24") _, out("$25") original_ra)
         }
 
-        soft_assert_eq(result, 0x3, "JAL within a delay slot should not take over target jump address")?;
-        soft_assert_eq(ra_after_jalr - original_ra, 16, "JALR writes address+4 into delay slot")?;
-        soft_assert_eq(ra_after_jal - original_ra, 40, "JAL in delay slot writes target address+4 of original jump into delay slot")?;
+        soft_assert_eq(
+            result,
+            0x3,
+            "JAL within a delay slot should not take over target jump address",
+        )?;
+        soft_assert_eq(
+            ra_after_jalr - original_ra,
+            16,
+            "JALR writes address+4 into delay slot",
+        )?;
+        soft_assert_eq(
+            ra_after_jal - original_ra,
+            40,
+            "JAL in delay slot writes target address+4 of original jump into delay slot",
+        )?;
 
         Ok(())
     }
 }
-

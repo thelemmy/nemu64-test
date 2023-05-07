@@ -1,26 +1,33 @@
-use spinning_top::Spinlock;
 use alloc::boxed::Box;
 use alloc::string::String;
 use alloc::vec::Vec;
 use core::any::Any;
+
+use spinning_top::Spinlock;
+
 use crate::cop0::Status;
 use crate::cop1::cfc1;
 use crate::println;
-
 use crate::rsp::rsp::RSP;
-use crate::tests::{Level, Test};
 use crate::tests::soft_asserts::{soft_assert_eq, soft_assert_less};
+use crate::tests::{Level, Test};
 
 static COP0_STATUS_EVERDRIVE_BUG: Spinlock<bool> = Spinlock::new(false);
 
 pub struct StartupTest {}
 
 impl Test for StartupTest {
-    fn name(&self) -> &str { "StartupTest" }
+    fn name(&self) -> &str {
+        "StartupTest"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         soft_assert_less(crate::cop0::wired(), 64, "Initial COP0 Wired")?; // Usually 0, but also seen 33 after soft reset. Don't check precise value
@@ -51,11 +58,28 @@ impl Test for StartupTest {
         // The EverDrive has a bug however and sets the wrong value. If we detect that,
         // TearDownTest will report it
         let status = crate::cop0::status();
-        soft_assert_eq(crate::cop0::status_64(), status.raw_value() as u64, "COP0 Status DMFC0 has to return same value as MFC0")?;
-        const STATUS_EXPECTED: Status = Status::ZERO.with_cop1usable(true).with_cop0usable(true).with_fpu64(true);
-        const STATUS_EVERDRIVE64: Status = Status::ZERO.with_cop1usable(true).with_fpu64(true).with_soft_reset(true).with_kx(true).with_sx(true).with_ux(true);
+        soft_assert_eq(
+            crate::cop0::status_64(),
+            status.raw_value() as u64,
+            "COP0 Status DMFC0 has to return same value as MFC0",
+        )?;
+        const STATUS_EXPECTED: Status = Status::ZERO
+            .with_cop1usable(true)
+            .with_cop0usable(true)
+            .with_fpu64(true);
+        const STATUS_EVERDRIVE64: Status = Status::ZERO
+            .with_cop1usable(true)
+            .with_fpu64(true)
+            .with_soft_reset(true)
+            .with_kx(true)
+            .with_sx(true)
+            .with_ux(true);
 
-        soft_assert_eq(crate::cop0::status_64(), status.raw_value() as u64, "COP0 Status DMFC0 has to return same value as MFC0")?;
+        soft_assert_eq(
+            crate::cop0::status_64(),
+            status.raw_value() as u64,
+            "COP0 Status DMFC0 has to return same value as MFC0",
+        )?;
         if status.with_soft_reset(false) == STATUS_EXPECTED {
             // all good
         } else if status == STATUS_EVERDRIVE64 {
@@ -79,11 +103,17 @@ impl Test for StartupTest {
 pub struct TearDownTest {}
 
 impl Test for TearDownTest {
-    fn name(&self) -> &str { "TearDownTest" }
+    fn name(&self) -> &str {
+        "TearDownTest"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         // This tests COP0 status that was recorded all the way at the beginning

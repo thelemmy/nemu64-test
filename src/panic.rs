@@ -1,5 +1,5 @@
-use core::panic::PanicInfo;
 use core::fmt::Write;
+use core::panic::PanicInfo;
 
 struct PanicWriter {}
 
@@ -13,7 +13,7 @@ impl core::fmt::Write for PanicWriter {
 fn panic_print(args: core::fmt::Arguments) {
     // If we used println!, we'd risk not being able to open the mutex. So instead we'll use a local
     // instance here
-    let mut writer = PanicWriter { };
+    let mut writer = PanicWriter {};
     writer.write_fmt(args).unwrap();
 }
 

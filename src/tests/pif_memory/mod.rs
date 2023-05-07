@@ -4,9 +4,9 @@ use alloc::vec::Vec;
 use core::any::Any;
 use core::arch::asm;
 
-use crate::MemoryMap;
-use crate::tests::{Level, Test};
 use crate::tests::soft_asserts::soft_assert_eq;
+use crate::tests::{Level, Test};
+use crate::MemoryMap;
 
 // Write/reading from PIFRAM:
 // - SW and LW works as expected
@@ -17,11 +17,17 @@ use crate::tests::soft_asserts::soft_assert_eq;
 pub struct SW {}
 
 impl Test for SW {
-    fn name(&self) -> &str { "pifram: SW" }
+    fn name(&self) -> &str {
+        "pifram: SW"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let pifram = MemoryMap::uncached_pifram_address::<u32>(0x0);
@@ -29,7 +35,11 @@ impl Test for SW {
             pifram.write_volatile(0x01634567);
         }
 
-        soft_assert_eq(unsafe { pifram.read_volatile() }, 0x01634567, "Reading 32 bit from PIFRAM[0]")?;
+        soft_assert_eq(
+            unsafe { pifram.read_volatile() },
+            0x01634567,
+            "Reading 32 bit from PIFRAM[0]",
+        )?;
         Ok(())
     }
 }
@@ -37,11 +47,17 @@ impl Test for SW {
 pub struct SH0 {}
 
 impl Test for SH0 {
-    fn name(&self) -> &str { "pifram: SH (offset 0)" }
+    fn name(&self) -> &str {
+        "pifram: SH (offset 0)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let pifram = MemoryMap::uncached_pifram_address::<u32>(0x0);
@@ -57,7 +73,11 @@ impl Test for SH0 {
             ", in("$2") pifram, out("$3") _)
         }
 
-        soft_assert_eq(unsafe { pifram.add(0).read_volatile() }, 0x31E20000, "Reading 32 bit from PIFRAM[0]")?;
+        soft_assert_eq(
+            unsafe { pifram.add(0).read_volatile() },
+            0x31E20000,
+            "Reading 32 bit from PIFRAM[0]",
+        )?;
         Ok(())
     }
 }
@@ -65,11 +85,17 @@ impl Test for SH0 {
 pub struct SH2 {}
 
 impl Test for SH2 {
-    fn name(&self) -> &str { "pifram: SH (offset 2)" }
+    fn name(&self) -> &str {
+        "pifram: SH (offset 2)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let pifram = MemoryMap::uncached_pifram_address::<u32>(0x0);
@@ -85,7 +111,11 @@ impl Test for SH2 {
             ", in("$2") pifram, out("$3") _)
         }
 
-        soft_assert_eq(unsafe { pifram.add(0).read_volatile() }, 0x424131A2, "Reading 32 bit from PIFRAM[0]")?;
+        soft_assert_eq(
+            unsafe { pifram.add(0).read_volatile() },
+            0x424131A2,
+            "Reading 32 bit from PIFRAM[0]",
+        )?;
         Ok(())
     }
 }
@@ -93,11 +123,17 @@ impl Test for SH2 {
 pub struct SB0 {}
 
 impl Test for SB0 {
-    fn name(&self) -> &str { "pifram: SB (offset 0)" }
+    fn name(&self) -> &str {
+        "pifram: SB (offset 0)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let pifram = MemoryMap::uncached_pifram_address::<u32>(0x0);
@@ -113,7 +149,11 @@ impl Test for SB0 {
             ", in("$2") pifram, out("$3") _)
         }
 
-        soft_assert_eq(unsafe { pifram.add(0).read_volatile() }, 0x78000000, "Reading 32 bit from PIFRAM[0]")?;
+        soft_assert_eq(
+            unsafe { pifram.add(0).read_volatile() },
+            0x78000000,
+            "Reading 32 bit from PIFRAM[0]",
+        )?;
         Ok(())
     }
 }
@@ -121,11 +161,17 @@ impl Test for SB0 {
 pub struct SB1 {}
 
 impl Test for SB1 {
-    fn name(&self) -> &str { "pifram: SB (offset 1)" }
+    fn name(&self) -> &str {
+        "pifram: SB (offset 1)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let pifram = MemoryMap::uncached_pifram_address::<u32>(0x0);
@@ -141,7 +187,11 @@ impl Test for SB1 {
             ", in("$2") pifram, out("$3") _)
         }
 
-        soft_assert_eq(unsafe { pifram.add(0).read_volatile() }, 0x56780000, "Reading 32 bit from PIFRAM[0]")?;
+        soft_assert_eq(
+            unsafe { pifram.add(0).read_volatile() },
+            0x56780000,
+            "Reading 32 bit from PIFRAM[0]",
+        )?;
         Ok(())
     }
 }
@@ -149,11 +199,17 @@ impl Test for SB1 {
 pub struct SB2 {}
 
 impl Test for SB2 {
-    fn name(&self) -> &str { "pifram: SB (offset 2)" }
+    fn name(&self) -> &str {
+        "pifram: SB (offset 2)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let pifram = MemoryMap::uncached_pifram_address::<u32>(0x0);
@@ -169,7 +225,11 @@ impl Test for SB2 {
             ", in("$2") pifram, out("$3") _)
         }
 
-        soft_assert_eq(unsafe { pifram.add(0).read_volatile() }, 0x34567800, "Reading 32 bit from PIFRAM[0]")?;
+        soft_assert_eq(
+            unsafe { pifram.add(0).read_volatile() },
+            0x34567800,
+            "Reading 32 bit from PIFRAM[0]",
+        )?;
         Ok(())
     }
 }
@@ -177,11 +237,17 @@ impl Test for SB2 {
 pub struct SB3 {}
 
 impl Test for SB3 {
-    fn name(&self) -> &str { "pifram: SB (offset 3)" }
+    fn name(&self) -> &str {
+        "pifram: SB (offset 3)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let pifram = MemoryMap::uncached_pifram_address::<u32>(0x0);
@@ -197,7 +263,11 @@ impl Test for SB3 {
             ", in("$2") pifram, out("$3") _)
         }
 
-        soft_assert_eq(unsafe { pifram.add(0).read_volatile() }, 0x12345678, "Reading 32 bit from PIFRAM[0]")?;
+        soft_assert_eq(
+            unsafe { pifram.add(0).read_volatile() },
+            0x12345678,
+            "Reading 32 bit from PIFRAM[0]",
+        )?;
         Ok(())
     }
 }
@@ -205,11 +275,17 @@ impl Test for SB3 {
 pub struct LB {}
 
 impl Test for LB {
-    fn name(&self) -> &str { "pifram: LB" }
+    fn name(&self) -> &str {
+        "pifram: LB"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let pifram = MemoryMap::uncached_pifram_address::<u32>(0x0);
@@ -221,10 +297,26 @@ impl Test for LB {
 
         let pifram_8 = MemoryMap::uncached_pifram_address::<u8>(0x0);
 
-        soft_assert_eq(unsafe { pifram_8.add(0).read_volatile() }, 0x01, "Reading 8 bit from PIFRAM[0]")?;
-        soft_assert_eq(unsafe { pifram_8.add(1).read_volatile() }, 0x63, "Reading 8 bit from PIFRAM[1]")?;
-        soft_assert_eq(unsafe { pifram_8.add(2).read_volatile() }, 0x45, "Reading 8 bit from PIFRAM[2]")?;
-        soft_assert_eq(unsafe { pifram_8.add(3).read_volatile() }, 0x67, "Reading 8 bit from PIFRAM[3]")?;
+        soft_assert_eq(
+            unsafe { pifram_8.add(0).read_volatile() },
+            0x01,
+            "Reading 8 bit from PIFRAM[0]",
+        )?;
+        soft_assert_eq(
+            unsafe { pifram_8.add(1).read_volatile() },
+            0x63,
+            "Reading 8 bit from PIFRAM[1]",
+        )?;
+        soft_assert_eq(
+            unsafe { pifram_8.add(2).read_volatile() },
+            0x45,
+            "Reading 8 bit from PIFRAM[2]",
+        )?;
+        soft_assert_eq(
+            unsafe { pifram_8.add(3).read_volatile() },
+            0x67,
+            "Reading 8 bit from PIFRAM[3]",
+        )?;
         Ok(())
     }
 }
@@ -232,11 +324,17 @@ impl Test for LB {
 pub struct LH {}
 
 impl Test for LH {
-    fn name(&self) -> &str { "pifram: LH" }
+    fn name(&self) -> &str {
+        "pifram: LH"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let pifram = MemoryMap::uncached_pifram_address::<u32>(0x0);
@@ -248,8 +346,16 @@ impl Test for LH {
 
         let pifram_16 = MemoryMap::uncached_pifram_address::<u16>(0x0);
 
-        soft_assert_eq(unsafe { pifram_16.add(0).read_volatile() }, 0x0163, "Reading 16 bit from PIFRAM[0]")?;
-        soft_assert_eq(unsafe { pifram_16.add(1).read_volatile() }, 0x4567, "Reading 16 bit from PIFRAM[2]")?;
+        soft_assert_eq(
+            unsafe { pifram_16.add(0).read_volatile() },
+            0x0163,
+            "Reading 16 bit from PIFRAM[0]",
+        )?;
+        soft_assert_eq(
+            unsafe { pifram_16.add(1).read_volatile() },
+            0x4567,
+            "Reading 16 bit from PIFRAM[2]",
+        )?;
         Ok(())
     }
 }

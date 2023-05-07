@@ -1,14 +1,14 @@
 use core::fmt::Write;
+
 use spinning_top::Spinlock;
+
 use crate::FramebufferConsole;
 
 /// Global Text Writer. This is a static mut as we don't use Threading. If we ever support that,
 /// we'll need to protect this with e.g. a spinlock
 static TEXT_WRITER: Spinlock<Writer> = Spinlock::new(Writer {});
 
-pub struct Writer {
-
-}
+pub struct Writer {}
 
 impl Write for Writer {
     fn write_str(&mut self, s: &str) -> core::fmt::Result {
@@ -37,4 +37,3 @@ macro_rules! println {
     () => ($crate::print!("\n"));
     ($($arg:tt)*) => ($crate::print!("{}\n", format_args!($($arg)*)));
 }
-

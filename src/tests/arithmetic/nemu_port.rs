@@ -5,17 +5,23 @@ use alloc::vec::Vec;
 use core::any::Any;
 use core::arch::asm;
 
-use crate::tests::{Level, Test};
 use crate::tests::soft_asserts::soft_assert_eq;
+use crate::tests::{Level, Test};
 
 pub struct LUIOpcodeTest1 {}
 
 impl Test for LUIOpcodeTest1 {
-    fn name(&self) -> &str { "LUIOpcodeTest1" }
+    fn name(&self) -> &str {
+        "LUIOpcodeTest1"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r2: u64 = 0x1234567898765432;
@@ -36,11 +42,17 @@ impl Test for LUIOpcodeTest1 {
 pub struct LUIOpcodeTest2 {}
 
 impl Test for LUIOpcodeTest2 {
-    fn name(&self) -> &str { "LUIOpcodeTest2" }
+    fn name(&self) -> &str {
+        "LUIOpcodeTest2"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r2: u64 = 0x1234567898765432;
@@ -61,11 +73,17 @@ impl Test for LUIOpcodeTest2 {
 pub struct LUIOpcodeTestIntoR0 {}
 
 impl Test for LUIOpcodeTestIntoR0 {
-    fn name(&self) -> &str { "LUIOpcodeTestIntoR0" }
+    fn name(&self) -> &str {
+        "LUIOpcodeTestIntoR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -85,11 +103,17 @@ impl Test for LUIOpcodeTestIntoR0 {
 pub struct DADDIOpcodeTest {}
 
 impl Test for DADDIOpcodeTest {
-    fn name(&self) -> &str { "DADDIOpcodeTest" }
+    fn name(&self) -> &str {
+        "DADDIOpcodeTest"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0x1234567898760110;
@@ -112,11 +136,17 @@ impl Test for DADDIOpcodeTest {
 pub struct DADDIOpcodeTestWithNegativeImmediate {}
 
 impl Test for DADDIOpcodeTestWithNegativeImmediate {
-    fn name(&self) -> &str { "DADDIOpcodeTestWithNegativeImmediate" }
+    fn name(&self) -> &str {
+        "DADDIOpcodeTestWithNegativeImmediate"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0x1234567898760110;
@@ -139,11 +169,17 @@ impl Test for DADDIOpcodeTestWithNegativeImmediate {
 pub struct DADDIOpcodeTestLargeNegative1 {}
 
 impl Test for DADDIOpcodeTestLargeNegative1 {
-    fn name(&self) -> &str { "DADDIOpcodeTestLargeNegative1" }
+    fn name(&self) -> &str {
+        "DADDIOpcodeTestLargeNegative1"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r3: u64 = 0x4321432143214321;
@@ -165,11 +201,17 @@ impl Test for DADDIOpcodeTestLargeNegative1 {
 pub struct DADDIOpcodeTestLargeNegative2 {}
 
 impl Test for DADDIOpcodeTestLargeNegative2 {
-    fn name(&self) -> &str { "DADDIOpcodeTestLargeNegative2" }
+    fn name(&self) -> &str {
+        "DADDIOpcodeTestLargeNegative2"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r3: u64 = 0x4321432143214321;
@@ -190,11 +232,17 @@ impl Test for DADDIOpcodeTestLargeNegative2 {
 pub struct DADDIOpcodeTestWithR0 {}
 
 impl Test for DADDIOpcodeTestWithR0 {
-    fn name(&self) -> &str { "DADDIOpcodeTestWithR0" }
+    fn name(&self) -> &str {
+        "DADDIOpcodeTestWithR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -222,11 +270,17 @@ impl Test for DADDIOpcodeTestWithR0 {
 pub struct DADDIOpcodeTestWithOffsetZero {}
 
 impl Test for DADDIOpcodeTestWithOffsetZero {
-    fn name(&self) -> &str { "DADDIOpcodeTestWithOffsetZero" }
+    fn name(&self) -> &str {
+        "DADDIOpcodeTestWithOffsetZero"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -254,11 +308,17 @@ impl Test for DADDIOpcodeTestWithOffsetZero {
 pub struct DADDIOpcodeTestWithOffsetZeroAndR0 {}
 
 impl Test for DADDIOpcodeTestWithOffsetZeroAndR0 {
-    fn name(&self) -> &str { "DADDIOpcodeTestWithOffsetZeroAndR0" }
+    fn name(&self) -> &str {
+        "DADDIOpcodeTestWithOffsetZeroAndR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -286,11 +346,17 @@ impl Test for DADDIOpcodeTestWithOffsetZeroAndR0 {
 pub struct DADDIOpcodeTestIntoR0 {}
 
 impl Test for DADDIOpcodeTestIntoR0 {
-    fn name(&self) -> &str { "DADDIOpcodeTestIntoR0" }
+    fn name(&self) -> &str {
+        "DADDIOpcodeTestIntoR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -318,11 +384,17 @@ impl Test for DADDIOpcodeTestIntoR0 {
 pub struct DADDIOpcodeTestIntoR0WithOffset0 {}
 
 impl Test for DADDIOpcodeTestIntoR0WithOffset0 {
-    fn name(&self) -> &str { "DADDIOpcodeTestIntoR0WithOffset0" }
+    fn name(&self) -> &str {
+        "DADDIOpcodeTestIntoR0WithOffset0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -350,11 +422,17 @@ impl Test for DADDIOpcodeTestIntoR0WithOffset0 {
 pub struct DADDIUOpcodeTest {}
 
 impl Test for DADDIUOpcodeTest {
-    fn name(&self) -> &str { "DADDIUOpcodeTest" }
+    fn name(&self) -> &str {
+        "DADDIUOpcodeTest"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0x1234567898760110;
@@ -377,11 +455,17 @@ impl Test for DADDIUOpcodeTest {
 pub struct DADDIUOpcodeTestWithNegativeImmediate {}
 
 impl Test for DADDIUOpcodeTestWithNegativeImmediate {
-    fn name(&self) -> &str { "DADDIUOpcodeTestWithNegativeImmediate" }
+    fn name(&self) -> &str {
+        "DADDIUOpcodeTestWithNegativeImmediate"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0x1234567898760110;
@@ -404,11 +488,17 @@ impl Test for DADDIUOpcodeTestWithNegativeImmediate {
 pub struct DADDIUOpcodeTestLargeNegative1 {}
 
 impl Test for DADDIUOpcodeTestLargeNegative1 {
-    fn name(&self) -> &str { "DADDIUOpcodeTestLargeNegative1" }
+    fn name(&self) -> &str {
+        "DADDIUOpcodeTestLargeNegative1"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r3: u64 = 0x4321432143214321;
@@ -430,11 +520,17 @@ impl Test for DADDIUOpcodeTestLargeNegative1 {
 pub struct DADDIUOpcodeTestLargeNegative2 {}
 
 impl Test for DADDIUOpcodeTestLargeNegative2 {
-    fn name(&self) -> &str { "DADDIUOpcodeTestLargeNegative2" }
+    fn name(&self) -> &str {
+        "DADDIUOpcodeTestLargeNegative2"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r3: u64 = 0x4321432143214321;
@@ -455,11 +551,17 @@ impl Test for DADDIUOpcodeTestLargeNegative2 {
 pub struct DADDIUOpcodeTestWithR0 {}
 
 impl Test for DADDIUOpcodeTestWithR0 {
-    fn name(&self) -> &str { "DADDIUOpcodeTestWithR0" }
+    fn name(&self) -> &str {
+        "DADDIUOpcodeTestWithR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -487,11 +589,17 @@ impl Test for DADDIUOpcodeTestWithR0 {
 pub struct DADDIUOpcodeTestWithOffsetZero {}
 
 impl Test for DADDIUOpcodeTestWithOffsetZero {
-    fn name(&self) -> &str { "DADDIUOpcodeTestWithOffsetZero" }
+    fn name(&self) -> &str {
+        "DADDIUOpcodeTestWithOffsetZero"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -519,11 +627,17 @@ impl Test for DADDIUOpcodeTestWithOffsetZero {
 pub struct DADDIUOpcodeTestWithOffsetZeroAndR0 {}
 
 impl Test for DADDIUOpcodeTestWithOffsetZeroAndR0 {
-    fn name(&self) -> &str { "DADDIUOpcodeTestWithOffsetZeroAndR0" }
+    fn name(&self) -> &str {
+        "DADDIUOpcodeTestWithOffsetZeroAndR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -551,11 +665,17 @@ impl Test for DADDIUOpcodeTestWithOffsetZeroAndR0 {
 pub struct DADDIUOpcodeTestIntoR0 {}
 
 impl Test for DADDIUOpcodeTestIntoR0 {
-    fn name(&self) -> &str { "DADDIUOpcodeTestIntoR0" }
+    fn name(&self) -> &str {
+        "DADDIUOpcodeTestIntoR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -583,11 +703,17 @@ impl Test for DADDIUOpcodeTestIntoR0 {
 pub struct DADDIUOpcodeTestNoOverflowPositive {}
 
 impl Test for DADDIUOpcodeTestNoOverflowPositive {
-    fn name(&self) -> &str { "DADDIUOpcodeTestNoOverflowPositive" }
+    fn name(&self) -> &str {
+        "DADDIUOpcodeTestNoOverflowPositive"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r2: u64 = 0x7fffffffffffff00;
@@ -612,11 +738,17 @@ impl Test for DADDIUOpcodeTestNoOverflowPositive {
 pub struct DADDIUOpcodeTestNoOverflowNegative {}
 
 impl Test for DADDIUOpcodeTestNoOverflowNegative {
-    fn name(&self) -> &str { "DADDIUOpcodeTestNoOverflowNegative" }
+    fn name(&self) -> &str {
+        "DADDIUOpcodeTestNoOverflowNegative"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r2: u64 = 0x8000000000000000;
@@ -641,11 +773,17 @@ impl Test for DADDIUOpcodeTestNoOverflowNegative {
 pub struct ADDIOpcodeTest {}
 
 impl Test for ADDIOpcodeTest {
-    fn name(&self) -> &str { "ADDIOpcodeTest" }
+    fn name(&self) -> &str {
+        "ADDIOpcodeTest"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0x1234567898760110;
@@ -668,11 +806,17 @@ impl Test for ADDIOpcodeTest {
 pub struct ADDIOpcodeTestWithNegativeImmediate {}
 
 impl Test for ADDIOpcodeTestWithNegativeImmediate {
-    fn name(&self) -> &str { "ADDIOpcodeTestWithNegativeImmediate" }
+    fn name(&self) -> &str {
+        "ADDIOpcodeTestWithNegativeImmediate"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0x1234567898760110;
@@ -695,11 +839,17 @@ impl Test for ADDIOpcodeTestWithNegativeImmediate {
 pub struct ADDIOpcodeTestLower12Bit {}
 
 impl Test for ADDIOpcodeTestLower12Bit {
-    fn name(&self) -> &str { "ADDIOpcodeTestLower12Bit" }
+    fn name(&self) -> &str {
+        "ADDIOpcodeTestLower12Bit"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0x64;
@@ -722,11 +872,17 @@ impl Test for ADDIOpcodeTestLower12Bit {
 pub struct ADDIOpcodeTestUpper4Bit {}
 
 impl Test for ADDIOpcodeTestUpper4Bit {
-    fn name(&self) -> &str { "ADDIOpcodeTestUpper4Bit" }
+    fn name(&self) -> &str {
+        "ADDIOpcodeTestUpper4Bit"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0x64;
@@ -749,11 +905,17 @@ impl Test for ADDIOpcodeTestUpper4Bit {
 pub struct ADDIOpcodeTestLower12BitNegative {}
 
 impl Test for ADDIOpcodeTestLower12BitNegative {
-    fn name(&self) -> &str { "ADDIOpcodeTestLower12BitNegative" }
+    fn name(&self) -> &str {
+        "ADDIOpcodeTestLower12BitNegative"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0x64;
@@ -776,11 +938,17 @@ impl Test for ADDIOpcodeTestLower12BitNegative {
 pub struct ADDIOpcodeTestUpper4BitNegative {}
 
 impl Test for ADDIOpcodeTestUpper4BitNegative {
-    fn name(&self) -> &str { "ADDIOpcodeTestUpper4BitNegative" }
+    fn name(&self) -> &str {
+        "ADDIOpcodeTestUpper4BitNegative"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0x64;
@@ -803,11 +971,17 @@ impl Test for ADDIOpcodeTestUpper4BitNegative {
 pub struct ADDIOpcodeTestLargeNegative1 {}
 
 impl Test for ADDIOpcodeTestLargeNegative1 {
-    fn name(&self) -> &str { "ADDIOpcodeTestLargeNegative1" }
+    fn name(&self) -> &str {
+        "ADDIOpcodeTestLargeNegative1"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r3: u64 = 0x4321432143214321;
@@ -829,11 +1003,17 @@ impl Test for ADDIOpcodeTestLargeNegative1 {
 pub struct ADDIOpcodeTestLargeNegative2 {}
 
 impl Test for ADDIOpcodeTestLargeNegative2 {
-    fn name(&self) -> &str { "ADDIOpcodeTestLargeNegative2" }
+    fn name(&self) -> &str {
+        "ADDIOpcodeTestLargeNegative2"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r3: u64 = 0x4321432143214321;
@@ -854,11 +1034,17 @@ impl Test for ADDIOpcodeTestLargeNegative2 {
 pub struct ADDIOpcodeTestWithR0 {}
 
 impl Test for ADDIOpcodeTestWithR0 {
-    fn name(&self) -> &str { "ADDIOpcodeTestWithR0" }
+    fn name(&self) -> &str {
+        "ADDIOpcodeTestWithR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -886,11 +1072,17 @@ impl Test for ADDIOpcodeTestWithR0 {
 pub struct ADDIOpcodeTestWithOffsetZero {}
 
 impl Test for ADDIOpcodeTestWithOffsetZero {
-    fn name(&self) -> &str { "ADDIOpcodeTestWithOffsetZero" }
+    fn name(&self) -> &str {
+        "ADDIOpcodeTestWithOffsetZero"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -918,11 +1110,17 @@ impl Test for ADDIOpcodeTestWithOffsetZero {
 pub struct ADDIOpcodeTestWithOffsetZeroAndR0 {}
 
 impl Test for ADDIOpcodeTestWithOffsetZeroAndR0 {
-    fn name(&self) -> &str { "ADDIOpcodeTestWithOffsetZeroAndR0" }
+    fn name(&self) -> &str {
+        "ADDIOpcodeTestWithOffsetZeroAndR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -950,11 +1148,17 @@ impl Test for ADDIOpcodeTestWithOffsetZeroAndR0 {
 pub struct ADDIOpcodeTestIntoR0 {}
 
 impl Test for ADDIOpcodeTestIntoR0 {
-    fn name(&self) -> &str { "ADDIOpcodeTestIntoR0" }
+    fn name(&self) -> &str {
+        "ADDIOpcodeTestIntoR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -982,11 +1186,17 @@ impl Test for ADDIOpcodeTestIntoR0 {
 pub struct ADDIOpcodeTestIntoR0WithOffset0 {}
 
 impl Test for ADDIOpcodeTestIntoR0WithOffset0 {
-    fn name(&self) -> &str { "ADDIOpcodeTestIntoR0WithOffset0" }
+    fn name(&self) -> &str {
+        "ADDIOpcodeTestIntoR0WithOffset0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -1014,11 +1224,17 @@ impl Test for ADDIOpcodeTestIntoR0WithOffset0 {
 pub struct ADDIUOpcodeTest {}
 
 impl Test for ADDIUOpcodeTest {
-    fn name(&self) -> &str { "ADDIUOpcodeTest" }
+    fn name(&self) -> &str {
+        "ADDIUOpcodeTest"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0x1234567898760110;
@@ -1041,11 +1257,17 @@ impl Test for ADDIUOpcodeTest {
 pub struct ADDIUOpcodeTestWithNegativeImmediate {}
 
 impl Test for ADDIUOpcodeTestWithNegativeImmediate {
-    fn name(&self) -> &str { "ADDIUOpcodeTestWithNegativeImmediate" }
+    fn name(&self) -> &str {
+        "ADDIUOpcodeTestWithNegativeImmediate"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0x1234567898760110;
@@ -1068,11 +1290,17 @@ impl Test for ADDIUOpcodeTestWithNegativeImmediate {
 pub struct ADDIUOpcodeTestLower12Bit {}
 
 impl Test for ADDIUOpcodeTestLower12Bit {
-    fn name(&self) -> &str { "ADDIUOpcodeTestLower12Bit" }
+    fn name(&self) -> &str {
+        "ADDIUOpcodeTestLower12Bit"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0x64;
@@ -1095,11 +1323,17 @@ impl Test for ADDIUOpcodeTestLower12Bit {
 pub struct ADDIUOpcodeTestUpper4Bit {}
 
 impl Test for ADDIUOpcodeTestUpper4Bit {
-    fn name(&self) -> &str { "ADDIUOpcodeTestUpper4Bit" }
+    fn name(&self) -> &str {
+        "ADDIUOpcodeTestUpper4Bit"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0x64;
@@ -1122,11 +1356,17 @@ impl Test for ADDIUOpcodeTestUpper4Bit {
 pub struct ADDIUOpcodeTestLower12BitNegative {}
 
 impl Test for ADDIUOpcodeTestLower12BitNegative {
-    fn name(&self) -> &str { "ADDIUOpcodeTestLower12BitNegative" }
+    fn name(&self) -> &str {
+        "ADDIUOpcodeTestLower12BitNegative"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0x64;
@@ -1149,11 +1389,17 @@ impl Test for ADDIUOpcodeTestLower12BitNegative {
 pub struct ADDIUOpcodeTestUpper4BitNegative {}
 
 impl Test for ADDIUOpcodeTestUpper4BitNegative {
-    fn name(&self) -> &str { "ADDIUOpcodeTestUpper4BitNegative" }
+    fn name(&self) -> &str {
+        "ADDIUOpcodeTestUpper4BitNegative"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0x64;
@@ -1176,11 +1422,17 @@ impl Test for ADDIUOpcodeTestUpper4BitNegative {
 pub struct ADDIUOpcodeTestLargeNegative1 {}
 
 impl Test for ADDIUOpcodeTestLargeNegative1 {
-    fn name(&self) -> &str { "ADDIUOpcodeTestLargeNegative1" }
+    fn name(&self) -> &str {
+        "ADDIUOpcodeTestLargeNegative1"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r3: u64 = 0x4321432143214321;
@@ -1202,11 +1454,17 @@ impl Test for ADDIUOpcodeTestLargeNegative1 {
 pub struct ADDIUOpcodeTestLargeNegative2 {}
 
 impl Test for ADDIUOpcodeTestLargeNegative2 {
-    fn name(&self) -> &str { "ADDIUOpcodeTestLargeNegative2" }
+    fn name(&self) -> &str {
+        "ADDIUOpcodeTestLargeNegative2"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r3: u64 = 0x4321432143214321;
@@ -1227,11 +1485,17 @@ impl Test for ADDIUOpcodeTestLargeNegative2 {
 pub struct ADDIUOpcodeTestWithR0 {}
 
 impl Test for ADDIUOpcodeTestWithR0 {
-    fn name(&self) -> &str { "ADDIUOpcodeTestWithR0" }
+    fn name(&self) -> &str {
+        "ADDIUOpcodeTestWithR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -1259,11 +1523,17 @@ impl Test for ADDIUOpcodeTestWithR0 {
 pub struct ADDIUOpcodeTestWithOffsetZero {}
 
 impl Test for ADDIUOpcodeTestWithOffsetZero {
-    fn name(&self) -> &str { "ADDIUOpcodeTestWithOffsetZero" }
+    fn name(&self) -> &str {
+        "ADDIUOpcodeTestWithOffsetZero"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -1291,11 +1561,17 @@ impl Test for ADDIUOpcodeTestWithOffsetZero {
 pub struct ADDIUOpcodeTestWithOffsetZeroAndR0 {}
 
 impl Test for ADDIUOpcodeTestWithOffsetZeroAndR0 {
-    fn name(&self) -> &str { "ADDIUOpcodeTestWithOffsetZeroAndR0" }
+    fn name(&self) -> &str {
+        "ADDIUOpcodeTestWithOffsetZeroAndR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -1323,11 +1599,17 @@ impl Test for ADDIUOpcodeTestWithOffsetZeroAndR0 {
 pub struct ADDIUOpcodeTestWithOffsetZeroIntoItself {}
 
 impl Test for ADDIUOpcodeTestWithOffsetZeroIntoItself {
-    fn name(&self) -> &str { "ADDIUOpcodeTestWithOffsetZeroIntoItself" }
+    fn name(&self) -> &str {
+        "ADDIUOpcodeTestWithOffsetZeroIntoItself"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -1355,11 +1637,17 @@ impl Test for ADDIUOpcodeTestWithOffsetZeroIntoItself {
 pub struct ADDIUOpcodeTestIntoR0 {}
 
 impl Test for ADDIUOpcodeTestIntoR0 {
-    fn name(&self) -> &str { "ADDIUOpcodeTestIntoR0" }
+    fn name(&self) -> &str {
+        "ADDIUOpcodeTestIntoR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -1387,11 +1675,17 @@ impl Test for ADDIUOpcodeTestIntoR0 {
 pub struct SLTIOpcodeTest1 {}
 
 impl Test for SLTIOpcodeTest1 {
-    fn name(&self) -> &str { "SLTIOpcodeTest1" }
+    fn name(&self) -> &str {
+        "SLTIOpcodeTest1"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0x100000000000;
@@ -1414,11 +1708,17 @@ impl Test for SLTIOpcodeTest1 {
 pub struct SLTIOpcodeTest2 {}
 
 impl Test for SLTIOpcodeTest2 {
-    fn name(&self) -> &str { "SLTIOpcodeTest2" }
+    fn name(&self) -> &str {
+        "SLTIOpcodeTest2"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0x2;
@@ -1441,11 +1741,17 @@ impl Test for SLTIOpcodeTest2 {
 pub struct SLTIOpcodeTest3 {}
 
 impl Test for SLTIOpcodeTest3 {
-    fn name(&self) -> &str { "SLTIOpcodeTest3" }
+    fn name(&self) -> &str {
+        "SLTIOpcodeTest3"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0xfffffffffffffffc;
@@ -1468,11 +1774,17 @@ impl Test for SLTIOpcodeTest3 {
 pub struct SLTIOpcodeTest4 {}
 
 impl Test for SLTIOpcodeTest4 {
-    fn name(&self) -> &str { "SLTIOpcodeTest4" }
+    fn name(&self) -> &str {
+        "SLTIOpcodeTest4"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0xfffffffffffffffc;
@@ -1495,11 +1807,17 @@ impl Test for SLTIOpcodeTest4 {
 pub struct SLTIOpcodeTest5 {}
 
 impl Test for SLTIOpcodeTest5 {
-    fn name(&self) -> &str { "SLTIOpcodeTest5" }
+    fn name(&self) -> &str {
+        "SLTIOpcodeTest5"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0xfffffffffffffffc;
@@ -1522,11 +1840,17 @@ impl Test for SLTIOpcodeTest5 {
 pub struct SLTIOpcodeTest6 {}
 
 impl Test for SLTIOpcodeTest6 {
-    fn name(&self) -> &str { "SLTIOpcodeTest6" }
+    fn name(&self) -> &str {
+        "SLTIOpcodeTest6"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0xfffffffffffffffc;
@@ -1549,11 +1873,17 @@ impl Test for SLTIOpcodeTest6 {
 pub struct SLTIOpcodeTestEqual {}
 
 impl Test for SLTIOpcodeTestEqual {
-    fn name(&self) -> &str { "SLTIOpcodeTestEqual" }
+    fn name(&self) -> &str {
+        "SLTIOpcodeTestEqual"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0xfffffffffffffffc;
@@ -1576,11 +1906,17 @@ impl Test for SLTIOpcodeTestEqual {
 pub struct SLTIOpcodeTestWithR0 {}
 
 impl Test for SLTIOpcodeTestWithR0 {
-    fn name(&self) -> &str { "SLTIOpcodeTestWithR0" }
+    fn name(&self) -> &str {
+        "SLTIOpcodeTestWithR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -1608,11 +1944,17 @@ impl Test for SLTIOpcodeTestWithR0 {
 pub struct SLTIOpcodeTestWithR0_1 {}
 
 impl Test for SLTIOpcodeTestWithR0_1 {
-    fn name(&self) -> &str { "SLTIOpcodeTestWithR0_1" }
+    fn name(&self) -> &str {
+        "SLTIOpcodeTestWithR0_1"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -1640,11 +1982,17 @@ impl Test for SLTIOpcodeTestWithR0_1 {
 pub struct SLTIOpcodeTestIntoR0 {}
 
 impl Test for SLTIOpcodeTestIntoR0 {
-    fn name(&self) -> &str { "SLTIOpcodeTestIntoR0" }
+    fn name(&self) -> &str {
+        "SLTIOpcodeTestIntoR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -1672,11 +2020,17 @@ impl Test for SLTIOpcodeTestIntoR0 {
 pub struct SLTIOpcodeTestPositiveAgainst0 {}
 
 impl Test for SLTIOpcodeTestPositiveAgainst0 {
-    fn name(&self) -> &str { "SLTIOpcodeTestPositiveAgainst0" }
+    fn name(&self) -> &str {
+        "SLTIOpcodeTestPositiveAgainst0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -1704,11 +2058,17 @@ impl Test for SLTIOpcodeTestPositiveAgainst0 {
 pub struct SLTIOpcodeTestNegativeAgainst0 {}
 
 impl Test for SLTIOpcodeTestNegativeAgainst0 {
-    fn name(&self) -> &str { "SLTIOpcodeTestNegativeAgainst0" }
+    fn name(&self) -> &str {
+        "SLTIOpcodeTestNegativeAgainst0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -1736,11 +2096,17 @@ impl Test for SLTIOpcodeTestNegativeAgainst0 {
 pub struct SLTIOpcodeTestR0Against0 {}
 
 impl Test for SLTIOpcodeTestR0Against0 {
-    fn name(&self) -> &str { "SLTIOpcodeTestR0Against0" }
+    fn name(&self) -> &str {
+        "SLTIOpcodeTestR0Against0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -1768,11 +2134,17 @@ impl Test for SLTIOpcodeTestR0Against0 {
 pub struct SLTIUOpcodeTest1 {}
 
 impl Test for SLTIUOpcodeTest1 {
-    fn name(&self) -> &str { "SLTIUOpcodeTest1" }
+    fn name(&self) -> &str {
+        "SLTIUOpcodeTest1"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0x100000000000;
@@ -1795,11 +2167,17 @@ impl Test for SLTIUOpcodeTest1 {
 pub struct SLTIUOpcodeTest2 {}
 
 impl Test for SLTIUOpcodeTest2 {
-    fn name(&self) -> &str { "SLTIUOpcodeTest2" }
+    fn name(&self) -> &str {
+        "SLTIUOpcodeTest2"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0x2;
@@ -1822,11 +2200,17 @@ impl Test for SLTIUOpcodeTest2 {
 pub struct SLTIUOpcodeTest3 {}
 
 impl Test for SLTIUOpcodeTest3 {
-    fn name(&self) -> &str { "SLTIUOpcodeTest3" }
+    fn name(&self) -> &str {
+        "SLTIUOpcodeTest3"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0xfffffffffffffffc;
@@ -1849,11 +2233,17 @@ impl Test for SLTIUOpcodeTest3 {
 pub struct SLTIUOpcodeTest4 {}
 
 impl Test for SLTIUOpcodeTest4 {
-    fn name(&self) -> &str { "SLTIUOpcodeTest4" }
+    fn name(&self) -> &str {
+        "SLTIUOpcodeTest4"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0xfffffffffffffffc;
@@ -1876,11 +2266,17 @@ impl Test for SLTIUOpcodeTest4 {
 pub struct SLTIUOpcodeTestEqual {}
 
 impl Test for SLTIUOpcodeTestEqual {
-    fn name(&self) -> &str { "SLTIUOpcodeTestEqual" }
+    fn name(&self) -> &str {
+        "SLTIUOpcodeTestEqual"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0xfffffffffffffffc;
@@ -1903,11 +2299,17 @@ impl Test for SLTIUOpcodeTestEqual {
 pub struct SLTIUOpcodeTestWithR0 {}
 
 impl Test for SLTIUOpcodeTestWithR0 {
-    fn name(&self) -> &str { "SLTIUOpcodeTestWithR0" }
+    fn name(&self) -> &str {
+        "SLTIUOpcodeTestWithR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -1935,11 +2337,17 @@ impl Test for SLTIUOpcodeTestWithR0 {
 pub struct SLTIUOpcodeTestWithR0_1 {}
 
 impl Test for SLTIUOpcodeTestWithR0_1 {
-    fn name(&self) -> &str { "SLTIUOpcodeTestWithR0_1" }
+    fn name(&self) -> &str {
+        "SLTIUOpcodeTestWithR0_1"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -1967,11 +2375,17 @@ impl Test for SLTIUOpcodeTestWithR0_1 {
 pub struct SLTIUOpcodeTestIntoR0 {}
 
 impl Test for SLTIUOpcodeTestIntoR0 {
-    fn name(&self) -> &str { "SLTIUOpcodeTestIntoR0" }
+    fn name(&self) -> &str {
+        "SLTIUOpcodeTestIntoR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -1999,11 +2413,17 @@ impl Test for SLTIUOpcodeTestIntoR0 {
 pub struct SLTIUOpcodeTestPositiveAgainst0 {}
 
 impl Test for SLTIUOpcodeTestPositiveAgainst0 {
-    fn name(&self) -> &str { "SLTIUOpcodeTestPositiveAgainst0" }
+    fn name(&self) -> &str {
+        "SLTIUOpcodeTestPositiveAgainst0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -2031,11 +2451,17 @@ impl Test for SLTIUOpcodeTestPositiveAgainst0 {
 pub struct SLTIUOpcodeTestNegativeAgainst0 {}
 
 impl Test for SLTIUOpcodeTestNegativeAgainst0 {
-    fn name(&self) -> &str { "SLTIUOpcodeTestNegativeAgainst0" }
+    fn name(&self) -> &str {
+        "SLTIUOpcodeTestNegativeAgainst0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -2063,11 +2489,17 @@ impl Test for SLTIUOpcodeTestNegativeAgainst0 {
 pub struct SLTIUOpcodeTestR0Against0 {}
 
 impl Test for SLTIUOpcodeTestR0Against0 {
-    fn name(&self) -> &str { "SLTIUOpcodeTestR0Against0" }
+    fn name(&self) -> &str {
+        "SLTIUOpcodeTestR0Against0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -2095,11 +2527,17 @@ impl Test for SLTIUOpcodeTestR0Against0 {
 pub struct OROpcodeTest {}
 
 impl Test for OROpcodeTest {
-    fn name(&self) -> &str { "OROpcodeTest" }
+    fn name(&self) -> &str {
+        "OROpcodeTest"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -2131,11 +2569,17 @@ impl Test for OROpcodeTest {
 pub struct OROpcodeTestRTIsR0 {}
 
 impl Test for OROpcodeTestRTIsR0 {
-    fn name(&self) -> &str { "OROpcodeTestRTIsR0" }
+    fn name(&self) -> &str {
+        "OROpcodeTestRTIsR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -2167,11 +2611,17 @@ impl Test for OROpcodeTestRTIsR0 {
 pub struct OROpcodeTestRSIsR0 {}
 
 impl Test for OROpcodeTestRSIsR0 {
-    fn name(&self) -> &str { "OROpcodeTestRSIsR0" }
+    fn name(&self) -> &str {
+        "OROpcodeTestRSIsR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -2203,11 +2653,17 @@ impl Test for OROpcodeTestRSIsR0 {
 pub struct OROpcodeTestBothAreR0 {}
 
 impl Test for OROpcodeTestBothAreR0 {
-    fn name(&self) -> &str { "OROpcodeTestBothAreR0" }
+    fn name(&self) -> &str {
+        "OROpcodeTestBothAreR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -2239,11 +2695,17 @@ impl Test for OROpcodeTestBothAreR0 {
 pub struct OROpcodeTestIntoR0 {}
 
 impl Test for OROpcodeTestIntoR0 {
-    fn name(&self) -> &str { "OROpcodeTestIntoR0" }
+    fn name(&self) -> &str {
+        "OROpcodeTestIntoR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -2275,11 +2737,17 @@ impl Test for OROpcodeTestIntoR0 {
 pub struct OROpcodeTestWithItself {}
 
 impl Test for OROpcodeTestWithItself {
-    fn name(&self) -> &str { "OROpcodeTestWithItself" }
+    fn name(&self) -> &str {
+        "OROpcodeTestWithItself"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -2311,11 +2779,17 @@ impl Test for OROpcodeTestWithItself {
 pub struct OROpcodeTestInputOutput1 {}
 
 impl Test for OROpcodeTestInputOutput1 {
-    fn name(&self) -> &str { "OROpcodeTestInputOutput1" }
+    fn name(&self) -> &str {
+        "OROpcodeTestInputOutput1"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -2347,11 +2821,17 @@ impl Test for OROpcodeTestInputOutput1 {
 pub struct OROpcodeTestInputOutput2 {}
 
 impl Test for OROpcodeTestInputOutput2 {
-    fn name(&self) -> &str { "OROpcodeTestInputOutput2" }
+    fn name(&self) -> &str {
+        "OROpcodeTestInputOutput2"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -2383,11 +2863,17 @@ impl Test for OROpcodeTestInputOutput2 {
 pub struct OROpcodeTestInputOutput3 {}
 
 impl Test for OROpcodeTestInputOutput3 {
-    fn name(&self) -> &str { "OROpcodeTestInputOutput3" }
+    fn name(&self) -> &str {
+        "OROpcodeTestInputOutput3"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -2419,11 +2905,17 @@ impl Test for OROpcodeTestInputOutput3 {
 pub struct ANDOpcodeTest {}
 
 impl Test for ANDOpcodeTest {
-    fn name(&self) -> &str { "ANDOpcodeTest" }
+    fn name(&self) -> &str {
+        "ANDOpcodeTest"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -2455,11 +2947,17 @@ impl Test for ANDOpcodeTest {
 pub struct ANDOpcodeTestRTIsR0 {}
 
 impl Test for ANDOpcodeTestRTIsR0 {
-    fn name(&self) -> &str { "ANDOpcodeTestRTIsR0" }
+    fn name(&self) -> &str {
+        "ANDOpcodeTestRTIsR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -2491,11 +2989,17 @@ impl Test for ANDOpcodeTestRTIsR0 {
 pub struct ANDOpcodeTestRSIsR0 {}
 
 impl Test for ANDOpcodeTestRSIsR0 {
-    fn name(&self) -> &str { "ANDOpcodeTestRSIsR0" }
+    fn name(&self) -> &str {
+        "ANDOpcodeTestRSIsR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -2527,11 +3031,17 @@ impl Test for ANDOpcodeTestRSIsR0 {
 pub struct ANDOpcodeTestBothAreR0 {}
 
 impl Test for ANDOpcodeTestBothAreR0 {
-    fn name(&self) -> &str { "ANDOpcodeTestBothAreR0" }
+    fn name(&self) -> &str {
+        "ANDOpcodeTestBothAreR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -2563,11 +3073,17 @@ impl Test for ANDOpcodeTestBothAreR0 {
 pub struct ANDOpcodeTestIntoR0 {}
 
 impl Test for ANDOpcodeTestIntoR0 {
-    fn name(&self) -> &str { "ANDOpcodeTestIntoR0" }
+    fn name(&self) -> &str {
+        "ANDOpcodeTestIntoR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -2599,11 +3115,17 @@ impl Test for ANDOpcodeTestIntoR0 {
 pub struct ANDOpcodeTestWithItself {}
 
 impl Test for ANDOpcodeTestWithItself {
-    fn name(&self) -> &str { "ANDOpcodeTestWithItself" }
+    fn name(&self) -> &str {
+        "ANDOpcodeTestWithItself"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -2635,11 +3157,17 @@ impl Test for ANDOpcodeTestWithItself {
 pub struct ANDOpcodeTestInputOutput1 {}
 
 impl Test for ANDOpcodeTestInputOutput1 {
-    fn name(&self) -> &str { "ANDOpcodeTestInputOutput1" }
+    fn name(&self) -> &str {
+        "ANDOpcodeTestInputOutput1"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -2671,11 +3199,17 @@ impl Test for ANDOpcodeTestInputOutput1 {
 pub struct ANDOpcodeTestInputOutput2 {}
 
 impl Test for ANDOpcodeTestInputOutput2 {
-    fn name(&self) -> &str { "ANDOpcodeTestInputOutput2" }
+    fn name(&self) -> &str {
+        "ANDOpcodeTestInputOutput2"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -2707,11 +3241,17 @@ impl Test for ANDOpcodeTestInputOutput2 {
 pub struct ANDOpcodeTestInputOutput3 {}
 
 impl Test for ANDOpcodeTestInputOutput3 {
-    fn name(&self) -> &str { "ANDOpcodeTestInputOutput3" }
+    fn name(&self) -> &str {
+        "ANDOpcodeTestInputOutput3"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -2743,11 +3283,17 @@ impl Test for ANDOpcodeTestInputOutput3 {
 pub struct XOROpcodeTest {}
 
 impl Test for XOROpcodeTest {
-    fn name(&self) -> &str { "XOROpcodeTest" }
+    fn name(&self) -> &str {
+        "XOROpcodeTest"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -2779,11 +3325,17 @@ impl Test for XOROpcodeTest {
 pub struct XOROpcodeTestRTIsR0 {}
 
 impl Test for XOROpcodeTestRTIsR0 {
-    fn name(&self) -> &str { "XOROpcodeTestRTIsR0" }
+    fn name(&self) -> &str {
+        "XOROpcodeTestRTIsR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -2815,11 +3367,17 @@ impl Test for XOROpcodeTestRTIsR0 {
 pub struct XOROpcodeTestRSIsR0 {}
 
 impl Test for XOROpcodeTestRSIsR0 {
-    fn name(&self) -> &str { "XOROpcodeTestRSIsR0" }
+    fn name(&self) -> &str {
+        "XOROpcodeTestRSIsR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -2851,11 +3409,17 @@ impl Test for XOROpcodeTestRSIsR0 {
 pub struct XOROpcodeTestBothAreR0 {}
 
 impl Test for XOROpcodeTestBothAreR0 {
-    fn name(&self) -> &str { "XOROpcodeTestBothAreR0" }
+    fn name(&self) -> &str {
+        "XOROpcodeTestBothAreR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -2887,11 +3451,17 @@ impl Test for XOROpcodeTestBothAreR0 {
 pub struct XOROpcodeTestIntoR0 {}
 
 impl Test for XOROpcodeTestIntoR0 {
-    fn name(&self) -> &str { "XOROpcodeTestIntoR0" }
+    fn name(&self) -> &str {
+        "XOROpcodeTestIntoR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -2923,11 +3493,17 @@ impl Test for XOROpcodeTestIntoR0 {
 pub struct XOROpcodeTestWithItself {}
 
 impl Test for XOROpcodeTestWithItself {
-    fn name(&self) -> &str { "XOROpcodeTestWithItself" }
+    fn name(&self) -> &str {
+        "XOROpcodeTestWithItself"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -2959,11 +3535,17 @@ impl Test for XOROpcodeTestWithItself {
 pub struct XOROpcodeTestInputOutput1 {}
 
 impl Test for XOROpcodeTestInputOutput1 {
-    fn name(&self) -> &str { "XOROpcodeTestInputOutput1" }
+    fn name(&self) -> &str {
+        "XOROpcodeTestInputOutput1"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -2995,11 +3577,17 @@ impl Test for XOROpcodeTestInputOutput1 {
 pub struct XOROpcodeTestInputOutput2 {}
 
 impl Test for XOROpcodeTestInputOutput2 {
-    fn name(&self) -> &str { "XOROpcodeTestInputOutput2" }
+    fn name(&self) -> &str {
+        "XOROpcodeTestInputOutput2"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -3031,11 +3619,17 @@ impl Test for XOROpcodeTestInputOutput2 {
 pub struct XOROpcodeTestInputOutput3 {}
 
 impl Test for XOROpcodeTestInputOutput3 {
-    fn name(&self) -> &str { "XOROpcodeTestInputOutput3" }
+    fn name(&self) -> &str {
+        "XOROpcodeTestInputOutput3"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -3067,11 +3661,17 @@ impl Test for XOROpcodeTestInputOutput3 {
 pub struct NOROpcodeTest {}
 
 impl Test for NOROpcodeTest {
-    fn name(&self) -> &str { "NOROpcodeTest" }
+    fn name(&self) -> &str {
+        "NOROpcodeTest"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -3103,11 +3703,17 @@ impl Test for NOROpcodeTest {
 pub struct NOROpcodeTestRTIsR0 {}
 
 impl Test for NOROpcodeTestRTIsR0 {
-    fn name(&self) -> &str { "NOROpcodeTestRTIsR0" }
+    fn name(&self) -> &str {
+        "NOROpcodeTestRTIsR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -3139,11 +3745,17 @@ impl Test for NOROpcodeTestRTIsR0 {
 pub struct NOROpcodeTestRSIsR0 {}
 
 impl Test for NOROpcodeTestRSIsR0 {
-    fn name(&self) -> &str { "NOROpcodeTestRSIsR0" }
+    fn name(&self) -> &str {
+        "NOROpcodeTestRSIsR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -3175,11 +3787,17 @@ impl Test for NOROpcodeTestRSIsR0 {
 pub struct NOROpcodeTestBothAreR0 {}
 
 impl Test for NOROpcodeTestBothAreR0 {
-    fn name(&self) -> &str { "NOROpcodeTestBothAreR0" }
+    fn name(&self) -> &str {
+        "NOROpcodeTestBothAreR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -3211,11 +3829,17 @@ impl Test for NOROpcodeTestBothAreR0 {
 pub struct NOROpcodeTestIntoR0 {}
 
 impl Test for NOROpcodeTestIntoR0 {
-    fn name(&self) -> &str { "NOROpcodeTestIntoR0" }
+    fn name(&self) -> &str {
+        "NOROpcodeTestIntoR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -3247,11 +3871,17 @@ impl Test for NOROpcodeTestIntoR0 {
 pub struct NOROpcodeTestWithItself {}
 
 impl Test for NOROpcodeTestWithItself {
-    fn name(&self) -> &str { "NOROpcodeTestWithItself" }
+    fn name(&self) -> &str {
+        "NOROpcodeTestWithItself"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -3283,11 +3913,17 @@ impl Test for NOROpcodeTestWithItself {
 pub struct NOROpcodeTestInputOutput1 {}
 
 impl Test for NOROpcodeTestInputOutput1 {
-    fn name(&self) -> &str { "NOROpcodeTestInputOutput1" }
+    fn name(&self) -> &str {
+        "NOROpcodeTestInputOutput1"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -3319,11 +3955,17 @@ impl Test for NOROpcodeTestInputOutput1 {
 pub struct NOROpcodeTestInputOutput2 {}
 
 impl Test for NOROpcodeTestInputOutput2 {
-    fn name(&self) -> &str { "NOROpcodeTestInputOutput2" }
+    fn name(&self) -> &str {
+        "NOROpcodeTestInputOutput2"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -3355,11 +3997,17 @@ impl Test for NOROpcodeTestInputOutput2 {
 pub struct NOROpcodeTestInputOutput3 {}
 
 impl Test for NOROpcodeTestInputOutput3 {
-    fn name(&self) -> &str { "NOROpcodeTestInputOutput3" }
+    fn name(&self) -> &str {
+        "NOROpcodeTestInputOutput3"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -3391,11 +4039,17 @@ impl Test for NOROpcodeTestInputOutput3 {
 pub struct SLTOpcodeTest {}
 
 impl Test for SLTOpcodeTest {
-    fn name(&self) -> &str { "SLTOpcodeTest" }
+    fn name(&self) -> &str {
+        "SLTOpcodeTest"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0x2710;
@@ -3420,11 +4074,17 @@ impl Test for SLTOpcodeTest {
 pub struct SLTOpcodeTest2 {}
 
 impl Test for SLTOpcodeTest2 {
-    fn name(&self) -> &str { "SLTOpcodeTest2" }
+    fn name(&self) -> &str {
+        "SLTOpcodeTest2"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0x2710;
@@ -3449,11 +4109,17 @@ impl Test for SLTOpcodeTest2 {
 pub struct SLTOpcodeTest3 {}
 
 impl Test for SLTOpcodeTest3 {
-    fn name(&self) -> &str { "SLTOpcodeTest3" }
+    fn name(&self) -> &str {
+        "SLTOpcodeTest3"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0x2710;
@@ -3478,11 +4144,17 @@ impl Test for SLTOpcodeTest3 {
 pub struct SLTOpcodeTest4 {}
 
 impl Test for SLTOpcodeTest4 {
-    fn name(&self) -> &str { "SLTOpcodeTest4" }
+    fn name(&self) -> &str {
+        "SLTOpcodeTest4"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0xffffff01ffffffff;
@@ -3507,11 +4179,17 @@ impl Test for SLTOpcodeTest4 {
 pub struct SLTOpcodeTest5 {}
 
 impl Test for SLTOpcodeTest5 {
-    fn name(&self) -> &str { "SLTOpcodeTest5" }
+    fn name(&self) -> &str {
+        "SLTOpcodeTest5"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0xffffff01ffffffff;
@@ -3536,11 +4214,17 @@ impl Test for SLTOpcodeTest5 {
 pub struct SLTOpcodeTest6 {}
 
 impl Test for SLTOpcodeTest6 {
-    fn name(&self) -> &str { "SLTOpcodeTest6" }
+    fn name(&self) -> &str {
+        "SLTOpcodeTest6"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0xffffff01ffffffff;
@@ -3565,11 +4249,17 @@ impl Test for SLTOpcodeTest6 {
 pub struct SLTOpcodeTest7 {}
 
 impl Test for SLTOpcodeTest7 {
-    fn name(&self) -> &str { "SLTOpcodeTest7" }
+    fn name(&self) -> &str {
+        "SLTOpcodeTest7"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0x2710;
@@ -3594,11 +4284,17 @@ impl Test for SLTOpcodeTest7 {
 pub struct SLTOpcodeTest8 {}
 
 impl Test for SLTOpcodeTest8 {
-    fn name(&self) -> &str { "SLTOpcodeTest8" }
+    fn name(&self) -> &str {
+        "SLTOpcodeTest8"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0x10000270f;
@@ -3623,11 +4319,17 @@ impl Test for SLTOpcodeTest8 {
 pub struct SLTOpcodeTestWithSelf {}
 
 impl Test for SLTOpcodeTestWithSelf {
-    fn name(&self) -> &str { "SLTOpcodeTestWithSelf" }
+    fn name(&self) -> &str {
+        "SLTOpcodeTestWithSelf"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0xdeadbeef;
@@ -3652,11 +4354,17 @@ impl Test for SLTOpcodeTestWithSelf {
 pub struct SLTOpcodeTestWithR0Pos {}
 
 impl Test for SLTOpcodeTestWithR0Pos {
-    fn name(&self) -> &str { "SLTOpcodeTestWithR0Pos" }
+    fn name(&self) -> &str {
+        "SLTOpcodeTestWithR0Pos"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0x1;
@@ -3681,11 +4389,17 @@ impl Test for SLTOpcodeTestWithR0Pos {
 pub struct SLTOpcodeTestWithR0Neg {}
 
 impl Test for SLTOpcodeTestWithR0Neg {
-    fn name(&self) -> &str { "SLTOpcodeTestWithR0Neg" }
+    fn name(&self) -> &str {
+        "SLTOpcodeTestWithR0Neg"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0xffffffffffffffff;
@@ -3710,11 +4424,17 @@ impl Test for SLTOpcodeTestWithR0Neg {
 pub struct SLTOpcodeTestIntoR0 {}
 
 impl Test for SLTOpcodeTestIntoR0 {
-    fn name(&self) -> &str { "SLTOpcodeTestIntoR0" }
+    fn name(&self) -> &str {
+        "SLTOpcodeTestIntoR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -3740,11 +4460,17 @@ impl Test for SLTOpcodeTestIntoR0 {
 pub struct SLTUOpcodeTest {}
 
 impl Test for SLTUOpcodeTest {
-    fn name(&self) -> &str { "SLTUOpcodeTest" }
+    fn name(&self) -> &str {
+        "SLTUOpcodeTest"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0x2710;
@@ -3769,11 +4495,17 @@ impl Test for SLTUOpcodeTest {
 pub struct SLTUOpcodeTest2 {}
 
 impl Test for SLTUOpcodeTest2 {
-    fn name(&self) -> &str { "SLTUOpcodeTest2" }
+    fn name(&self) -> &str {
+        "SLTUOpcodeTest2"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0x2710;
@@ -3798,11 +4530,17 @@ impl Test for SLTUOpcodeTest2 {
 pub struct SLTUOpcodeTest3 {}
 
 impl Test for SLTUOpcodeTest3 {
-    fn name(&self) -> &str { "SLTUOpcodeTest3" }
+    fn name(&self) -> &str {
+        "SLTUOpcodeTest3"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0x2710;
@@ -3827,11 +4565,17 @@ impl Test for SLTUOpcodeTest3 {
 pub struct SLTUOpcodeTest4 {}
 
 impl Test for SLTUOpcodeTest4 {
-    fn name(&self) -> &str { "SLTUOpcodeTest4" }
+    fn name(&self) -> &str {
+        "SLTUOpcodeTest4"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0xffffff01ffffffff;
@@ -3856,11 +4600,17 @@ impl Test for SLTUOpcodeTest4 {
 pub struct SLTUOpcodeTest5 {}
 
 impl Test for SLTUOpcodeTest5 {
-    fn name(&self) -> &str { "SLTUOpcodeTest5" }
+    fn name(&self) -> &str {
+        "SLTUOpcodeTest5"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0xffffff01ffffffff;
@@ -3885,11 +4635,17 @@ impl Test for SLTUOpcodeTest5 {
 pub struct SLTUOpcodeTest6 {}
 
 impl Test for SLTUOpcodeTest6 {
-    fn name(&self) -> &str { "SLTUOpcodeTest6" }
+    fn name(&self) -> &str {
+        "SLTUOpcodeTest6"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0xffffff01ffffffff;
@@ -3914,11 +4670,17 @@ impl Test for SLTUOpcodeTest6 {
 pub struct SLTUOpcodeTest7 {}
 
 impl Test for SLTUOpcodeTest7 {
-    fn name(&self) -> &str { "SLTUOpcodeTest7" }
+    fn name(&self) -> &str {
+        "SLTUOpcodeTest7"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0x2710;
@@ -3943,11 +4705,17 @@ impl Test for SLTUOpcodeTest7 {
 pub struct SLTUOpcodeTest8 {}
 
 impl Test for SLTUOpcodeTest8 {
-    fn name(&self) -> &str { "SLTUOpcodeTest8" }
+    fn name(&self) -> &str {
+        "SLTUOpcodeTest8"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0x10000270f;
@@ -3972,11 +4740,17 @@ impl Test for SLTUOpcodeTest8 {
 pub struct SLTUOpcodeTestWithSelf {}
 
 impl Test for SLTUOpcodeTestWithSelf {
-    fn name(&self) -> &str { "SLTUOpcodeTestWithSelf" }
+    fn name(&self) -> &str {
+        "SLTUOpcodeTestWithSelf"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0xdeadbeef;
@@ -4001,11 +4775,17 @@ impl Test for SLTUOpcodeTestWithSelf {
 pub struct SLTUOpcodeTestWithR0Pos {}
 
 impl Test for SLTUOpcodeTestWithR0Pos {
-    fn name(&self) -> &str { "SLTUOpcodeTestWithR0Pos" }
+    fn name(&self) -> &str {
+        "SLTUOpcodeTestWithR0Pos"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0x1;
@@ -4030,11 +4810,17 @@ impl Test for SLTUOpcodeTestWithR0Pos {
 pub struct SLTUOpcodeTestWithR0Neg {}
 
 impl Test for SLTUOpcodeTestWithR0Neg {
-    fn name(&self) -> &str { "SLTUOpcodeTestWithR0Neg" }
+    fn name(&self) -> &str {
+        "SLTUOpcodeTestWithR0Neg"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0xffffffffffffffff;
@@ -4059,11 +4845,17 @@ impl Test for SLTUOpcodeTestWithR0Neg {
 pub struct SLTUOpcodeTestIntoR0 {}
 
 impl Test for SLTUOpcodeTestIntoR0 {
-    fn name(&self) -> &str { "SLTUOpcodeTestIntoR0" }
+    fn name(&self) -> &str {
+        "SLTUOpcodeTestIntoR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -4089,11 +4881,17 @@ impl Test for SLTUOpcodeTestIntoR0 {
 pub struct ORIOpcodeTest1 {}
 
 impl Test for ORIOpcodeTest1 {
-    fn name(&self) -> &str { "ORIOpcodeTest1" }
+    fn name(&self) -> &str {
+        "ORIOpcodeTest1"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0x1234567898760110;
@@ -4116,11 +4914,17 @@ impl Test for ORIOpcodeTest1 {
 pub struct ORIOpcodeTest2 {}
 
 impl Test for ORIOpcodeTest2 {
-    fn name(&self) -> &str { "ORIOpcodeTest2" }
+    fn name(&self) -> &str {
+        "ORIOpcodeTest2"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0x1234567898760110;
@@ -4143,11 +4947,17 @@ impl Test for ORIOpcodeTest2 {
 pub struct ORIOpcodeTest3 {}
 
 impl Test for ORIOpcodeTest3 {
-    fn name(&self) -> &str { "ORIOpcodeTest3" }
+    fn name(&self) -> &str {
+        "ORIOpcodeTest3"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0x1234567898760110;
@@ -4170,11 +4980,17 @@ impl Test for ORIOpcodeTest3 {
 pub struct ORIOpcodeTest4 {}
 
 impl Test for ORIOpcodeTest4 {
-    fn name(&self) -> &str { "ORIOpcodeTest4" }
+    fn name(&self) -> &str {
+        "ORIOpcodeTest4"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0x1234567898760110;
@@ -4197,11 +5013,17 @@ impl Test for ORIOpcodeTest4 {
 pub struct ORIOpcodeTestWithR0 {}
 
 impl Test for ORIOpcodeTestWithR0 {
-    fn name(&self) -> &str { "ORIOpcodeTestWithR0" }
+    fn name(&self) -> &str {
+        "ORIOpcodeTestWithR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -4229,11 +5051,17 @@ impl Test for ORIOpcodeTestWithR0 {
 pub struct ORIOpcodeTestWithOffsetZero {}
 
 impl Test for ORIOpcodeTestWithOffsetZero {
-    fn name(&self) -> &str { "ORIOpcodeTestWithOffsetZero" }
+    fn name(&self) -> &str {
+        "ORIOpcodeTestWithOffsetZero"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -4261,11 +5089,17 @@ impl Test for ORIOpcodeTestWithOffsetZero {
 pub struct ORIOpcodeTestWithOffsetZeroAndR0 {}
 
 impl Test for ORIOpcodeTestWithOffsetZeroAndR0 {
-    fn name(&self) -> &str { "ORIOpcodeTestWithOffsetZeroAndR0" }
+    fn name(&self) -> &str {
+        "ORIOpcodeTestWithOffsetZeroAndR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -4293,11 +5127,17 @@ impl Test for ORIOpcodeTestWithOffsetZeroAndR0 {
 pub struct ORIOpcodeTestIntoR0 {}
 
 impl Test for ORIOpcodeTestIntoR0 {
-    fn name(&self) -> &str { "ORIOpcodeTestIntoR0" }
+    fn name(&self) -> &str {
+        "ORIOpcodeTestIntoR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -4325,11 +5165,17 @@ impl Test for ORIOpcodeTestIntoR0 {
 pub struct ANDIOpcodeTest1 {}
 
 impl Test for ANDIOpcodeTest1 {
-    fn name(&self) -> &str { "ANDIOpcodeTest1" }
+    fn name(&self) -> &str {
+        "ANDIOpcodeTest1"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0x1234567898760110;
@@ -4352,11 +5198,17 @@ impl Test for ANDIOpcodeTest1 {
 pub struct ANDIOpcodeTest2 {}
 
 impl Test for ANDIOpcodeTest2 {
-    fn name(&self) -> &str { "ANDIOpcodeTest2" }
+    fn name(&self) -> &str {
+        "ANDIOpcodeTest2"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0x1234567898760110;
@@ -4379,11 +5231,17 @@ impl Test for ANDIOpcodeTest2 {
 pub struct ANDIOpcodeTest3 {}
 
 impl Test for ANDIOpcodeTest3 {
-    fn name(&self) -> &str { "ANDIOpcodeTest3" }
+    fn name(&self) -> &str {
+        "ANDIOpcodeTest3"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0x123456789876ff80;
@@ -4406,11 +5264,17 @@ impl Test for ANDIOpcodeTest3 {
 pub struct ANDIOpcodeTest4 {}
 
 impl Test for ANDIOpcodeTest4 {
-    fn name(&self) -> &str { "ANDIOpcodeTest4" }
+    fn name(&self) -> &str {
+        "ANDIOpcodeTest4"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0x123456789876ffe3;
@@ -4433,11 +5297,17 @@ impl Test for ANDIOpcodeTest4 {
 pub struct ANDIOpcodeTest5 {}
 
 impl Test for ANDIOpcodeTest5 {
-    fn name(&self) -> &str { "ANDIOpcodeTest5" }
+    fn name(&self) -> &str {
+        "ANDIOpcodeTest5"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0x123456789876ffe2;
@@ -4460,11 +5330,17 @@ impl Test for ANDIOpcodeTest5 {
 pub struct ANDIOpcodeTestWithR0 {}
 
 impl Test for ANDIOpcodeTestWithR0 {
-    fn name(&self) -> &str { "ANDIOpcodeTestWithR0" }
+    fn name(&self) -> &str {
+        "ANDIOpcodeTestWithR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -4492,11 +5368,17 @@ impl Test for ANDIOpcodeTestWithR0 {
 pub struct ANDIOpcodeTestWithOffsetZero {}
 
 impl Test for ANDIOpcodeTestWithOffsetZero {
-    fn name(&self) -> &str { "ANDIOpcodeTestWithOffsetZero" }
+    fn name(&self) -> &str {
+        "ANDIOpcodeTestWithOffsetZero"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -4524,11 +5406,17 @@ impl Test for ANDIOpcodeTestWithOffsetZero {
 pub struct ANDIOpcodeTestWithOffsetZeroAndR0 {}
 
 impl Test for ANDIOpcodeTestWithOffsetZeroAndR0 {
-    fn name(&self) -> &str { "ANDIOpcodeTestWithOffsetZeroAndR0" }
+    fn name(&self) -> &str {
+        "ANDIOpcodeTestWithOffsetZeroAndR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -4556,11 +5444,17 @@ impl Test for ANDIOpcodeTestWithOffsetZeroAndR0 {
 pub struct ANDIOpcodeTestIntoR0 {}
 
 impl Test for ANDIOpcodeTestIntoR0 {
-    fn name(&self) -> &str { "ANDIOpcodeTestIntoR0" }
+    fn name(&self) -> &str {
+        "ANDIOpcodeTestIntoR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -4588,11 +5482,17 @@ impl Test for ANDIOpcodeTestIntoR0 {
 pub struct XORIOpcodeTest1 {}
 
 impl Test for XORIOpcodeTest1 {
-    fn name(&self) -> &str { "XORIOpcodeTest1" }
+    fn name(&self) -> &str {
+        "XORIOpcodeTest1"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0x1234567898760110;
@@ -4615,11 +5515,17 @@ impl Test for XORIOpcodeTest1 {
 pub struct XORIOpcodeTest2 {}
 
 impl Test for XORIOpcodeTest2 {
-    fn name(&self) -> &str { "XORIOpcodeTest2" }
+    fn name(&self) -> &str {
+        "XORIOpcodeTest2"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0x1234567898760110;
@@ -4642,11 +5548,17 @@ impl Test for XORIOpcodeTest2 {
 pub struct XORIOpcodeTest3 {}
 
 impl Test for XORIOpcodeTest3 {
-    fn name(&self) -> &str { "XORIOpcodeTest3" }
+    fn name(&self) -> &str {
+        "XORIOpcodeTest3"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0x1234567898760110;
@@ -4669,11 +5581,17 @@ impl Test for XORIOpcodeTest3 {
 pub struct XORIOpcodeTest4 {}
 
 impl Test for XORIOpcodeTest4 {
-    fn name(&self) -> &str { "XORIOpcodeTest4" }
+    fn name(&self) -> &str {
+        "XORIOpcodeTest4"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0x1234567898760110;
@@ -4696,11 +5614,17 @@ impl Test for XORIOpcodeTest4 {
 pub struct XORIOpcodeTest5 {}
 
 impl Test for XORIOpcodeTest5 {
-    fn name(&self) -> &str { "XORIOpcodeTest5" }
+    fn name(&self) -> &str {
+        "XORIOpcodeTest5"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let r2: u64 = 0x1234567898760110;
@@ -4723,11 +5647,17 @@ impl Test for XORIOpcodeTest5 {
 pub struct XORIOpcodeTestWithR0 {}
 
 impl Test for XORIOpcodeTestWithR0 {
-    fn name(&self) -> &str { "XORIOpcodeTestWithR0" }
+    fn name(&self) -> &str {
+        "XORIOpcodeTestWithR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -4755,11 +5685,17 @@ impl Test for XORIOpcodeTestWithR0 {
 pub struct XORIOpcodeTestWithOffsetZero {}
 
 impl Test for XORIOpcodeTestWithOffsetZero {
-    fn name(&self) -> &str { "XORIOpcodeTestWithOffsetZero" }
+    fn name(&self) -> &str {
+        "XORIOpcodeTestWithOffsetZero"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -4787,11 +5723,17 @@ impl Test for XORIOpcodeTestWithOffsetZero {
 pub struct XORIOpcodeTestWithOffsetZeroAndR0 {}
 
 impl Test for XORIOpcodeTestWithOffsetZeroAndR0 {
-    fn name(&self) -> &str { "XORIOpcodeTestWithOffsetZeroAndR0" }
+    fn name(&self) -> &str {
+        "XORIOpcodeTestWithOffsetZeroAndR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -4819,11 +5761,17 @@ impl Test for XORIOpcodeTestWithOffsetZeroAndR0 {
 pub struct XORIOpcodeTestIntoR0 {}
 
 impl Test for XORIOpcodeTestIntoR0 {
-    fn name(&self) -> &str { "XORIOpcodeTestIntoR0" }
+    fn name(&self) -> &str {
+        "XORIOpcodeTestIntoR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -4851,11 +5799,17 @@ impl Test for XORIOpcodeTestIntoR0 {
 pub struct ADDOpcodeTest {}
 
 impl Test for ADDOpcodeTest {
-    fn name(&self) -> &str { "ADDOpcodeTest" }
+    fn name(&self) -> &str {
+        "ADDOpcodeTest"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -4887,11 +5841,17 @@ impl Test for ADDOpcodeTest {
 pub struct ADDOpcodeTestInputOutput1 {}
 
 impl Test for ADDOpcodeTestInputOutput1 {
-    fn name(&self) -> &str { "ADDOpcodeTestInputOutput1" }
+    fn name(&self) -> &str {
+        "ADDOpcodeTestInputOutput1"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -4923,11 +5883,17 @@ impl Test for ADDOpcodeTestInputOutput1 {
 pub struct ADDOpcodeTestInputOutput2 {}
 
 impl Test for ADDOpcodeTestInputOutput2 {
-    fn name(&self) -> &str { "ADDOpcodeTestInputOutput2" }
+    fn name(&self) -> &str {
+        "ADDOpcodeTestInputOutput2"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -4959,11 +5925,17 @@ impl Test for ADDOpcodeTestInputOutput2 {
 pub struct ADDOpcodeTestInputOutput3 {}
 
 impl Test for ADDOpcodeTestInputOutput3 {
-    fn name(&self) -> &str { "ADDOpcodeTestInputOutput3" }
+    fn name(&self) -> &str {
+        "ADDOpcodeTestInputOutput3"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -4995,11 +5967,17 @@ impl Test for ADDOpcodeTestInputOutput3 {
 pub struct ADDOpcodeTestRTIsR0 {}
 
 impl Test for ADDOpcodeTestRTIsR0 {
-    fn name(&self) -> &str { "ADDOpcodeTestRTIsR0" }
+    fn name(&self) -> &str {
+        "ADDOpcodeTestRTIsR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -5031,11 +6009,17 @@ impl Test for ADDOpcodeTestRTIsR0 {
 pub struct ADDOpcodeTestRSIsR0 {}
 
 impl Test for ADDOpcodeTestRSIsR0 {
-    fn name(&self) -> &str { "ADDOpcodeTestRSIsR0" }
+    fn name(&self) -> &str {
+        "ADDOpcodeTestRSIsR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -5067,11 +6051,17 @@ impl Test for ADDOpcodeTestRSIsR0 {
 pub struct ADDOpcodeTestBothAreR0 {}
 
 impl Test for ADDOpcodeTestBothAreR0 {
-    fn name(&self) -> &str { "ADDOpcodeTestBothAreR0" }
+    fn name(&self) -> &str {
+        "ADDOpcodeTestBothAreR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -5103,11 +6093,17 @@ impl Test for ADDOpcodeTestBothAreR0 {
 pub struct ADDOpcodeTestIntoR0 {}
 
 impl Test for ADDOpcodeTestIntoR0 {
-    fn name(&self) -> &str { "ADDOpcodeTestIntoR0" }
+    fn name(&self) -> &str {
+        "ADDOpcodeTestIntoR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -5139,11 +6135,17 @@ impl Test for ADDOpcodeTestIntoR0 {
 pub struct ADDOpcodeTestWithItself {}
 
 impl Test for ADDOpcodeTestWithItself {
-    fn name(&self) -> &str { "ADDOpcodeTestWithItself" }
+    fn name(&self) -> &str {
+        "ADDOpcodeTestWithItself"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -5175,11 +6177,17 @@ impl Test for ADDOpcodeTestWithItself {
 pub struct ADDUOpcodeTest {}
 
 impl Test for ADDUOpcodeTest {
-    fn name(&self) -> &str { "ADDUOpcodeTest" }
+    fn name(&self) -> &str {
+        "ADDUOpcodeTest"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -5211,11 +6219,17 @@ impl Test for ADDUOpcodeTest {
 pub struct ADDUOpcodeTestInputOutput1 {}
 
 impl Test for ADDUOpcodeTestInputOutput1 {
-    fn name(&self) -> &str { "ADDUOpcodeTestInputOutput1" }
+    fn name(&self) -> &str {
+        "ADDUOpcodeTestInputOutput1"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -5247,11 +6261,17 @@ impl Test for ADDUOpcodeTestInputOutput1 {
 pub struct ADDUOpcodeTestInputOutput2 {}
 
 impl Test for ADDUOpcodeTestInputOutput2 {
-    fn name(&self) -> &str { "ADDUOpcodeTestInputOutput2" }
+    fn name(&self) -> &str {
+        "ADDUOpcodeTestInputOutput2"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -5283,11 +6303,17 @@ impl Test for ADDUOpcodeTestInputOutput2 {
 pub struct ADDUOpcodeTestInputOutput3 {}
 
 impl Test for ADDUOpcodeTestInputOutput3 {
-    fn name(&self) -> &str { "ADDUOpcodeTestInputOutput3" }
+    fn name(&self) -> &str {
+        "ADDUOpcodeTestInputOutput3"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -5319,11 +6345,17 @@ impl Test for ADDUOpcodeTestInputOutput3 {
 pub struct ADDUOpcodeTestRTIsR0 {}
 
 impl Test for ADDUOpcodeTestRTIsR0 {
-    fn name(&self) -> &str { "ADDUOpcodeTestRTIsR0" }
+    fn name(&self) -> &str {
+        "ADDUOpcodeTestRTIsR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -5355,11 +6387,17 @@ impl Test for ADDUOpcodeTestRTIsR0 {
 pub struct ADDUOpcodeTestRSIsR0 {}
 
 impl Test for ADDUOpcodeTestRSIsR0 {
-    fn name(&self) -> &str { "ADDUOpcodeTestRSIsR0" }
+    fn name(&self) -> &str {
+        "ADDUOpcodeTestRSIsR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -5391,11 +6429,17 @@ impl Test for ADDUOpcodeTestRSIsR0 {
 pub struct ADDUOpcodeTestBothAreR0 {}
 
 impl Test for ADDUOpcodeTestBothAreR0 {
-    fn name(&self) -> &str { "ADDUOpcodeTestBothAreR0" }
+    fn name(&self) -> &str {
+        "ADDUOpcodeTestBothAreR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -5427,11 +6471,17 @@ impl Test for ADDUOpcodeTestBothAreR0 {
 pub struct ADDUOpcodeTestIntoR0 {}
 
 impl Test for ADDUOpcodeTestIntoR0 {
-    fn name(&self) -> &str { "ADDUOpcodeTestIntoR0" }
+    fn name(&self) -> &str {
+        "ADDUOpcodeTestIntoR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -5463,11 +6513,17 @@ impl Test for ADDUOpcodeTestIntoR0 {
 pub struct ADDUOpcodeTestWithItself {}
 
 impl Test for ADDUOpcodeTestWithItself {
-    fn name(&self) -> &str { "ADDUOpcodeTestWithItself" }
+    fn name(&self) -> &str {
+        "ADDUOpcodeTestWithItself"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -5499,11 +6555,17 @@ impl Test for ADDUOpcodeTestWithItself {
 pub struct DADDOpcodeTest {}
 
 impl Test for DADDOpcodeTest {
-    fn name(&self) -> &str { "DADDOpcodeTest" }
+    fn name(&self) -> &str {
+        "DADDOpcodeTest"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -5535,11 +6597,17 @@ impl Test for DADDOpcodeTest {
 pub struct DADDOpcodeTestInputOutput1 {}
 
 impl Test for DADDOpcodeTestInputOutput1 {
-    fn name(&self) -> &str { "DADDOpcodeTestInputOutput1" }
+    fn name(&self) -> &str {
+        "DADDOpcodeTestInputOutput1"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -5571,11 +6639,17 @@ impl Test for DADDOpcodeTestInputOutput1 {
 pub struct DADDOpcodeTestInputOutput2 {}
 
 impl Test for DADDOpcodeTestInputOutput2 {
-    fn name(&self) -> &str { "DADDOpcodeTestInputOutput2" }
+    fn name(&self) -> &str {
+        "DADDOpcodeTestInputOutput2"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -5607,11 +6681,17 @@ impl Test for DADDOpcodeTestInputOutput2 {
 pub struct DADDOpcodeTestInputOutput3 {}
 
 impl Test for DADDOpcodeTestInputOutput3 {
-    fn name(&self) -> &str { "DADDOpcodeTestInputOutput3" }
+    fn name(&self) -> &str {
+        "DADDOpcodeTestInputOutput3"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -5643,11 +6723,17 @@ impl Test for DADDOpcodeTestInputOutput3 {
 pub struct DADDOpcodeTestRTIsR0 {}
 
 impl Test for DADDOpcodeTestRTIsR0 {
-    fn name(&self) -> &str { "DADDOpcodeTestRTIsR0" }
+    fn name(&self) -> &str {
+        "DADDOpcodeTestRTIsR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -5679,11 +6765,17 @@ impl Test for DADDOpcodeTestRTIsR0 {
 pub struct DADDOpcodeTestRSIsR0 {}
 
 impl Test for DADDOpcodeTestRSIsR0 {
-    fn name(&self) -> &str { "DADDOpcodeTestRSIsR0" }
+    fn name(&self) -> &str {
+        "DADDOpcodeTestRSIsR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -5715,11 +6807,17 @@ impl Test for DADDOpcodeTestRSIsR0 {
 pub struct DADDOpcodeTestBothAreR0 {}
 
 impl Test for DADDOpcodeTestBothAreR0 {
-    fn name(&self) -> &str { "DADDOpcodeTestBothAreR0" }
+    fn name(&self) -> &str {
+        "DADDOpcodeTestBothAreR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -5751,11 +6849,17 @@ impl Test for DADDOpcodeTestBothAreR0 {
 pub struct DADDOpcodeTestIntoR0 {}
 
 impl Test for DADDOpcodeTestIntoR0 {
-    fn name(&self) -> &str { "DADDOpcodeTestIntoR0" }
+    fn name(&self) -> &str {
+        "DADDOpcodeTestIntoR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -5787,11 +6891,17 @@ impl Test for DADDOpcodeTestIntoR0 {
 pub struct DADDOpcodeTestWithItself {}
 
 impl Test for DADDOpcodeTestWithItself {
-    fn name(&self) -> &str { "DADDOpcodeTestWithItself" }
+    fn name(&self) -> &str {
+        "DADDOpcodeTestWithItself"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -5823,11 +6933,17 @@ impl Test for DADDOpcodeTestWithItself {
 pub struct DADDUOpcodeTest {}
 
 impl Test for DADDUOpcodeTest {
-    fn name(&self) -> &str { "DADDUOpcodeTest" }
+    fn name(&self) -> &str {
+        "DADDUOpcodeTest"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -5859,11 +6975,17 @@ impl Test for DADDUOpcodeTest {
 pub struct DADDUOpcodeTestInputOutput1 {}
 
 impl Test for DADDUOpcodeTestInputOutput1 {
-    fn name(&self) -> &str { "DADDUOpcodeTestInputOutput1" }
+    fn name(&self) -> &str {
+        "DADDUOpcodeTestInputOutput1"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -5895,11 +7017,17 @@ impl Test for DADDUOpcodeTestInputOutput1 {
 pub struct DADDUOpcodeTestInputOutput2 {}
 
 impl Test for DADDUOpcodeTestInputOutput2 {
-    fn name(&self) -> &str { "DADDUOpcodeTestInputOutput2" }
+    fn name(&self) -> &str {
+        "DADDUOpcodeTestInputOutput2"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -5931,11 +7059,17 @@ impl Test for DADDUOpcodeTestInputOutput2 {
 pub struct DADDUOpcodeTestInputOutput3 {}
 
 impl Test for DADDUOpcodeTestInputOutput3 {
-    fn name(&self) -> &str { "DADDUOpcodeTestInputOutput3" }
+    fn name(&self) -> &str {
+        "DADDUOpcodeTestInputOutput3"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -5967,11 +7101,17 @@ impl Test for DADDUOpcodeTestInputOutput3 {
 pub struct DADDUOpcodeTestRTIsR0 {}
 
 impl Test for DADDUOpcodeTestRTIsR0 {
-    fn name(&self) -> &str { "DADDUOpcodeTestRTIsR0" }
+    fn name(&self) -> &str {
+        "DADDUOpcodeTestRTIsR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -6003,11 +7143,17 @@ impl Test for DADDUOpcodeTestRTIsR0 {
 pub struct DADDUOpcodeTestRSIsR0 {}
 
 impl Test for DADDUOpcodeTestRSIsR0 {
-    fn name(&self) -> &str { "DADDUOpcodeTestRSIsR0" }
+    fn name(&self) -> &str {
+        "DADDUOpcodeTestRSIsR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -6039,11 +7185,17 @@ impl Test for DADDUOpcodeTestRSIsR0 {
 pub struct DADDUOpcodeTestBothAreR0 {}
 
 impl Test for DADDUOpcodeTestBothAreR0 {
-    fn name(&self) -> &str { "DADDUOpcodeTestBothAreR0" }
+    fn name(&self) -> &str {
+        "DADDUOpcodeTestBothAreR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -6075,11 +7227,17 @@ impl Test for DADDUOpcodeTestBothAreR0 {
 pub struct DADDUOpcodeTestIntoR0 {}
 
 impl Test for DADDUOpcodeTestIntoR0 {
-    fn name(&self) -> &str { "DADDUOpcodeTestIntoR0" }
+    fn name(&self) -> &str {
+        "DADDUOpcodeTestIntoR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -6111,11 +7269,17 @@ impl Test for DADDUOpcodeTestIntoR0 {
 pub struct DADDUOpcodeTestWithItself {}
 
 impl Test for DADDUOpcodeTestWithItself {
-    fn name(&self) -> &str { "DADDUOpcodeTestWithItself" }
+    fn name(&self) -> &str {
+        "DADDUOpcodeTestWithItself"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -6147,11 +7311,17 @@ impl Test for DADDUOpcodeTestWithItself {
 pub struct SUBOpcodeTest {}
 
 impl Test for SUBOpcodeTest {
-    fn name(&self) -> &str { "SUBOpcodeTest" }
+    fn name(&self) -> &str {
+        "SUBOpcodeTest"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -6183,11 +7353,17 @@ impl Test for SUBOpcodeTest {
 pub struct SUBOpcodeTestInputOutput1 {}
 
 impl Test for SUBOpcodeTestInputOutput1 {
-    fn name(&self) -> &str { "SUBOpcodeTestInputOutput1" }
+    fn name(&self) -> &str {
+        "SUBOpcodeTestInputOutput1"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -6219,11 +7395,17 @@ impl Test for SUBOpcodeTestInputOutput1 {
 pub struct SUBOpcodeTestInputOutput2 {}
 
 impl Test for SUBOpcodeTestInputOutput2 {
-    fn name(&self) -> &str { "SUBOpcodeTestInputOutput2" }
+    fn name(&self) -> &str {
+        "SUBOpcodeTestInputOutput2"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -6255,11 +7437,17 @@ impl Test for SUBOpcodeTestInputOutput2 {
 pub struct SUBOpcodeTestInputOutput3 {}
 
 impl Test for SUBOpcodeTestInputOutput3 {
-    fn name(&self) -> &str { "SUBOpcodeTestInputOutput3" }
+    fn name(&self) -> &str {
+        "SUBOpcodeTestInputOutput3"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -6291,11 +7479,17 @@ impl Test for SUBOpcodeTestInputOutput3 {
 pub struct SUBOpcodeTestRTIsR0 {}
 
 impl Test for SUBOpcodeTestRTIsR0 {
-    fn name(&self) -> &str { "SUBOpcodeTestRTIsR0" }
+    fn name(&self) -> &str {
+        "SUBOpcodeTestRTIsR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -6327,11 +7521,17 @@ impl Test for SUBOpcodeTestRTIsR0 {
 pub struct SUBOpcodeTestRSIsR0 {}
 
 impl Test for SUBOpcodeTestRSIsR0 {
-    fn name(&self) -> &str { "SUBOpcodeTestRSIsR0" }
+    fn name(&self) -> &str {
+        "SUBOpcodeTestRSIsR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -6363,11 +7563,17 @@ impl Test for SUBOpcodeTestRSIsR0 {
 pub struct SUBOpcodeTestBothAreR0 {}
 
 impl Test for SUBOpcodeTestBothAreR0 {
-    fn name(&self) -> &str { "SUBOpcodeTestBothAreR0" }
+    fn name(&self) -> &str {
+        "SUBOpcodeTestBothAreR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -6399,11 +7605,17 @@ impl Test for SUBOpcodeTestBothAreR0 {
 pub struct SUBOpcodeTestIntoR0 {}
 
 impl Test for SUBOpcodeTestIntoR0 {
-    fn name(&self) -> &str { "SUBOpcodeTestIntoR0" }
+    fn name(&self) -> &str {
+        "SUBOpcodeTestIntoR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -6435,11 +7647,17 @@ impl Test for SUBOpcodeTestIntoR0 {
 pub struct SUBOpcodeTestWithItself {}
 
 impl Test for SUBOpcodeTestWithItself {
-    fn name(&self) -> &str { "SUBOpcodeTestWithItself" }
+    fn name(&self) -> &str {
+        "SUBOpcodeTestWithItself"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -6471,11 +7689,17 @@ impl Test for SUBOpcodeTestWithItself {
 pub struct SUBUOpcodeTest {}
 
 impl Test for SUBUOpcodeTest {
-    fn name(&self) -> &str { "SUBUOpcodeTest" }
+    fn name(&self) -> &str {
+        "SUBUOpcodeTest"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -6507,11 +7731,17 @@ impl Test for SUBUOpcodeTest {
 pub struct SUBUOpcodeTestInputOutput1 {}
 
 impl Test for SUBUOpcodeTestInputOutput1 {
-    fn name(&self) -> &str { "SUBUOpcodeTestInputOutput1" }
+    fn name(&self) -> &str {
+        "SUBUOpcodeTestInputOutput1"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -6543,11 +7773,17 @@ impl Test for SUBUOpcodeTestInputOutput1 {
 pub struct SUBUOpcodeTestInputOutput2 {}
 
 impl Test for SUBUOpcodeTestInputOutput2 {
-    fn name(&self) -> &str { "SUBUOpcodeTestInputOutput2" }
+    fn name(&self) -> &str {
+        "SUBUOpcodeTestInputOutput2"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -6579,11 +7815,17 @@ impl Test for SUBUOpcodeTestInputOutput2 {
 pub struct SUBUOpcodeTestInputOutput3 {}
 
 impl Test for SUBUOpcodeTestInputOutput3 {
-    fn name(&self) -> &str { "SUBUOpcodeTestInputOutput3" }
+    fn name(&self) -> &str {
+        "SUBUOpcodeTestInputOutput3"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -6615,11 +7857,17 @@ impl Test for SUBUOpcodeTestInputOutput3 {
 pub struct SUBUOpcodeTestRTIsR0 {}
 
 impl Test for SUBUOpcodeTestRTIsR0 {
-    fn name(&self) -> &str { "SUBUOpcodeTestRTIsR0" }
+    fn name(&self) -> &str {
+        "SUBUOpcodeTestRTIsR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -6651,11 +7899,17 @@ impl Test for SUBUOpcodeTestRTIsR0 {
 pub struct SUBUOpcodeTestRSIsR0 {}
 
 impl Test for SUBUOpcodeTestRSIsR0 {
-    fn name(&self) -> &str { "SUBUOpcodeTestRSIsR0" }
+    fn name(&self) -> &str {
+        "SUBUOpcodeTestRSIsR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -6687,11 +7941,17 @@ impl Test for SUBUOpcodeTestRSIsR0 {
 pub struct SUBUOpcodeTestBothAreR0 {}
 
 impl Test for SUBUOpcodeTestBothAreR0 {
-    fn name(&self) -> &str { "SUBUOpcodeTestBothAreR0" }
+    fn name(&self) -> &str {
+        "SUBUOpcodeTestBothAreR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -6723,11 +7983,17 @@ impl Test for SUBUOpcodeTestBothAreR0 {
 pub struct SUBUOpcodeTestIntoR0 {}
 
 impl Test for SUBUOpcodeTestIntoR0 {
-    fn name(&self) -> &str { "SUBUOpcodeTestIntoR0" }
+    fn name(&self) -> &str {
+        "SUBUOpcodeTestIntoR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -6759,11 +8025,17 @@ impl Test for SUBUOpcodeTestIntoR0 {
 pub struct SUBUOpcodeTestWithItself {}
 
 impl Test for SUBUOpcodeTestWithItself {
-    fn name(&self) -> &str { "SUBUOpcodeTestWithItself" }
+    fn name(&self) -> &str {
+        "SUBUOpcodeTestWithItself"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -6795,11 +8067,17 @@ impl Test for SUBUOpcodeTestWithItself {
 pub struct DSUBOpcodeTest {}
 
 impl Test for DSUBOpcodeTest {
-    fn name(&self) -> &str { "DSUBOpcodeTest" }
+    fn name(&self) -> &str {
+        "DSUBOpcodeTest"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -6831,11 +8109,17 @@ impl Test for DSUBOpcodeTest {
 pub struct DSUBOpcodeTestInputOutput1 {}
 
 impl Test for DSUBOpcodeTestInputOutput1 {
-    fn name(&self) -> &str { "DSUBOpcodeTestInputOutput1" }
+    fn name(&self) -> &str {
+        "DSUBOpcodeTestInputOutput1"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -6867,11 +8151,17 @@ impl Test for DSUBOpcodeTestInputOutput1 {
 pub struct DSUBOpcodeTestInputOutput2 {}
 
 impl Test for DSUBOpcodeTestInputOutput2 {
-    fn name(&self) -> &str { "DSUBOpcodeTestInputOutput2" }
+    fn name(&self) -> &str {
+        "DSUBOpcodeTestInputOutput2"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -6903,11 +8193,17 @@ impl Test for DSUBOpcodeTestInputOutput2 {
 pub struct DSUBOpcodeTestInputOutput3 {}
 
 impl Test for DSUBOpcodeTestInputOutput3 {
-    fn name(&self) -> &str { "DSUBOpcodeTestInputOutput3" }
+    fn name(&self) -> &str {
+        "DSUBOpcodeTestInputOutput3"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -6939,11 +8235,17 @@ impl Test for DSUBOpcodeTestInputOutput3 {
 pub struct DSUBOpcodeTestRTIsR0 {}
 
 impl Test for DSUBOpcodeTestRTIsR0 {
-    fn name(&self) -> &str { "DSUBOpcodeTestRTIsR0" }
+    fn name(&self) -> &str {
+        "DSUBOpcodeTestRTIsR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -6975,11 +8277,17 @@ impl Test for DSUBOpcodeTestRTIsR0 {
 pub struct DSUBOpcodeTestRSIsR0 {}
 
 impl Test for DSUBOpcodeTestRSIsR0 {
-    fn name(&self) -> &str { "DSUBOpcodeTestRSIsR0" }
+    fn name(&self) -> &str {
+        "DSUBOpcodeTestRSIsR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -7011,11 +8319,17 @@ impl Test for DSUBOpcodeTestRSIsR0 {
 pub struct DSUBOpcodeTestBothAreR0 {}
 
 impl Test for DSUBOpcodeTestBothAreR0 {
-    fn name(&self) -> &str { "DSUBOpcodeTestBothAreR0" }
+    fn name(&self) -> &str {
+        "DSUBOpcodeTestBothAreR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -7047,11 +8361,17 @@ impl Test for DSUBOpcodeTestBothAreR0 {
 pub struct DSUBOpcodeTestIntoR0 {}
 
 impl Test for DSUBOpcodeTestIntoR0 {
-    fn name(&self) -> &str { "DSUBOpcodeTestIntoR0" }
+    fn name(&self) -> &str {
+        "DSUBOpcodeTestIntoR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -7083,11 +8403,17 @@ impl Test for DSUBOpcodeTestIntoR0 {
 pub struct DSUBOpcodeTestWithItself {}
 
 impl Test for DSUBOpcodeTestWithItself {
-    fn name(&self) -> &str { "DSUBOpcodeTestWithItself" }
+    fn name(&self) -> &str {
+        "DSUBOpcodeTestWithItself"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -7119,11 +8445,17 @@ impl Test for DSUBOpcodeTestWithItself {
 pub struct DSUBUOpcodeTest {}
 
 impl Test for DSUBUOpcodeTest {
-    fn name(&self) -> &str { "DSUBUOpcodeTest" }
+    fn name(&self) -> &str {
+        "DSUBUOpcodeTest"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -7155,11 +8487,17 @@ impl Test for DSUBUOpcodeTest {
 pub struct DSUBUOpcodeTestInputOutput1 {}
 
 impl Test for DSUBUOpcodeTestInputOutput1 {
-    fn name(&self) -> &str { "DSUBUOpcodeTestInputOutput1" }
+    fn name(&self) -> &str {
+        "DSUBUOpcodeTestInputOutput1"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -7191,11 +8529,17 @@ impl Test for DSUBUOpcodeTestInputOutput1 {
 pub struct DSUBUOpcodeTestInputOutput2 {}
 
 impl Test for DSUBUOpcodeTestInputOutput2 {
-    fn name(&self) -> &str { "DSUBUOpcodeTestInputOutput2" }
+    fn name(&self) -> &str {
+        "DSUBUOpcodeTestInputOutput2"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -7227,11 +8571,17 @@ impl Test for DSUBUOpcodeTestInputOutput2 {
 pub struct DSUBUOpcodeTestInputOutput3 {}
 
 impl Test for DSUBUOpcodeTestInputOutput3 {
-    fn name(&self) -> &str { "DSUBUOpcodeTestInputOutput3" }
+    fn name(&self) -> &str {
+        "DSUBUOpcodeTestInputOutput3"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -7263,11 +8613,17 @@ impl Test for DSUBUOpcodeTestInputOutput3 {
 pub struct DSUBUOpcodeTestRTIsR0 {}
 
 impl Test for DSUBUOpcodeTestRTIsR0 {
-    fn name(&self) -> &str { "DSUBUOpcodeTestRTIsR0" }
+    fn name(&self) -> &str {
+        "DSUBUOpcodeTestRTIsR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -7299,11 +8655,17 @@ impl Test for DSUBUOpcodeTestRTIsR0 {
 pub struct DSUBUOpcodeTestRSIsR0 {}
 
 impl Test for DSUBUOpcodeTestRSIsR0 {
-    fn name(&self) -> &str { "DSUBUOpcodeTestRSIsR0" }
+    fn name(&self) -> &str {
+        "DSUBUOpcodeTestRSIsR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -7335,11 +8697,17 @@ impl Test for DSUBUOpcodeTestRSIsR0 {
 pub struct DSUBUOpcodeTestBothAreR0 {}
 
 impl Test for DSUBUOpcodeTestBothAreR0 {
-    fn name(&self) -> &str { "DSUBUOpcodeTestBothAreR0" }
+    fn name(&self) -> &str {
+        "DSUBUOpcodeTestBothAreR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -7371,11 +8739,17 @@ impl Test for DSUBUOpcodeTestBothAreR0 {
 pub struct DSUBUOpcodeTestIntoR0 {}
 
 impl Test for DSUBUOpcodeTestIntoR0 {
-    fn name(&self) -> &str { "DSUBUOpcodeTestIntoR0" }
+    fn name(&self) -> &str {
+        "DSUBUOpcodeTestIntoR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -7407,11 +8781,17 @@ impl Test for DSUBUOpcodeTestIntoR0 {
 pub struct DSUBUOpcodeTestWithItself {}
 
 impl Test for DSUBUOpcodeTestWithItself {
-    fn name(&self) -> &str { "DSUBUOpcodeTestWithItself" }
+    fn name(&self) -> &str {
+        "DSUBUOpcodeTestWithItself"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -7443,11 +8823,17 @@ impl Test for DSUBUOpcodeTestWithItself {
 pub struct DSUBUOpcodeTestNoOverflowNegativeMinusPositive {}
 
 impl Test for DSUBUOpcodeTestNoOverflowNegativeMinusPositive {
-    fn name(&self) -> &str { "DSUBUOpcodeTestNoOverflowNegativeMinusPositive" }
+    fn name(&self) -> &str {
+        "DSUBUOpcodeTestNoOverflowNegativeMinusPositive"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r2: u64 = 0xbffffff000000000;
@@ -7476,11 +8862,17 @@ impl Test for DSUBUOpcodeTestNoOverflowNegativeMinusPositive {
 pub struct SLLOpcodeTest {}
 
 impl Test for SLLOpcodeTest {
-    fn name(&self) -> &str { "SLLOpcodeTest" }
+    fn name(&self) -> &str {
+        "SLLOpcodeTest"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -7512,11 +8904,17 @@ impl Test for SLLOpcodeTest {
 pub struct SLLOpcodeTestShift0 {}
 
 impl Test for SLLOpcodeTestShift0 {
-    fn name(&self) -> &str { "SLLOpcodeTestShift0" }
+    fn name(&self) -> &str {
+        "SLLOpcodeTestShift0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -7548,11 +8946,17 @@ impl Test for SLLOpcodeTestShift0 {
 pub struct SLLOpcodeTestSignExtension {}
 
 impl Test for SLLOpcodeTestSignExtension {
-    fn name(&self) -> &str { "SLLOpcodeTestSignExtension" }
+    fn name(&self) -> &str {
+        "SLLOpcodeTestSignExtension"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -7584,11 +8988,17 @@ impl Test for SLLOpcodeTestSignExtension {
 pub struct SLLOpcodeTestIntoItself {}
 
 impl Test for SLLOpcodeTestIntoItself {
-    fn name(&self) -> &str { "SLLOpcodeTestIntoItself" }
+    fn name(&self) -> &str {
+        "SLLOpcodeTestIntoItself"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -7620,11 +9030,17 @@ impl Test for SLLOpcodeTestIntoItself {
 pub struct SLLOpcodeTestIntoItself0 {}
 
 impl Test for SLLOpcodeTestIntoItself0 {
-    fn name(&self) -> &str { "SLLOpcodeTestIntoItself0" }
+    fn name(&self) -> &str {
+        "SLLOpcodeTestIntoItself0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -7656,11 +9072,17 @@ impl Test for SLLOpcodeTestIntoItself0 {
 pub struct SLLOpcodeTestIntoR0Shift0 {}
 
 impl Test for SLLOpcodeTestIntoR0Shift0 {
-    fn name(&self) -> &str { "SLLOpcodeTestIntoR0Shift0" }
+    fn name(&self) -> &str {
+        "SLLOpcodeTestIntoR0Shift0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -7692,11 +9114,17 @@ impl Test for SLLOpcodeTestIntoR0Shift0 {
 pub struct SLLOpcodeTestFromR0 {}
 
 impl Test for SLLOpcodeTestFromR0 {
-    fn name(&self) -> &str { "SLLOpcodeTestFromR0" }
+    fn name(&self) -> &str {
+        "SLLOpcodeTestFromR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -7728,11 +9156,17 @@ impl Test for SLLOpcodeTestFromR0 {
 pub struct SLLOpcodeTestFromR0Shift0 {}
 
 impl Test for SLLOpcodeTestFromR0Shift0 {
-    fn name(&self) -> &str { "SLLOpcodeTestFromR0Shift0" }
+    fn name(&self) -> &str {
+        "SLLOpcodeTestFromR0Shift0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -7764,11 +9198,17 @@ impl Test for SLLOpcodeTestFromR0Shift0 {
 pub struct SLLVOpcodeTest {}
 
 impl Test for SLLVOpcodeTest {
-    fn name(&self) -> &str { "SLLVOpcodeTest" }
+    fn name(&self) -> &str {
+        "SLLVOpcodeTest"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -7800,11 +9240,17 @@ impl Test for SLLVOpcodeTest {
 pub struct SLLVOpcodeTestShift0 {}
 
 impl Test for SLLVOpcodeTestShift0 {
-    fn name(&self) -> &str { "SLLVOpcodeTestShift0" }
+    fn name(&self) -> &str {
+        "SLLVOpcodeTestShift0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -7836,11 +9282,17 @@ impl Test for SLLVOpcodeTestShift0 {
 pub struct SLLVOpcodeTestShiftTargetAndSourceSame1 {}
 
 impl Test for SLLVOpcodeTestShiftTargetAndSourceSame1 {
-    fn name(&self) -> &str { "SLLVOpcodeTestShiftTargetAndSourceSame1" }
+    fn name(&self) -> &str {
+        "SLLVOpcodeTestShiftTargetAndSourceSame1"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -7872,11 +9324,17 @@ impl Test for SLLVOpcodeTestShiftTargetAndSourceSame1 {
 pub struct SLLVOpcodeTestShiftTargetAndSourceSame2 {}
 
 impl Test for SLLVOpcodeTestShiftTargetAndSourceSame2 {
-    fn name(&self) -> &str { "SLLVOpcodeTestShiftTargetAndSourceSame2" }
+    fn name(&self) -> &str {
+        "SLLVOpcodeTestShiftTargetAndSourceSame2"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -7908,11 +9366,17 @@ impl Test for SLLVOpcodeTestShiftTargetAndSourceSame2 {
 pub struct SLLVOpcodeTestShiftTargetAndSourceSame3 {}
 
 impl Test for SLLVOpcodeTestShiftTargetAndSourceSame3 {
-    fn name(&self) -> &str { "SLLVOpcodeTestShiftTargetAndSourceSame3" }
+    fn name(&self) -> &str {
+        "SLLVOpcodeTestShiftTargetAndSourceSame3"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -7944,11 +9408,17 @@ impl Test for SLLVOpcodeTestShiftTargetAndSourceSame3 {
 pub struct SLLVOpcodeTestShiftTooLarge {}
 
 impl Test for SLLVOpcodeTestShiftTooLarge {
-    fn name(&self) -> &str { "SLLVOpcodeTestShiftTooLarge" }
+    fn name(&self) -> &str {
+        "SLLVOpcodeTestShiftTooLarge"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -7980,11 +9450,17 @@ impl Test for SLLVOpcodeTestShiftTooLarge {
 pub struct SLLVOpcodeTestSignExtension {}
 
 impl Test for SLLVOpcodeTestSignExtension {
-    fn name(&self) -> &str { "SLLVOpcodeTestSignExtension" }
+    fn name(&self) -> &str {
+        "SLLVOpcodeTestSignExtension"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -8016,11 +9492,17 @@ impl Test for SLLVOpcodeTestSignExtension {
 pub struct SLLVOpcodeTestIntoItself {}
 
 impl Test for SLLVOpcodeTestIntoItself {
-    fn name(&self) -> &str { "SLLVOpcodeTestIntoItself" }
+    fn name(&self) -> &str {
+        "SLLVOpcodeTestIntoItself"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -8052,11 +9534,17 @@ impl Test for SLLVOpcodeTestIntoItself {
 pub struct SLLVOpcodeTestIntoItself0 {}
 
 impl Test for SLLVOpcodeTestIntoItself0 {
-    fn name(&self) -> &str { "SLLVOpcodeTestIntoItself0" }
+    fn name(&self) -> &str {
+        "SLLVOpcodeTestIntoItself0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -8088,11 +9576,17 @@ impl Test for SLLVOpcodeTestIntoItself0 {
 pub struct SLLVOpcodeTestIntoR0Shift0 {}
 
 impl Test for SLLVOpcodeTestIntoR0Shift0 {
-    fn name(&self) -> &str { "SLLVOpcodeTestIntoR0Shift0" }
+    fn name(&self) -> &str {
+        "SLLVOpcodeTestIntoR0Shift0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -8124,11 +9618,17 @@ impl Test for SLLVOpcodeTestIntoR0Shift0 {
 pub struct SLLVOpcodeTestFromR0 {}
 
 impl Test for SLLVOpcodeTestFromR0 {
-    fn name(&self) -> &str { "SLLVOpcodeTestFromR0" }
+    fn name(&self) -> &str {
+        "SLLVOpcodeTestFromR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -8160,11 +9660,17 @@ impl Test for SLLVOpcodeTestFromR0 {
 pub struct SLLVOpcodeTestFromR0Shift0 {}
 
 impl Test for SLLVOpcodeTestFromR0Shift0 {
-    fn name(&self) -> &str { "SLLVOpcodeTestFromR0Shift0" }
+    fn name(&self) -> &str {
+        "SLLVOpcodeTestFromR0Shift0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -8196,11 +9702,17 @@ impl Test for SLLVOpcodeTestFromR0Shift0 {
 pub struct DSLL32OpcodeTest {}
 
 impl Test for DSLL32OpcodeTest {
-    fn name(&self) -> &str { "DSLL32OpcodeTest" }
+    fn name(&self) -> &str {
+        "DSLL32OpcodeTest"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -8232,11 +9744,17 @@ impl Test for DSLL32OpcodeTest {
 pub struct DSLL32OpcodeTestShift0 {}
 
 impl Test for DSLL32OpcodeTestShift0 {
-    fn name(&self) -> &str { "DSLL32OpcodeTestShift0" }
+    fn name(&self) -> &str {
+        "DSLL32OpcodeTestShift0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -8268,11 +9786,17 @@ impl Test for DSLL32OpcodeTestShift0 {
 pub struct DSLL32OpcodeTestIntoItself {}
 
 impl Test for DSLL32OpcodeTestIntoItself {
-    fn name(&self) -> &str { "DSLL32OpcodeTestIntoItself" }
+    fn name(&self) -> &str {
+        "DSLL32OpcodeTestIntoItself"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -8304,11 +9828,17 @@ impl Test for DSLL32OpcodeTestIntoItself {
 pub struct DSLL32OpcodeTestIntoItself0 {}
 
 impl Test for DSLL32OpcodeTestIntoItself0 {
-    fn name(&self) -> &str { "DSLL32OpcodeTestIntoItself0" }
+    fn name(&self) -> &str {
+        "DSLL32OpcodeTestIntoItself0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -8340,11 +9870,17 @@ impl Test for DSLL32OpcodeTestIntoItself0 {
 pub struct DSLL32OpcodeTestIntoR0Shift0 {}
 
 impl Test for DSLL32OpcodeTestIntoR0Shift0 {
-    fn name(&self) -> &str { "DSLL32OpcodeTestIntoR0Shift0" }
+    fn name(&self) -> &str {
+        "DSLL32OpcodeTestIntoR0Shift0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -8376,11 +9912,17 @@ impl Test for DSLL32OpcodeTestIntoR0Shift0 {
 pub struct DSLL32OpcodeTestFromR0 {}
 
 impl Test for DSLL32OpcodeTestFromR0 {
-    fn name(&self) -> &str { "DSLL32OpcodeTestFromR0" }
+    fn name(&self) -> &str {
+        "DSLL32OpcodeTestFromR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -8412,11 +9954,17 @@ impl Test for DSLL32OpcodeTestFromR0 {
 pub struct DSLL32OpcodeTestFromR0Shift0 {}
 
 impl Test for DSLL32OpcodeTestFromR0Shift0 {
-    fn name(&self) -> &str { "DSLL32OpcodeTestFromR0Shift0" }
+    fn name(&self) -> &str {
+        "DSLL32OpcodeTestFromR0Shift0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -8448,11 +9996,17 @@ impl Test for DSLL32OpcodeTestFromR0Shift0 {
 pub struct DSLLOpcodeTest {}
 
 impl Test for DSLLOpcodeTest {
-    fn name(&self) -> &str { "DSLLOpcodeTest" }
+    fn name(&self) -> &str {
+        "DSLLOpcodeTest"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -8484,11 +10038,17 @@ impl Test for DSLLOpcodeTest {
 pub struct DSLLOpcodeTestShift0 {}
 
 impl Test for DSLLOpcodeTestShift0 {
-    fn name(&self) -> &str { "DSLLOpcodeTestShift0" }
+    fn name(&self) -> &str {
+        "DSLLOpcodeTestShift0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -8520,11 +10080,17 @@ impl Test for DSLLOpcodeTestShift0 {
 pub struct DSLLOpcodeTestIntoItself {}
 
 impl Test for DSLLOpcodeTestIntoItself {
-    fn name(&self) -> &str { "DSLLOpcodeTestIntoItself" }
+    fn name(&self) -> &str {
+        "DSLLOpcodeTestIntoItself"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -8556,11 +10122,17 @@ impl Test for DSLLOpcodeTestIntoItself {
 pub struct DSLLOpcodeTestIntoItself0 {}
 
 impl Test for DSLLOpcodeTestIntoItself0 {
-    fn name(&self) -> &str { "DSLLOpcodeTestIntoItself0" }
+    fn name(&self) -> &str {
+        "DSLLOpcodeTestIntoItself0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -8592,11 +10164,17 @@ impl Test for DSLLOpcodeTestIntoItself0 {
 pub struct DSLLOpcodeTestIntoR0Shift0 {}
 
 impl Test for DSLLOpcodeTestIntoR0Shift0 {
-    fn name(&self) -> &str { "DSLLOpcodeTestIntoR0Shift0" }
+    fn name(&self) -> &str {
+        "DSLLOpcodeTestIntoR0Shift0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -8628,11 +10206,17 @@ impl Test for DSLLOpcodeTestIntoR0Shift0 {
 pub struct DSLLOpcodeTestFromR0 {}
 
 impl Test for DSLLOpcodeTestFromR0 {
-    fn name(&self) -> &str { "DSLLOpcodeTestFromR0" }
+    fn name(&self) -> &str {
+        "DSLLOpcodeTestFromR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -8664,11 +10248,17 @@ impl Test for DSLLOpcodeTestFromR0 {
 pub struct DSLLOpcodeTestFromR0Shift0 {}
 
 impl Test for DSLLOpcodeTestFromR0Shift0 {
-    fn name(&self) -> &str { "DSLLOpcodeTestFromR0Shift0" }
+    fn name(&self) -> &str {
+        "DSLLOpcodeTestFromR0Shift0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -8700,11 +10290,17 @@ impl Test for DSLLOpcodeTestFromR0Shift0 {
 pub struct DSLLVOpcodeTest {}
 
 impl Test for DSLLVOpcodeTest {
-    fn name(&self) -> &str { "DSLLVOpcodeTest" }
+    fn name(&self) -> &str {
+        "DSLLVOpcodeTest"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -8736,11 +10332,17 @@ impl Test for DSLLVOpcodeTest {
 pub struct DSLLVOpcodeTestShift0 {}
 
 impl Test for DSLLVOpcodeTestShift0 {
-    fn name(&self) -> &str { "DSLLVOpcodeTestShift0" }
+    fn name(&self) -> &str {
+        "DSLLVOpcodeTestShift0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -8772,11 +10374,17 @@ impl Test for DSLLVOpcodeTestShift0 {
 pub struct DSLLVOpcodeTestShift1 {}
 
 impl Test for DSLLVOpcodeTestShift1 {
-    fn name(&self) -> &str { "DSLLVOpcodeTestShift1" }
+    fn name(&self) -> &str {
+        "DSLLVOpcodeTestShift1"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -8808,11 +10416,17 @@ impl Test for DSLLVOpcodeTestShift1 {
 pub struct DSLLVOpcodeTestShiftTargetAndSourceSame1 {}
 
 impl Test for DSLLVOpcodeTestShiftTargetAndSourceSame1 {
-    fn name(&self) -> &str { "DSLLVOpcodeTestShiftTargetAndSourceSame1" }
+    fn name(&self) -> &str {
+        "DSLLVOpcodeTestShiftTargetAndSourceSame1"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -8844,11 +10458,17 @@ impl Test for DSLLVOpcodeTestShiftTargetAndSourceSame1 {
 pub struct DSLLVOpcodeTestShiftTargetAndSourceSame2 {}
 
 impl Test for DSLLVOpcodeTestShiftTargetAndSourceSame2 {
-    fn name(&self) -> &str { "DSLLVOpcodeTestShiftTargetAndSourceSame2" }
+    fn name(&self) -> &str {
+        "DSLLVOpcodeTestShiftTargetAndSourceSame2"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -8880,11 +10500,17 @@ impl Test for DSLLVOpcodeTestShiftTargetAndSourceSame2 {
 pub struct DSLLVOpcodeTestShiftTargetAndSourceSame3 {}
 
 impl Test for DSLLVOpcodeTestShiftTargetAndSourceSame3 {
-    fn name(&self) -> &str { "DSLLVOpcodeTestShiftTargetAndSourceSame3" }
+    fn name(&self) -> &str {
+        "DSLLVOpcodeTestShiftTargetAndSourceSame3"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -8916,11 +10542,17 @@ impl Test for DSLLVOpcodeTestShiftTargetAndSourceSame3 {
 pub struct DSLLVOpcodeTestShiftTooLarge {}
 
 impl Test for DSLLVOpcodeTestShiftTooLarge {
-    fn name(&self) -> &str { "DSLLVOpcodeTestShiftTooLarge" }
+    fn name(&self) -> &str {
+        "DSLLVOpcodeTestShiftTooLarge"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -8952,11 +10584,17 @@ impl Test for DSLLVOpcodeTestShiftTooLarge {
 pub struct DSLLVOpcodeTestIntoItself {}
 
 impl Test for DSLLVOpcodeTestIntoItself {
-    fn name(&self) -> &str { "DSLLVOpcodeTestIntoItself" }
+    fn name(&self) -> &str {
+        "DSLLVOpcodeTestIntoItself"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -8988,11 +10626,17 @@ impl Test for DSLLVOpcodeTestIntoItself {
 pub struct DSLLVOpcodeTestIntoItself0 {}
 
 impl Test for DSLLVOpcodeTestIntoItself0 {
-    fn name(&self) -> &str { "DSLLVOpcodeTestIntoItself0" }
+    fn name(&self) -> &str {
+        "DSLLVOpcodeTestIntoItself0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -9024,11 +10668,17 @@ impl Test for DSLLVOpcodeTestIntoItself0 {
 pub struct DSLLVOpcodeTestIntoR0Shift0 {}
 
 impl Test for DSLLVOpcodeTestIntoR0Shift0 {
-    fn name(&self) -> &str { "DSLLVOpcodeTestIntoR0Shift0" }
+    fn name(&self) -> &str {
+        "DSLLVOpcodeTestIntoR0Shift0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -9060,11 +10710,17 @@ impl Test for DSLLVOpcodeTestIntoR0Shift0 {
 pub struct DSLLVOpcodeTestFromR0 {}
 
 impl Test for DSLLVOpcodeTestFromR0 {
-    fn name(&self) -> &str { "DSLLVOpcodeTestFromR0" }
+    fn name(&self) -> &str {
+        "DSLLVOpcodeTestFromR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -9096,11 +10752,17 @@ impl Test for DSLLVOpcodeTestFromR0 {
 pub struct DSLLVOpcodeTestFromR0Shift0 {}
 
 impl Test for DSLLVOpcodeTestFromR0Shift0 {
-    fn name(&self) -> &str { "DSLLVOpcodeTestFromR0Shift0" }
+    fn name(&self) -> &str {
+        "DSLLVOpcodeTestFromR0Shift0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -9132,11 +10794,17 @@ impl Test for DSLLVOpcodeTestFromR0Shift0 {
 pub struct SRLOpcodeTest {}
 
 impl Test for SRLOpcodeTest {
-    fn name(&self) -> &str { "SRLOpcodeTest" }
+    fn name(&self) -> &str {
+        "SRLOpcodeTest"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -9168,11 +10836,17 @@ impl Test for SRLOpcodeTest {
 pub struct SRLOpcodeTestShift0 {}
 
 impl Test for SRLOpcodeTestShift0 {
-    fn name(&self) -> &str { "SRLOpcodeTestShift0" }
+    fn name(&self) -> &str {
+        "SRLOpcodeTestShift0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -9204,11 +10878,17 @@ impl Test for SRLOpcodeTestShift0 {
 pub struct SRLOpcodeTestIntoItself {}
 
 impl Test for SRLOpcodeTestIntoItself {
-    fn name(&self) -> &str { "SRLOpcodeTestIntoItself" }
+    fn name(&self) -> &str {
+        "SRLOpcodeTestIntoItself"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -9240,11 +10920,17 @@ impl Test for SRLOpcodeTestIntoItself {
 pub struct SRLOpcodeTestIntoItself0 {}
 
 impl Test for SRLOpcodeTestIntoItself0 {
-    fn name(&self) -> &str { "SRLOpcodeTestIntoItself0" }
+    fn name(&self) -> &str {
+        "SRLOpcodeTestIntoItself0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -9276,11 +10962,17 @@ impl Test for SRLOpcodeTestIntoItself0 {
 pub struct SRLOpcodeTestIntoR0Shift0 {}
 
 impl Test for SRLOpcodeTestIntoR0Shift0 {
-    fn name(&self) -> &str { "SRLOpcodeTestIntoR0Shift0" }
+    fn name(&self) -> &str {
+        "SRLOpcodeTestIntoR0Shift0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -9312,11 +11004,17 @@ impl Test for SRLOpcodeTestIntoR0Shift0 {
 pub struct SRLOpcodeTestFromR0 {}
 
 impl Test for SRLOpcodeTestFromR0 {
-    fn name(&self) -> &str { "SRLOpcodeTestFromR0" }
+    fn name(&self) -> &str {
+        "SRLOpcodeTestFromR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -9348,11 +11046,17 @@ impl Test for SRLOpcodeTestFromR0 {
 pub struct SRLOpcodeTestFromR0Shift0 {}
 
 impl Test for SRLOpcodeTestFromR0Shift0 {
-    fn name(&self) -> &str { "SRLOpcodeTestFromR0Shift0" }
+    fn name(&self) -> &str {
+        "SRLOpcodeTestFromR0Shift0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -9384,11 +11088,17 @@ impl Test for SRLOpcodeTestFromR0Shift0 {
 pub struct SRLVOpcodeTest {}
 
 impl Test for SRLVOpcodeTest {
-    fn name(&self) -> &str { "SRLVOpcodeTest" }
+    fn name(&self) -> &str {
+        "SRLVOpcodeTest"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -9420,11 +11130,17 @@ impl Test for SRLVOpcodeTest {
 pub struct SRLVOpcodeTestShift0 {}
 
 impl Test for SRLVOpcodeTestShift0 {
-    fn name(&self) -> &str { "SRLVOpcodeTestShift0" }
+    fn name(&self) -> &str {
+        "SRLVOpcodeTestShift0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -9456,11 +11172,17 @@ impl Test for SRLVOpcodeTestShift0 {
 pub struct SRLVOpcodeTestShiftTargetAndSourceSame1 {}
 
 impl Test for SRLVOpcodeTestShiftTargetAndSourceSame1 {
-    fn name(&self) -> &str { "SRLVOpcodeTestShiftTargetAndSourceSame1" }
+    fn name(&self) -> &str {
+        "SRLVOpcodeTestShiftTargetAndSourceSame1"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -9492,11 +11214,17 @@ impl Test for SRLVOpcodeTestShiftTargetAndSourceSame1 {
 pub struct SRLVOpcodeTestShiftTargetAndSourceSame2 {}
 
 impl Test for SRLVOpcodeTestShiftTargetAndSourceSame2 {
-    fn name(&self) -> &str { "SRLVOpcodeTestShiftTargetAndSourceSame2" }
+    fn name(&self) -> &str {
+        "SRLVOpcodeTestShiftTargetAndSourceSame2"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -9528,11 +11256,17 @@ impl Test for SRLVOpcodeTestShiftTargetAndSourceSame2 {
 pub struct SRLVOpcodeTestShiftTargetAndSourceSame3 {}
 
 impl Test for SRLVOpcodeTestShiftTargetAndSourceSame3 {
-    fn name(&self) -> &str { "SRLVOpcodeTestShiftTargetAndSourceSame3" }
+    fn name(&self) -> &str {
+        "SRLVOpcodeTestShiftTargetAndSourceSame3"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -9564,11 +11298,17 @@ impl Test for SRLVOpcodeTestShiftTargetAndSourceSame3 {
 pub struct SRLVOpcodeTestShiftTargetAndSourceSame4 {}
 
 impl Test for SRLVOpcodeTestShiftTargetAndSourceSame4 {
-    fn name(&self) -> &str { "SRLVOpcodeTestShiftTargetAndSourceSame4" }
+    fn name(&self) -> &str {
+        "SRLVOpcodeTestShiftTargetAndSourceSame4"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -9600,11 +11340,17 @@ impl Test for SRLVOpcodeTestShiftTargetAndSourceSame4 {
 pub struct SRLVOpcodeTestShiftTooLarge {}
 
 impl Test for SRLVOpcodeTestShiftTooLarge {
-    fn name(&self) -> &str { "SRLVOpcodeTestShiftTooLarge" }
+    fn name(&self) -> &str {
+        "SRLVOpcodeTestShiftTooLarge"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -9636,11 +11382,17 @@ impl Test for SRLVOpcodeTestShiftTooLarge {
 pub struct SRLVOpcodeTestIntoItself {}
 
 impl Test for SRLVOpcodeTestIntoItself {
-    fn name(&self) -> &str { "SRLVOpcodeTestIntoItself" }
+    fn name(&self) -> &str {
+        "SRLVOpcodeTestIntoItself"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -9672,11 +11424,17 @@ impl Test for SRLVOpcodeTestIntoItself {
 pub struct SRLVOpcodeTestIntoItself0 {}
 
 impl Test for SRLVOpcodeTestIntoItself0 {
-    fn name(&self) -> &str { "SRLVOpcodeTestIntoItself0" }
+    fn name(&self) -> &str {
+        "SRLVOpcodeTestIntoItself0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -9708,11 +11466,17 @@ impl Test for SRLVOpcodeTestIntoItself0 {
 pub struct SRLVOpcodeTestIntoR0Shift0 {}
 
 impl Test for SRLVOpcodeTestIntoR0Shift0 {
-    fn name(&self) -> &str { "SRLVOpcodeTestIntoR0Shift0" }
+    fn name(&self) -> &str {
+        "SRLVOpcodeTestIntoR0Shift0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -9744,11 +11508,17 @@ impl Test for SRLVOpcodeTestIntoR0Shift0 {
 pub struct SRLVOpcodeTestFromR0 {}
 
 impl Test for SRLVOpcodeTestFromR0 {
-    fn name(&self) -> &str { "SRLVOpcodeTestFromR0" }
+    fn name(&self) -> &str {
+        "SRLVOpcodeTestFromR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -9780,11 +11550,17 @@ impl Test for SRLVOpcodeTestFromR0 {
 pub struct SRLVOpcodeTestFromR0Shift0 {}
 
 impl Test for SRLVOpcodeTestFromR0Shift0 {
-    fn name(&self) -> &str { "SRLVOpcodeTestFromR0Shift0" }
+    fn name(&self) -> &str {
+        "SRLVOpcodeTestFromR0Shift0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -9816,11 +11592,17 @@ impl Test for SRLVOpcodeTestFromR0Shift0 {
 pub struct DSRL32OpcodeTest {}
 
 impl Test for DSRL32OpcodeTest {
-    fn name(&self) -> &str { "DSRL32OpcodeTest" }
+    fn name(&self) -> &str {
+        "DSRL32OpcodeTest"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -9852,11 +11634,17 @@ impl Test for DSRL32OpcodeTest {
 pub struct DSRL32OpcodeTestShift0 {}
 
 impl Test for DSRL32OpcodeTestShift0 {
-    fn name(&self) -> &str { "DSRL32OpcodeTestShift0" }
+    fn name(&self) -> &str {
+        "DSRL32OpcodeTestShift0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -9888,11 +11676,17 @@ impl Test for DSRL32OpcodeTestShift0 {
 pub struct DSRL32OpcodeTestIntoItself {}
 
 impl Test for DSRL32OpcodeTestIntoItself {
-    fn name(&self) -> &str { "DSRL32OpcodeTestIntoItself" }
+    fn name(&self) -> &str {
+        "DSRL32OpcodeTestIntoItself"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -9924,11 +11718,17 @@ impl Test for DSRL32OpcodeTestIntoItself {
 pub struct DSRL32OpcodeTestIntoItself0 {}
 
 impl Test for DSRL32OpcodeTestIntoItself0 {
-    fn name(&self) -> &str { "DSRL32OpcodeTestIntoItself0" }
+    fn name(&self) -> &str {
+        "DSRL32OpcodeTestIntoItself0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -9960,11 +11760,17 @@ impl Test for DSRL32OpcodeTestIntoItself0 {
 pub struct DSRL32OpcodeTestIntoR0Shift0 {}
 
 impl Test for DSRL32OpcodeTestIntoR0Shift0 {
-    fn name(&self) -> &str { "DSRL32OpcodeTestIntoR0Shift0" }
+    fn name(&self) -> &str {
+        "DSRL32OpcodeTestIntoR0Shift0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -9996,11 +11802,17 @@ impl Test for DSRL32OpcodeTestIntoR0Shift0 {
 pub struct DSRL32OpcodeTestFromR0 {}
 
 impl Test for DSRL32OpcodeTestFromR0 {
-    fn name(&self) -> &str { "DSRL32OpcodeTestFromR0" }
+    fn name(&self) -> &str {
+        "DSRL32OpcodeTestFromR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -10032,11 +11844,17 @@ impl Test for DSRL32OpcodeTestFromR0 {
 pub struct DSRL32OpcodeTestFromR0Shift0 {}
 
 impl Test for DSRL32OpcodeTestFromR0Shift0 {
-    fn name(&self) -> &str { "DSRL32OpcodeTestFromR0Shift0" }
+    fn name(&self) -> &str {
+        "DSRL32OpcodeTestFromR0Shift0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -10068,11 +11886,17 @@ impl Test for DSRL32OpcodeTestFromR0Shift0 {
 pub struct DSRLOpcodeTest {}
 
 impl Test for DSRLOpcodeTest {
-    fn name(&self) -> &str { "DSRLOpcodeTest" }
+    fn name(&self) -> &str {
+        "DSRLOpcodeTest"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -10104,11 +11928,17 @@ impl Test for DSRLOpcodeTest {
 pub struct DSRLOpcodeTestShift0 {}
 
 impl Test for DSRLOpcodeTestShift0 {
-    fn name(&self) -> &str { "DSRLOpcodeTestShift0" }
+    fn name(&self) -> &str {
+        "DSRLOpcodeTestShift0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -10140,11 +11970,17 @@ impl Test for DSRLOpcodeTestShift0 {
 pub struct DSRLOpcodeTestIntoItself {}
 
 impl Test for DSRLOpcodeTestIntoItself {
-    fn name(&self) -> &str { "DSRLOpcodeTestIntoItself" }
+    fn name(&self) -> &str {
+        "DSRLOpcodeTestIntoItself"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -10176,11 +12012,17 @@ impl Test for DSRLOpcodeTestIntoItself {
 pub struct DSRLOpcodeTestIntoItself0 {}
 
 impl Test for DSRLOpcodeTestIntoItself0 {
-    fn name(&self) -> &str { "DSRLOpcodeTestIntoItself0" }
+    fn name(&self) -> &str {
+        "DSRLOpcodeTestIntoItself0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -10212,11 +12054,17 @@ impl Test for DSRLOpcodeTestIntoItself0 {
 pub struct DSRLOpcodeTestIntoR0Shift0 {}
 
 impl Test for DSRLOpcodeTestIntoR0Shift0 {
-    fn name(&self) -> &str { "DSRLOpcodeTestIntoR0Shift0" }
+    fn name(&self) -> &str {
+        "DSRLOpcodeTestIntoR0Shift0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -10248,11 +12096,17 @@ impl Test for DSRLOpcodeTestIntoR0Shift0 {
 pub struct DSRLOpcodeTestFromR0 {}
 
 impl Test for DSRLOpcodeTestFromR0 {
-    fn name(&self) -> &str { "DSRLOpcodeTestFromR0" }
+    fn name(&self) -> &str {
+        "DSRLOpcodeTestFromR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -10284,11 +12138,17 @@ impl Test for DSRLOpcodeTestFromR0 {
 pub struct DSRLOpcodeTestFromR0Shift0 {}
 
 impl Test for DSRLOpcodeTestFromR0Shift0 {
-    fn name(&self) -> &str { "DSRLOpcodeTestFromR0Shift0" }
+    fn name(&self) -> &str {
+        "DSRLOpcodeTestFromR0Shift0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -10320,11 +12180,17 @@ impl Test for DSRLOpcodeTestFromR0Shift0 {
 pub struct DSRLVOpcodeTest {}
 
 impl Test for DSRLVOpcodeTest {
-    fn name(&self) -> &str { "DSRLVOpcodeTest" }
+    fn name(&self) -> &str {
+        "DSRLVOpcodeTest"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -10356,11 +12222,17 @@ impl Test for DSRLVOpcodeTest {
 pub struct DSRLVOpcodeTestShift0 {}
 
 impl Test for DSRLVOpcodeTestShift0 {
-    fn name(&self) -> &str { "DSRLVOpcodeTestShift0" }
+    fn name(&self) -> &str {
+        "DSRLVOpcodeTestShift0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -10392,11 +12264,17 @@ impl Test for DSRLVOpcodeTestShift0 {
 pub struct DSRLVOpcodeTestShift1 {}
 
 impl Test for DSRLVOpcodeTestShift1 {
-    fn name(&self) -> &str { "DSRLVOpcodeTestShift1" }
+    fn name(&self) -> &str {
+        "DSRLVOpcodeTestShift1"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -10428,11 +12306,17 @@ impl Test for DSRLVOpcodeTestShift1 {
 pub struct DSRLVOpcodeTestShiftTargetAndSourceSame1 {}
 
 impl Test for DSRLVOpcodeTestShiftTargetAndSourceSame1 {
-    fn name(&self) -> &str { "DSRLVOpcodeTestShiftTargetAndSourceSame1" }
+    fn name(&self) -> &str {
+        "DSRLVOpcodeTestShiftTargetAndSourceSame1"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -10464,11 +12348,17 @@ impl Test for DSRLVOpcodeTestShiftTargetAndSourceSame1 {
 pub struct DSRLVOpcodeTestShiftTargetAndSourceSame2 {}
 
 impl Test for DSRLVOpcodeTestShiftTargetAndSourceSame2 {
-    fn name(&self) -> &str { "DSRLVOpcodeTestShiftTargetAndSourceSame2" }
+    fn name(&self) -> &str {
+        "DSRLVOpcodeTestShiftTargetAndSourceSame2"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -10500,11 +12390,17 @@ impl Test for DSRLVOpcodeTestShiftTargetAndSourceSame2 {
 pub struct DSRLVOpcodeTestShiftTargetAndSourceSame3 {}
 
 impl Test for DSRLVOpcodeTestShiftTargetAndSourceSame3 {
-    fn name(&self) -> &str { "DSRLVOpcodeTestShiftTargetAndSourceSame3" }
+    fn name(&self) -> &str {
+        "DSRLVOpcodeTestShiftTargetAndSourceSame3"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -10536,11 +12432,17 @@ impl Test for DSRLVOpcodeTestShiftTargetAndSourceSame3 {
 pub struct DSRLVOpcodeTestShiftTargetAndSourceSame4 {}
 
 impl Test for DSRLVOpcodeTestShiftTargetAndSourceSame4 {
-    fn name(&self) -> &str { "DSRLVOpcodeTestShiftTargetAndSourceSame4" }
+    fn name(&self) -> &str {
+        "DSRLVOpcodeTestShiftTargetAndSourceSame4"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -10572,11 +12474,17 @@ impl Test for DSRLVOpcodeTestShiftTargetAndSourceSame4 {
 pub struct DSRLVOpcodeTestShiftTooLarge {}
 
 impl Test for DSRLVOpcodeTestShiftTooLarge {
-    fn name(&self) -> &str { "DSRLVOpcodeTestShiftTooLarge" }
+    fn name(&self) -> &str {
+        "DSRLVOpcodeTestShiftTooLarge"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -10608,11 +12516,17 @@ impl Test for DSRLVOpcodeTestShiftTooLarge {
 pub struct DSRLVOpcodeTestIntoItself {}
 
 impl Test for DSRLVOpcodeTestIntoItself {
-    fn name(&self) -> &str { "DSRLVOpcodeTestIntoItself" }
+    fn name(&self) -> &str {
+        "DSRLVOpcodeTestIntoItself"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -10644,11 +12558,17 @@ impl Test for DSRLVOpcodeTestIntoItself {
 pub struct DSRLVOpcodeTestIntoItself0 {}
 
 impl Test for DSRLVOpcodeTestIntoItself0 {
-    fn name(&self) -> &str { "DSRLVOpcodeTestIntoItself0" }
+    fn name(&self) -> &str {
+        "DSRLVOpcodeTestIntoItself0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -10680,11 +12600,17 @@ impl Test for DSRLVOpcodeTestIntoItself0 {
 pub struct DSRLVOpcodeTestIntoR0Shift0 {}
 
 impl Test for DSRLVOpcodeTestIntoR0Shift0 {
-    fn name(&self) -> &str { "DSRLVOpcodeTestIntoR0Shift0" }
+    fn name(&self) -> &str {
+        "DSRLVOpcodeTestIntoR0Shift0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -10716,11 +12642,17 @@ impl Test for DSRLVOpcodeTestIntoR0Shift0 {
 pub struct DSRLVOpcodeTestFromR0 {}
 
 impl Test for DSRLVOpcodeTestFromR0 {
-    fn name(&self) -> &str { "DSRLVOpcodeTestFromR0" }
+    fn name(&self) -> &str {
+        "DSRLVOpcodeTestFromR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -10752,11 +12684,17 @@ impl Test for DSRLVOpcodeTestFromR0 {
 pub struct DSRLVOpcodeTestFromR0Shift0 {}
 
 impl Test for DSRLVOpcodeTestFromR0Shift0 {
-    fn name(&self) -> &str { "DSRLVOpcodeTestFromR0Shift0" }
+    fn name(&self) -> &str {
+        "DSRLVOpcodeTestFromR0Shift0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -10788,11 +12726,17 @@ impl Test for DSRLVOpcodeTestFromR0Shift0 {
 pub struct SRAOpcodeTest {}
 
 impl Test for SRAOpcodeTest {
-    fn name(&self) -> &str { "SRAOpcodeTest" }
+    fn name(&self) -> &str {
+        "SRAOpcodeTest"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -10824,11 +12768,17 @@ impl Test for SRAOpcodeTest {
 pub struct SRAOpcodeTest2 {}
 
 impl Test for SRAOpcodeTest2 {
-    fn name(&self) -> &str { "SRAOpcodeTest2" }
+    fn name(&self) -> &str {
+        "SRAOpcodeTest2"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -10860,11 +12810,17 @@ impl Test for SRAOpcodeTest2 {
 pub struct SRAOpcodeTestShift0 {}
 
 impl Test for SRAOpcodeTestShift0 {
-    fn name(&self) -> &str { "SRAOpcodeTestShift0" }
+    fn name(&self) -> &str {
+        "SRAOpcodeTestShift0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -10896,11 +12852,17 @@ impl Test for SRAOpcodeTestShift0 {
 pub struct SRAOpcodeTestIntoItself {}
 
 impl Test for SRAOpcodeTestIntoItself {
-    fn name(&self) -> &str { "SRAOpcodeTestIntoItself" }
+    fn name(&self) -> &str {
+        "SRAOpcodeTestIntoItself"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -10932,11 +12894,17 @@ impl Test for SRAOpcodeTestIntoItself {
 pub struct SRAOpcodeTestIntoItself0 {}
 
 impl Test for SRAOpcodeTestIntoItself0 {
-    fn name(&self) -> &str { "SRAOpcodeTestIntoItself0" }
+    fn name(&self) -> &str {
+        "SRAOpcodeTestIntoItself0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -10968,11 +12936,17 @@ impl Test for SRAOpcodeTestIntoItself0 {
 pub struct SRAOpcodeTestIntoR0Shift0 {}
 
 impl Test for SRAOpcodeTestIntoR0Shift0 {
-    fn name(&self) -> &str { "SRAOpcodeTestIntoR0Shift0" }
+    fn name(&self) -> &str {
+        "SRAOpcodeTestIntoR0Shift0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -11004,11 +12978,17 @@ impl Test for SRAOpcodeTestIntoR0Shift0 {
 pub struct SRAOpcodeTestFromR0 {}
 
 impl Test for SRAOpcodeTestFromR0 {
-    fn name(&self) -> &str { "SRAOpcodeTestFromR0" }
+    fn name(&self) -> &str {
+        "SRAOpcodeTestFromR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -11040,11 +13020,17 @@ impl Test for SRAOpcodeTestFromR0 {
 pub struct SRAOpcodeTestFromR0Shift0 {}
 
 impl Test for SRAOpcodeTestFromR0Shift0 {
-    fn name(&self) -> &str { "SRAOpcodeTestFromR0Shift0" }
+    fn name(&self) -> &str {
+        "SRAOpcodeTestFromR0Shift0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -11076,11 +13062,17 @@ impl Test for SRAOpcodeTestFromR0Shift0 {
 pub struct SRAVOpcodeTest {}
 
 impl Test for SRAVOpcodeTest {
-    fn name(&self) -> &str { "SRAVOpcodeTest" }
+    fn name(&self) -> &str {
+        "SRAVOpcodeTest"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -11112,11 +13104,17 @@ impl Test for SRAVOpcodeTest {
 pub struct SRAVOpcodeTest2 {}
 
 impl Test for SRAVOpcodeTest2 {
-    fn name(&self) -> &str { "SRAVOpcodeTest2" }
+    fn name(&self) -> &str {
+        "SRAVOpcodeTest2"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -11148,11 +13146,17 @@ impl Test for SRAVOpcodeTest2 {
 pub struct SRAVOpcodeTestShift0 {}
 
 impl Test for SRAVOpcodeTestShift0 {
-    fn name(&self) -> &str { "SRAVOpcodeTestShift0" }
+    fn name(&self) -> &str {
+        "SRAVOpcodeTestShift0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -11184,11 +13188,17 @@ impl Test for SRAVOpcodeTestShift0 {
 pub struct SRAVOpcodeTestShiftTargetAndSourceSame1 {}
 
 impl Test for SRAVOpcodeTestShiftTargetAndSourceSame1 {
-    fn name(&self) -> &str { "SRAVOpcodeTestShiftTargetAndSourceSame1" }
+    fn name(&self) -> &str {
+        "SRAVOpcodeTestShiftTargetAndSourceSame1"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -11220,11 +13230,17 @@ impl Test for SRAVOpcodeTestShiftTargetAndSourceSame1 {
 pub struct SRAVOpcodeTestShiftTargetAndSourceSame2 {}
 
 impl Test for SRAVOpcodeTestShiftTargetAndSourceSame2 {
-    fn name(&self) -> &str { "SRAVOpcodeTestShiftTargetAndSourceSame2" }
+    fn name(&self) -> &str {
+        "SRAVOpcodeTestShiftTargetAndSourceSame2"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -11256,11 +13272,17 @@ impl Test for SRAVOpcodeTestShiftTargetAndSourceSame2 {
 pub struct SRAVOpcodeTestShiftTargetAndSourceSame3 {}
 
 impl Test for SRAVOpcodeTestShiftTargetAndSourceSame3 {
-    fn name(&self) -> &str { "SRAVOpcodeTestShiftTargetAndSourceSame3" }
+    fn name(&self) -> &str {
+        "SRAVOpcodeTestShiftTargetAndSourceSame3"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -11292,11 +13314,17 @@ impl Test for SRAVOpcodeTestShiftTargetAndSourceSame3 {
 pub struct SRAVOpcodeTestShiftTargetAndSourceSame4 {}
 
 impl Test for SRAVOpcodeTestShiftTargetAndSourceSame4 {
-    fn name(&self) -> &str { "SRAVOpcodeTestShiftTargetAndSourceSame4" }
+    fn name(&self) -> &str {
+        "SRAVOpcodeTestShiftTargetAndSourceSame4"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -11328,11 +13356,17 @@ impl Test for SRAVOpcodeTestShiftTargetAndSourceSame4 {
 pub struct SRAVOpcodeTestShiftTooLarge {}
 
 impl Test for SRAVOpcodeTestShiftTooLarge {
-    fn name(&self) -> &str { "SRAVOpcodeTestShiftTooLarge" }
+    fn name(&self) -> &str {
+        "SRAVOpcodeTestShiftTooLarge"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -11364,11 +13398,17 @@ impl Test for SRAVOpcodeTestShiftTooLarge {
 pub struct SRAVOpcodeTestIntoItself {}
 
 impl Test for SRAVOpcodeTestIntoItself {
-    fn name(&self) -> &str { "SRAVOpcodeTestIntoItself" }
+    fn name(&self) -> &str {
+        "SRAVOpcodeTestIntoItself"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -11400,11 +13440,17 @@ impl Test for SRAVOpcodeTestIntoItself {
 pub struct SRAVOpcodeTestIntoItself0 {}
 
 impl Test for SRAVOpcodeTestIntoItself0 {
-    fn name(&self) -> &str { "SRAVOpcodeTestIntoItself0" }
+    fn name(&self) -> &str {
+        "SRAVOpcodeTestIntoItself0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -11436,11 +13482,17 @@ impl Test for SRAVOpcodeTestIntoItself0 {
 pub struct SRAVOpcodeTestIntoR0Shift0 {}
 
 impl Test for SRAVOpcodeTestIntoR0Shift0 {
-    fn name(&self) -> &str { "SRAVOpcodeTestIntoR0Shift0" }
+    fn name(&self) -> &str {
+        "SRAVOpcodeTestIntoR0Shift0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -11472,11 +13524,17 @@ impl Test for SRAVOpcodeTestIntoR0Shift0 {
 pub struct SRAVOpcodeTestFromR0 {}
 
 impl Test for SRAVOpcodeTestFromR0 {
-    fn name(&self) -> &str { "SRAVOpcodeTestFromR0" }
+    fn name(&self) -> &str {
+        "SRAVOpcodeTestFromR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -11508,11 +13566,17 @@ impl Test for SRAVOpcodeTestFromR0 {
 pub struct SRAVOpcodeTestFromR0Shift0 {}
 
 impl Test for SRAVOpcodeTestFromR0Shift0 {
-    fn name(&self) -> &str { "SRAVOpcodeTestFromR0Shift0" }
+    fn name(&self) -> &str {
+        "SRAVOpcodeTestFromR0Shift0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -11544,11 +13608,17 @@ impl Test for SRAVOpcodeTestFromR0Shift0 {
 pub struct DSRA32OpcodeTest {}
 
 impl Test for DSRA32OpcodeTest {
-    fn name(&self) -> &str { "DSRA32OpcodeTest" }
+    fn name(&self) -> &str {
+        "DSRA32OpcodeTest"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -11580,11 +13650,17 @@ impl Test for DSRA32OpcodeTest {
 pub struct DSRA32OpcodeTestShift0 {}
 
 impl Test for DSRA32OpcodeTestShift0 {
-    fn name(&self) -> &str { "DSRA32OpcodeTestShift0" }
+    fn name(&self) -> &str {
+        "DSRA32OpcodeTestShift0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -11616,11 +13692,17 @@ impl Test for DSRA32OpcodeTestShift0 {
 pub struct DSRA32OpcodeTestIntoItself {}
 
 impl Test for DSRA32OpcodeTestIntoItself {
-    fn name(&self) -> &str { "DSRA32OpcodeTestIntoItself" }
+    fn name(&self) -> &str {
+        "DSRA32OpcodeTestIntoItself"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -11652,11 +13734,17 @@ impl Test for DSRA32OpcodeTestIntoItself {
 pub struct DSRA32OpcodeTestIntoItself0 {}
 
 impl Test for DSRA32OpcodeTestIntoItself0 {
-    fn name(&self) -> &str { "DSRA32OpcodeTestIntoItself0" }
+    fn name(&self) -> &str {
+        "DSRA32OpcodeTestIntoItself0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -11688,11 +13776,17 @@ impl Test for DSRA32OpcodeTestIntoItself0 {
 pub struct DSRA32OpcodeTestIntoR0Shift0 {}
 
 impl Test for DSRA32OpcodeTestIntoR0Shift0 {
-    fn name(&self) -> &str { "DSRA32OpcodeTestIntoR0Shift0" }
+    fn name(&self) -> &str {
+        "DSRA32OpcodeTestIntoR0Shift0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -11724,11 +13818,17 @@ impl Test for DSRA32OpcodeTestIntoR0Shift0 {
 pub struct DSRA32OpcodeTestFromR0 {}
 
 impl Test for DSRA32OpcodeTestFromR0 {
-    fn name(&self) -> &str { "DSRA32OpcodeTestFromR0" }
+    fn name(&self) -> &str {
+        "DSRA32OpcodeTestFromR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -11760,11 +13860,17 @@ impl Test for DSRA32OpcodeTestFromR0 {
 pub struct DSRA32OpcodeTestFromR0Shift0 {}
 
 impl Test for DSRA32OpcodeTestFromR0Shift0 {
-    fn name(&self) -> &str { "DSRA32OpcodeTestFromR0Shift0" }
+    fn name(&self) -> &str {
+        "DSRA32OpcodeTestFromR0Shift0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -11796,11 +13902,17 @@ impl Test for DSRA32OpcodeTestFromR0Shift0 {
 pub struct DSRAOpcodeTest {}
 
 impl Test for DSRAOpcodeTest {
-    fn name(&self) -> &str { "DSRAOpcodeTest" }
+    fn name(&self) -> &str {
+        "DSRAOpcodeTest"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -11832,11 +13944,17 @@ impl Test for DSRAOpcodeTest {
 pub struct DSRAOpcodeTestShift0 {}
 
 impl Test for DSRAOpcodeTestShift0 {
-    fn name(&self) -> &str { "DSRAOpcodeTestShift0" }
+    fn name(&self) -> &str {
+        "DSRAOpcodeTestShift0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -11868,11 +13986,17 @@ impl Test for DSRAOpcodeTestShift0 {
 pub struct DSRAOpcodeTestIntoItself {}
 
 impl Test for DSRAOpcodeTestIntoItself {
-    fn name(&self) -> &str { "DSRAOpcodeTestIntoItself" }
+    fn name(&self) -> &str {
+        "DSRAOpcodeTestIntoItself"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -11904,11 +14028,17 @@ impl Test for DSRAOpcodeTestIntoItself {
 pub struct DSRAOpcodeTestIntoItself0 {}
 
 impl Test for DSRAOpcodeTestIntoItself0 {
-    fn name(&self) -> &str { "DSRAOpcodeTestIntoItself0" }
+    fn name(&self) -> &str {
+        "DSRAOpcodeTestIntoItself0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -11940,11 +14070,17 @@ impl Test for DSRAOpcodeTestIntoItself0 {
 pub struct DSRAOpcodeTestIntoR0Shift0 {}
 
 impl Test for DSRAOpcodeTestIntoR0Shift0 {
-    fn name(&self) -> &str { "DSRAOpcodeTestIntoR0Shift0" }
+    fn name(&self) -> &str {
+        "DSRAOpcodeTestIntoR0Shift0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -11976,11 +14112,17 @@ impl Test for DSRAOpcodeTestIntoR0Shift0 {
 pub struct DSRAOpcodeTestFromR0 {}
 
 impl Test for DSRAOpcodeTestFromR0 {
-    fn name(&self) -> &str { "DSRAOpcodeTestFromR0" }
+    fn name(&self) -> &str {
+        "DSRAOpcodeTestFromR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -12012,11 +14154,17 @@ impl Test for DSRAOpcodeTestFromR0 {
 pub struct DSRAOpcodeTestFromR0Shift0 {}
 
 impl Test for DSRAOpcodeTestFromR0Shift0 {
-    fn name(&self) -> &str { "DSRAOpcodeTestFromR0Shift0" }
+    fn name(&self) -> &str {
+        "DSRAOpcodeTestFromR0Shift0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -12048,11 +14196,17 @@ impl Test for DSRAOpcodeTestFromR0Shift0 {
 pub struct DSRAVOpcodeTest {}
 
 impl Test for DSRAVOpcodeTest {
-    fn name(&self) -> &str { "DSRAVOpcodeTest" }
+    fn name(&self) -> &str {
+        "DSRAVOpcodeTest"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -12084,11 +14238,17 @@ impl Test for DSRAVOpcodeTest {
 pub struct DSRAVOpcodeTestShift0 {}
 
 impl Test for DSRAVOpcodeTestShift0 {
-    fn name(&self) -> &str { "DSRAVOpcodeTestShift0" }
+    fn name(&self) -> &str {
+        "DSRAVOpcodeTestShift0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -12120,11 +14280,17 @@ impl Test for DSRAVOpcodeTestShift0 {
 pub struct DSRAVOpcodeTestShift1 {}
 
 impl Test for DSRAVOpcodeTestShift1 {
-    fn name(&self) -> &str { "DSRAVOpcodeTestShift1" }
+    fn name(&self) -> &str {
+        "DSRAVOpcodeTestShift1"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -12156,11 +14322,17 @@ impl Test for DSRAVOpcodeTestShift1 {
 pub struct DSRAVOpcodeTestShiftTargetAndSourceSame1 {}
 
 impl Test for DSRAVOpcodeTestShiftTargetAndSourceSame1 {
-    fn name(&self) -> &str { "DSRAVOpcodeTestShiftTargetAndSourceSame1" }
+    fn name(&self) -> &str {
+        "DSRAVOpcodeTestShiftTargetAndSourceSame1"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -12192,11 +14364,17 @@ impl Test for DSRAVOpcodeTestShiftTargetAndSourceSame1 {
 pub struct DSRAVOpcodeTestShiftTargetAndSourceSame2 {}
 
 impl Test for DSRAVOpcodeTestShiftTargetAndSourceSame2 {
-    fn name(&self) -> &str { "DSRAVOpcodeTestShiftTargetAndSourceSame2" }
+    fn name(&self) -> &str {
+        "DSRAVOpcodeTestShiftTargetAndSourceSame2"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -12228,11 +14406,17 @@ impl Test for DSRAVOpcodeTestShiftTargetAndSourceSame2 {
 pub struct DSRAVOpcodeTestShiftTargetAndSourceSame3 {}
 
 impl Test for DSRAVOpcodeTestShiftTargetAndSourceSame3 {
-    fn name(&self) -> &str { "DSRAVOpcodeTestShiftTargetAndSourceSame3" }
+    fn name(&self) -> &str {
+        "DSRAVOpcodeTestShiftTargetAndSourceSame3"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -12264,11 +14448,17 @@ impl Test for DSRAVOpcodeTestShiftTargetAndSourceSame3 {
 pub struct DSRAVOpcodeTestShiftTargetAndSourceSame4 {}
 
 impl Test for DSRAVOpcodeTestShiftTargetAndSourceSame4 {
-    fn name(&self) -> &str { "DSRAVOpcodeTestShiftTargetAndSourceSame4" }
+    fn name(&self) -> &str {
+        "DSRAVOpcodeTestShiftTargetAndSourceSame4"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -12300,11 +14490,17 @@ impl Test for DSRAVOpcodeTestShiftTargetAndSourceSame4 {
 pub struct DSRAVOpcodeTestShiftTooLarge {}
 
 impl Test for DSRAVOpcodeTestShiftTooLarge {
-    fn name(&self) -> &str { "DSRAVOpcodeTestShiftTooLarge" }
+    fn name(&self) -> &str {
+        "DSRAVOpcodeTestShiftTooLarge"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -12336,11 +14532,17 @@ impl Test for DSRAVOpcodeTestShiftTooLarge {
 pub struct DSRAVOpcodeTestIntoItself {}
 
 impl Test for DSRAVOpcodeTestIntoItself {
-    fn name(&self) -> &str { "DSRAVOpcodeTestIntoItself" }
+    fn name(&self) -> &str {
+        "DSRAVOpcodeTestIntoItself"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -12372,11 +14574,17 @@ impl Test for DSRAVOpcodeTestIntoItself {
 pub struct DSRAVOpcodeTestIntoItself0 {}
 
 impl Test for DSRAVOpcodeTestIntoItself0 {
-    fn name(&self) -> &str { "DSRAVOpcodeTestIntoItself0" }
+    fn name(&self) -> &str {
+        "DSRAVOpcodeTestIntoItself0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -12408,11 +14616,17 @@ impl Test for DSRAVOpcodeTestIntoItself0 {
 pub struct DSRAVOpcodeTestIntoR0Shift0 {}
 
 impl Test for DSRAVOpcodeTestIntoR0Shift0 {
-    fn name(&self) -> &str { "DSRAVOpcodeTestIntoR0Shift0" }
+    fn name(&self) -> &str {
+        "DSRAVOpcodeTestIntoR0Shift0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -12444,11 +14658,17 @@ impl Test for DSRAVOpcodeTestIntoR0Shift0 {
 pub struct DSRAVOpcodeTestFromR0 {}
 
 impl Test for DSRAVOpcodeTestFromR0 {
-    fn name(&self) -> &str { "DSRAVOpcodeTestFromR0" }
+    fn name(&self) -> &str {
+        "DSRAVOpcodeTestFromR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;
@@ -12480,11 +14700,17 @@ impl Test for DSRAVOpcodeTestFromR0 {
 pub struct DSRAVOpcodeTestFromR0Shift0 {}
 
 impl Test for DSRAVOpcodeTestFromR0Shift0 {
-    fn name(&self) -> &str { "DSRAVOpcodeTestFromR0Shift0" }
+    fn name(&self) -> &str {
+        "DSRAVOpcodeTestFromR0Shift0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut r0: u64 = 0;

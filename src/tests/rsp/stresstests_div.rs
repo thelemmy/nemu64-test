@@ -4,20 +4,24 @@ use alloc::string::String;
 use alloc::vec::Vec;
 use core::any::Any;
 
-use crate::VIDEO;
 use crate::graphics::color::Color;
 use crate::graphics::color::RGBA5551;
 use crate::graphics::cursor::Cursor;
 use crate::graphics::font::Font;
 use crate::graphics::system_font::FONT_GENEVA_9;
 use crate::rsp::rsp::RSP;
-use crate::rsp::rsp_assembler::{E, Element, GPR, RSPAssembler, VR};
+use crate::rsp::rsp_assembler::{Element, RSPAssembler, E, GPR, VR};
 use crate::rsp::spmem::SPMEM;
-use crate::tests::{Level, Test};
 use crate::tests::rsp::op_vmov_vrcp::{rcp, rsq};
 use crate::tests::soft_asserts::soft_assert_eq2;
+use crate::tests::{Level, Test};
+use crate::VIDEO;
 
-fn run_stress_test<FEmitter: Fn(&mut RSPAssembler, VR), FSimulator: Fn(u32) -> u32>(name: &str, emit: FEmitter, simulate: FSimulator) -> Result<(), String> {
+fn run_stress_test<FEmitter: Fn(&mut RSPAssembler, VR), FSimulator: Fn(u32) -> u32>(
+    name: &str,
+    emit: FEmitter,
+    simulate: FSimulator,
+) -> Result<(), String> {
     let mut assembler = RSPAssembler::new(0);
     assembler.write_lqv(VR::V0, E::_0, 0x000, GPR::R0);
     emit(&mut assembler, VR::V0);
@@ -36,7 +40,16 @@ fn run_stress_test<FEmitter: Fn(&mut RSPAssembler, VR), FSimulator: Fn(u32) -> u
 
                 cursor.x = 16;
                 cursor.y = 16;
-                cursor.draw_text(buffer, format!("Stress testing {}. {:3.2}% complete (at 0x{:x})", name, input_value as f32 / 0xFFFF_FFFFu32 as f32 * 100.0f32, input_value).as_str());
+                cursor.draw_text(
+                    buffer,
+                    format!(
+                        "Stress testing {}. {:3.2}% complete (at 0x{:x})",
+                        name,
+                        input_value as f32 / 0xFFFF_FFFFu32 as f32 * 100.0f32,
+                        input_value
+                    )
+                    .as_str(),
+                );
             }
             v.swap_buffers();
         }
@@ -48,20 +61,28 @@ fn run_stress_test<FEmitter: Fn(&mut RSPAssembler, VR), FSimulator: Fn(u32) -> u
         RSP::wait_until_rsp_is_halted();
 
         let result = SPMEM::read(0x104);
-        soft_assert_eq2(result, expected_value, || format!("Result for value 0x{:x}", input_value))?;
+        soft_assert_eq2(result, expected_value, || {
+            format!("Result for value 0x{:x}", input_value)
+        })?;
     }
 
     Ok(())
 }
 
-pub struct VRCP32 { }
+pub struct VRCP32 {}
 
 impl Test for VRCP32 {
-    fn name(&self) -> &str { "RSP VRCPL/VRCPH (Stress test)" }
+    fn name(&self) -> &str {
+        "RSP VRCPL/VRCPH (Stress test)"
+    }
 
-    fn level(&self) -> Level { Level::StressTest }
+    fn level(&self) -> Level {
+        Level::StressTest
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         run_stress_test(
@@ -78,14 +99,20 @@ impl Test for VRCP32 {
     }
 }
 
-pub struct VRSQ32 { }
+pub struct VRSQ32 {}
 
 impl Test for VRSQ32 {
-    fn name(&self) -> &str { "RSP VRSQL/VRSQH (Stress test)" }
+    fn name(&self) -> &str {
+        "RSP VRSQL/VRSQH (Stress test)"
+    }
 
-    fn level(&self) -> Level { Level::StressTest }
+    fn level(&self) -> Level {
+        Level::StressTest
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         run_stress_test(
@@ -101,4 +128,3 @@ impl Test for VRSQ32 {
         Ok(())
     }
 }
-

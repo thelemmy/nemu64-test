@@ -5,15 +5,16 @@
 
 static mut MEMORY_SIZE: usize = 0;
 
-pub struct MemoryMap {
-
-}
+pub struct MemoryMap {}
 
 impl MemoryMap {
-    pub const fn addr32_to_usize(from: u32) -> usize { from as i32 as usize }
+    pub const fn addr32_to_usize(from: u32) -> usize {
+        from as i32 as usize
+    }
 
     pub const HEAP_END: usize = 7 * 1024 * 1024;
-    pub const HEAP_END_VIRTUAL_UNCACHED: usize = Self::addr32_to_usize(0xA000_0000) | MemoryMap::HEAP_END;
+    pub const HEAP_END_VIRTUAL_UNCACHED: usize =
+        Self::addr32_to_usize(0xA000_0000) | MemoryMap::HEAP_END;
 
     pub const PHYSICAL_SPMEM_BASE: usize = 0x0400_0000;
     pub const PHYSICAL_PIFRAM_BASE: usize = 0x1FC0_07C0;
@@ -54,7 +55,8 @@ impl MemoryMap {
         let memory_address = p as usize;
         assert!(memory_address >= Self::addr32_to_usize(0x8000_0400));
         unsafe {
-            let ram_end = Self::addr32_to_usize(0x8000_0400) + (&__binary_size as *const u8 as usize);
+            let ram_end =
+                Self::addr32_to_usize(0x8000_0400) + (&__binary_size as *const u8 as usize);
             assert!(memory_address < ram_end);
         }
 
@@ -73,9 +75,13 @@ impl MemoryMap {
         (address | 0xFFFF_FFFF_8000_0000) as *const T
     }
 
-    pub fn uncached_to_physical_mut<T>(p: *mut T) -> usize { (p as usize) & 0x1FFF_FFFF }
+    pub fn uncached_to_physical_mut<T>(p: *mut T) -> usize {
+        (p as usize) & 0x1FFF_FFFF
+    }
 
-    pub fn cached_to_physical_mut<T>(p: *mut T) -> usize { (p as usize) & 0x1FFF_FFFF }
+    pub fn cached_to_physical_mut<T>(p: *mut T) -> usize {
+        (p as usize) & 0x1FFF_FFFF
+    }
 
     pub fn uncached_spmem_address<T>(offset: usize) -> *mut T {
         Self::physical_to_uncached_mut::<T>(Self::PHYSICAL_SPMEM_BASE + offset)

@@ -15,7 +15,7 @@ impl<T: Copy + Color> Image<T> {
             width,
             height,
             padding_right,
-            pixels
+            pixels,
         }
     }
 
@@ -32,9 +32,15 @@ impl<T: Copy + Color> Image<T> {
         self.pixels[(y * self.width + x) as usize] = color;
     }
 
-    pub fn padded_width(&self) -> u32 { self.width - self.padding_right }
+    pub fn padded_width(&self) -> u32 {
+        self.width - self.padding_right
+    }
 
-    pub fn height(&self) -> u32 { self.height }
+    pub fn height(&self) -> u32 {
+        self.height
+    }
 
-    pub fn pixels_mut(&mut self) -> &mut Box<[T]> { &mut self.pixels }
+    pub fn pixels_mut(&mut self) -> &mut Box<[T]> {
+        &mut self.pixels
+    }
 }

@@ -24,8 +24,7 @@ pub const DP_SET_STATUS_SET_XBUS: u32 = 0x2;
 pub const DP_SET_STATUS_CLEAR_FREEZE: u32 = 0x4;
 pub const DP_SET_STATUS_SET_FREEZE: u32 = 0x8;
 
-pub struct RDP {
-}
+pub struct RDP {}
 
 impl RDP {
     fn set_register(reg: RegisterOffset, value: u32) {
@@ -60,7 +59,9 @@ impl RDP {
         Self::set_register(RegisterOffset::Status, value);
     }
 
-    pub fn status() -> u32 { Self::get_register(RegisterOffset::Status) }
+    pub fn status() -> u32 {
+        Self::get_register(RegisterOffset::Status)
+    }
 
     /// Runs the RDP and immediately returns
     /// This is marked as unsafe as the memory that is being written to by the RDP (framebuffer/depth-buffer)
@@ -79,7 +80,9 @@ impl RDP {
     /// Runs the RDP and waits until it is done.
     pub fn run_and_wait(assembler: &mut RDPAssembler) {
         let end = assembler.end();
-        unsafe { Self::start_running(assembler.start(), end); }
+        unsafe {
+            Self::start_running(assembler.start(), end);
+        }
         Self::wait_until_finished(end);
     }
 }

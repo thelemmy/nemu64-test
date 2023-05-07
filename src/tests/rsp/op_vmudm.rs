@@ -4,15 +4,31 @@ use alloc::vec::Vec;
 use core::any::Any;
 
 use crate::rsp::rsp::RSP;
-use crate::rsp::rsp_assembler::{E, Element, GPR, RSPAssembler, VR, VSARAccumulator};
+use crate::rsp::rsp_assembler::{Element, RSPAssembler, VSARAccumulator, E, GPR, VR};
 use crate::rsp::spmem::SPMEM;
-use crate::tests::{Level, Test};
 use crate::tests::soft_asserts::soft_assert_eq;
+use crate::tests::{Level, Test};
 
-fn run_test(e: Element, expected_result: [u16; 8], expected_acc_top: [u16; 8], expected_acc_mid: [u16; 8], expected_acc_low: [u16; 8]) -> Result<(), String> {
+fn run_test(
+    e: Element,
+    expected_result: [u16; 8],
+    expected_acc_top: [u16; 8],
+    expected_acc_mid: [u16; 8],
+    expected_acc_low: [u16; 8],
+) -> Result<(), String> {
     // Prepare input data
-    SPMEM::write_vector16_into_dmem(0x00, &[0x0000, 0x0000, 0x0000, 0xE000, 0x8001, 0x8000, 0x7FFF, 0x8000]);
-    SPMEM::write_vector16_into_dmem(0x10, &[0x0000, 0x0001, 0xFFFF, 0xFFFF, 0x8000, 0x7FFF, 0x7FFF, 0x8000]);
+    SPMEM::write_vector16_into_dmem(
+        0x00,
+        &[
+            0x0000, 0x0000, 0x0000, 0xE000, 0x8001, 0x8000, 0x7FFF, 0x8000,
+        ],
+    );
+    SPMEM::write_vector16_into_dmem(
+        0x10,
+        &[
+            0x0000, 0x0001, 0xFFFF, 0xFFFF, 0x8000, 0x7FFF, 0x7FFF, 0x8000,
+        ],
+    );
 
     // Assemble RSP program. First use VMULF to set accumulator to something known, then use VMUDM
     let mut assembler = RSPAssembler::new(0);
@@ -46,12 +62,36 @@ fn run_test(e: Element, expected_result: [u16; 8], expected_acc_top: [u16; 8], e
 
     RSP::run_and_wait(0);
 
-    soft_assert_eq(SPMEM::read_vector16_from_dmem(0x100), expected_result, "VMUDM result")?;
-    soft_assert_eq(SPMEM::read_vector16_from_dmem(0x110), expected_acc_top, "VMUDM Acc[32..48]")?;
-    soft_assert_eq(SPMEM::read_vector16_from_dmem(0x120), expected_acc_mid, "VMUDM Acc[16..32]")?;
-    soft_assert_eq(SPMEM::read_vector16_from_dmem(0x130), expected_acc_low, "VMUDM Acc[0..16]")?;
-    soft_assert_eq(SPMEM::read_vector16_from_dmem(0x140), expected_result, "VMUDM result when doing VMUDM V6, V6, V1")?;
-    soft_assert_eq(SPMEM::read_vector16_from_dmem(0x150), expected_result, "VMUDM result when doing VMUDM V7, V0, V7")?;
+    soft_assert_eq(
+        SPMEM::read_vector16_from_dmem(0x100),
+        expected_result,
+        "VMUDM result",
+    )?;
+    soft_assert_eq(
+        SPMEM::read_vector16_from_dmem(0x110),
+        expected_acc_top,
+        "VMUDM Acc[32..48]",
+    )?;
+    soft_assert_eq(
+        SPMEM::read_vector16_from_dmem(0x120),
+        expected_acc_mid,
+        "VMUDM Acc[16..32]",
+    )?;
+    soft_assert_eq(
+        SPMEM::read_vector16_from_dmem(0x130),
+        expected_acc_low,
+        "VMUDM Acc[0..16]",
+    )?;
+    soft_assert_eq(
+        SPMEM::read_vector16_from_dmem(0x140),
+        expected_result,
+        "VMUDM result when doing VMUDM V6, V6, V1",
+    )?;
+    soft_assert_eq(
+        SPMEM::read_vector16_from_dmem(0x150),
+        expected_result,
+        "VMUDM result when doing VMUDM V7, V0, V7",
+    )?;
 
     Ok(())
 }
@@ -59,11 +99,17 @@ fn run_test(e: Element, expected_result: [u16; 8], expected_acc_top: [u16; 8], e
 pub struct VMUDMAll {}
 
 impl Test for VMUDMAll {
-    fn name(&self) -> &str { "RSP VMUDM" }
+    fn name(&self) -> &str {
+        "RSP VMUDM"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         run_test(
@@ -79,11 +125,17 @@ impl Test for VMUDMAll {
 pub struct VMUDMH1 {}
 
 impl Test for VMUDMH1 {
-    fn name(&self) -> &str { "RSP VMUDM (H1)" }
+    fn name(&self) -> &str {
+        "RSP VMUDM (H1)"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         run_test(
@@ -98,11 +150,17 @@ impl Test for VMUDMH1 {
 pub struct VMUDM7 {}
 
 impl Test for VMUDM7 {
-    fn name(&self) -> &str { "RSP VMUDM (e=_7)" }
+    fn name(&self) -> &str {
+        "RSP VMUDM (e=_7)"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         run_test(

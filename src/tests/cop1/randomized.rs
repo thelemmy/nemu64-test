@@ -5,18 +5,20 @@ use alloc::vec::Vec;
 use core::any::Any;
 use core::arch::asm;
 use core::mem::transmute;
+
 use arbitrary_int::u2;
 use oorandom::{Rand32, Rand64};
+
 use crate::assembler::{Assembler, FR};
-use crate::cop0::{CauseException};
-use crate::cop1::{FCSR, fcsr, FCSRRoundingMode, set_fcsr};
+use crate::cop0::CauseException;
+use crate::cop1::{fcsr, set_fcsr, FCSRRoundingMode, FCSR};
 use crate::exception_handler::expect_exception;
 use crate::graphics::color::{Color, RGBA5551};
 use crate::graphics::cursor::Cursor;
 use crate::graphics::font::Font;
 use crate::graphics::system_font::FONT_GENEVA_9;
-use crate::tests::{Level, Test};
 use crate::tests::soft_asserts::soft_assert_eq;
+use crate::tests::{Level, Test};
 use crate::VIDEO;
 
 // The tests in here perform a lot of randomized calculations and hash the output/exception flags
@@ -24,20 +26,30 @@ use crate::VIDEO;
 // to print out some temp values in randomized_test.
 // These tests rely on the deterministic nature of oorandom
 
-fn randomized_test<FLOAT, INT: From<u32> + Into<u64>, FPERFORM: FnMut(u32) -> INT>(name: &str, progress_indicator: bool, iterations: u32, expected: u64, mut perform: FPERFORM) -> Result<(), String>  {
+fn randomized_test<FLOAT, INT: From<u32> + Into<u64>, FPERFORM: FnMut(u32) -> INT>(
+    name: &str,
+    progress_indicator: bool,
+    iterations: u32,
+    expected: u64,
+    mut perform: FPERFORM,
+) -> Result<(), String> {
     let mut hash = 0u64;
 
     let font = Font::from_data(&FONT_GENEVA_9).unwrap();
     let mut cursor = Cursor::new_with_font(&font, RGBA5551::BLACK);
 
     for i in 0..iterations {
-        let mut result: INT = i.into();  // in case of exception this won't be written to
+        let mut result: INT = i.into(); // in case of exception this won't be written to
         let mut result_fcsr = FCSR::ZERO;
 
         // Disable exception firing, but toggle flush denorm to zero
         let ftz = (i & 1) != 0;
         let rounding_mode = FCSRRoundingMode::new_with_raw_value(u2::extract_u32(i, 1));
-        set_fcsr(FCSR::ZERO.with_flush_denorm_to_zero(ftz).with_rounding_mode(rounding_mode));
+        set_fcsr(
+            FCSR::ZERO
+                .with_flush_denorm_to_zero(ftz)
+                .with_rounding_mode(rounding_mode),
+        );
         let maybe_exception = expect_exception(CauseException::FPE, 1, || {
             result = perform(i);
             result_fcsr = fcsr();
@@ -62,7 +74,15 @@ fn randomized_test<FLOAT, INT: From<u32> + Into<u64>, FPERFORM: FnMut(u32) -> IN
 
                     cursor.x = 16;
                     cursor.y = 16;
-                    cursor.draw_text(buffer, format!("Stress testing {}. {}% complete", name, i * 100 / iterations).as_str());
+                    cursor.draw_text(
+                        buffer,
+                        format!(
+                            "Stress testing {}. {}% complete",
+                            name,
+                            i * 100 / iterations
+                        )
+                        .as_str(),
+                    );
                 }
                 v.swap_buffers();
             }
@@ -74,7 +94,12 @@ fn randomized_test<FLOAT, INT: From<u32> + Into<u64>, FPERFORM: FnMut(u32) -> IN
     Ok(())
 }
 
-fn randomized_test32<const FINSTRUCTION: u32>(name: &str, progress_indicator: bool, iterations: u32, expected: u64) -> Result<(), String> {
+fn randomized_test32<const FINSTRUCTION: u32>(
+    name: &str,
+    progress_indicator: bool,
+    iterations: u32,
+    expected: u64,
+) -> Result<(), String> {
     let mut random = Rand32::new(0);
 
     /// Returns a random float with an equal distribution of its bits (so this includes NAN, subnormal etc)
@@ -83,7 +108,10 @@ fn randomized_test32<const FINSTRUCTION: u32>(name: &str, progress_indicator: bo
     }
 
     randomized_test::<f32, u32, _>(
-        name, progress_indicator, iterations, expected,
+        name,
+        progress_indicator,
+        iterations,
+        expected,
         |_iteration| {
             let f1 = random_float(&mut random);
             let f2 = random_float(&mut random);
@@ -103,10 +131,16 @@ fn randomized_test32<const FINSTRUCTION: u32>(name: &str, progress_indicator: bo
 
                 transmute(float_result)
             }
-        })
+        },
+    )
 }
 
-fn randomized_test64<const FINSTRUCTION: u32>(name: &str, progress_indicator: bool, iterations: u32, expected: u64) -> Result<(), String> {
+fn randomized_test64<const FINSTRUCTION: u32>(
+    name: &str,
+    progress_indicator: bool,
+    iterations: u32,
+    expected: u64,
+) -> Result<(), String> {
     let mut random = Rand64::new(0);
 
     /// Returns a random float with an equal distribution of its bits (so this includes NAN, subnormal etc)
@@ -116,7 +150,9 @@ fn randomized_test64<const FINSTRUCTION: u32>(name: &str, progress_indicator: bo
 
     randomized_test::<f64, u64, _>(
         name,
-        progress_indicator, iterations, expected,
+        progress_indicator,
+        iterations,
+        expected,
         |_iteration| {
             let f1 = random_float(&mut random);
             let f2 = random_float(&mut random);
@@ -136,17 +172,24 @@ fn randomized_test64<const FINSTRUCTION: u32>(name: &str, progress_indicator: bo
 
                 transmute(float_result)
             }
-        })
+        },
+    )
 }
 
 pub struct AddS;
 
 impl Test for AddS {
-    fn name(&self) -> &str { "ADD.S (randomized - quick)" }
+    fn name(&self) -> &str {
+        "ADD.S (randomized - quick)"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const INSTRUCTION: u32 = Assembler::make_cop1_add(FR::F4, FR::F0, FR::F2).s();
@@ -157,11 +200,17 @@ impl Test for AddS {
 pub struct AddD;
 
 impl Test for AddD {
-    fn name(&self) -> &str { "ADD.D (randomized - quick)" }
+    fn name(&self) -> &str {
+        "ADD.D (randomized - quick)"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const INSTRUCTION: u32 = Assembler::make_cop1_add(FR::F4, FR::F0, FR::F2).d();
@@ -172,11 +221,17 @@ impl Test for AddD {
 pub struct SubS;
 
 impl Test for SubS {
-    fn name(&self) -> &str { "SUB.S (randomized - quick)" }
+    fn name(&self) -> &str {
+        "SUB.S (randomized - quick)"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const INSTRUCTION: u32 = Assembler::make_cop1_sub(FR::F4, FR::F0, FR::F2).s();
@@ -187,11 +242,17 @@ impl Test for SubS {
 pub struct SubD;
 
 impl Test for SubD {
-    fn name(&self) -> &str { "SUB.D (randomized - quick)" }
+    fn name(&self) -> &str {
+        "SUB.D (randomized - quick)"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const INSTRUCTION: u32 = Assembler::make_cop1_sub(FR::F4, FR::F0, FR::F2).d();
@@ -202,11 +263,17 @@ impl Test for SubD {
 pub struct MulS;
 
 impl Test for MulS {
-    fn name(&self) -> &str { "MUL.S (randomized - quick)" }
+    fn name(&self) -> &str {
+        "MUL.S (randomized - quick)"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const INSTRUCTION: u32 = Assembler::make_cop1_mul(FR::F4, FR::F0, FR::F2).s();
@@ -217,11 +284,17 @@ impl Test for MulS {
 pub struct MulD;
 
 impl Test for MulD {
-    fn name(&self) -> &str { "MUL.D (randomized - quick)" }
+    fn name(&self) -> &str {
+        "MUL.D (randomized - quick)"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const INSTRUCTION: u32 = Assembler::make_cop1_mul(FR::F4, FR::F0, FR::F2).d();
@@ -232,11 +305,17 @@ impl Test for MulD {
 pub struct DivS;
 
 impl Test for DivS {
-    fn name(&self) -> &str { "DIV.S (randomized - quick)" }
+    fn name(&self) -> &str {
+        "DIV.S (randomized - quick)"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const INSTRUCTION: u32 = Assembler::make_cop1_div(FR::F4, FR::F0, FR::F2).s();
@@ -247,26 +326,38 @@ impl Test for DivS {
 pub struct DivD;
 
 impl Test for DivD {
-    fn name(&self) -> &str { "DIV.D (randomized - quick)" }
+    fn name(&self) -> &str {
+        "DIV.D (randomized - quick)"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const INSTRUCTION: u32 = Assembler::make_cop1_div(FR::F4, FR::F0, FR::F2).d();
-        randomized_test64::<INSTRUCTION>("DIV.D",false, 2000, 0xa2ae9ba9a3fec554)
+        randomized_test64::<INSTRUCTION>("DIV.D", false, 2000, 0xa2ae9ba9a3fec554)
     }
 }
 
 pub struct SqrtS;
 
 impl Test for SqrtS {
-    fn name(&self) -> &str { "SQRT.S (randomized - quick)" }
+    fn name(&self) -> &str {
+        "SQRT.S (randomized - quick)"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const INSTRUCTION: u32 = Assembler::make_cop1_sqrt(FR::F4, FR::F0).s();
@@ -277,11 +368,17 @@ impl Test for SqrtS {
 pub struct SqrtD;
 
 impl Test for SqrtD {
-    fn name(&self) -> &str { "SQRT.D (randomized - quick)" }
+    fn name(&self) -> &str {
+        "SQRT.D (randomized - quick)"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const INSTRUCTION: u32 = Assembler::make_cop1_sqrt(FR::F4, FR::F0).d();
@@ -292,11 +389,17 @@ impl Test for SqrtD {
 pub struct CvtSFromW;
 
 impl Test for CvtSFromW {
-    fn name(&self) -> &str { "CVT.S.W (randomized - quick)" }
+    fn name(&self) -> &str {
+        "CVT.S.W (randomized - quick)"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const INSTRUCTION: u32 = Assembler::make_cop1_cvt_s(FR::F4, FR::F0).w();
@@ -307,11 +410,17 @@ impl Test for CvtSFromW {
 pub struct CvtWFromS;
 
 impl Test for CvtWFromS {
-    fn name(&self) -> &str { "CVT.W.S (randomized - quick)" }
+    fn name(&self) -> &str {
+        "CVT.W.S (randomized - quick)"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const INSTRUCTION: u32 = Assembler::make_cop1_cvt_w(FR::F4, FR::F0).s();
@@ -322,11 +431,17 @@ impl Test for CvtWFromS {
 pub struct StresstestAddS;
 
 impl Test for StresstestAddS {
-    fn name(&self) -> &str { "ADD.S (randomized - stresstest)" }
+    fn name(&self) -> &str {
+        "ADD.S (randomized - stresstest)"
+    }
 
-    fn level(&self) -> Level { Level::StressTest }
+    fn level(&self) -> Level {
+        Level::StressTest
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const INSTRUCTION: u32 = Assembler::make_cop1_add(FR::F4, FR::F0, FR::F2).s();
@@ -337,11 +452,17 @@ impl Test for StresstestAddS {
 pub struct StresstestAddD;
 
 impl Test for StresstestAddD {
-    fn name(&self) -> &str { "ADD.D (randomized - stresstest)" }
+    fn name(&self) -> &str {
+        "ADD.D (randomized - stresstest)"
+    }
 
-    fn level(&self) -> Level { Level::StressTest }
+    fn level(&self) -> Level {
+        Level::StressTest
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const INSTRUCTION: u32 = Assembler::make_cop1_add(FR::F4, FR::F0, FR::F2).d();
@@ -352,11 +473,17 @@ impl Test for StresstestAddD {
 pub struct StresstestSubS;
 
 impl Test for StresstestSubS {
-    fn name(&self) -> &str { "SUB.S (randomized - stresstest)" }
+    fn name(&self) -> &str {
+        "SUB.S (randomized - stresstest)"
+    }
 
-    fn level(&self) -> Level { Level::StressTest }
+    fn level(&self) -> Level {
+        Level::StressTest
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const INSTRUCTION: u32 = Assembler::make_cop1_sub(FR::F4, FR::F0, FR::F2).s();
@@ -367,11 +494,17 @@ impl Test for StresstestSubS {
 pub struct StresstestSubD;
 
 impl Test for StresstestSubD {
-    fn name(&self) -> &str { "SUB.D (randomized - stresstest)" }
+    fn name(&self) -> &str {
+        "SUB.D (randomized - stresstest)"
+    }
 
-    fn level(&self) -> Level { Level::StressTest }
+    fn level(&self) -> Level {
+        Level::StressTest
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const INSTRUCTION: u32 = Assembler::make_cop1_sub(FR::F4, FR::F0, FR::F2).d();
@@ -382,11 +515,17 @@ impl Test for StresstestSubD {
 pub struct StresstestMulS;
 
 impl Test for StresstestMulS {
-    fn name(&self) -> &str { "MUL.S (randomized - stresstest)" }
+    fn name(&self) -> &str {
+        "MUL.S (randomized - stresstest)"
+    }
 
-    fn level(&self) -> Level { Level::StressTest }
+    fn level(&self) -> Level {
+        Level::StressTest
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const INSTRUCTION: u32 = Assembler::make_cop1_mul(FR::F4, FR::F0, FR::F2).s();
@@ -397,11 +536,17 @@ impl Test for StresstestMulS {
 pub struct StresstestMulD;
 
 impl Test for StresstestMulD {
-    fn name(&self) -> &str { "MUL.D (randomized - stresstest)" }
+    fn name(&self) -> &str {
+        "MUL.D (randomized - stresstest)"
+    }
 
-    fn level(&self) -> Level { Level::StressTest }
+    fn level(&self) -> Level {
+        Level::StressTest
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const INSTRUCTION: u32 = Assembler::make_cop1_mul(FR::F4, FR::F0, FR::F2).d();
@@ -412,11 +557,17 @@ impl Test for StresstestMulD {
 pub struct StresstestDivS;
 
 impl Test for StresstestDivS {
-    fn name(&self) -> &str { "DIV.S (randomized - stresstest)" }
+    fn name(&self) -> &str {
+        "DIV.S (randomized - stresstest)"
+    }
 
-    fn level(&self) -> Level { Level::StressTest }
+    fn level(&self) -> Level {
+        Level::StressTest
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const INSTRUCTION: u32 = Assembler::make_cop1_div(FR::F4, FR::F0, FR::F2).s();
@@ -427,11 +578,17 @@ impl Test for StresstestDivS {
 pub struct StresstestDivD;
 
 impl Test for StresstestDivD {
-    fn name(&self) -> &str { "DIV.D (randomized - stresstest)" }
+    fn name(&self) -> &str {
+        "DIV.D (randomized - stresstest)"
+    }
 
-    fn level(&self) -> Level { Level::StressTest }
+    fn level(&self) -> Level {
+        Level::StressTest
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const INSTRUCTION: u32 = Assembler::make_cop1_div(FR::F4, FR::F0, FR::F2).d();
@@ -442,11 +599,17 @@ impl Test for StresstestDivD {
 pub struct StresstestSqrtS;
 
 impl Test for StresstestSqrtS {
-    fn name(&self) -> &str { "SQRT.S (randomized - stresstest)" }
+    fn name(&self) -> &str {
+        "SQRT.S (randomized - stresstest)"
+    }
 
-    fn level(&self) -> Level { Level::StressTest }
+    fn level(&self) -> Level {
+        Level::StressTest
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const INSTRUCTION: u32 = Assembler::make_cop1_sqrt(FR::F4, FR::F0).s();
@@ -457,11 +620,17 @@ impl Test for StresstestSqrtS {
 pub struct StresstestSqrtD;
 
 impl Test for StresstestSqrtD {
-    fn name(&self) -> &str { "SQRT.D (randomized - stresstest)" }
+    fn name(&self) -> &str {
+        "SQRT.D (randomized - stresstest)"
+    }
 
-    fn level(&self) -> Level { Level::StressTest }
+    fn level(&self) -> Level {
+        Level::StressTest
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const INSTRUCTION: u32 = Assembler::make_cop1_sqrt(FR::F4, FR::F0).d();
@@ -472,11 +641,17 @@ impl Test for StresstestSqrtD {
 pub struct StresstestCvtSFromW;
 
 impl Test for StresstestCvtSFromW {
-    fn name(&self) -> &str { "CVT.S.W (randomized - stresstest)" }
+    fn name(&self) -> &str {
+        "CVT.S.W (randomized - stresstest)"
+    }
 
-    fn level(&self) -> Level { Level::StressTest }
+    fn level(&self) -> Level {
+        Level::StressTest
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const INSTRUCTION: u32 = Assembler::make_cop1_cvt_s(FR::F4, FR::F0).w();
@@ -487,15 +662,20 @@ impl Test for StresstestCvtSFromW {
 pub struct StresstestCvtWFromS;
 
 impl Test for StresstestCvtWFromS {
-    fn name(&self) -> &str { "CVT.W.S (randomized - stresstest)" }
+    fn name(&self) -> &str {
+        "CVT.W.S (randomized - stresstest)"
+    }
 
-    fn level(&self) -> Level { Level::StressTest }
+    fn level(&self) -> Level {
+        Level::StressTest
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const INSTRUCTION: u32 = Assembler::make_cop1_cvt_w(FR::F4, FR::F0).s();
         randomized_test32::<INSTRUCTION>("CVT.W.S", true, 2000000, 0x1e1b3c375a34d773)
     }
 }
-

@@ -5,8 +5,8 @@ use alloc::vec::Vec;
 use core::any::Any;
 use core::arch::asm;
 
-use crate::tests::{Level, Test};
 use crate::tests::soft_asserts::soft_assert_eq;
+use crate::tests::{Level, Test};
 
 fn test_div(dividend: u64, divisor: u64) -> (u64, u64) {
     let mut quotient: u64 = 0;
@@ -92,21 +92,39 @@ fn test_ddivu(dividend: u64, divisor: u64) -> (u64, u64) {
     (quotient, remainder)
 }
 
-
 pub struct DIV {}
 
 impl Test for DIV {
-    fn name(&self) -> &str { "DIV" }
+    fn name(&self) -> &str {
+        "DIV"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
     fn values(&self) -> Vec<Box<dyn Any>> {
-        vec! {
-            Box::new((0x00000000_01234567u64, 0u64, 0xFFFFFFFF_FFFFFFFFu64, 0x00000000_01234567u64)),
+        vec![
+            Box::new((
+                0x00000000_01234567u64,
+                0u64,
+                0xFFFFFFFF_FFFFFFFFu64,
+                0x00000000_01234567u64,
+            )),
             Box::new((0u64, 0u64, 0xFFFFFFFF_FFFFFFFFu64, 0u64)),
-            Box::new((0xFFFFFFFF_F1234567u64, 0u64, 0x00000000_00000001u64, 0xFFFFFFFF_F1234567u64)),
-            Box::new((0xFFFFFFFF_80000000u64, 0xFFFFFFFF_FFFFFFFFu64, 0xFFFFFFFF_80000000u64, 0u64)),
-        }
+            Box::new((
+                0xFFFFFFFF_F1234567u64,
+                0u64,
+                0x00000000_00000001u64,
+                0xFFFFFFFF_F1234567u64,
+            )),
+            Box::new((
+                0xFFFFFFFF_80000000u64,
+                0xFFFFFFFF_FFFFFFFFu64,
+                0xFFFFFFFF_80000000u64,
+                0u64,
+            )),
+        ]
     }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
@@ -117,25 +135,38 @@ impl Test for DIV {
                 soft_assert_eq(remainder, *expected_remainder, "Remainder")?;
                 Ok(())
             }
-            _ => Err("Value is not valid".to_string())
+            _ => Err("Value is not valid".to_string()),
         }
     }
 }
 
-
 pub struct DIVU {}
 
 impl Test for DIVU {
-    fn name(&self) -> &str { "DIVU" }
+    fn name(&self) -> &str {
+        "DIVU"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
     fn values(&self) -> Vec<Box<dyn Any>> {
-        vec! {
-            Box::new((0x00000000_01234567u64, 0u64, 0xFFFFFFFF_FFFFFFFFu64, 0x00000000_01234567u64)),
+        vec![
+            Box::new((
+                0x00000000_01234567u64,
+                0u64,
+                0xFFFFFFFF_FFFFFFFFu64,
+                0x00000000_01234567u64,
+            )),
             Box::new((0u64, 0u64, 0xFFFFFFFF_FFFFFFFFu64, 0u64)),
-            Box::new((0xFFFFFFFF_F1234567u64, 0u64, 0xFFFFFFFF_FFFFFFFFu64, 0xFFFFFFFF_F1234567u64)),
-        }
+            Box::new((
+                0xFFFFFFFF_F1234567u64,
+                0u64,
+                0xFFFFFFFF_FFFFFFFFu64,
+                0xFFFFFFFF_F1234567u64,
+            )),
+        ]
     }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
@@ -146,7 +177,7 @@ impl Test for DIVU {
                 soft_assert_eq(remainder, *expected_remainder, "Remainder")?;
                 Ok(())
             }
-            _ => Err("Value is not valid".to_string())
+            _ => Err("Value is not valid".to_string()),
         }
     }
 }
@@ -154,17 +185,36 @@ impl Test for DIVU {
 pub struct DDIV {}
 
 impl Test for DDIV {
-    fn name(&self) -> &str { "DDIV" }
+    fn name(&self) -> &str {
+        "DDIV"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
     fn values(&self) -> Vec<Box<dyn Any>> {
-        vec! {
-            Box::new((0x01234567_89ABCDEFu64, 0u64, 0xFFFFFFFF_FFFFFFFFu64, 0x01234567_89ABCDEFu64)),
+        vec![
+            Box::new((
+                0x01234567_89ABCDEFu64,
+                0u64,
+                0xFFFFFFFF_FFFFFFFFu64,
+                0x01234567_89ABCDEFu64,
+            )),
             Box::new((0u64, 0u64, 0xFFFFFFFF_FFFFFFFFu64, 0u64)),
-            Box::new((0xF1234567_89ABCDEFu64, 0u64, 0x00000000_00000001u64, 0xF1234567_89ABCDEFu64)),
-            Box::new((0x80000000_00000000u64, 0xFFFFFFFF_FFFFFFFFu64, 0x80000000_00000000u64, 0u64)),
-        }
+            Box::new((
+                0xF1234567_89ABCDEFu64,
+                0u64,
+                0x00000000_00000001u64,
+                0xF1234567_89ABCDEFu64,
+            )),
+            Box::new((
+                0x80000000_00000000u64,
+                0xFFFFFFFF_FFFFFFFFu64,
+                0x80000000_00000000u64,
+                0u64,
+            )),
+        ]
     }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
@@ -175,7 +225,7 @@ impl Test for DDIV {
                 soft_assert_eq(remainder, *expected_remainder, "Remainder")?;
                 Ok(())
             }
-            _ => Err("Value is not valid".to_string())
+            _ => Err("Value is not valid".to_string()),
         }
     }
 }
@@ -183,16 +233,30 @@ impl Test for DDIV {
 pub struct DDIVU {}
 
 impl Test for DDIVU {
-    fn name(&self) -> &str { "DDIVU" }
+    fn name(&self) -> &str {
+        "DDIVU"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
     fn values(&self) -> Vec<Box<dyn Any>> {
-        vec! {
-            Box::new((0x01234567_89ABCDEFu64, 0u64, 0xFFFFFFFF_FFFFFFFFu64, 0x01234567_89ABCDEFu64)),
+        vec![
+            Box::new((
+                0x01234567_89ABCDEFu64,
+                0u64,
+                0xFFFFFFFF_FFFFFFFFu64,
+                0x01234567_89ABCDEFu64,
+            )),
             Box::new((0u64, 0u64, 0xFFFFFFFF_FFFFFFFFu64, 0u64)),
-            Box::new((0xF1234567_89ABCDEFu64, 0u64, 0xFFFFFFFF_FFFFFFFFu64, 0xF1234567_89ABCDEFu64)),
-        }
+            Box::new((
+                0xF1234567_89ABCDEFu64,
+                0u64,
+                0xFFFFFFFF_FFFFFFFFu64,
+                0xF1234567_89ABCDEFu64,
+            )),
+        ]
     }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
@@ -203,8 +267,7 @@ impl Test for DDIVU {
                 soft_assert_eq(remainder, *expected_remainder, "Remainder")?;
                 Ok(())
             }
-            _ => Err("Value is not valid".to_string())
+            _ => Err("Value is not valid".to_string()),
         }
     }
 }
-

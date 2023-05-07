@@ -4,19 +4,29 @@ use alloc::string::String;
 use alloc::vec::Vec;
 use core::any::Any;
 use core::mem::size_of;
+
 use arbitrary_int::u12;
 use oorandom::Rand32;
 
 use crate::graphics::color::{Color, ARGB8888};
 use crate::rdp::fixedpoint::{I12_2, I16_16, U10_2};
-use crate::rdp::modes::{A, B, Blender, CoverageMode, CycleType, Format, Othermode, PixelSize, PM};
+use crate::rdp::modes::{Blender, CoverageMode, CycleType, Format, Othermode, PixelSize, A, B, PM};
 use crate::rdp::rdp::RDP;
 use crate::rdp::rdp_assembler::{RDPAssembler, RDPRectangle, TriangleBase};
-use crate::tests::{Level, Test};
 use crate::tests::soft_asserts::soft_assert_eq_2d_array;
+use crate::tests::{Level, Test};
 use crate::uncached_memory::UncachedHeapMemory;
 
-fn render_on_cpu<T: Color + Copy + Clone + From<ARGB8888>, const WIDTH: usize, const HEIGHT: usize>(base: &TriangleBase, scissor: &RDPRectangle, color32: ARGB8888, coverage_mode: CoverageMode) -> [[T; WIDTH]; HEIGHT] {
+fn render_on_cpu<
+    T: Color + Copy + Clone + From<ARGB8888>,
+    const WIDTH: usize,
+    const HEIGHT: usize,
+>(
+    base: &TriangleBase,
+    scissor: &RDPRectangle,
+    color32: ARGB8888,
+    coverage_mode: CoverageMode,
+) -> [[T; WIDTH]; HEIGHT] {
     let color: T = color32.into();
     let mut result: [[T; WIDTH]; HEIGHT] = [[T::BLACK; WIDTH]; HEIGHT];
     let mut subpixel_coverage: [[u8; WIDTH]; HEIGHT] = [[0; WIDTH]; HEIGHT];
@@ -49,7 +59,11 @@ fn render_on_cpu<T: Color + Copy + Clone + From<ARGB8888>, const WIDTH: usize, c
                     break;
                 }
 
-                let (left, right) = if is_right_major { (major_x, minor_x) } else { (minor_x, major_x) };
+                let (left, right) = if is_right_major {
+                    (major_x, minor_x)
+                } else {
+                    (minor_x, major_x)
+                };
 
                 if right >= left {
                     let subpixel_left = left >> 16;
@@ -96,7 +110,7 @@ fn render_on_cpu<T: Color + Copy + Clone + From<ARGB8888>, const WIDTH: usize, c
                         10 => 0x60,
                         12 => 0xA0,
                         16 => 0xE0,
-                        _ => coverage,  // placeholder until all are filled out
+                        _ => coverage, // placeholder until all are filled out
                     },
                     CoverageMode::Zap => 0xE0,
                     CoverageMode::Wrap => 0xE0,
@@ -110,8 +124,14 @@ fn render_on_cpu<T: Color + Copy + Clone + From<ARGB8888>, const WIDTH: usize, c
     result
 }
 
-fn render_on_rdp<T: Color + Copy + Clone, const WIDTH: usize, const HEIGHT: usize>(triangle: &TriangleBase, scissor: &RDPRectangle, color: ARGB8888, coverage_mode: CoverageMode) -> [[T; WIDTH]; HEIGHT] {
-    let mut framebuffer = UncachedHeapMemory::<T>::new_with_init_value(WIDTH * HEIGHT, 32, T::BLACK);
+fn render_on_rdp<T: Color + Copy + Clone, const WIDTH: usize, const HEIGHT: usize>(
+    triangle: &TriangleBase,
+    scissor: &RDPRectangle,
+    color: ARGB8888,
+    coverage_mode: CoverageMode,
+) -> [[T; WIDTH]; HEIGHT] {
+    let mut framebuffer =
+        UncachedHeapMemory::<T>::new_with_init_value(WIDTH * HEIGHT, 32, T::BLACK);
 
     let mut assembler = RDPAssembler::new();
 
@@ -120,23 +140,44 @@ fn render_on_rdp<T: Color + Copy + Clone, const WIDTH: usize, const HEIGHT: usiz
         4 => PixelSize::Bits32,
         _ => panic!("Unhandled color format"),
     };
-    assembler.set_framebuffer_image(Format::RGBA, image_size, u12::new((WIDTH - 1).try_into().unwrap()), &mut framebuffer);
+    assembler.set_framebuffer_image(
+        Format::RGBA,
+        image_size,
+        u12::new((WIDTH - 1).try_into().unwrap()),
+        &mut framebuffer,
+    );
     assembler.set_scissor(scissor);
 
     // Clear everything
-    let clear_rect = RDPRectangle::new(U10_2::from_u32(0), U10_2::from_u32(0), U10_2::from_u32(WIDTH as u32 - 1), U10_2::from_u32(HEIGHT as u32 - 1));
-    assembler.set_othermode(Othermode::DEFAULT
-        .with_cycle_type(CycleType::Fill));
+    let clear_rect = RDPRectangle::new(
+        U10_2::from_u32(0),
+        U10_2::from_u32(0),
+        U10_2::from_u32(WIDTH as u32 - 1),
+        U10_2::from_u32(HEIGHT as u32 - 1),
+    );
+    assembler.set_othermode(Othermode::DEFAULT.with_cycle_type(CycleType::Fill));
     assembler.set_fillcolor32(ARGB8888::BLACK);
     assembler.filled_rectangle(&clear_rect);
     assembler.sync_pipe();
 
     // Draw triangle
-    assembler.set_framebuffer_image(Format::RGBA, image_size, u12::new((WIDTH - 1).try_into().unwrap()), &mut framebuffer);
-    assembler.set_othermode(Othermode::DEFAULT
-        .with_cycle_type(CycleType::SingleCycle)
-        .with_coverage_mode(coverage_mode)
-        .with_blender_0(Blender::new(A::CombineAlpha, PM::BlendColor, B::Zero, PM::MemoryColor)));
+    assembler.set_framebuffer_image(
+        Format::RGBA,
+        image_size,
+        u12::new((WIDTH - 1).try_into().unwrap()),
+        &mut framebuffer,
+    );
+    assembler.set_othermode(
+        Othermode::DEFAULT
+            .with_cycle_type(CycleType::SingleCycle)
+            .with_coverage_mode(coverage_mode)
+            .with_blender_0(Blender::new(
+                A::CombineAlpha,
+                PM::BlendColor,
+                B::Zero,
+                PM::MemoryColor,
+            )),
+    );
     assembler.set_blendcolor(color);
     assembler.filled_triangle(triangle);
     assembler.sync_pipe();
@@ -158,18 +199,31 @@ fn render_on_rdp<T: Color + Copy + Clone, const WIDTH: usize, const HEIGHT: usiz
 pub struct FilledTriangle1CycleDegenerateRect {}
 
 impl Test for FilledTriangle1CycleDegenerateRect {
-    fn name(&self) -> &str { "RDP FilledTriangle 1 Cycle (degenerate as rectangle)" }
+    fn name(&self) -> &str {
+        "RDP FilledTriangle 1 Cycle (degenerate as rectangle)"
+    }
 
-    fn level(&self) -> Level { Level::RDPBasic }
+    fn level(&self) -> Level {
+        Level::RDPBasic
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        let scissor = RDPRectangle::new(U10_2::from_u32(0), U10_2::from_u32(0), U10_2::from_usize(8), U10_2::from_usize(8));
+        let scissor = RDPRectangle::new(
+            U10_2::from_u32(0),
+            U10_2::from_u32(0),
+            U10_2::from_usize(8),
+            U10_2::from_usize(8),
+        );
         let color = ARGB8888::RED.with_alpha(255);
         let coverage_mode = CoverageMode::Zap;
         let triangle = TriangleBase::new(
-            true, 0, 0,
+            true,
+            0,
+            0,
             I12_2::from_i32(5),
             I12_2::from_i32(3),
             I12_2::from_i32(1),
@@ -194,18 +248,31 @@ impl Test for FilledTriangle1CycleDegenerateRect {
 pub struct FilledTriangle1CycleRightMajorFlatTop {}
 
 impl Test for FilledTriangle1CycleRightMajorFlatTop {
-    fn name(&self) -> &str { "RDP FilledTriangle 1 Cycle (right major with flat top)" }
+    fn name(&self) -> &str {
+        "RDP FilledTriangle 1 Cycle (right major with flat top)"
+    }
 
-    fn level(&self) -> Level { Level::RDPBasic }
+    fn level(&self) -> Level {
+        Level::RDPBasic
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        let scissor = RDPRectangle::new(U10_2::from_u32(0), U10_2::from_u32(0), U10_2::from_usize(8), U10_2::from_usize(8));
+        let scissor = RDPRectangle::new(
+            U10_2::from_u32(0),
+            U10_2::from_u32(0),
+            U10_2::from_usize(8),
+            U10_2::from_usize(8),
+        );
         let color = ARGB8888::RED;
         let coverage_mode = CoverageMode::Zap;
         let triangle = TriangleBase::new(
-            true, 0, 0,
+            true,
+            0,
+            0,
             I12_2::from_i32(5),
             I12_2::from_i32(1),
             I12_2::from_i32(1),
@@ -230,19 +297,32 @@ impl Test for FilledTriangle1CycleRightMajorFlatTop {
 pub struct FilledTriangle1CycleRightMajor {}
 
 impl Test for FilledTriangle1CycleRightMajor {
-    fn name(&self) -> &str { "RDP FilledTriangle 1 Cycle (right major)" }
+    fn name(&self) -> &str {
+        "RDP FilledTriangle 1 Cycle (right major)"
+    }
 
-    fn level(&self) -> Level { Level::RDPBasic }
+    fn level(&self) -> Level {
+        Level::RDPBasic
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         // TODO: is anything ever shown here?
-        let scissor = RDPRectangle::new(U10_2::from_u32(0), U10_2::from_u32(0), U10_2::from_usize(8), U10_2::from_usize(8));
+        let scissor = RDPRectangle::new(
+            U10_2::from_u32(0),
+            U10_2::from_u32(0),
+            U10_2::from_usize(8),
+            U10_2::from_usize(8),
+        );
         let color = ARGB8888::RED;
         let coverage_mode = CoverageMode::Zap;
         let triangle = TriangleBase::new(
-            true, 0, 0,
+            true,
+            0,
+            0,
             I12_2::from_i32(5),
             I12_2::from_i32(1),
             I12_2::from_i32(1),
@@ -268,20 +348,33 @@ impl Test for FilledTriangle1CycleRightMajor {
 pub struct FilledTriangle1CycleScissorLeft {}
 
 impl Test for FilledTriangle1CycleScissorLeft {
-    fn name(&self) -> &str { "RDP FilledTriangle 1 Cycle (scissor left)" }
+    fn name(&self) -> &str {
+        "RDP FilledTriangle 1 Cycle (scissor left)"
+    }
 
-    fn level(&self) -> Level { Level::RDPBasic }
+    fn level(&self) -> Level {
+        Level::RDPBasic
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         for left_scissor_raw_value in 0..12 {
             let left_scissor = U10_2::new_with_masked_value(left_scissor_raw_value);
-            let scissor = RDPRectangle::new(left_scissor, U10_2::from_u32(0), U10_2::from_usize(8), U10_2::from_usize(8));
+            let scissor = RDPRectangle::new(
+                left_scissor,
+                U10_2::from_u32(0),
+                U10_2::from_usize(8),
+                U10_2::from_usize(8),
+            );
             let color = ARGB8888::RED;
             let coverage_mode = CoverageMode::Zap;
             let triangle = TriangleBase::new(
-                true, 0, 0,
+                true,
+                0,
+                0,
                 I12_2::from_i32(5),
                 I12_2::from_i32(1),
                 I12_2::from_i32(1),
@@ -294,9 +387,12 @@ impl Test for FilledTriangle1CycleScissorLeft {
             );
 
             let actual = render_on_rdp::<ARGB8888, 8, 8>(&triangle, &scissor, color, coverage_mode);
-            let expected = render_on_cpu::<ARGB8888, 8, 8>(&triangle, &scissor, color, coverage_mode);
+            let expected =
+                render_on_cpu::<ARGB8888, 8, 8>(&triangle, &scissor, color, coverage_mode);
 
-            soft_assert_eq_2d_array(actual, expected, || format!("Rendered pixels with left scissor={:?}", left_scissor))?;
+            soft_assert_eq_2d_array(actual, expected, || {
+                format!("Rendered pixels with left scissor={:?}", left_scissor)
+            })?;
         }
 
         Ok(())
@@ -307,20 +403,33 @@ impl Test for FilledTriangle1CycleScissorLeft {
 pub struct FilledTriangle1CycleScissorTop {}
 
 impl Test for FilledTriangle1CycleScissorTop {
-    fn name(&self) -> &str { "RDP FilledTriangle 1 Cycle (scissor top)" }
+    fn name(&self) -> &str {
+        "RDP FilledTriangle 1 Cycle (scissor top)"
+    }
 
-    fn level(&self) -> Level { Level::RDPBasic }
+    fn level(&self) -> Level {
+        Level::RDPBasic
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         for top_scissor_raw_value in 0..12 {
             let top_scissor = U10_2::new_with_masked_value(top_scissor_raw_value);
-            let scissor = RDPRectangle::new(U10_2::from_u32(0), top_scissor, U10_2::from_usize(8), U10_2::from_usize(8));
+            let scissor = RDPRectangle::new(
+                U10_2::from_u32(0),
+                top_scissor,
+                U10_2::from_usize(8),
+                U10_2::from_usize(8),
+            );
             let color = ARGB8888::RED;
             let coverage_mode = CoverageMode::Zap;
             let triangle = TriangleBase::new(
-                true, 0, 0,
+                true,
+                0,
+                0,
                 I12_2::from_i32(5),
                 I12_2::from_i32(0),
                 I12_2::from_i32(0),
@@ -333,9 +442,12 @@ impl Test for FilledTriangle1CycleScissorTop {
             );
 
             let actual = render_on_rdp::<ARGB8888, 8, 8>(&triangle, &scissor, color, coverage_mode);
-            let expected = render_on_cpu::<ARGB8888, 8, 8>(&triangle, &scissor, color, coverage_mode);
+            let expected =
+                render_on_cpu::<ARGB8888, 8, 8>(&triangle, &scissor, color, coverage_mode);
 
-            soft_assert_eq_2d_array(actual, expected, || format!("Rendered pixels with top scissor={:?}", top_scissor))?;
+            soft_assert_eq_2d_array(actual, expected, || {
+                format!("Rendered pixels with top scissor={:?}", top_scissor)
+            })?;
         }
 
         Ok(())
@@ -345,11 +457,18 @@ impl Test for FilledTriangle1CycleScissorTop {
 fn test_right_scissor(step_by: usize) -> Result<(), String> {
     for right_scissor_raw_value in (0..32).step_by(step_by) {
         let right_scissor = U10_2::new_with_masked_value(right_scissor_raw_value);
-        let scissor = RDPRectangle::new(U10_2::from_u32(0), U10_2::from_u32(0), right_scissor, U10_2::from_usize(8));
+        let scissor = RDPRectangle::new(
+            U10_2::from_u32(0),
+            U10_2::from_u32(0),
+            right_scissor,
+            U10_2::from_usize(8),
+        );
         let color = ARGB8888::RED;
         let coverage_mode = CoverageMode::Zap;
         let triangle = TriangleBase::new(
-            true, 0, 0,
+            true,
+            0,
+            0,
             I12_2::from_i32(5),
             I12_2::from_i32(1),
             I12_2::from_i32(1),
@@ -364,7 +483,9 @@ fn test_right_scissor(step_by: usize) -> Result<(), String> {
         let actual = render_on_rdp::<ARGB8888, 8, 8>(&triangle, &scissor, color, coverage_mode);
         let expected = render_on_cpu::<ARGB8888, 8, 8>(&triangle, &scissor, color, coverage_mode);
 
-        soft_assert_eq_2d_array(actual, expected, || format!("Rendered pixels with right scissor={:?}", right_scissor))?;
+        soft_assert_eq_2d_array(actual, expected, || {
+            format!("Rendered pixels with right scissor={:?}", right_scissor)
+        })?;
     }
     Ok(())
 }
@@ -373,11 +494,17 @@ fn test_right_scissor(step_by: usize) -> Result<(), String> {
 pub struct FilledTriangle1CycleScissorRight {}
 
 impl Test for FilledTriangle1CycleScissorRight {
-    fn name(&self) -> &str { "RDP FilledTriangle 1 Cycle (scissor right)" }
+    fn name(&self) -> &str {
+        "RDP FilledTriangle 1 Cycle (scissor right)"
+    }
 
-    fn level(&self) -> Level { Level::RDPBasic }
+    fn level(&self) -> Level {
+        Level::RDPBasic
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         test_right_scissor(4)
@@ -388,11 +515,17 @@ impl Test for FilledTriangle1CycleScissorRight {
 pub struct FilledTriangle1CycleScissorRightSubPixelPrecision {}
 
 impl Test for FilledTriangle1CycleScissorRightSubPixelPrecision {
-    fn name(&self) -> &str { "RDP FilledTriangle 1 Cycle (scissor right with subpixel precision)" }
+    fn name(&self) -> &str {
+        "RDP FilledTriangle 1 Cycle (scissor right with subpixel precision)"
+    }
 
-    fn level(&self) -> Level { Level::RDPPrecise }
+    fn level(&self) -> Level {
+        Level::RDPPrecise
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         test_right_scissor(1)
@@ -402,11 +535,18 @@ impl Test for FilledTriangle1CycleScissorRightSubPixelPrecision {
 fn test_bottom_scissor(step_by: usize) -> Result<(), String> {
     for bottom_scissor_raw_value in (0..32).step_by(step_by) {
         let bottom_scissor = U10_2::new_with_masked_value(bottom_scissor_raw_value);
-        let scissor = RDPRectangle::new(U10_2::from_u32(0), U10_2::from_u32(0), U10_2::from_usize(8), bottom_scissor);
+        let scissor = RDPRectangle::new(
+            U10_2::from_u32(0),
+            U10_2::from_u32(0),
+            U10_2::from_usize(8),
+            bottom_scissor,
+        );
         let color = ARGB8888::RED;
         let coverage_mode = CoverageMode::Zap;
         let triangle = TriangleBase::new(
-            true, 0, 0,
+            true,
+            0,
+            0,
             I12_2::from_i32(5),
             I12_2::from_i32(1),
             I12_2::from_i32(1),
@@ -421,7 +561,9 @@ fn test_bottom_scissor(step_by: usize) -> Result<(), String> {
         let actual = render_on_rdp::<ARGB8888, 8, 8>(&triangle, &scissor, color, coverage_mode);
         let expected = render_on_cpu::<ARGB8888, 8, 8>(&triangle, &scissor, color, coverage_mode);
 
-        soft_assert_eq_2d_array(actual, expected, || format!("Rendered pixels with bottom scissor={:?}", bottom_scissor))?;
+        soft_assert_eq_2d_array(actual, expected, || {
+            format!("Rendered pixels with bottom scissor={:?}", bottom_scissor)
+        })?;
     }
     Ok(())
 }
@@ -430,11 +572,17 @@ fn test_bottom_scissor(step_by: usize) -> Result<(), String> {
 pub struct FilledTriangle1CycleScissorBottom {}
 
 impl Test for FilledTriangle1CycleScissorBottom {
-    fn name(&self) -> &str { "RDP FilledTriangle 1 Cycle (scissor bottom)" }
+    fn name(&self) -> &str {
+        "RDP FilledTriangle 1 Cycle (scissor bottom)"
+    }
 
-    fn level(&self) -> Level { Level::RDPBasic }
+    fn level(&self) -> Level {
+        Level::RDPBasic
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         test_bottom_scissor(4)
@@ -445,11 +593,17 @@ impl Test for FilledTriangle1CycleScissorBottom {
 pub struct FilledTriangle1CycleScissorBottomSubPixelPrecision {}
 
 impl Test for FilledTriangle1CycleScissorBottomSubPixelPrecision {
-    fn name(&self) -> &str { "RDP FilledTriangle 1 Cycle (scissor bottom with subpixel precision)" }
+    fn name(&self) -> &str {
+        "RDP FilledTriangle 1 Cycle (scissor bottom with subpixel precision)"
+    }
 
-    fn level(&self) -> Level { Level::RDPBasic }
+    fn level(&self) -> Level {
+        Level::RDPBasic
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         test_bottom_scissor(1)
@@ -459,18 +613,31 @@ impl Test for FilledTriangle1CycleScissorBottomSubPixelPrecision {
 pub struct FilledTriangle1CycleNegativeYH {}
 
 impl Test for FilledTriangle1CycleNegativeYH {
-    fn name(&self) -> &str { "RDP FilledTriangle 1 Cycle (with negative Y)" }
+    fn name(&self) -> &str {
+        "RDP FilledTriangle 1 Cycle (with negative Y)"
+    }
 
-    fn level(&self) -> Level { Level::RDPBasic }
+    fn level(&self) -> Level {
+        Level::RDPBasic
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        let scissor = RDPRectangle::new(U10_2::from_u32(0), U10_2::from_u32(0), U10_2::from_usize(8), U10_2::from_usize(8));
+        let scissor = RDPRectangle::new(
+            U10_2::from_u32(0),
+            U10_2::from_u32(0),
+            U10_2::from_usize(8),
+            U10_2::from_usize(8),
+        );
         let color = ARGB8888::RED.with_alpha(255);
         let coverage_mode = CoverageMode::Zap;
         let triangle = TriangleBase::new(
-            true, 0, 0,
+            true,
+            0,
+            0,
             I12_2::from_i32(5),
             I12_2::from_i32(3),
             I12_2::from_i32(-2),
@@ -494,18 +661,31 @@ impl Test for FilledTriangle1CycleNegativeYH {
 pub struct FilledTriangle1CycleNegativeXL {}
 
 impl Test for FilledTriangle1CycleNegativeXL {
-    fn name(&self) -> &str { "RDP FilledTriangle 1 Cycle (negative X)" }
+    fn name(&self) -> &str {
+        "RDP FilledTriangle 1 Cycle (negative X)"
+    }
 
-    fn level(&self) -> Level { Level::RDPBasic }
+    fn level(&self) -> Level {
+        Level::RDPBasic
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        let scissor = RDPRectangle::new(U10_2::from_u32(0), U10_2::from_u32(0), U10_2::from_usize(8), U10_2::from_usize(8));
+        let scissor = RDPRectangle::new(
+            U10_2::from_u32(0),
+            U10_2::from_u32(0),
+            U10_2::from_usize(8),
+            U10_2::from_usize(8),
+        );
         let color = ARGB8888::BLUE;
         let coverage_mode = CoverageMode::Zap;
         let triangle = TriangleBase::new(
-            false, 0, 0,
+            false,
+            0,
+            0,
             I12_2::from_i32(7),
             I12_2::from_i32(7),
             I12_2::from_i32(2),
@@ -518,7 +698,8 @@ impl Test for FilledTriangle1CycleNegativeXL {
         );
 
         let actual = render_on_rdp::<ARGB8888, 8, 8>(&triangle, &scissor, color, coverage_mode);
-        let expected = render_on_cpu::<ARGB8888, 8, 8>(&triangle, &scissor, ARGB8888::BLUE, coverage_mode);
+        let expected =
+            render_on_cpu::<ARGB8888, 8, 8>(&triangle, &scissor, ARGB8888::BLUE, coverage_mode);
 
         soft_assert_eq_2d_array(actual, expected, || format!("Rendered pixels"))?;
 
@@ -529,16 +710,27 @@ impl Test for FilledTriangle1CycleNegativeXL {
 pub struct FilledTriangle1CycleRandomized {}
 
 impl Test for FilledTriangle1CycleRandomized {
-    fn name(&self) -> &str { "RDP FilledTriangle 1 Cycle (randomized)" }
+    fn name(&self) -> &str {
+        "RDP FilledTriangle 1 Cycle (randomized)"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut random = Rand32::new(0);
         for _ in 0..100 {
-            let scissor = RDPRectangle::new(U10_2::from_u32(0), U10_2::from_u32(0), U10_2::from_usize(8), U10_2::from_usize(8));
+            let scissor = RDPRectangle::new(
+                U10_2::from_u32(0),
+                U10_2::from_u32(0),
+                U10_2::from_usize(8),
+                U10_2::from_usize(8),
+            );
             let color = ARGB8888::BLUE;
             let coverage_mode = CoverageMode::Zap;
             // For very large y range, weird effects happen that aren't understood. Don't include them in the random set yet
@@ -558,21 +750,29 @@ impl Test for FilledTriangle1CycleRandomized {
             let xm = I16_16::new_with_raw_value(x_min + (random.rand_range(0..x_range) as i32));
             let xl = I16_16::new_with_raw_value(x_min + (random.rand_range(0..x_range) as i32));
             let triangle = TriangleBase::new(
-                (random.rand_u32() & 1) != 0, 0, 0,
-                yl, ym, yh,
-                xl, xm, xh,
+                (random.rand_u32() & 1) != 0,
+                0,
+                0,
+                yl,
+                ym,
+                yh,
+                xl,
+                xm,
+                xh,
                 I16_16::from_i32(0),
                 I16_16::from_i32(0),
                 I16_16::from_i32(0),
             );
 
             let actual = render_on_rdp::<ARGB8888, 8, 8>(&triangle, &scissor, color, coverage_mode);
-            let expected = render_on_cpu::<ARGB8888, 8, 8>(&triangle, &scissor, color, coverage_mode);
+            let expected =
+                render_on_cpu::<ARGB8888, 8, 8>(&triangle, &scissor, color, coverage_mode);
 
-            soft_assert_eq_2d_array(actual, expected, || format!("Rendered pixels for {:?}", triangle))?;
+            soft_assert_eq_2d_array(actual, expected, || {
+                format!("Rendered pixels for {:?}", triangle)
+            })?;
         }
 
         Ok(())
     }
 }
-

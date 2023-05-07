@@ -4,12 +4,12 @@ use alloc::vec::Vec;
 use core::any::Any;
 
 use crate::rsp::rsp::RSP;
-use crate::rsp::rsp_assembler::{GPR, RSPAssembler};
+use crate::rsp::rsp_assembler::{RSPAssembler, GPR};
 use crate::rsp::spmem::SPMEM;
-use crate::tests::{Level, Test};
 use crate::tests::soft_asserts::soft_assert_eq;
+use crate::tests::{Level, Test};
 
-fn test<F: Fn(&mut RSPAssembler,GPR,GPR,GPR)>(write_add: F) -> Result<(), String> {
+fn test<F: Fn(&mut RSPAssembler, GPR, GPR, GPR)>(write_add: F) -> Result<(), String> {
     let mut assembler = RSPAssembler::new(0);
 
     assembler.write_li(GPR::T0, 0x12345678);
@@ -71,31 +71,39 @@ fn test<F: Fn(&mut RSPAssembler,GPR,GPR,GPR)>(write_add: F) -> Result<(), String
 pub struct ADD {}
 
 impl Test for ADD {
-    fn name(&self) -> &str { "RSP ADD" }
+    fn name(&self) -> &str {
+        "RSP ADD"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        test(|assembler, rd, rs, rt| {
-            assembler.write_add(rd, rt, rs)
-        })
+        test(|assembler, rd, rs, rt| assembler.write_add(rd, rt, rs))
     }
 }
 
 pub struct ADDU {}
 
 impl Test for ADDU {
-    fn name(&self) -> &str { "RSP ADDU" }
+    fn name(&self) -> &str {
+        "RSP ADDU"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        test(|assembler, rd, rs, rt| {
-            assembler.write_addu(rd, rt, rs)
-        })
+        test(|assembler, rd, rs, rt| assembler.write_addu(rd, rt, rs))
     }
 }

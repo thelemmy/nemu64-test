@@ -4,10 +4,12 @@ use core::arch::asm;
 use core::fmt::{Debug, Formatter};
 use core::mem::transmute;
 use core::ops::BitOr;
+
 use bitbybit::{bitenum, bitfield};
+
 use crate::cop1::FCSRRoundingMode::{NegativeInfinity, PositiveInfinity};
 
-pub struct FConst { }
+pub struct FConst {}
 
 impl FConst {
     // Signalling NAN range (taken from https://www.doc.ic.ac.uk/~eedwards/compsys/float/nan.html).
@@ -38,10 +40,14 @@ impl FConst {
     pub const SUBNORMAL_MIN_NEGATIVE_32: f32 = unsafe { transmute::<u32, f32>(0x80000001) };
     pub const SUBNORMAL_MAX_NEGATIVE_32: f32 = unsafe { transmute::<u32, f32>(0x807fffff) };
 
-    pub const SUBNORMAL_MIN_POSITIVE_64: f64 = unsafe { transmute::<u64, f64>(0x00000000_00000001) };
-    pub const SUBNORMAL_MAX_POSITIVE_64: f64 = unsafe { transmute::<u64, f64>(0x000fffff_ffffffff) };
-    pub const SUBNORMAL_MIN_NEGATIVE_64: f64 = unsafe { transmute::<u64, f64>(0x80000000_00000001) };
-    pub const SUBNORMAL_MAX_NEGATIVE_64: f64 = unsafe { transmute::<u64, f64>(0x800fffff_ffffffff) };
+    pub const SUBNORMAL_MIN_POSITIVE_64: f64 =
+        unsafe { transmute::<u64, f64>(0x00000000_00000001) };
+    pub const SUBNORMAL_MAX_POSITIVE_64: f64 =
+        unsafe { transmute::<u64, f64>(0x000fffff_ffffffff) };
+    pub const SUBNORMAL_MIN_NEGATIVE_64: f64 =
+        unsafe { transmute::<u64, f64>(0x80000000_00000001) };
+    pub const SUBNORMAL_MAX_NEGATIVE_64: f64 =
+        unsafe { transmute::<u64, f64>(0x800fffff_ffffffff) };
 }
 
 #[bitenum(u2, exhaustive: true)]
@@ -54,26 +60,36 @@ pub enum FCSRRoundingMode {
 }
 
 impl FCSRRoundingMode {
-    pub const ALL: [FCSRRoundingMode; 4] = [FCSRRoundingMode::Nearest, FCSRRoundingMode::Zero, PositiveInfinity, NegativeInfinity];
+    pub const ALL: [FCSRRoundingMode; 4] = [
+        FCSRRoundingMode::Nearest,
+        FCSRRoundingMode::Zero,
+        PositiveInfinity,
+        NegativeInfinity,
+    ];
 }
 
 #[bitfield(u8, default: 0)]
 #[derive(PartialEq, Eq)]
 pub struct FCSRFlags {
     #[bit(4, rw)]
-    invalid_operation : bool,
+    invalid_operation: bool,
     #[bit(3, rw)]
-    division_by_zero : bool,
+    division_by_zero: bool,
     #[bit(2, rw)]
-    overflow : bool,
+    overflow: bool,
     #[bit(1, rw)]
-    underflow : bool,
+    underflow: bool,
     #[bit(0, rw)]
-    inexact_operation : bool,
+    inexact_operation: bool,
 }
 
 impl FCSRFlags {
-    pub const ALL: FCSRFlags = FCSRFlags::DEFAULT.with_invalid_operation(true).with_division_by_zero(true).with_overflow(true).with_underflow(true).with_inexact_operation(true);
+    pub const ALL: FCSRFlags = FCSRFlags::DEFAULT
+        .with_invalid_operation(true)
+        .with_division_by_zero(true)
+        .with_overflow(true)
+        .with_underflow(true)
+        .with_inexact_operation(true);
     pub const NONE: FCSRFlags = FCSRFlags::DEFAULT;
     pub const fn invert(&self) -> Self {
         FCSRFlags::DEFAULT
@@ -119,54 +135,56 @@ impl Debug for FCSRFlags {
 #[derive(PartialEq, Eq)]
 pub struct FCSR {
     #[bit(24, rw)]
-    flush_denorm_to_zero : bool,
+    flush_denorm_to_zero: bool,
 
     #[bit(23, rw)]
-    condition : bool,
+    condition: bool,
 
     #[bit(17, rw)]
-    cause_unimplemented_operation : bool,
+    cause_unimplemented_operation: bool,
 
     #[bit(16, rw)]
-    cause_invalid_operation : bool,
+    cause_invalid_operation: bool,
     #[bit(15, rw)]
-    cause_division_by_zero : bool,
+    cause_division_by_zero: bool,
     #[bit(14, rw)]
-    cause_overflow : bool,
+    cause_overflow: bool,
     #[bit(13, rw)]
-    cause_underflow : bool,
+    cause_underflow: bool,
     #[bit(12, rw)]
-    cause_inexact_operation : bool,
+    cause_inexact_operation: bool,
 
     #[bit(11, rw)]
-    enable_invalid_operation : bool,
+    enable_invalid_operation: bool,
     #[bit(10, rw)]
-    enable_division_by_zero : bool,
+    enable_division_by_zero: bool,
     #[bit(9, rw)]
-    enable_overflow : bool,
+    enable_overflow: bool,
     #[bit(8, rw)]
-    enable_underflow : bool,
+    enable_underflow: bool,
     #[bit(7, rw)]
-    enable_inexact_operation : bool,
+    enable_inexact_operation: bool,
 
     #[bit(6, rw)]
-    invalid_operation : bool,
+    invalid_operation: bool,
     #[bit(5, rw)]
-    division_by_zero : bool,
+    division_by_zero: bool,
     #[bit(4, rw)]
-    overflow : bool,
+    overflow: bool,
     #[bit(3, rw)]
-    underflow : bool,
+    underflow: bool,
     #[bit(2, rw)]
-    inexact_operation : bool,
+    inexact_operation: bool,
 
     #[bits(0..=1, rw)]
-    rounding_mode : FCSRRoundingMode,
+    rounding_mode: FCSRRoundingMode,
 }
 
 impl FCSR {
     pub const ZERO: Self = Self::new_with_raw_value(0);
-    pub const DEFAULT: Self = Self::ZERO.with_enable_invalid_operation(true).with_flush_denorm_to_zero(true);
+    pub const DEFAULT: Self = Self::ZERO
+        .with_enable_invalid_operation(true)
+        .with_flush_denorm_to_zero(true);
 
     pub const fn with_maskable_causes(self, value: FCSRFlags) -> Self {
         self.with_cause_invalid_operation(value.invalid_operation())
@@ -219,7 +237,15 @@ impl FCSR {
 
 impl Debug for FCSR {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
-        let cause_tmp = format!("{} {:?}", if self.cause_unimplemented_operation() { "unimpl " } else { "" }, self.maskable_causes());
+        let cause_tmp = format!(
+            "{} {:?}",
+            if self.cause_unimplemented_operation() {
+                "unimpl "
+            } else {
+                ""
+            },
+            self.maskable_causes()
+        );
         let cause = cause_tmp.trim_end();
 
         f.debug_struct("FCSR")
@@ -268,6 +294,5 @@ pub fn set_fcsr(value: FCSR) {
 }
 
 pub fn fcsr() -> FCSR {
-     FCSR::new_with_raw_value(cfc1::<31>())
+    FCSR::new_with_raw_value(cfc1::<31>())
 }
-

@@ -1,4 +1,5 @@
 use core::fmt::{Debug, Formatter};
+
 use arbitrary_int::u5;
 use bitbybit::bitfield;
 
@@ -93,7 +94,8 @@ impl From<RGBA5551> for ARGB8888 {
             widen_5_to_8(value.red()),
             widen_5_to_8(value.green()),
             widen_5_to_8(value.blue()),
-            if value.alpha() { 0xFF } else { 0x00 })
+            if value.alpha() { 0xFF } else { 0x00 },
+        )
     }
 }
 

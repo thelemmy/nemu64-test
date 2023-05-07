@@ -11,26 +11,40 @@ pub struct SignedFixedPoint<const DIGITS_BEFORE: usize, const DIGITS_AFTER: usiz
     raw_value: i32,
 }
 
-impl<const DIGITS_BEFORE: usize, const DIGITS_AFTER: usize> SignedFixedPoint<DIGITS_BEFORE, DIGITS_AFTER> {
+impl<const DIGITS_BEFORE: usize, const DIGITS_AFTER: usize>
+    SignedFixedPoint<DIGITS_BEFORE, DIGITS_AFTER>
+{
     const DIGITS: usize = DIGITS_BEFORE + DIGITS_AFTER;
-    const MASK: u32 = if Self::DIGITS == 32 { 0xFFFF_FFFF } else { (1u32 << Self::DIGITS) - 1 };
+    const MASK: u32 = if Self::DIGITS == 32 {
+        0xFFFF_FFFF
+    } else {
+        (1u32 << Self::DIGITS) - 1
+    };
 
-    pub const fn raw_value(&self) -> i32 { self.raw_value }
+    pub const fn raw_value(&self) -> i32 {
+        self.raw_value
+    }
 
-    pub const fn masked_value(&self) -> u32 { (self.raw_value as u32) & Self::MASK }
+    pub const fn masked_value(&self) -> u32 {
+        (self.raw_value as u32) & Self::MASK
+    }
 
     pub fn new_with_raw_value(value: i32) -> Self {
         let extra_digits: usize = 32 - Self::DIGITS;
         let sign_extended = ((value as i32) << extra_digits) >> extra_digits;
         assert!(value == sign_extended);
-        Self { raw_value: sign_extended }
+        Self {
+            raw_value: sign_extended,
+        }
     }
 
     pub const fn new_with_masked_value(value: u32) -> Self {
         assert!(value <= Self::MASK);
         let extra_digits: usize = 32 - Self::DIGITS;
         let sign_extended = ((value as i32) << extra_digits) >> extra_digits;
-        Self { raw_value: sign_extended }
+        Self {
+            raw_value: sign_extended,
+        }
     }
 
     pub fn from_i32(value: i32) -> Self {
@@ -50,13 +64,23 @@ pub struct UnsignedFixedPoint<const DIGITS_BEFORE: usize, const DIGITS_AFTER: us
     raw_value: u32,
 }
 
-impl<const DIGITS_BEFORE: usize, const DIGITS_AFTER: usize> UnsignedFixedPoint<DIGITS_BEFORE, DIGITS_AFTER> {
+impl<const DIGITS_BEFORE: usize, const DIGITS_AFTER: usize>
+    UnsignedFixedPoint<DIGITS_BEFORE, DIGITS_AFTER>
+{
     const DIGITS: usize = DIGITS_BEFORE + DIGITS_AFTER;
-    const MASK: u32 = if Self::DIGITS == 32 { 0xFFFF_FFFF } else { (1u32 << Self::DIGITS) - 1 };
+    const MASK: u32 = if Self::DIGITS == 32 {
+        0xFFFF_FFFF
+    } else {
+        (1u32 << Self::DIGITS) - 1
+    };
 
-    pub const fn raw_value(&self) -> u32 { self.raw_value }
+    pub const fn raw_value(&self) -> u32 {
+        self.raw_value
+    }
 
-    pub const fn masked_value(&self) -> u32 { self.raw_value }
+    pub const fn masked_value(&self) -> u32 {
+        self.raw_value
+    }
 
     pub const fn new_with_masked_value(value: u32) -> Self {
         assert!(value <= Self::MASK);
@@ -65,12 +89,16 @@ impl<const DIGITS_BEFORE: usize, const DIGITS_AFTER: usize> UnsignedFixedPoint<D
 
     pub const fn from_u32(value: u32) -> Self {
         assert!((value >> DIGITS_BEFORE) == 0);
-        Self { raw_value: ((value << DIGITS_AFTER) as u32) }
+        Self {
+            raw_value: ((value << DIGITS_AFTER) as u32),
+        }
     }
 
     pub const fn from_usize(value: usize) -> Self {
         assert!((value >> DIGITS_BEFORE) == 0);
-        Self { raw_value: ((value << DIGITS_AFTER) as u32) }
+        Self {
+            raw_value: ((value << DIGITS_AFTER) as u32),
+        }
     }
 
     pub fn as_f32(&self) -> f32 {
@@ -78,13 +106,17 @@ impl<const DIGITS_BEFORE: usize, const DIGITS_AFTER: usize> UnsignedFixedPoint<D
     }
 }
 
-impl<const DIGITS_BEFORE: usize, const DIGITS_AFTER: usize> Debug for SignedFixedPoint<DIGITS_BEFORE, DIGITS_AFTER> {
+impl<const DIGITS_BEFORE: usize, const DIGITS_AFTER: usize> Debug
+    for SignedFixedPoint<DIGITS_BEFORE, DIGITS_AFTER>
+{
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
         Debug::fmt(&self.as_f32(), f)
     }
 }
 
-impl<const DIGITS_BEFORE: usize, const DIGITS_AFTER: usize> Debug for UnsignedFixedPoint<DIGITS_BEFORE, DIGITS_AFTER> {
+impl<const DIGITS_BEFORE: usize, const DIGITS_AFTER: usize> Debug
+    for UnsignedFixedPoint<DIGITS_BEFORE, DIGITS_AFTER>
+{
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
         Debug::fmt(&self.as_f32(), f)
     }

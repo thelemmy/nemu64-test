@@ -12,7 +12,6 @@ fn pi_wait() {
     while pi::is_io_busy() {}
 }
 
-
 // This method simply prints text without synchronization. This should only be used from within
 // the exception handler which can't wait for a lock
 pub fn text_out(s: &str) {

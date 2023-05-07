@@ -56,7 +56,7 @@ fn append_stress_tests(_target: &mut Vec<Box<dyn Test>>) {
 
 #[cfg(feature = "quick")]
 fn default_tests() -> Vec<Box<dyn Test>> {
-    vec! {
+    vec![
         // This should be the overall first test
         Box::new(super::startup::StartupTest {}),
         Box::new(super::address_error_exception::UnalignedLW {}),
@@ -461,7 +461,9 @@ fn default_tests() -> Vec<Box<dyn Test>> {
         Box::new(super::cache::dcache::WriteBackSW {}),
         Box::new(super::cache::dcache::WriteBackSD {}),
         Box::new(super::cache::dcache::WriteBackCacheDataIndexWriteBackInvalidate {}),
-        Box::new(super::cache::dcache::WriteBackCacheDataIndexWriteBackInvalidateUncachedAddress {}),
+        Box::new(
+            super::cache::dcache::WriteBackCacheDataIndexWriteBackInvalidateUncachedAddress {},
+        ),
         Box::new(super::cache::dcache::WriteBackCacheDataIndexWriteBackInvalidateNextBlock {}),
         Box::new(super::cache::dcache::DataCacheIndexLoadTag {}),
         Box::new(super::cache::dcache::DataCacheHitWriteBackInvalidate {}),
@@ -710,7 +712,6 @@ fn default_tests() -> Vec<Box<dyn Test>> {
         Box::new(super::pif_memory::SB3 {}),
         Box::new(super::pif_memory::LB {}),
         Box::new(super::pif_memory::LH {}),
-
         Box::new(super::timing::RepeatedMFC0Count {}),
         Box::new(super::timing::HalfCycleExactCalibration {}),
         Box::new(super::timing::PreciseMeasureJustNOPs {}),
@@ -723,20 +724,17 @@ fn default_tests() -> Vec<Box<dyn Test>> {
         Box::new(super::timing::CPURegisterDependency {}),
         Box::new(super::timing::COP1RegisterDependency {}),
         Box::new(super::timing::LikelyBranchCycleCount {}),
-
         Box::new(super::timing::cache::CacheSizeTest {}),
         Box::new(super::timing::cache::LoadMissVIEnabled {}),
         Box::new(super::timing::cache::LoadMissVIDisabled {}),
         Box::new(super::timing::cache::LoadFromUncachedVIEnabled {}),
         Box::new(super::timing::cache::LoadFromUncachedVIDisabled {}),
-
         Box::new(super::rdp::StartAndEndMasking {}),
         Box::new(super::rdp::StartIsValidFlag {}),
         Box::new(super::rdp::StatusFlagsDuringRun {}),
         Box::new(super::rdp::RunFromDMEM {}),
         Box::new(super::rdp::RunFromDMEMEnd {}),
         Box::new(super::rdp::RunFromDMEMOverflow {}),
-
         // The following are disabled for the time being as they are not stable on hardware yet
         // Box::new(super::rdp::filled_triangle::FilledTriangle1CycleDegenerateRect {}),
         // Box::new(super::rdp::filled_triangle::FilledTriangle1CycleRightMajorFlatTop {}),
@@ -750,7 +748,6 @@ fn default_tests() -> Vec<Box<dyn Test>> {
         // Box::new(super::rdp::filled_triangle::FilledTriangle1CycleNegativeYH {}),
         // Box::new(super::rdp::filled_triangle::FilledTriangle1CycleNegativeXL {}),
         // Box::new(super::rdp::filled_triangle::FilledTriangle1CycleRandomized {}),
-
         Box::new(super::rdram::LWL {}),
         Box::new(super::rdram::LWR {}),
         Box::new(super::rdram::LDL {}),
@@ -826,7 +823,6 @@ fn default_tests() -> Vec<Box<dyn Test>> {
         Box::new(super::rsp::op_shifts::SRLVWithShiftAmountOverwrite {}),
         Box::new(super::rsp::op_shifts::SRAV {}),
         Box::new(super::rsp::op_shifts::SRAVWithShiftAmountOverwrite {}),
-
         // RSP Vector Store instructions
         Box::new(super::rsp::op_vector_stores::SBV {}),
         Box::new(super::rsp::op_vector_stores::SSV {}),
@@ -840,7 +836,6 @@ fn default_tests() -> Vec<Box<dyn Test>> {
         Box::new(super::rsp::op_vector_stores::SFV {}),
         Box::new(super::rsp::op_vector_stores::SWV {}),
         Box::new(super::rsp::op_vector_stores::STV {}),
-
         // RSP Vector Load instructions
         Box::new(super::rsp::op_cfc2_ctc2::CTC2CFC2 {}),
         Box::new(super::rsp::op_cfc2_ctc2::CFC2WeirdIndexes {}),
@@ -867,7 +862,6 @@ fn default_tests() -> Vec<Box<dyn Test>> {
         Box::new(super::rsp::op_vector_loads::LFV {}),
         Box::new(super::rsp::op_vector_loads::LWV {}),
         Box::new(super::rsp::op_vector_loads::LTV {}),
-
         // Other vector instructions
         Box::new(super::rsp::op_vector_arithmetic::VADD {}),
         Box::new(super::rsp::op_vector_arithmetic::VSUB {}),
@@ -1008,7 +1002,6 @@ fn default_tests() -> Vec<Box<dyn Test>> {
         Box::new(super::sp_memory::dma::SPDMAIntoDMEMWithOverflow {}),
         Box::new(super::sp_memory::dma::SPDMAIntoIMEMUntilEnd {}),
         Box::new(super::sp_memory::dma::SPDMAIntoIMEMWithOverflow {}),
-
         Box::new(super::tlb::WiredRandom {}),
         Box::new(super::tlb::WiredOutOfBoundsRandom {}),
         Box::new(super::tlb::WriteRandomExpectIgnored {}),
@@ -1069,15 +1062,14 @@ fn default_tests() -> Vec<Box<dyn Test>> {
         Box::new(super::traps::TLTIU {}),
         Box::new(super::traps::delay::TNEDelay1 {}),
         Box::new(super::traps::delay::TNEDelay2 {}),
-
         // This should be the overall last test
         Box::new(super::startup::TearDownTest {}),
-    }
+    ]
 }
 
 #[cfg(not(feature = "quick"))]
 fn default_tests() -> Vec<Box<dyn Test>> {
-    vec! {}
+    vec![]
 }
 
 /// Returns a list of tests to be performed.

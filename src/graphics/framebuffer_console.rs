@@ -22,10 +22,15 @@ impl<'a> FramebufferConsole {
     const MAX_CHARS: usize = 10_000;
 
     const fn new() -> Self {
-        Self { contents: String::new(), is_full: false }
+        Self {
+            contents: String::new(),
+            is_full: false,
+        }
     }
 
-    pub fn instance() -> &'static Spinlock<FramebufferConsole> { &INSTANCE }
+    pub fn instance() -> &'static Spinlock<FramebufferConsole> {
+        &INSTANCE
+    }
 
     /// Prepends the given string, even if the console is considered full
     pub fn prepend(&mut self, str: &str) {

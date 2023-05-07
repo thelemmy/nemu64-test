@@ -1,22 +1,49 @@
 use core::iter::Step;
 use core::mem::transmute;
 use core::ops::RangeInclusive;
+
 use arbitrary_int::u5;
 use bitbybit::bitenum;
 
 use crate::rsp::dmem_writer::DMEMWriter;
 
-// @formatter:off
 #[allow(dead_code)]
 #[repr(u8)]
 #[derive(Copy, Clone, PartialOrd, PartialEq, Eq)]
 pub enum GPR {
-    R0 = 0, AT = 1, V0 = 2, V1 = 3, A0 = 4, A1 = 5, R2 = 6, R3 = 7,
-    T0 = 8, T1 = 9, T2 = 10, T3 = 11, T4 = 12, T5 = 13, T6 = 14, T7 = 15,
-    S0 = 16, S1 = 17, S2 = 18, S3 = 19, S4 = 20, S5 = 21, S6 = 22, S7 = 23,
-    T8 = 24, T9 = 25, K0 = 26, K1 = 27, GP = 28, SP = 29, S8 = 30, RA = 31,
+    R0 = 0,
+    AT = 1,
+    V0 = 2,
+    V1 = 3,
+    A0 = 4,
+    A1 = 5,
+    R2 = 6,
+    R3 = 7,
+    T0 = 8,
+    T1 = 9,
+    T2 = 10,
+    T3 = 11,
+    T4 = 12,
+    T5 = 13,
+    T6 = 14,
+    T7 = 15,
+    S0 = 16,
+    S1 = 17,
+    S2 = 18,
+    S3 = 19,
+    S4 = 20,
+    S5 = 21,
+    S6 = 22,
+    S7 = 23,
+    T8 = 24,
+    T9 = 25,
+    K0 = 26,
+    K1 = 27,
+    GP = 28,
+    SP = 29,
+    S8 = 30,
+    RA = 31,
 }
-// @formatter:on
 
 impl GPR {
     pub const fn from_index(index: usize) -> Option<Self> {
@@ -46,17 +73,43 @@ impl Step for GPR {
     }
 }
 
-// @formatter:off
 #[bitenum(u5, exhaustive: true)]
 #[allow(dead_code)]
 #[derive(Debug, PartialOrd, PartialEq, Eq)]
 pub enum VR {
-    V0 = 0, V1 = 1, V2 = 2, V3 = 3, V4 = 4, V5 = 5, V6 = 6, V7 = 7,
-    V8 = 8, V9 = 9, V10 = 10, V11 = 11, V12 = 12, V13 = 13, V14 = 14, V15 = 15,
-    V16 = 16, V17 = 17, V18 = 18, V19 = 19, V20 = 20, V21 = 21, V22 = 22, V23 = 23,
-    V24 = 24, V25 = 25, V26 = 26, V27 = 27, V28 = 28, V29 = 29, V30 = 30, V31 = 31,
+    V0 = 0,
+    V1 = 1,
+    V2 = 2,
+    V3 = 3,
+    V4 = 4,
+    V5 = 5,
+    V6 = 6,
+    V7 = 7,
+    V8 = 8,
+    V9 = 9,
+    V10 = 10,
+    V11 = 11,
+    V12 = 12,
+    V13 = 13,
+    V14 = 14,
+    V15 = 15,
+    V16 = 16,
+    V17 = 17,
+    V18 = 18,
+    V19 = 19,
+    V20 = 20,
+    V21 = 21,
+    V22 = 22,
+    V23 = 23,
+    V24 = 24,
+    V25 = 25,
+    V26 = 26,
+    V27 = 27,
+    V28 = 28,
+    V29 = 29,
+    V30 = 30,
+    V31 = 31,
 }
-// @formatter:on
 
 impl VR {
     pub const fn from_index(index: usize) -> Option<Self> {
@@ -90,20 +143,32 @@ impl Step for VR {
     }
 }
 
-// @formatter:off
 #[allow(dead_code)]
 #[repr(u8)]
 #[derive(Debug, Copy, Clone, PartialOrd, PartialEq, Eq)]
 pub enum Element {
-    All = 0, All1 = 1,
-    Q0 = 2, Q1 = 3,
-    H0 = 4, H1 = 5, H2 = 6, H3 = 7,
-    _0 = 8, _1 = 9, _2 = 10, _3 = 11, _4 = 12, _5 = 13, _6 = 14, _7 = 15,
+    All = 0,
+    All1 = 1,
+    Q0 = 2,
+    Q1 = 3,
+    H0 = 4,
+    H1 = 5,
+    H2 = 6,
+    H3 = 7,
+    _0 = 8,
+    _1 = 9,
+    _2 = 10,
+    _3 = 11,
+    _4 = 12,
+    _5 = 13,
+    _6 = 14,
+    _7 = 15,
 }
-// @formatter:on
 
 impl Element {
-    pub fn range() -> RangeInclusive<Element> { Self::All..=Self::_7 }
+    pub fn range() -> RangeInclusive<Element> {
+        Self::All..=Self::_7
+    }
     pub const fn from_index(index: usize) -> Option<Self> {
         if index <= 15 {
             Some(unsafe { transmute(index as u8) })
@@ -113,8 +178,12 @@ impl Element {
     }
 
     pub fn get_effective_element_index(&self, index: usize) -> usize {
-        const fn q(n: usize) -> [usize; 8] { [n, n, n + 2, n + 2, n + 4, n + 4, n + 6, n + 6] }
-        const fn h(n: usize) -> [usize; 8] { [n, n, n, n, n + 4, n + 4, n + 4, n + 4] }
+        const fn q(n: usize) -> [usize; 8] {
+            [n, n, n + 2, n + 2, n + 4, n + 4, n + 6, n + 6]
+        }
+        const fn h(n: usize) -> [usize; 8] {
+            [n, n, n, n, n + 4, n + 4, n + 4, n + 4]
+        }
         const EFFECTIVE_INDEX: [[usize; 8]; 16] = [
             [0, 1, 2, 3, 4, 5, 6, 7],
             [0, 1, 2, 3, 4, 5, 6, 7],
@@ -156,16 +225,27 @@ impl Step for Element {
     }
 }
 
-
-// @formatter:off
 #[allow(dead_code)]
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum E {
-    _0 = 0, _1 = 1, _2 = 2, _3 = 3, _4 = 4, _5=5, _6=6, _7=7,
-    _8 = 8, _9 = 9, _10 = 10, _11 = 11, _12 = 12, _13 = 13, _14 = 14, _15 = 15,
+    _0 = 0,
+    _1 = 1,
+    _2 = 2,
+    _3 = 3,
+    _4 = 4,
+    _5 = 5,
+    _6 = 6,
+    _7 = 7,
+    _8 = 8,
+    _9 = 9,
+    _10 = 10,
+    _11 = 11,
+    _12 = 12,
+    _13 = 13,
+    _14 = 14,
+    _15 = 15,
 }
-// @formatter:on
 
 impl E {
     pub const fn from_index(i: usize) -> Option<Self> {
@@ -199,105 +279,216 @@ impl Step for E {
     }
 }
 
-
-// @formatter:off
 #[allow(dead_code)]
 #[repr(u8)]
 enum OP {
-    SPECIAL = 0, REGIMM = 1, J = 2, JAL = 3, BEQ = 4, BNE = 5, BLEZ = 6, BGTZ = 7,
-    ADDI = 8, ADDIU = 9, SLTI = 10, SLTIU = 11, ANDI = 12, ORI = 13, XORI = 14, LUI = 15,
-    COP0 = 16, COP2 = 18,
-    LB = 32, LH = 33, LW = 35, LBU = 36, LHU = 37, LWU = 39, SB = 40, SH = 41, SW = 43,
-    LWC2 = 50, SWC2 = 58,
+    SPECIAL = 0,
+    REGIMM = 1,
+    J = 2,
+    JAL = 3,
+    BEQ = 4,
+    BNE = 5,
+    BLEZ = 6,
+    BGTZ = 7,
+    ADDI = 8,
+    ADDIU = 9,
+    SLTI = 10,
+    SLTIU = 11,
+    ANDI = 12,
+    ORI = 13,
+    XORI = 14,
+    LUI = 15,
+    COP0 = 16,
+    COP2 = 18,
+    LB = 32,
+    LH = 33,
+    LW = 35,
+    LBU = 36,
+    LHU = 37,
+    LWU = 39,
+    SB = 40,
+    SH = 41,
+    SW = 43,
+    LWC2 = 50,
+    SWC2 = 58,
 }
-// @formatter:on
 
-// @formatter:off
 #[allow(dead_code)]
 #[repr(u8)]
 enum SpecialOP {
-    SLL = 0, SRL = 2, SRA = 3, SLLV = 4, SRLV = 6, SRAV = 7,
-    JR = 8, JALR = 9,
+    SLL = 0,
+    SRL = 2,
+    SRA = 3,
+    SLLV = 4,
+    SRLV = 6,
+    SRAV = 7,
+    JR = 8,
+    JALR = 9,
     BREAK = 13,
-    ADD = 32, ADDU = 33, SUB = 34, SUBU = 35,
-    AND = 36, OR = 37, XOR = 38, NOR = 39,
-    SLT = 42, SLTU = 43,
+    ADD = 32,
+    ADDU = 33,
+    SUB = 34,
+    SUBU = 35,
+    AND = 36,
+    OR = 37,
+    XOR = 38,
+    NOR = 39,
+    SLT = 42,
+    SLTU = 43,
 }
-// @formatter:on
 
-// @formatter:off
 #[allow(dead_code)]
 #[repr(u8)]
 enum RegimmOP {
-    BLTZ = 0, BGEZ = 1, BLTZAL = 16, BGEZAL = 17,
+    BLTZ = 0,
+    BGEZ = 1,
+    BLTZAL = 16,
+    BGEZAL = 17,
 }
-// @formatter:on
 
-// @formatter:off
 #[allow(dead_code)]
 #[repr(u8)]
 enum CP0OP {
-    MFC0 = 0, MTC0 = 4,
+    MFC0 = 0,
+    MTC0 = 4,
 }
-// @formatter:on
 
-// @formatter:off
 #[allow(dead_code)]
 #[repr(u8)]
 pub enum CP0Register {
-    SPAddress = 0, DRAMAddress = 1, ReadLength = 2, WriteLength = 3, SPStatus = 4, DmaFull = 5, DmaBusy = 6, Semaphore = 7,
-    DPStart = 8, DPEnd = 9, DPStatus = 11, DPClock = 12
+    SPAddress = 0,
+    DRAMAddress = 1,
+    ReadLength = 2,
+    WriteLength = 3,
+    SPStatus = 4,
+    DmaFull = 5,
+    DmaBusy = 6,
+    Semaphore = 7,
+    DPStart = 8,
+    DPEnd = 9,
+    DPStatus = 11,
+    DPClock = 12,
 }
-// @formatter:on
 
-// @formatter:off
 #[allow(dead_code)]
 #[repr(u8)]
 enum WC2OP {
-    B = 0, S = 1, L = 2, D = 3, Q = 4, R = 5, P = 6, U = 7, H = 8, F = 9, W = 10, T = 11,
+    B = 0,
+    S = 1,
+    L = 2,
+    D = 3,
+    Q = 4,
+    R = 5,
+    P = 6,
+    U = 7,
+    H = 8,
+    F = 9,
+    W = 10,
+    T = 11,
 }
-// @formatter:on
 
-// @formatter:off
 #[allow(dead_code)]
 #[repr(u8)]
 enum CP2OP {
-    MFC2 = 0, CFC2 = 2, MTC2 = 4, CTC2 = 6, VECTOR = 16,
+    MFC2 = 0,
+    CFC2 = 2,
+    MTC2 = 4,
+    CTC2 = 6,
+    VECTOR = 16,
 }
-// @formatter:on
 
-// @formatter:off
 #[bitenum(u5, exhaustive: false)]
 pub enum CP2FlagsRegister {
-    VCO = 0, VCC = 1, VCE = 2
+    VCO = 0,
+    VCC = 1,
+    VCE = 2,
 }
-// @formatter:on
 
-// @formatter:off
 #[allow(dead_code)]
 #[repr(u8)]
 enum VectorOp {
-    VMULF = 0, VMULU = 1, VRNDP = 2, VMULQ = 3, VMUDL = 4, VMUDM = 5, VMUDN = 6, VMUDH = 7, VMACF = 8, VMACU = 9, VRNDN = 10, VMACQ = 11, VMADL = 12, VMADM = 13, VMADN = 14, VMADH = 15,
-    VADD = 16, VSUB = 17, VSUT = 18, VABS = 19, VADDC = 20, VSUBC = 21, VADDB = 22, VSUBB = 23, VACCB = 24, VSUCB = 25, VSAD = 26, VSAC = 27, VSUM = 28, VSAR = 29, V30 = 30, V31 = 31,
-    VLT = 32, VEQ = 33, VNE = 34, VGE = 35, VCL = 36, VCH = 37, VCR = 38, VMRG = 39, VAND = 40, VNAND = 41, VOR = 42, VNOR = 43, VXOR = 44, VNXOR = 45, V46 = 46, V47 = 47,
-    VRCP = 48, VRCPL = 49, VRCPH = 50, VMOV = 51, VRSQ = 52, VRSQL = 53, VRSQH = 54, VNOP = 55, VEXTT = 56, VEXTQ = 57, VEXTN = 58, V59 = 59, VINST = 60, VINSQ = 61, VINSN = 62, VNULL = 63,
+    VMULF = 0,
+    VMULU = 1,
+    VRNDP = 2,
+    VMULQ = 3,
+    VMUDL = 4,
+    VMUDM = 5,
+    VMUDN = 6,
+    VMUDH = 7,
+    VMACF = 8,
+    VMACU = 9,
+    VRNDN = 10,
+    VMACQ = 11,
+    VMADL = 12,
+    VMADM = 13,
+    VMADN = 14,
+    VMADH = 15,
+    VADD = 16,
+    VSUB = 17,
+    VSUT = 18,
+    VABS = 19,
+    VADDC = 20,
+    VSUBC = 21,
+    VADDB = 22,
+    VSUBB = 23,
+    VACCB = 24,
+    VSUCB = 25,
+    VSAD = 26,
+    VSAC = 27,
+    VSUM = 28,
+    VSAR = 29,
+    V30 = 30,
+    V31 = 31,
+    VLT = 32,
+    VEQ = 33,
+    VNE = 34,
+    VGE = 35,
+    VCL = 36,
+    VCH = 37,
+    VCR = 38,
+    VMRG = 39,
+    VAND = 40,
+    VNAND = 41,
+    VOR = 42,
+    VNOR = 43,
+    VXOR = 44,
+    VNXOR = 45,
+    V46 = 46,
+    V47 = 47,
+    VRCP = 48,
+    VRCPL = 49,
+    VRCPH = 50,
+    VMOV = 51,
+    VRSQ = 52,
+    VRSQL = 53,
+    VRSQH = 54,
+    VNOP = 55,
+    VEXTT = 56,
+    VEXTQ = 57,
+    VEXTN = 58,
+    V59 = 59,
+    VINST = 60,
+    VINSQ = 61,
+    VINSN = 62,
+    VNULL = 63,
 }
-// @formatter:on
 
-// @formatter:off
 #[allow(dead_code)]
 #[repr(u8)]
 pub enum VSARAccumulator {
-    High = 8, Mid = 9, Low = 10
+    High = 8,
+    Mid = 9,
+    Low = 10,
 }
-// @formatter:on
 
 pub struct RSMAssemblerJumpTarget {
     offset: usize,
 }
 
 impl RSMAssemblerJumpTarget {
-    pub fn new(offset: usize) -> Self { Self { offset } }
+    pub fn new(offset: usize) -> Self {
+        Self { offset }
+    }
 }
 
 pub struct RSPAssembler {
@@ -307,10 +498,14 @@ pub struct RSPAssembler {
 impl RSPAssembler {
     pub const fn new(start_offset: usize) -> Self {
         // IMEM starts at 0x1000
-        Self { writer: DMEMWriter::new(start_offset) }
+        Self {
+            writer: DMEMWriter::new(start_offset),
+        }
     }
 
-    pub fn writer(&self) -> &DMEMWriter { &self.writer }
+    pub fn writer(&self) -> &DMEMWriter {
+        &self.writer
+    }
 
     pub fn get_jump_target(&self) -> RSMAssemblerJumpTarget {
         RSMAssemblerJumpTarget::new(self.writer.offset())
@@ -318,91 +513,85 @@ impl RSPAssembler {
 
     fn write_main_immediate(&mut self, op: OP, rt: GPR, rs: GPR, imm: u16) {
         let instruction: u32 =
-            (imm as u32) |
-                ((rt as u32) << 16) |
-                ((rs as u32) << 21) |
-                ((op as u32) << 26);
+            (imm as u32) | ((rt as u32) << 16) | ((rs as u32) << 21) | ((op as u32) << 26);
         self.writer.write(instruction);
     }
 
     fn write_main_jump(&mut self, op: OP, jump_target_shifted_by_2: u32) {
         assert!(jump_target_shifted_by_2 < (1 << 26));
-        let instruction: u32 =
-            jump_target_shifted_by_2 |
-                ((op as u32) << 26);
+        let instruction: u32 = jump_target_shifted_by_2 | ((op as u32) << 26);
         self.writer.write(instruction);
     }
 
     fn write_special(&mut self, function: SpecialOP, sa: u5, rd: GPR, rs: GPR, rt: GPR) {
-        self.writer.write((function as u32) |
-            (((sa.value()) as u32) << 6) |
-            ((rd as u32) << 11) |
-            ((rt as u32) << 16) |
-            ((rs as u32) << 21) |
-            ((OP::SPECIAL as u32) << 26));
+        self.writer.write(
+            (function as u32)
+                | (((sa.value()) as u32) << 6)
+                | ((rd as u32) << 11)
+                | ((rt as u32) << 16)
+                | ((rs as u32) << 21)
+                | ((OP::SPECIAL as u32) << 26),
+        );
     }
 
     fn write_regimm(&mut self, regimm_op: RegimmOP, rs: GPR, imm: u16) {
-        self.writer.write((imm as u32) |
-            ((regimm_op as u32) << 16) |
-            ((rs as u32) << 21) |
-            ((OP::REGIMM as u32) << 26));
+        self.writer.write(
+            (imm as u32)
+                | ((regimm_op as u32) << 16)
+                | ((rs as u32) << 21)
+                | ((OP::REGIMM as u32) << 26),
+        );
     }
 
     fn write_cop0(&mut self, cp0op: CP0OP, cp0register: CP0Register, rt: GPR) {
-        let instruction: u32 =
-            ((cp0register as u32) << 11) |
-                ((rt as u32) << 16) |
-                ((cp0op as u32) << 21) |
-                ((OP::COP0 as u32) << 26);
+        let instruction: u32 = ((cp0register as u32) << 11)
+            | ((rt as u32) << 16)
+            | ((cp0op as u32) << 21)
+            | ((OP::COP0 as u32) << 26);
         self.writer.write(instruction);
     }
 
     fn write_wc2(&mut self, op: OP, wc2op: WC2OP, vt: VR, element: E, imm7: i32, base: GPR) {
         assert!(imm7 <= 63 && imm7 >= -64);
-        let instruction: u32 =
-            ((imm7 as u32) & 0b111_1111) |
-                ((element as u32) << 7) |
-                ((wc2op as u32) << 11) |
-                ((vt as u32) << 16) |
-                ((base as u32) << 21) |
-                ((op as u32) << 26);
+        let instruction: u32 = ((imm7 as u32) & 0b111_1111)
+            | ((element as u32) << 7)
+            | ((wc2op as u32) << 11)
+            | ((vt as u32) << 16)
+            | ((base as u32) << 21)
+            | ((op as u32) << 26);
         self.writer.write(instruction);
     }
 
     fn write_cop2(&mut self, cp2op: CP2OP, rd: u5, rt: GPR, e: E) {
-        let instruction: u32 =
-            ((e as u32) << 7) |
-                ((rd.value() as u32) << 11) |
-                ((rt as u32) << 16) |
-                ((cp2op as u32) << 21) |
-                ((OP::COP2 as u32) << 26);
+        let instruction: u32 = ((e as u32) << 7)
+            | ((rd.value() as u32) << 11)
+            | ((rt as u32) << 16)
+            | ((cp2op as u32) << 21)
+            | ((OP::COP2 as u32) << 26);
         self.writer.write(instruction);
     }
 
     fn write_vector(&mut self, vector_op: VectorOp, vd: VR, vt: VR, vs: VR, e: Element) {
         // CP2OP::VECTOR has a bunch of 0 bits at the bottom, which are being reused for e. That explains the strange encoding
-        let instruction: u32 =
-            (vector_op as u32) |
-                ((vd as u32) << 6) |
-                ((vs as u32) << 11) |
-                ((vt as u32) << 16) |
-                ((e as u32) << 21) |
-                ((CP2OP::VECTOR as u32) << 21) |
-                ((OP::COP2 as u32) << 26);
+        let instruction: u32 = (vector_op as u32)
+            | ((vd as u32) << 6)
+            | ((vs as u32) << 11)
+            | ((vt as u32) << 16)
+            | ((e as u32) << 21)
+            | ((CP2OP::VECTOR as u32) << 21)
+            | ((OP::COP2 as u32) << 26);
         self.writer.write(instruction);
     }
 
     fn write_vector_e(&mut self, vector_op: VectorOp, vd: VR, vt: VR, vs: VR, e: E) {
         // CP2OP::VECTOR has a bunch of 0 bits at the bottom, which are being reused for e. That explains the strange encoding
-        let instruction: u32 =
-            (vector_op as u32) |
-                ((vd as u32) << 6) |
-                ((vs as u32) << 11) |
-                ((vt as u32) << 16) |
-                ((e as u32) << 21) |
-                ((CP2OP::VECTOR as u32) << 21) |
-                ((OP::COP2 as u32) << 26);
+        let instruction: u32 = (vector_op as u32)
+            | ((vd as u32) << 6)
+            | ((vs as u32) << 11)
+            | ((vt as u32) << 16)
+            | ((e as u32) << 21)
+            | ((CP2OP::VECTOR as u32) << 21)
+            | ((OP::COP2 as u32) << 26);
         self.writer.write(instruction);
     }
 
@@ -980,7 +1169,7 @@ impl RSPAssembler {
     }
 
     pub fn write_vsar(&mut self, vd: VR, source: VSARAccumulator) {
-        self.write_vsar_any_index(vd, VR::V0, VR::V0,  E::from_index(source as usize).unwrap());
+        self.write_vsar_any_index(vd, VR::V0, VR::V0, E::from_index(source as usize).unwrap());
     }
 
     pub fn write_vsub(&mut self, vd: VR, vt: VR, vs: VR, e: Element) {

@@ -5,10 +5,10 @@ use core::any::Any;
 use core::sync::atomic::{AtomicU16, Ordering};
 
 use crate::rsp::rsp::RSP;
-use crate::rsp::rsp_assembler::{E, Element, GPR, RSPAssembler, VR, VSARAccumulator};
+use crate::rsp::rsp_assembler::{Element, RSPAssembler, VSARAccumulator, E, GPR, VR};
 use crate::rsp::spmem::SPMEM;
-use crate::tests::{Level, Test};
 use crate::tests::soft_asserts::soft_assert_eq;
+use crate::tests::{Level, Test};
 
 static COUNTER: AtomicU16 = AtomicU16::new(13);
 
@@ -16,14 +16,40 @@ fn rng() -> u16 {
     COUNTER.fetch_add(1234, Ordering::Relaxed)
 }
 
-fn run_test(e: Element, vs: VR, vt: VR, expected_result: [u16; 8], expected_acc_top: [u16; 8], expected_acc_mid: [u16; 8], expected_acc_low: [u16; 8]) -> Result<(), String> {
+fn run_test(
+    e: Element,
+    vs: VR,
+    vt: VR,
+    expected_result: [u16; 8],
+    expected_acc_top: [u16; 8],
+    expected_acc_mid: [u16; 8],
+    expected_acc_low: [u16; 8],
+) -> Result<(), String> {
     // Data to pre-set accumulator
-    SPMEM::write_vector16_into_dmem(0x00, &[0x0000, 0x0001, 0x0001, 0x7FFF, 0xFFFF, 0x7FFF, 0x3FFF, 0x8000]);
-    SPMEM::write_vector16_into_dmem(0x10, &[0x0000, 0x0001, 0xFFFF, 0xFFFF, 0xFFFF, 0x7FFF, 0x7FFF, 0x7FFF]);
+    SPMEM::write_vector16_into_dmem(
+        0x00,
+        &[
+            0x0000, 0x0001, 0x0001, 0x7FFF, 0xFFFF, 0x7FFF, 0x3FFF, 0x8000,
+        ],
+    );
+    SPMEM::write_vector16_into_dmem(
+        0x10,
+        &[
+            0x0000, 0x0001, 0xFFFF, 0xFFFF, 0xFFFF, 0x7FFF, 0x7FFF, 0x7FFF,
+        ],
+    );
 
     // Data for input. The second value is ignored, so we'll fill it with garbage
-    SPMEM::write_vector16_into_dmem(0x20, &[0x0000, 0x0001, 0x0002, 0x7FFF, 0xFFFF, 0x8000, 0x8001, 0x8002]);
-    SPMEM::write_vector16_into_dmem(0x30, &[rng(), rng(), rng(), rng(), rng(), rng(), rng(), rng()]);
+    SPMEM::write_vector16_into_dmem(
+        0x20,
+        &[
+            0x0000, 0x0001, 0x0002, 0x7FFF, 0xFFFF, 0x8000, 0x8001, 0x8002,
+        ],
+    );
+    SPMEM::write_vector16_into_dmem(
+        0x30,
+        &[rng(), rng(), rng(), rng(), rng(), rng(), rng(), rng()],
+    );
 
     // Assemble RSP program
     let mut assembler = RSPAssembler::new(0);
@@ -58,10 +84,26 @@ fn run_test(e: Element, vs: VR, vt: VR, expected_result: [u16; 8], expected_acc_
 
     RSP::run_and_wait(0);
 
-    soft_assert_eq(SPMEM::read_vector16_from_dmem(0x100), expected_result, "Result")?;
-    soft_assert_eq(SPMEM::read_vector16_from_dmem(0x110), expected_acc_top, "Acc[32..48]")?;
-    soft_assert_eq(SPMEM::read_vector16_from_dmem(0x120), expected_acc_mid, "Acc[16..32]")?;
-    soft_assert_eq(SPMEM::read_vector16_from_dmem(0x130), expected_acc_low, "Acc[0..16]")?;
+    soft_assert_eq(
+        SPMEM::read_vector16_from_dmem(0x100),
+        expected_result,
+        "Result",
+    )?;
+    soft_assert_eq(
+        SPMEM::read_vector16_from_dmem(0x110),
+        expected_acc_top,
+        "Acc[32..48]",
+    )?;
+    soft_assert_eq(
+        SPMEM::read_vector16_from_dmem(0x120),
+        expected_acc_mid,
+        "Acc[16..32]",
+    )?;
+    soft_assert_eq(
+        SPMEM::read_vector16_from_dmem(0x130),
+        expected_acc_low,
+        "Acc[0..16]",
+    )?;
 
     Ok(())
 }
@@ -69,11 +111,17 @@ fn run_test(e: Element, vs: VR, vt: VR, expected_result: [u16; 8], expected_acc_
 pub struct VRNDNWithEvenVS {}
 
 impl Test for VRNDNWithEvenVS {
-    fn name(&self) -> &str { "RSP VRNDN (even vs)" }
+    fn name(&self) -> &str {
+        "RSP VRNDN (even vs)"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         for i in (0..32).step_by(2) {
@@ -96,11 +144,17 @@ impl Test for VRNDNWithEvenVS {
 pub struct VRNDNWithOddVS {}
 
 impl Test for VRNDNWithOddVS {
-    fn name(&self) -> &str { "RSP VRNDN (odd vs)" }
+    fn name(&self) -> &str {
+        "RSP VRNDN (odd vs)"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         for i in (1..32).step_by(2) {
@@ -123,11 +177,17 @@ impl Test for VRNDNWithOddVS {
 pub struct VRNDNOverwriteItselfWithElement {}
 
 impl Test for VRNDNOverwriteItselfWithElement {
-    fn name(&self) -> &str { "RSP VRNDN (overwrite itself with element specifier)" }
+    fn name(&self) -> &str {
+        "RSP VRNDN (overwrite itself with element specifier)"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         // V2 is the output, so also use it for input
@@ -148,11 +208,17 @@ impl Test for VRNDNOverwriteItselfWithElement {
 pub struct VRNDNAccumulatorOverflowed {}
 
 impl Test for VRNDNAccumulatorOverflowed {
-    fn name(&self) -> &str { "RSP VRNDN (accumulator itself overflowed)" }
+    fn name(&self) -> &str {
+        "RSP VRNDN (accumulator itself overflowed)"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         // Prepare input data
@@ -172,7 +238,7 @@ impl Test for VRNDNAccumulatorOverflowed {
         assembler.write_vrndn(VR::V2, VR::V0, VR::V1, Element::All);
         assembler.write_addiu(GPR::A0, GPR::A0, -1);
         assembler.write_bgtz(GPR::A0, -3);
-        assembler.write_nop();  // delay
+        assembler.write_nop(); // delay
 
         assembler.write_vsar_any_index(VR::V3, VR::V0, VR::V0, E::_8);
         assembler.write_vsar_any_index(VR::V4, VR::V0, VR::V0, E::_9);
@@ -188,10 +254,26 @@ impl Test for VRNDNAccumulatorOverflowed {
         RSP::run_and_wait(0);
 
         // After first overflow
-        soft_assert_eq(SPMEM::read_vector16_from_dmem(0x100), [0, 0, 0, 0, 0, 0, 0, 0], "Result after accumulator overflow in [0]")?;
-        soft_assert_eq(SPMEM::read_vector16_from_dmem(0x110), [0, 0, 0, 0, 0, 0, 0, 0], "Acc[32..48] after accumulator overflow in [0]")?;
-        soft_assert_eq(SPMEM::read_vector16_from_dmem(0x120), [0, 0, 0, 0, 0, 0, 0, 0], "Acc[16..32] after accumulator overflow in [0]")?;
-        soft_assert_eq(SPMEM::read_vector16_from_dmem(0x130), [0, 0, 0, 0, 0, 0, 0, 0], "Acc[0..16] after accumulator overflow in [0]")?;
+        soft_assert_eq(
+            SPMEM::read_vector16_from_dmem(0x100),
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            "Result after accumulator overflow in [0]",
+        )?;
+        soft_assert_eq(
+            SPMEM::read_vector16_from_dmem(0x110),
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            "Acc[32..48] after accumulator overflow in [0]",
+        )?;
+        soft_assert_eq(
+            SPMEM::read_vector16_from_dmem(0x120),
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            "Acc[16..32] after accumulator overflow in [0]",
+        )?;
+        soft_assert_eq(
+            SPMEM::read_vector16_from_dmem(0x130),
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            "Acc[0..16] after accumulator overflow in [0]",
+        )?;
 
         Ok(())
     }

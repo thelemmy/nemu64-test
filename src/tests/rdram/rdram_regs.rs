@@ -1,25 +1,27 @@
 use alloc::boxed::Box;
-use alloc::{format, vec};
 use alloc::string::String;
 use alloc::vec::Vec;
+use alloc::{format, vec};
 use core::any::Any;
 use core::arch::asm;
+
 use crate::memory_map::MemoryMap;
-use crate::tests::{Level, Test};
 use crate::tests::soft_asserts::soft_assert_eq;
+use crate::tests::{Level, Test};
 
 pub struct Read00 {}
 
 impl Test for Read00 {
-    fn name(&self) -> &str { "rdram-regs: Read 0x00" }
+    fn name(&self) -> &str {
+        "rdram-regs: Read 0x00"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
     fn values(&self) -> Vec<Box<dyn Any>> {
-        vec!(
-            Box::new(true),
-            Box::new(false)
-        )
+        vec![Box::new(true), Box::new(false)]
     }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
@@ -68,8 +70,16 @@ impl Test for Read00 {
         soft_assert_eq(result2, 0xFFFFFFFF_b4190010, "LW from RDRAM REG (Config)")?;
         soft_assert_eq(result3, 0xFFFFFFFF_FFFFb419, "LH from RDRAM REG (Config)")?;
         soft_assert_eq(result4, 0xFFFFFFFF_FFFFFFb4, "LB from RDRAM REG (Config)")?;
-        soft_assert_eq(result5, 0x00000000_00000019, "LB from RDRAM REG (Config) (+1)")?;
-        soft_assert_eq(result6, 0x00000000_19001010, "LDL from RDRAM REG (Config) (+1)")?;
+        soft_assert_eq(
+            result5,
+            0x00000000_00000019,
+            "LB from RDRAM REG (Config) (+1)",
+        )?;
+        soft_assert_eq(
+            result6,
+            0x00000000_19001010,
+            "LDL from RDRAM REG (Config) (+1)",
+        )?;
 
         Ok(())
     }
@@ -78,11 +88,17 @@ impl Test for Read00 {
 pub struct ReadMore {}
 
 impl Test for ReadMore {
-    fn name(&self) -> &str { "rdram-regs: Read more" }
+    fn name(&self) -> &str {
+        "rdram-regs: Read more"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         fn read_next(p: &mut *const u32) -> u32 {
@@ -95,8 +111,12 @@ impl Test for ReadMore {
 
         fn expect_array(p: &mut *const u32, a: &[u32]) -> Result<(), String> {
             for i in 0..a.len() {
-                let value= read_next(p);
-                soft_assert_eq(value, a[i], format!("Reading 0x{:x}", (*p) as usize - 4).as_str())?;
+                let value = read_next(p);
+                soft_assert_eq(
+                    value,
+                    a[i],
+                    format!("Reading 0x{:x}", (*p) as usize - 4).as_str(),
+                )?;
             }
             Ok(())
         }
@@ -104,22 +124,7 @@ impl Test for ReadMore {
         // Not sure what these values are but they match what's seen on real hardware (both with
         // and without expansion pack)
         const EXPECTED_A: [u32; 16] = [
-            0xb4190010,
-            0,
-            0x2b3b1a0b,
-            0,
-            0,
-            0,
-            0x101c0a04,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
+            0xb4190010, 0, 0x2b3b1a0b, 0, 0, 0, 0x101c0a04, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         ];
 
         let mut p = MemoryMap::addr32_to_usize(0xA3F00000) as *const u32;

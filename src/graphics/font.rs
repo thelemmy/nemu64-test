@@ -25,14 +25,23 @@ impl Font<'_> {
 
         if baseline >= height ||            // is baseline within characters?
             o_bitstream < o_x_offsets + 4 || // does x_offsets array contain at least two (16 bit) entries?
-            data.len() <= o_bitstream {     // is bitstream non-empty?
+            data.len() <= o_bitstream
+        {
+            // is bitstream non-empty?
             return None;
         }
 
         let x_offsets = &data[o_x_offsets..o_bitstream];
         let bitstream = &data[o_bitstream..];
         let max_char = ((x_offsets.len() >> 1) + FIRST_CHAR_IN_FONT as usize - 2) as u8;
-        let font = Font { height, baseline, bitstream, x_offsets, bytes_per_row, max_char };
+        let font = Font {
+            height,
+            baseline,
+            bitstream,
+            x_offsets,
+            bytes_per_row,
+            max_char,
+        };
         Some(font)
     }
 
@@ -48,11 +57,18 @@ impl Font<'_> {
         c >= FIRST_CHAR_IN_FONT && c <= self.max_char
     }
 
-    pub fn draw_char<TColor: Copy + Color>(&self, image: &mut Image<TColor>, cx: u16, cy: u16, color: TColor, c: char) -> Option<u16> {
+    pub fn draw_char<TColor: Copy + Color>(
+        &self,
+        image: &mut Image<TColor>,
+        cx: u16,
+        cy: u16,
+        color: TColor,
+        c: char,
+    ) -> Option<u16> {
         if self.is_printable(c) {
             let (x0, width) = self.x_offset_width(c);
             if ((cx + width) as u32) > image.padded_width() {
-                return None
+                return None;
             }
             let mut yo = 0;
             if ((cy + self.height) as u32) < image.height() {

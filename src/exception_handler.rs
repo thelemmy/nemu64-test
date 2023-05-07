@@ -4,6 +4,7 @@ use core::ops::{Deref, DerefMut};
 
 use spinning_top::Spinlock;
 
+use super::cop0;
 use crate::cop0::{CacheOp, Cause, CauseException, Context, XContext};
 use crate::cop1::FCSR;
 use crate::graphics::color::Color;
@@ -13,8 +14,6 @@ use crate::graphics::system_font::FONT_GENEVA_9;
 use crate::graphics::vi::PixelType;
 use crate::memory_map::MemoryMap;
 use crate::VIDEO;
-
-use super::cop0;
 
 static EXCEPTION_SKIP: Spinlock<Option<u64>> = Spinlock::new(None);
 
@@ -258,7 +257,13 @@ extern "C" fn exception_handler_compiled(stackpointer: usize) -> usize {
 
     // If we got here through a software interrupt, ack it now. If both, ack both
     if context.cause.interrupt_sw1() || context.cause.interrupt_sw2() {
-        unsafe { context.cause.with_interrupt_sw1(false).with_interrupt_sw2(false).write() };
+        unsafe {
+            context
+                .cause
+                .with_interrupt_sw1(false)
+                .with_interrupt_sw2(false)
+                .write()
+        };
     }
 
     let mut guard = SEEN_EXCEPTION.lock();
@@ -266,10 +271,13 @@ extern "C" fn exception_handler_compiled(stackpointer: usize) -> usize {
     if guard.is_none() || avoid_bluescreen {
         // Skip the offending instruction(s) and return
         if skip_guard.is_some() {
-            context.return_to = context.exceptpc.wrapping_add(skip_guard.unwrap().wrapping_mul(4));
+            context.return_to = context
+                .exceptpc
+                .wrapping_add(skip_guard.unwrap().wrapping_mul(4));
         } else {
             crate::isviewer::text_out("Got unhandled exception. Attempting to continue\n");
-            context.return_to = context.exceptpc + (if context.cause.branch_delay() { 8 } else { 4 });
+            context.return_to =
+                context.exceptpc + (if context.cause.branch_delay() { 8 } else { 4 });
         }
         context.return_to = context.return_to & !0x3;
 
@@ -285,7 +293,9 @@ extern "C" fn exception_handler_compiled(stackpointer: usize) -> usize {
         return stackpointer;
     }
 
-    crate::isviewer::text_out("Got an exception but already got an exception previously. Showing bluescreen\n");
+    crate::isviewer::text_out(
+        "Got an exception but already got an exception previously. Showing bluescreen\n",
+    );
     show_bluescreen_of_death(context);
 }
 
@@ -296,11 +306,21 @@ pub fn drain_seen_exception() -> Option<(ExceptionContext, u32)> {
     result
 }
 
-pub fn expect_exception<F>(code: CauseException, skip_instructions_on_hit: u64, f: F) -> Result<ExceptionContext, alloc::string::String>
-    where F: FnOnce() -> Result<(), &'static str> {
+pub fn expect_exception<F>(
+    code: CauseException,
+    skip_instructions_on_hit: u64,
+    f: F,
+) -> Result<ExceptionContext, alloc::string::String>
+where
+    F: FnOnce() -> Result<(), &'static str>,
+{
     let guard = SEEN_EXCEPTION.lock();
     if guard.is_some() {
-        return Err(format!("Expected exception {:?} but we already previously got {:?}", code, guard.unwrap().0.cause.exception()));
+        return Err(format!(
+            "Expected exception {:?} but we already previously got {:?}",
+            code,
+            guard.unwrap().0.cause.exception()
+        ));
     }
     drop(guard);
 
@@ -318,24 +338,23 @@ pub fn expect_exception<F>(code: CauseException, skip_instructions_on_hit: u64, 
 
     let seen_exception_and_count = drain_seen_exception();
     match result {
-        Ok(_) => {
-            match seen_exception_and_count {
-                None => {
-                    Err(format!("Exception {:?} expected but none seen", code))
-                }
-                Some((context, count)) => {
-                    let actual_exception = context.cause.exception();
-                    if count != 1 {
-                        Err(format!("Expected exception {:?} but got {} exceptions, the first of which was {:?}", code, count, actual_exception))
-                    } else if actual_exception == Ok(code) {
-                        Ok(context)
-                    } else {
-                        Err(format!("Expected exception {:?} but got {:?}", code, actual_exception))
-                    }
+        Ok(_) => match seen_exception_and_count {
+            None => Err(format!("Exception {:?} expected but none seen", code)),
+            Some((context, count)) => {
+                let actual_exception = context.cause.exception();
+                if count != 1 {
+                    Err(format!("Expected exception {:?} but got {} exceptions, the first of which was {:?}", code, count, actual_exception))
+                } else if actual_exception == Ok(code) {
+                    Ok(context)
+                } else {
+                    Err(format!(
+                        "Expected exception {:?} but got {:?}",
+                        code, actual_exception
+                    ))
                 }
             }
-        }
-        Err(result) => Err(format!("{}", result))
+        },
+        Err(result) => Err(format!("{}", result)),
     }
 }
 
@@ -364,16 +383,40 @@ pub fn install_exception_handlers() {
     let size_000 = unsafe { &exception_handler_000_size as *const u8 as usize };
     let size_080 = unsafe { &exception_handler_080_size as *const u8 as usize };
     let size_180 = unsafe { &exception_handler_180_size as *const u8 as usize };
-    install_handler(exception_handler_000 as *mut u8, MemoryMap::addr32_to_usize(0x8000_0000) as *mut u8, size_000, 0x080);
-    install_handler(exception_handler_080 as *mut u8, MemoryMap::addr32_to_usize(0x8000_0080) as *mut u8, size_080, 0x100);
-    install_handler(exception_handler_180 as *mut u8, MemoryMap::addr32_to_usize(0x8000_0180) as *mut u8, size_180, 0x180);
+    install_handler(
+        exception_handler_000 as *mut u8,
+        MemoryMap::addr32_to_usize(0x8000_0000) as *mut u8,
+        size_000,
+        0x080,
+    );
+    install_handler(
+        exception_handler_080 as *mut u8,
+        MemoryMap::addr32_to_usize(0x8000_0080) as *mut u8,
+        size_080,
+        0x100,
+    );
+    install_handler(
+        exception_handler_180 as *mut u8,
+        MemoryMap::addr32_to_usize(0x8000_0180) as *mut u8,
+        size_180,
+        0x180,
+    );
 
     // Invalidate the full 8Kbytes in the Data Cache
-    invalidate_data_cache(MemoryMap::addr32_to_usize(0x8000_0000) as *const u32, 8 * 1024);
+    invalidate_data_cache(
+        MemoryMap::addr32_to_usize(0x8000_0000) as *const u32,
+        8 * 1024,
+    );
 
     // Invalidate the full 16Kbytes in the Instruction Cache
-    invalidate_instruction_cache(MemoryMap::addr32_to_usize(0x8000_0000) as *const u32, 16 * 1024);
-    invalidate_instruction_cache(MemoryMap::addr32_to_usize(0x8000_0000) as *const u32, 16 * 1024);
+    invalidate_instruction_cache(
+        MemoryMap::addr32_to_usize(0x8000_0000) as *const u32,
+        16 * 1024,
+    );
+    invalidate_instruction_cache(
+        MemoryMap::addr32_to_usize(0x8000_0000) as *const u32,
+        16 * 1024,
+    );
 }
 
 fn invalidate_instruction_cache(start: *const u32, bytes: usize) {
@@ -385,7 +428,6 @@ fn invalidate_instruction_cache(start: *const u32, bytes: usize) {
             cop0::cache::<OP, 0>((start as usize) + i);
         }
     }
-
 }
 
 fn invalidate_data_cache(start: *const u32, bytes: usize) {
@@ -397,7 +439,6 @@ fn invalidate_data_cache(start: *const u32, bytes: usize) {
             cop0::cache::<OP, 0>((start as usize) + i);
         }
     }
-
 }
 
 /// Attempts to take over video and show various cop0 registers.
@@ -421,7 +462,9 @@ fn show_bluescreen_of_death(context: &ExceptionContext) -> ! {
         cursor.draw_hex_u32(backbuffer, context.cause.raw_value());
         cursor.draw_text(backbuffer, " (");
         match context.cause.exception() {
-            Ok(exc) => { cursor.draw_text(backbuffer, format!("{:?}", exc).as_str()); }
+            Ok(exc) => {
+                cursor.draw_text(backbuffer, format!("{:?}", exc).as_str());
+            }
             Err(code) => {
                 cursor.draw_text(backbuffer, "0x");
                 cursor.draw_hex_u32(backbuffer, code as u32);
@@ -511,7 +554,7 @@ pub struct ExceptionContext {
     pub cause: Cause,
     pub status: u32,
     pub fcsr: FCSR,
-    padding: u32,  // used to pad to 64 bit - feel free to use going forward
+    padding: u32, // used to pad to 64 bit - feel free to use going forward
 }
 
 impl ExceptionContext {

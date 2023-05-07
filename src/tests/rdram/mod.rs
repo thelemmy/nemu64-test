@@ -1,31 +1,37 @@
 pub mod rdram_regs;
 
 use alloc::boxed::Box;
-use alloc::{format, vec};
 use alloc::string::String;
 use alloc::vec::Vec;
+use alloc::{format, vec};
 use core::any::Any;
 use core::arch::asm;
+
 use crate::assembler::{Assembler, GPR};
 use crate::memory_map::MemoryMap;
-use crate::tests::{Level, Test};
 use crate::tests::soft_asserts::soft_assert_eq;
+use crate::tests::{Level, Test};
 use crate::uncached_memory::UncachedHeapMemory;
 
-const DATA: [u64; 3] = [0x01234567_89ABCDEF, 0x21436587_99BADCFE, 0xA9887766_55443322];
+const DATA: [u64; 3] = [
+    0x01234567_89ABCDEF,
+    0x21436587_99BADCFE,
+    0xA9887766_55443322,
+];
 
 pub struct LWL {}
 
 impl Test for LWL {
-    fn name(&self) -> &str { "rdram: LWL" }
+    fn name(&self) -> &str {
+        "rdram: LWL"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
     fn values(&self) -> Vec<Box<dyn Any>> {
-        vec!(
-            Box::new(true),
-            Box::new(false)
-        )
+        vec![Box::new(true), Box::new(false)]
     }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
@@ -40,7 +46,11 @@ impl Test for LWL {
             0xFFFFFFFF_cdef3210,
             0xFFFFFFFF_ef543210,
         ];
-        let address = if *cached { &DATA[0] as *const u64 as usize } else { MemoryMap::uncached(&DATA[0] as *const u64) as usize };
+        let address = if *cached {
+            &DATA[0] as *const u64 as usize
+        } else {
+            MemoryMap::uncached(&DATA[0] as *const u64) as usize
+        };
         for i in 0..8 {
             let mut result: u64 = 0xFEDCBA98_76543210;
             unsafe {
@@ -56,7 +66,11 @@ impl Test for LWL {
                 )
             }
 
-            soft_assert_eq(result, EXPECTED[i], format!("LWL result with offset {}", i).as_str())?;
+            soft_assert_eq(
+                result,
+                EXPECTED[i],
+                format!("LWL result with offset {}", i).as_str(),
+            )?;
         }
         Ok(())
     }
@@ -65,15 +79,16 @@ impl Test for LWL {
 pub struct LWR {}
 
 impl Test for LWR {
-    fn name(&self) -> &str { "rdram: LWR" }
+    fn name(&self) -> &str {
+        "rdram: LWR"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
     fn values(&self) -> Vec<Box<dyn Any>> {
-        vec!(
-            Box::new(true),
-            Box::new(false)
-        )
+        vec![Box::new(true), Box::new(false)]
     }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
@@ -88,7 +103,11 @@ impl Test for LWR {
             0xFEDCBA98_7689abcd,
             0xFFFFFFFF_89abcdef,
         ];
-        let address = if *cached { &DATA[0] as *const u64 as usize } else { MemoryMap::uncached(&DATA[0] as *const u64) as usize };
+        let address = if *cached {
+            &DATA[0] as *const u64 as usize
+        } else {
+            MemoryMap::uncached(&DATA[0] as *const u64) as usize
+        };
         for i in 0..8 {
             let mut result: u64 = 0xFEDCBA98_76543210;
             unsafe {
@@ -105,7 +124,11 @@ impl Test for LWR {
             }
 
             //ate::println!("0x{:x},", result);
-            soft_assert_eq(result, EXPECTED[i], format!("LWR result with offset {}", i).as_str())?;
+            soft_assert_eq(
+                result,
+                EXPECTED[i],
+                format!("LWR result with offset {}", i).as_str(),
+            )?;
         }
         Ok(())
     }
@@ -114,15 +137,16 @@ impl Test for LWR {
 pub struct LDL {}
 
 impl Test for LDL {
-    fn name(&self) -> &str { "rdram: LDL" }
+    fn name(&self) -> &str {
+        "rdram: LDL"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
     fn values(&self) -> Vec<Box<dyn Any>> {
-        vec!(
-            Box::new(true),
-            Box::new(false)
-        )
+        vec![Box::new(true), Box::new(false)]
     }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
@@ -137,7 +161,11 @@ impl Test for LDL {
             0xcdefba98_76543210,
             0xefdcba98_76543210,
         ];
-        let address = if *cached { &DATA[0] as *const u64 as usize } else { MemoryMap::uncached(&DATA[0] as *const u64) as usize };
+        let address = if *cached {
+            &DATA[0] as *const u64 as usize
+        } else {
+            MemoryMap::uncached(&DATA[0] as *const u64) as usize
+        };
         for i in 0..8 {
             let mut result: u64 = 0xFEDCBA98_76543210;
             unsafe {
@@ -153,7 +181,11 @@ impl Test for LDL {
                 )
             }
 
-            soft_assert_eq(result, EXPECTED[i], format!("LDL result with offset {}", i).as_str())?;
+            soft_assert_eq(
+                result,
+                EXPECTED[i],
+                format!("LDL result with offset {}", i).as_str(),
+            )?;
         }
         Ok(())
     }
@@ -162,15 +194,16 @@ impl Test for LDL {
 pub struct LDR {}
 
 impl Test for LDR {
-    fn name(&self) -> &str { "rdram: LDR" }
+    fn name(&self) -> &str {
+        "rdram: LDR"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
     fn values(&self) -> Vec<Box<dyn Any>> {
-        vec!(
-            Box::new(true),
-            Box::new(false)
-        )
+        vec![Box::new(true), Box::new(false)]
     }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
@@ -185,7 +218,11 @@ impl Test for LDR {
             0xfe012345_6789abcd,
             0x01234567_89abcdef,
         ];
-        let address = if *cached { &DATA[0] as *const u64 as usize } else { MemoryMap::uncached(&DATA[0] as *const u64) as usize };
+        let address = if *cached {
+            &DATA[0] as *const u64 as usize
+        } else {
+            MemoryMap::uncached(&DATA[0] as *const u64) as usize
+        };
         for i in 0..8 {
             let mut result: u64 = 0xFEDCBA98_76543210;
             unsafe {
@@ -201,13 +238,20 @@ impl Test for LDR {
                 )
             }
 
-            soft_assert_eq(result, EXPECTED[i], format!("LDR result with offset {}", i).as_str())?;
+            soft_assert_eq(
+                result,
+                EXPECTED[i],
+                format!("LDR result with offset {}", i).as_str(),
+            )?;
         }
         Ok(())
     }
 }
 
-fn test_unaligned_store<const INSTRUCTION: u32>(cached: bool, expected: [u64; 8]) -> Result<(), String> {
+fn test_unaligned_store<const INSTRUCTION: u32>(
+    cached: bool,
+    expected: [u64; 8],
+) -> Result<(), String> {
     let mut data = UncachedHeapMemory::<u32>::new_with_align((16 * 1024) >> 2, 8 * 1024);
     for i in 0..8 {
         data.write(4, 0x01234567);
@@ -217,7 +261,11 @@ fn test_unaligned_store<const INSTRUCTION: u32>(cached: bool, expected: [u64; 8]
         data.write(5 + 2 * 1024, 0xBAABBAAB);
         let physical = data.start_physical() + 16;
         let cached_address = MemoryMap::physical_to_cached_mut::<u8>(physical) as usize;
-        let address = if cached { cached_address } else { MemoryMap::physical_to_uncached_mut::<u8>(physical) as usize };
+        let address = if cached {
+            cached_address
+        } else {
+            MemoryMap::physical_to_uncached_mut::<u8>(physical) as usize
+        };
         let mut value_and_result: u64 = 0xFEDCBA98_76543210;
         unsafe {
             asm!("
@@ -244,7 +292,11 @@ fn test_unaligned_store<const INSTRUCTION: u32>(cached: bool, expected: [u64; 8]
             )
         }
 
-        soft_assert_eq(value_and_result, expected[i], format!("Result with offset {}", i).as_str())?;
+        soft_assert_eq(
+            value_and_result,
+            expected[i],
+            format!("Result with offset {}", i).as_str(),
+        )?;
     }
     Ok(())
 }
@@ -252,15 +304,16 @@ fn test_unaligned_store<const INSTRUCTION: u32>(cached: bool, expected: [u64; 8]
 pub struct SWL {}
 
 impl Test for SWL {
-    fn name(&self) -> &str { "rdram: SWL" }
+    fn name(&self) -> &str {
+        "rdram: SWL"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
     fn values(&self) -> Vec<Box<dyn Any>> {
-        vec!(
-            Box::new(true),
-            Box::new(false)
-        )
+        vec![Box::new(true), Box::new(false)]
     }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
@@ -283,15 +336,16 @@ impl Test for SWL {
 pub struct SWR {}
 
 impl Test for SWR {
-    fn name(&self) -> &str { "rdram: SWR" }
+    fn name(&self) -> &str {
+        "rdram: SWR"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
     fn values(&self) -> Vec<Box<dyn Any>> {
-        vec!(
-            Box::new(true),
-            Box::new(false)
-        )
+        vec![Box::new(true), Box::new(false)]
     }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
@@ -314,15 +368,16 @@ impl Test for SWR {
 pub struct SDL {}
 
 impl Test for SDL {
-    fn name(&self) -> &str { "rdram: SDL" }
+    fn name(&self) -> &str {
+        "rdram: SDL"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
     fn values(&self) -> Vec<Box<dyn Any>> {
-        vec!(
-            Box::new(true),
-            Box::new(false)
-        )
+        vec![Box::new(true), Box::new(false)]
     }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
@@ -345,15 +400,16 @@ impl Test for SDL {
 pub struct SDR {}
 
 impl Test for SDR {
-    fn name(&self) -> &str { "rdram: SDR" }
+    fn name(&self) -> &str {
+        "rdram: SDR"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
     fn values(&self) -> Vec<Box<dyn Any>> {
-        vec!(
-            Box::new(true),
-            Box::new(false)
-        )
+        vec![Box::new(true), Box::new(false)]
     }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
@@ -372,4 +428,3 @@ impl Test for SDR {
         test_unaligned_store::<INSTRUCTION>(cached, EXPECTED)
     }
 }
-

@@ -4,10 +4,10 @@ use alloc::vec::Vec;
 use core::any::Any;
 
 use crate::rsp::rsp::RSP;
-use crate::rsp::rsp_assembler::{GPR, RSPAssembler};
+use crate::rsp::rsp_assembler::{RSPAssembler, GPR};
 use crate::rsp::spmem::SPMEM;
-use crate::tests::{Level, Test};
 use crate::tests::soft_asserts::soft_assert_eq;
+use crate::tests::{Level, Test};
 
 // SLTIU sign extends the immediate to 32 bit but then does an unsigned comparison
 // Essentially, the instruction correctly compares positive with positive and negative with negative,
@@ -16,11 +16,17 @@ use crate::tests::soft_asserts::soft_assert_eq;
 pub struct SLTIU {}
 
 impl Test for SLTIU {
-    fn name(&self) -> &str { "RSP SLTIU" }
+    fn name(&self) -> &str {
+        "RSP SLTIU"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         // Assemble RSP program

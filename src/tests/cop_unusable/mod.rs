@@ -4,14 +4,18 @@ use alloc::string::String;
 use alloc::vec::Vec;
 use core::any::Any;
 use core::arch::asm;
+
 use arbitrary_int::{u2, u5};
+
 use crate::assembler::{Assembler, FR, GPR};
 use crate::cop0;
-use crate::cop0::{badvaddr, Cause, CauseException, context, set_context_64, set_xcontext_64, Status, xcontext};
-use crate::cop1::{FCSR, set_fcsr};
+use crate::cop0::{
+    badvaddr, context, set_context_64, set_xcontext_64, xcontext, Cause, CauseException, Status,
+};
+use crate::cop1::{set_fcsr, FCSR};
 use crate::exception_handler::expect_exception;
-use crate::tests::{Level, Test};
 use crate::tests::soft_asserts::soft_assert_eq;
+use crate::tests::{Level, Test};
 
 // Various tests for COP unusable (and related). Some findings:
 // - COP 0..=3 can be enabled and disabled independently
@@ -24,9 +28,13 @@ use crate::tests::soft_asserts::soft_assert_eq;
 //   it can't fire
 
 fn test_masking(value: Status) -> Result<(), String> {
-    unsafe { cop0::set_status(value); }
+    unsafe {
+        cop0::set_status(value);
+    }
     soft_assert_eq(value, cop0::status(), "Flag should be settable")?;
-    unsafe { cop0::set_status(Status::ZERO); }
+    unsafe {
+        cop0::set_status(Status::ZERO);
+    }
     soft_assert_eq(Status::ZERO, cop0::status(), "Flag should be clearable")?;
     Ok(())
 }
@@ -34,11 +42,17 @@ fn test_masking(value: Status) -> Result<(), String> {
 pub struct COP3Usable {}
 
 impl Test for COP3Usable {
-    fn name(&self) -> &str { "COP3Usable (masking)" }
+    fn name(&self) -> &str {
+        "COP3Usable (masking)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         test_masking(Status::ZERO.with_cop3usable(true))
@@ -48,11 +62,17 @@ impl Test for COP3Usable {
 pub struct COP2Usable {}
 
 impl Test for COP2Usable {
-    fn name(&self) -> &str { "COP2Usable (masking)" }
+    fn name(&self) -> &str {
+        "COP2Usable (masking)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         test_masking(Status::ZERO.with_cop2usable(true))
@@ -62,11 +82,17 @@ impl Test for COP2Usable {
 pub struct COP1Usable {}
 
 impl Test for COP1Usable {
-    fn name(&self) -> &str { "COP1Usable (masking)" }
+    fn name(&self) -> &str {
+        "COP1Usable (masking)"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         test_masking(Status::ZERO.with_cop1usable(true))
@@ -76,44 +102,105 @@ impl Test for COP1Usable {
 pub struct COP0Usable {}
 
 impl Test for COP0Usable {
-    fn name(&self) -> &str { "COP0Usable (masking)" }
+    fn name(&self) -> &str {
+        "COP0Usable (masking)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         test_masking(Status::ZERO.with_cop0usable(true))
     }
 }
 
-fn test_instruction_causes_exception<const INSTRUCTION: u32>(base_fcsr: FCSR,
-    cop_index_usable: u2, usable: Status, exception_usable: CauseException, fcsr_usable: FCSR,
-    cop_index_unusable: u2, unusable: Status, exception_unusable: CauseException, fcsr_unusable: FCSR,) -> Result<(), String> {
-    for (desc, cop_index, status, exception, fcsr) in [("usable", cop_index_usable, usable, exception_usable, fcsr_usable), ("unusable", cop_index_unusable, unusable, exception_unusable, fcsr_unusable)] {
+fn test_instruction_causes_exception<const INSTRUCTION: u32>(
+    base_fcsr: FCSR,
+    cop_index_usable: u2,
+    usable: Status,
+    exception_usable: CauseException,
+    fcsr_usable: FCSR,
+    cop_index_unusable: u2,
+    unusable: Status,
+    exception_unusable: CauseException,
+    fcsr_unusable: FCSR,
+) -> Result<(), String> {
+    for (desc, cop_index, status, exception, fcsr) in [
+        (
+            "usable",
+            cop_index_usable,
+            usable,
+            exception_usable,
+            fcsr_usable,
+        ),
+        (
+            "unusable",
+            cop_index_unusable,
+            unusable,
+            exception_unusable,
+            fcsr_unusable,
+        ),
+    ] {
         set_fcsr(base_fcsr);
         let exception_context = expect_exception(exception, 1, || {
-            unsafe { cop0::set_status(status); }
+            unsafe {
+                cop0::set_status(status);
+            }
             unsafe {
                 asm!("
                 LUI $2, 0x8000
                 .WORD {INSTRUCTION}
             ", INSTRUCTION = const INSTRUCTION, out("$2") _)
             };
-            unsafe { cop0::set_status(Status::DEFAULT); }
+            unsafe {
+                cop0::set_status(Status::DEFAULT);
+            }
             Ok(())
         })?;
-        soft_assert_eq(exception_context.k0_exception_vector, 0xFFFFFFFF_80000180, "Exception Vector")?;
-        soft_assert_eq(exception_context.exceptpc & 0xFFFFFFFF_FF000000, 0xFFFFFFFF_80000000, "ExceptPC")?;
-        soft_assert_eq(unsafe { *(exception_context.exceptpc as *const u32) }, INSTRUCTION, "ExceptPC points to wrong instruction")?;
-        soft_assert_eq(exception_context.cause, Cause::DEFAULT.with_exception(exception).with_coprocessor_error(cop_index), "Cause")?;
-        soft_assert_eq(exception_context.status, status.with_exl(true).raw_value(), "Status")?;
-        soft_assert_eq(exception_context.fcsr, fcsr, format!("FCSR {}", desc).as_str())?;
+        soft_assert_eq(
+            exception_context.k0_exception_vector,
+            0xFFFFFFFF_80000180,
+            "Exception Vector",
+        )?;
+        soft_assert_eq(
+            exception_context.exceptpc & 0xFFFFFFFF_FF000000,
+            0xFFFFFFFF_80000000,
+            "ExceptPC",
+        )?;
+        soft_assert_eq(
+            unsafe { *(exception_context.exceptpc as *const u32) },
+            INSTRUCTION,
+            "ExceptPC points to wrong instruction",
+        )?;
+        soft_assert_eq(
+            exception_context.cause,
+            Cause::DEFAULT
+                .with_exception(exception)
+                .with_coprocessor_error(cop_index),
+            "Cause",
+        )?;
+        soft_assert_eq(
+            exception_context.status,
+            status.with_exl(true).raw_value(),
+            "Status",
+        )?;
+        soft_assert_eq(
+            exception_context.fcsr,
+            fcsr,
+            format!("FCSR {}", desc).as_str(),
+        )?;
 
         // Same test, this time within delay slot
         set_fcsr(base_fcsr);
         let exception_context = expect_exception(exception, 2, || {
-            unsafe { cop0::set_status(status); }
+            unsafe {
+                cop0::set_status(status);
+            }
             unsafe {
                 asm!("
                 .set noat
@@ -124,20 +211,49 @@ fn test_instruction_causes_exception<const INSTRUCTION: u32>(base_fcsr: FCSR,
                 2:
             ", INSTRUCTION = const INSTRUCTION, out("$2") _)
             };
-            unsafe { cop0::set_status(Status::DEFAULT); }
+            unsafe {
+                cop0::set_status(Status::DEFAULT);
+            }
             Ok(())
         })?;
-        soft_assert_eq(exception_context.k0_exception_vector, 0xFFFFFFFF_80000180, "Exception Vector (delay)")?;
-        soft_assert_eq(exception_context.exceptpc & 0xFFFFFFFF_FF000000, 0xFFFFFFFF_80000000, "ExceptPC (delay)")?;
-        soft_assert_eq(unsafe { *((exception_context.exceptpc + 4) as *const u32) }, INSTRUCTION, "ExceptPC points to wrong instruction (delay)")?;
-        soft_assert_eq(exception_context.cause, Cause::DEFAULT.with_branch_delay(true).with_coprocessor_error(cop_index).with_exception(exception), "Cause (delay)")?;
-        soft_assert_eq(exception_context.status, status.with_exl(true).raw_value(), "Status (delay)")?;
+        soft_assert_eq(
+            exception_context.k0_exception_vector,
+            0xFFFFFFFF_80000180,
+            "Exception Vector (delay)",
+        )?;
+        soft_assert_eq(
+            exception_context.exceptpc & 0xFFFFFFFF_FF000000,
+            0xFFFFFFFF_80000000,
+            "ExceptPC (delay)",
+        )?;
+        soft_assert_eq(
+            unsafe { *((exception_context.exceptpc + 4) as *const u32) },
+            INSTRUCTION,
+            "ExceptPC points to wrong instruction (delay)",
+        )?;
+        soft_assert_eq(
+            exception_context.cause,
+            Cause::DEFAULT
+                .with_branch_delay(true)
+                .with_coprocessor_error(cop_index)
+                .with_exception(exception),
+            "Cause (delay)",
+        )?;
+        soft_assert_eq(
+            exception_context.status,
+            status.with_exl(true).raw_value(),
+            "Status (delay)",
+        )?;
         soft_assert_eq(exception_context.fcsr, fcsr, "FCSR (delay)")?;
     }
     Ok(())
 }
 
-fn test_instruction_causes_unusable<const INSTRUCTION: u32>(cop_index: u2, usable: Status, unusable: Status) -> Result<(), String> {
+fn test_instruction_causes_unusable<const INSTRUCTION: u32>(
+    cop_index: u2,
+    usable: Status,
+    unusable: Status,
+) -> Result<(), String> {
     // Context, XContext, BadVAddr aren't affected by the exception. Remember their values so that
     // we can verify they aren't changed
     unsafe {
@@ -150,7 +266,9 @@ fn test_instruction_causes_unusable<const INSTRUCTION: u32>(cop_index: u2, usabl
 
     // Try calling instruction while the COP is enabled
     let mut temp: u64 = 0x01234567;
-    unsafe { cop0::set_status(usable); }
+    unsafe {
+        cop0::set_status(usable);
+    }
     unsafe {
         asm!("
         .WORD {INSTRUCTION}
@@ -160,21 +278,47 @@ fn test_instruction_causes_unusable<const INSTRUCTION: u32>(cop_index: u2, usabl
     // Try calling instruction while the COP is disabled
     let exception_context = expect_exception(CauseException::CopUnusable, 1, || {
         // Set unusable within this block as Rust's function/closure stuff might also cause cop1 code
-        unsafe { cop0::set_status(unusable); }
+        unsafe {
+            cop0::set_status(unusable);
+        }
         unsafe {
             asm!("
                 .WORD {INSTRUCTION}
             ", INSTRUCTION = const INSTRUCTION, inout("$2") &mut temp => _)
         };
-        unsafe { cop0::set_status(Status::DEFAULT); }
+        unsafe {
+            cop0::set_status(Status::DEFAULT);
+        }
         Ok(())
     })?;
 
-    soft_assert_eq(exception_context.k0_exception_vector, 0xFFFFFFFF_80000180, "Exception Vector")?;
-    soft_assert_eq(exception_context.exceptpc & 0xFFFFFFFF_FF000000, 0xFFFFFFFF_80000000, "ExceptPC")?;
-    soft_assert_eq(unsafe { *(exception_context.exceptpc as *const u32) }, INSTRUCTION, "ExceptPC points to wrong instruction")?;
-    soft_assert_eq(exception_context.cause, Cause::DEFAULT.with_exception(CauseException::CopUnusable).with_coprocessor_error(cop_index), "Cause")?;
-    soft_assert_eq(exception_context.status, unusable.with_exl(true).raw_value(), "Status")?;
+    soft_assert_eq(
+        exception_context.k0_exception_vector,
+        0xFFFFFFFF_80000180,
+        "Exception Vector",
+    )?;
+    soft_assert_eq(
+        exception_context.exceptpc & 0xFFFFFFFF_FF000000,
+        0xFFFFFFFF_80000000,
+        "ExceptPC",
+    )?;
+    soft_assert_eq(
+        unsafe { *(exception_context.exceptpc as *const u32) },
+        INSTRUCTION,
+        "ExceptPC points to wrong instruction",
+    )?;
+    soft_assert_eq(
+        exception_context.cause,
+        Cause::DEFAULT
+            .with_exception(CauseException::CopUnusable)
+            .with_coprocessor_error(cop_index),
+        "Cause",
+    )?;
+    soft_assert_eq(
+        exception_context.status,
+        unusable.with_exl(true).raw_value(),
+        "Status",
+    )?;
 
     // Ensure the following weren't changed
     soft_assert_eq(exception_context.xcontext, xcontext_before, "XContext")?;
@@ -184,7 +328,9 @@ fn test_instruction_causes_unusable<const INSTRUCTION: u32>(cop_index: u2, usabl
     // Call while it's illegal to call it, but in a delay slot
     let exception_context = expect_exception(CauseException::CopUnusable, 2, || {
         // Set unusable within this block as Rust's function/closure stuff might also cause cop1 code
-        unsafe { cop0::set_status(unusable); }
+        unsafe {
+            cop0::set_status(unusable);
+        }
         unsafe {
             asm!("
                 .set noat
@@ -194,15 +340,40 @@ fn test_instruction_causes_unusable<const INSTRUCTION: u32>(cop_index: u2, usabl
                 2:
                 ", INSTRUCTION = const INSTRUCTION, inout("$2") &mut temp => _)
         };
-        unsafe { cop0::set_status(Status::DEFAULT); }
+        unsafe {
+            cop0::set_status(Status::DEFAULT);
+        }
         Ok(())
     })?;
 
-    soft_assert_eq(exception_context.k0_exception_vector, 0xFFFFFFFF_80000180, "Exception Vector")?;
-    soft_assert_eq(exception_context.exceptpc & 0xFFFFFFFF_FF000000, 0xFFFFFFFF_80000000, "ExceptPC")?;
-    soft_assert_eq(unsafe { *((exception_context.exceptpc + 4) as *const u32) }, INSTRUCTION, "ExceptPC points to wrong instruction")?;
-    soft_assert_eq(exception_context.cause, Cause::DEFAULT.with_exception(CauseException::CopUnusable).with_coprocessor_error(cop_index).with_branch_delay(true), "Cause")?;
-    soft_assert_eq(exception_context.status, unusable.with_exl(true).raw_value(), "Status")?;
+    soft_assert_eq(
+        exception_context.k0_exception_vector,
+        0xFFFFFFFF_80000180,
+        "Exception Vector",
+    )?;
+    soft_assert_eq(
+        exception_context.exceptpc & 0xFFFFFFFF_FF000000,
+        0xFFFFFFFF_80000000,
+        "ExceptPC",
+    )?;
+    soft_assert_eq(
+        unsafe { *((exception_context.exceptpc + 4) as *const u32) },
+        INSTRUCTION,
+        "ExceptPC points to wrong instruction",
+    )?;
+    soft_assert_eq(
+        exception_context.cause,
+        Cause::DEFAULT
+            .with_exception(CauseException::CopUnusable)
+            .with_coprocessor_error(cop_index)
+            .with_branch_delay(true),
+        "Cause",
+    )?;
+    soft_assert_eq(
+        exception_context.status,
+        unusable.with_exl(true).raw_value(),
+        "Status",
+    )?;
 
     // Ensure the following weren't changed
     soft_assert_eq(exception_context.xcontext, xcontext_before, "XContext")?;
@@ -213,50 +384,106 @@ fn test_instruction_causes_unusable<const INSTRUCTION: u32>(cop_index: u2, usabl
 }
 
 fn test_cop1_instruction_causes_unusable<const INSTRUCTION: u32>() -> Result<(), String> {
-    test_instruction_causes_unusable::<INSTRUCTION>(u2::new(1), Status::DEFAULT.with_cop1usable(true), Status::DEFAULT.with_cop1usable(false))
+    test_instruction_causes_unusable::<INSTRUCTION>(
+        u2::new(1),
+        Status::DEFAULT.with_cop1usable(true),
+        Status::DEFAULT.with_cop1usable(false),
+    )
 }
 
 fn test_cop1_instruction_causes_fpe<const INSTRUCTION: u32>() -> Result<(), String> {
     // Set a bunch of unrelated FCSR flags to ensure they all get cleared
     for base_fcsr in [
-        FCSR::ZERO.with_cause_invalid_operation(true).with_cause_inexact_operation(true).with_cause_underflow(true).with_cause_overflow(true).with_cause_division_by_zero(true),
-        FCSR::ZERO.with_condition(true).with_flush_denorm_to_zero(true).with_invalid_operation(true).with_inexact_operation(true).with_underflow(true).with_overflow(true).with_division_by_zero(true)
+        FCSR::ZERO
+            .with_cause_invalid_operation(true)
+            .with_cause_inexact_operation(true)
+            .with_cause_underflow(true)
+            .with_cause_overflow(true)
+            .with_cause_division_by_zero(true),
+        FCSR::ZERO
+            .with_condition(true)
+            .with_flush_denorm_to_zero(true)
+            .with_invalid_operation(true)
+            .with_inexact_operation(true)
+            .with_underflow(true)
+            .with_overflow(true)
+            .with_division_by_zero(true),
     ] {
         // When an FPE exception is fired, all cause flags are cleared and only the one that is being fired remains; for unusable exception, the fcsr is not changed
-        let expected_fcsr_usable = base_fcsr.with_cause_invalid_operation(false).with_cause_inexact_operation(false).with_cause_underflow(false).with_cause_overflow(false).with_cause_division_by_zero(false).with_cause_unimplemented_operation(true);
+        let expected_fcsr_usable = base_fcsr
+            .with_cause_invalid_operation(false)
+            .with_cause_inexact_operation(false)
+            .with_cause_underflow(false)
+            .with_cause_overflow(false)
+            .with_cause_division_by_zero(false)
+            .with_cause_unimplemented_operation(true);
         let expected_fcsr_unusable = base_fcsr;
-        test_instruction_causes_exception::<INSTRUCTION>(base_fcsr,
-                                                         u2::new(0), Status::DEFAULT.with_cop1usable(true), CauseException::FPE, expected_fcsr_usable,
-                                                         u2::new(1), Status::DEFAULT.with_cop1usable(false), CauseException::CopUnusable, expected_fcsr_unusable)?
+        test_instruction_causes_exception::<INSTRUCTION>(
+            base_fcsr,
+            u2::new(0),
+            Status::DEFAULT.with_cop1usable(true),
+            CauseException::FPE,
+            expected_fcsr_usable,
+            u2::new(1),
+            Status::DEFAULT.with_cop1usable(false),
+            CauseException::CopUnusable,
+            expected_fcsr_unusable,
+        )?
     }
     Ok(())
 }
 
 fn test_cop2_instruction_causes_unusable<const INSTRUCTION: u32>() -> Result<(), String> {
-    test_instruction_causes_unusable::<INSTRUCTION>(u2::new(2), Status::DEFAULT.with_cop2usable(true), Status::DEFAULT.with_cop2usable(false))
+    test_instruction_causes_unusable::<INSTRUCTION>(
+        u2::new(2),
+        Status::DEFAULT.with_cop2usable(true),
+        Status::DEFAULT.with_cop2usable(false),
+    )
 }
 
 fn test_cop2_instruction_causes_ri<const INSTRUCTION: u32>() -> Result<(), String> {
-    test_instruction_causes_exception::<INSTRUCTION>(FCSR::DEFAULT,
-                                                     u2::new(2), Status::DEFAULT.with_cop2usable(true), CauseException::RI, FCSR::DEFAULT,
-                                                     u2::new(2), Status::DEFAULT.with_cop2usable(false), CauseException::CopUnusable, FCSR::DEFAULT)
+    test_instruction_causes_exception::<INSTRUCTION>(
+        FCSR::DEFAULT,
+        u2::new(2),
+        Status::DEFAULT.with_cop2usable(true),
+        CauseException::RI,
+        FCSR::DEFAULT,
+        u2::new(2),
+        Status::DEFAULT.with_cop2usable(false),
+        CauseException::CopUnusable,
+        FCSR::DEFAULT,
+    )
 }
 
 fn test_cop3_instruction_causes_ri<const INSTRUCTION: u32>() -> Result<(), String> {
     // COP3 doesn't exist, so the cop index isn't set
-    test_instruction_causes_exception::<INSTRUCTION>(FCSR::DEFAULT,
-        u2::new(0),Status::DEFAULT.with_cop3usable(true), CauseException::RI, FCSR::DEFAULT,
-        u2::new(0),Status::DEFAULT.with_cop3usable(false), CauseException::RI, FCSR::DEFAULT)
+    test_instruction_causes_exception::<INSTRUCTION>(
+        FCSR::DEFAULT,
+        u2::new(0),
+        Status::DEFAULT.with_cop3usable(true),
+        CauseException::RI,
+        FCSR::DEFAULT,
+        u2::new(0),
+        Status::DEFAULT.with_cop3usable(false),
+        CauseException::RI,
+        FCSR::DEFAULT,
+    )
 }
 
 pub struct COP1UsableLWC1 {}
 
 impl Test for COP1UsableLWC1 {
-    fn name(&self) -> &str { "COP1Usable (LWC1)" }
+    fn name(&self) -> &str {
+        "COP1Usable (LWC1)"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const INSTRUCTION: u32 = Assembler::make_lwc1(FR::F2, 0, GPR::V0);
@@ -267,11 +494,17 @@ impl Test for COP1UsableLWC1 {
 pub struct COP1UsableLDC1 {}
 
 impl Test for COP1UsableLDC1 {
-    fn name(&self) -> &str { "COP1Usable (LDC1)" }
+    fn name(&self) -> &str {
+        "COP1Usable (LDC1)"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const INSTRUCTION: u32 = Assembler::make_ldc1(FR::F2, 0, GPR::V0);
@@ -282,11 +515,17 @@ impl Test for COP1UsableLDC1 {
 pub struct COP1UsableSWC1 {}
 
 impl Test for COP1UsableSWC1 {
-    fn name(&self) -> &str { "COP1Usable (SWC1)" }
+    fn name(&self) -> &str {
+        "COP1Usable (SWC1)"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const INSTRUCTION: u32 = Assembler::make_swc1(FR::F2, 0, GPR::V0);
@@ -297,11 +536,17 @@ impl Test for COP1UsableSWC1 {
 pub struct COP1UsableSDC1 {}
 
 impl Test for COP1UsableSDC1 {
-    fn name(&self) -> &str { "COP1Usable (SDC1)" }
+    fn name(&self) -> &str {
+        "COP1Usable (SDC1)"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const INSTRUCTION: u32 = Assembler::make_sdc1(FR::F2, 0, GPR::V0);
@@ -312,11 +557,17 @@ impl Test for COP1UsableSDC1 {
 pub struct COP1UsableMFC1 {}
 
 impl Test for COP1UsableMFC1 {
-    fn name(&self) -> &str { "COP1Usable (MFC1)" }
+    fn name(&self) -> &str {
+        "COP1Usable (MFC1)"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const INSTRUCTION: u32 = Assembler::make_mfc1(GPR::V0, FR::F1);
@@ -327,11 +578,17 @@ impl Test for COP1UsableMFC1 {
 pub struct COP1UsableMTC1 {}
 
 impl Test for COP1UsableMTC1 {
-    fn name(&self) -> &str { "COP1Usable (MTC1)" }
+    fn name(&self) -> &str {
+        "COP1Usable (MTC1)"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const INSTRUCTION: u32 = Assembler::make_mtc1(GPR::V0, FR::F1);
@@ -342,11 +599,17 @@ impl Test for COP1UsableMTC1 {
 pub struct COP1UsableDMFC1 {}
 
 impl Test for COP1UsableDMFC1 {
-    fn name(&self) -> &str { "COP1Usable (DMFC1)" }
+    fn name(&self) -> &str {
+        "COP1Usable (DMFC1)"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const INSTRUCTION: u32 = Assembler::make_dmfc1(GPR::V0, FR::F1);
@@ -357,11 +620,17 @@ impl Test for COP1UsableDMFC1 {
 pub struct COP1UsableDMTC1 {}
 
 impl Test for COP1UsableDMTC1 {
-    fn name(&self) -> &str { "COP1Usable (DMTC1)" }
+    fn name(&self) -> &str {
+        "COP1Usable (DMTC1)"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const INSTRUCTION: u32 = Assembler::make_dmtc1(GPR::V0, FR::F1);
@@ -372,11 +641,17 @@ impl Test for COP1UsableDMTC1 {
 pub struct COP1UsableCFC1 {}
 
 impl Test for COP1UsableCFC1 {
-    fn name(&self) -> &str { "COP1Usable (CFC1)" }
+    fn name(&self) -> &str {
+        "COP1Usable (CFC1)"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const INSTRUCTION: u32 = Assembler::make_cfc1(GPR::V0, u5::new(0));
@@ -387,11 +662,17 @@ impl Test for COP1UsableCFC1 {
 pub struct COP1UsableCTC1 {}
 
 impl Test for COP1UsableCTC1 {
-    fn name(&self) -> &str { "COP1Usable (CTC1)" }
+    fn name(&self) -> &str {
+        "COP1Usable (CTC1)"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const INSTRUCTION: u32 = Assembler::make_ctc1(GPR::V0, u5::new(0));
@@ -402,11 +683,17 @@ impl Test for COP1UsableCTC1 {
 pub struct COP1UsableDCFC1 {}
 
 impl Test for COP1UsableDCFC1 {
-    fn name(&self) -> &str { "COP1Usable (DCFC1)" }
+    fn name(&self) -> &str {
+        "COP1Usable (DCFC1)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const INSTRUCTION: u32 = Assembler::make_dcfc1(GPR::V0, u5::new(0));
@@ -417,11 +704,17 @@ impl Test for COP1UsableDCFC1 {
 pub struct COP1UsableDCTC1 {}
 
 impl Test for COP1UsableDCTC1 {
-    fn name(&self) -> &str { "COP1Usable (DCTC1)" }
+    fn name(&self) -> &str {
+        "COP1Usable (DCTC1)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const INSTRUCTION: u32 = Assembler::make_dctc1(GPR::V0, u5::new(0));
@@ -432,11 +725,17 @@ impl Test for COP1UsableDCTC1 {
 pub struct COP2UsableMFC2 {}
 
 impl Test for COP2UsableMFC2 {
-    fn name(&self) -> &str { "COP2Usable (MFC2)" }
+    fn name(&self) -> &str {
+        "COP2Usable (MFC2)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const INSTRUCTION: u32 = Assembler::make_mfc2(GPR::V0, u5::new(6));
@@ -447,11 +746,17 @@ impl Test for COP2UsableMFC2 {
 pub struct COP2UsableMTC2 {}
 
 impl Test for COP2UsableMTC2 {
-    fn name(&self) -> &str { "COP2Usable (MTC2)" }
+    fn name(&self) -> &str {
+        "COP2Usable (MTC2)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const INSTRUCTION: u32 = Assembler::make_mtc2(GPR::V0, u5::new(6));
@@ -462,11 +767,17 @@ impl Test for COP2UsableMTC2 {
 pub struct COP2UsableDMFC2 {}
 
 impl Test for COP2UsableDMFC2 {
-    fn name(&self) -> &str { "COP2Usable (DMFC2)" }
+    fn name(&self) -> &str {
+        "COP2Usable (DMFC2)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const INSTRUCTION: u32 = Assembler::make_dmfc2(GPR::V0, u5::new(6));
@@ -477,11 +788,17 @@ impl Test for COP2UsableDMFC2 {
 pub struct COP2UsableDMTC2 {}
 
 impl Test for COP2UsableDMTC2 {
-    fn name(&self) -> &str { "COP2Usable (DMTC2)" }
+    fn name(&self) -> &str {
+        "COP2Usable (DMTC2)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const INSTRUCTION: u32 = Assembler::make_dmtc2(GPR::V0, u5::new(6));
@@ -492,11 +809,17 @@ impl Test for COP2UsableDMTC2 {
 pub struct COP2UsableCFC2 {}
 
 impl Test for COP2UsableCFC2 {
-    fn name(&self) -> &str { "COP2Usable (CFC2)" }
+    fn name(&self) -> &str {
+        "COP2Usable (CFC2)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const INSTRUCTION: u32 = Assembler::make_cfc2(GPR::V0, u5::new(6));
@@ -507,11 +830,17 @@ impl Test for COP2UsableCFC2 {
 pub struct COP2UsableCTC2 {}
 
 impl Test for COP2UsableCTC2 {
-    fn name(&self) -> &str { "COP2Usable (CTC2)" }
+    fn name(&self) -> &str {
+        "COP2Usable (CTC2)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const INSTRUCTION: u32 = Assembler::make_ctc2(GPR::V0, u5::new(6));
@@ -522,11 +851,17 @@ impl Test for COP2UsableCTC2 {
 pub struct COP2UsableDCFC2 {}
 
 impl Test for COP2UsableDCFC2 {
-    fn name(&self) -> &str { "COP2Usable (DCFC2)" }
+    fn name(&self) -> &str {
+        "COP2Usable (DCFC2)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const INSTRUCTION: u32 = Assembler::make_dcfc2(GPR::V0, u5::new(6));
@@ -537,11 +872,17 @@ impl Test for COP2UsableDCFC2 {
 pub struct COP2UsableDCTC2 {}
 
 impl Test for COP2UsableDCTC2 {
-    fn name(&self) -> &str { "COP2Usable (DCTC2)" }
+    fn name(&self) -> &str {
+        "COP2Usable (DCTC2)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const INSTRUCTION: u32 = Assembler::make_dctc2(GPR::V0, u5::new(6));
@@ -552,11 +893,17 @@ impl Test for COP2UsableDCTC2 {
 pub struct COP3UsableMFC3 {}
 
 impl Test for COP3UsableMFC3 {
-    fn name(&self) -> &str { "COP3Usable (MFC3)" }
+    fn name(&self) -> &str {
+        "COP3Usable (MFC3)"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const INSTRUCTION: u32 = Assembler::make_mfc3(GPR::V0, u5::new(6));
@@ -568,14 +915,22 @@ impl Test for COP3UsableMFC3 {
 pub struct COP2MFCBehavior {}
 
 impl Test for COP2MFCBehavior {
-    fn name(&self) -> &str { "MFC2/MTC2/DMFC2/DMTC2" }
+    fn name(&self) -> &str {
+        "MFC2/MTC2/DMFC2/DMTC2"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        unsafe { cop0::set_status(Status::DEFAULT.with_cop2usable(true)); }
+        unsafe {
+            cop0::set_status(Status::DEFAULT.with_cop2usable(true));
+        }
         let value = 0x01234567_89ABCDEFu64;
         let mut result = [0u64; 8];
         unsafe {
@@ -635,13 +990,29 @@ impl Test for COP2MFCBehavior {
 
         soft_assert_eq(result[0], 0xFFFFFFFF_89ABCDEF, "MFC2 after MTC2")?;
         soft_assert_eq(result[1], 0x01234567_89ABCDEF, "DMFC2 after MTC2")?;
-        soft_assert_eq(result[2], 0xFFFFFFFF_89ABCDEF, "MFC2 after MTC2 (different reg)")?;
-        soft_assert_eq(result[3], 0x01234567_89ABCDEF, "DMFC2 after MTC2 (different reg)")?;
+        soft_assert_eq(
+            result[2],
+            0xFFFFFFFF_89ABCDEF,
+            "MFC2 after MTC2 (different reg)",
+        )?;
+        soft_assert_eq(
+            result[3],
+            0x01234567_89ABCDEF,
+            "DMFC2 after MTC2 (different reg)",
+        )?;
 
         soft_assert_eq(result[4], 0xFFFFFFFF_89ABCDEF, "MFC2 after DMTC2")?;
         soft_assert_eq(result[5], 0x01234567_89ABCDEF, "DMFC2 after DMTC2")?;
-        soft_assert_eq(result[6], 0xFFFFFFFF_89ABCDEF, "MFC2 after DMTC2 (different reg)")?;
-        soft_assert_eq(result[7], 0x01234567_89ABCDEF, "DMFC2 after DMTC2 (different reg)")?;
+        soft_assert_eq(
+            result[6],
+            0xFFFFFFFF_89ABCDEF,
+            "MFC2 after DMTC2 (different reg)",
+        )?;
+        soft_assert_eq(
+            result[7],
+            0x01234567_89ABCDEF,
+            "DMFC2 after DMTC2 (different reg)",
+        )?;
 
         Ok(())
     }
@@ -657,14 +1028,22 @@ impl Test for COP2MFCBehavior {
 pub struct COP2LWC2Behavior {}
 
 impl Test for COP2LWC2Behavior {
-    fn name(&self) -> &str { "LWC2/LDC2/SWC2/SDC2" }
+    fn name(&self) -> &str {
+        "LWC2/LDC2/SWC2/SDC2"
+    }
 
-    fn level(&self) -> Level { Level::PoorlyUnderstoodQuirk }
+    fn level(&self) -> Level {
+        Level::PoorlyUnderstoodQuirk
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        unsafe { cop0::set_status(Status::DEFAULT.with_cop2usable(true)); }
+        unsafe {
+            cop0::set_status(Status::DEFAULT.with_cop2usable(true));
+        }
         let value = 0xFEDCBA98_76543210u64;
         let mut result = [0u64; 8];
         unsafe {
@@ -692,7 +1071,11 @@ impl Test for COP2LWC2Behavior {
         };
 
         soft_assert_eq(result[0], 0xFEDCBA98_76543210, "DMFC2 after LWC2")?;
-        soft_assert_eq(result[1], 0xFEDCBA98_76543210, "DMFC2 after LWC2 (offset +4)")?;
+        soft_assert_eq(
+            result[1],
+            0xFEDCBA98_76543210,
+            "DMFC2 after LWC2 (offset +4)",
+        )?;
         soft_assert_eq(result[2], 0xFEDCBA98_76543210, "SDC2 after LWC2")?;
         soft_assert_eq(result[3], 0x00000000_76543210, "SWC2 after LWC2")?;
 
@@ -703,4 +1086,3 @@ impl Test for COP2LWC2Behavior {
         Ok(())
     }
 }
-

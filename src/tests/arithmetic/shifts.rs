@@ -5,8 +5,8 @@ use alloc::vec::Vec;
 use core::any::Any;
 use core::arch::asm;
 
-use crate::tests::{Level, Test};
 use crate::tests::soft_asserts::soft_assert_eq;
+use crate::tests::{Level, Test};
 
 fn test_sra<const SHIFT_AMOUNT: u32>(source_value: u64) -> u64 {
     let mut result: u64 = 0;
@@ -59,18 +59,21 @@ fn test_sll<const SHIFT_AMOUNT: u32>(source_value: u64) -> u64 {
 pub struct SRA {}
 
 impl Test for SRA {
-    fn name(&self) -> &str { "SRA" }
+    fn name(&self) -> &str {
+        "SRA"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
     fn values(&self) -> Vec<Box<dyn Any>> {
-        vec! {
+        vec![
             Box::new((0x00000000_12345678u64, 4u32, 0x00000000_01234567u64)),
             Box::new((0x00000000_82345678u64, 0u32, 0xFFFFFFFF_82345678u64)),
-
             Box::new((0x01234567_89ABCDEFu64, 4u32, 0x00000000_789ABCDEu64)),
             Box::new((0x00000008_789ABCDEu64, 4u32, 0xFFFFFFFF_8789ABCDu64)),
-        }
+        ]
     }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
@@ -79,12 +82,12 @@ impl Test for SRA {
                 let result = match shift_amount {
                     0 => test_sra::<0>(*source_value),
                     4 => test_sra::<4>(*source_value),
-                    _ => panic!()
+                    _ => panic!(),
                 };
                 soft_assert_eq(result, *expected_value, "Result")?;
                 Ok(())
             }
-            _ => Err("Value is not valid".to_string())
+            _ => Err("Value is not valid".to_string()),
         }
     }
 }
@@ -92,18 +95,21 @@ impl Test for SRA {
 pub struct SRL {}
 
 impl Test for SRL {
-    fn name(&self) -> &str { "SRL" }
+    fn name(&self) -> &str {
+        "SRL"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
     fn values(&self) -> Vec<Box<dyn Any>> {
-        vec! {
+        vec![
             Box::new((0x00000000_12345678u64, 4u32, 0x00000000_01234567u64)),
             Box::new((0x00000000_82345678u64, 0u32, 0xFFFFFFFF_82345678u64)),
-
             Box::new((0x01234567_89ABCDEFu64, 4u32, 0x00000000_089ABCDEu64)),
             Box::new((0x00000008_789ABCDEu64, 4u32, 0x00000000_0789ABCDu64)),
-        }
+        ]
     }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
@@ -112,12 +118,12 @@ impl Test for SRL {
                 let result = match shift_amount {
                     0 => test_srl::<0>(*source_value),
                     4 => test_srl::<4>(*source_value),
-                    _ => panic!()
+                    _ => panic!(),
                 };
                 soft_assert_eq(result, *expected_value, "Result")?;
                 Ok(())
             }
-            _ => Err("Value is not valid".to_string())
+            _ => Err("Value is not valid".to_string()),
         }
     }
 }
@@ -125,16 +131,20 @@ impl Test for SRL {
 pub struct SLL {}
 
 impl Test for SLL {
-    fn name(&self) -> &str { "SLL" }
+    fn name(&self) -> &str {
+        "SLL"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
     fn values(&self) -> Vec<Box<dyn Any>> {
-        vec! {
+        vec![
             Box::new((0x00000000_12345678u64, 4u32, 0x00000000_23456780u64)),
             Box::new((0x00000000_82345678u64, 0u32, 0xFFFFFFFF_82345678u64)),
             Box::new((0x12345678_789ABCDEu64, 4u32, 0xFFFFFFFF_89ABCDE0u64)),
-        }
+        ]
     }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
@@ -143,12 +153,12 @@ impl Test for SLL {
                 let result = match shift_amount {
                     0 => test_sll::<0>(*source_value),
                     4 => test_sll::<4>(*source_value),
-                    _ => panic!()
+                    _ => panic!(),
                 };
                 soft_assert_eq(result, *expected_value, "Result")?;
                 Ok(())
             }
-            _ => Err("Value is not valid".to_string())
+            _ => Err("Value is not valid".to_string()),
         }
     }
 }
@@ -156,11 +166,17 @@ impl Test for SLL {
 pub struct ShiftsIntoR0 {}
 
 impl Test for ShiftsIntoR0 {
-    fn name(&self) -> &str { "ShiftsIntoR0" }
+    fn name(&self) -> &str {
+        "ShiftsIntoR0"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { vec! {} }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![]
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut sll: u64 = 0xDECAF15BADC0FFEE;

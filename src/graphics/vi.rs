@@ -1,5 +1,6 @@
 use arbitrary_int::{u10, u12, u24, u4};
 use bitbybit::{bitenum, bitfield};
+
 use crate::graphics::framebuffer_images::FramebufferImages;
 use crate::memory_map::MemoryMap;
 
@@ -64,7 +65,6 @@ struct DRAMAddress {
     address: u24,
 }
 
-
 const VI_BASE_REG: *mut u32 = MemoryMap::addr32_to_usize(0xA440_0000) as *mut u32;
 
 pub struct Video {
@@ -100,27 +100,49 @@ impl Video {
         // Initialize VI. See https://github.com/PeterLemon/N64/blob/master/RDP/TextureCoordinates/LIB/N64_GFX.INC#L38 for an assembly version of this
 
         unsafe {
-            VI_BASE_REG.add(RegisterOffset::Status as usize >> 2).write_volatile(
-                Status::DEFAULT
-                    .with_framebuffer_type(StatusFramebufferType::Bits16)
-                    .with_gamma_dither(true)
-                    .with_gamma_boost(true)
-                    .with_serrate(true)
-                    .with_anti_alias(false)
-                    .with_resample(true)
-                    .with_pixel_advance(u4::new(3))
-                    .raw_value(), );
-            VI_BASE_REG.add(RegisterOffset::VIntr as usize >> 2).write_volatile(
-                VIIntr::DEFAULT.with_row(u10::new(2)).raw_value());
-            VI_BASE_REG.add(RegisterOffset::Timing as usize >> 2).write_volatile(0x03E5_2239);
-            VI_BASE_REG.add(RegisterOffset::VSync as usize >> 2).write_volatile(0x0000_020D);
-            VI_BASE_REG.add(RegisterOffset::HSync as usize >> 2).write_volatile(0x0000_0C15);
-            VI_BASE_REG.add(RegisterOffset::HSyncLeap as usize >> 2).write_volatile(0x0C15_0C15);
-            VI_BASE_REG.add(RegisterOffset::HVideo as usize >> 2).write_volatile(0x006C_02EC);
-            VI_BASE_REG.add(RegisterOffset::VVideo as usize >> 2).write_volatile(0x0025_01FF);
-            VI_BASE_REG.add(RegisterOffset::VBurst as usize >> 2).write_volatile(0x000E_0204);
-            VI_BASE_REG.add(RegisterOffset::XScale as usize >> 2).write_volatile((0x100 * WIDTH) / 160);
-            VI_BASE_REG.add(RegisterOffset::YScale as usize >> 2).write_volatile((0x100 * HEIGHT) / 60);
+            VI_BASE_REG
+                .add(RegisterOffset::Status as usize >> 2)
+                .write_volatile(
+                    Status::DEFAULT
+                        .with_framebuffer_type(StatusFramebufferType::Bits16)
+                        .with_gamma_dither(true)
+                        .with_gamma_boost(true)
+                        .with_serrate(true)
+                        .with_anti_alias(false)
+                        .with_resample(true)
+                        .with_pixel_advance(u4::new(3))
+                        .raw_value(),
+                );
+            VI_BASE_REG
+                .add(RegisterOffset::VIntr as usize >> 2)
+                .write_volatile(VIIntr::DEFAULT.with_row(u10::new(2)).raw_value());
+            VI_BASE_REG
+                .add(RegisterOffset::Timing as usize >> 2)
+                .write_volatile(0x03E5_2239);
+            VI_BASE_REG
+                .add(RegisterOffset::VSync as usize >> 2)
+                .write_volatile(0x0000_020D);
+            VI_BASE_REG
+                .add(RegisterOffset::HSync as usize >> 2)
+                .write_volatile(0x0000_0C15);
+            VI_BASE_REG
+                .add(RegisterOffset::HSyncLeap as usize >> 2)
+                .write_volatile(0x0C15_0C15);
+            VI_BASE_REG
+                .add(RegisterOffset::HVideo as usize >> 2)
+                .write_volatile(0x006C_02EC);
+            VI_BASE_REG
+                .add(RegisterOffset::VVideo as usize >> 2)
+                .write_volatile(0x0025_01FF);
+            VI_BASE_REG
+                .add(RegisterOffset::VBurst as usize >> 2)
+                .write_volatile(0x000E_0204);
+            VI_BASE_REG
+                .add(RegisterOffset::XScale as usize >> 2)
+                .write_volatile((0x100 * WIDTH) / 160);
+            VI_BASE_REG
+                .add(RegisterOffset::YScale as usize >> 2)
+                .write_volatile((0x100 * HEIGHT) / 60);
         }
     }
 
@@ -130,16 +152,25 @@ impl Video {
             let status = Status::new_with_raw_value(mmr.read_volatile());
             let new_status = status.with_framebuffer_type(value);
             mmr.write_volatile(new_status.raw_value());
-            status.framebuffer_type().unwrap_or(StatusFramebufferType::Off)
+            status
+                .framebuffer_type()
+                .unwrap_or(StatusFramebufferType::Off)
         }
     }
 
-    pub fn framebuffers(&self) -> &FramebufferImages<PixelType> { &self.framebuffers }
+    pub fn framebuffers(&self) -> &FramebufferImages<PixelType> {
+        &self.framebuffers
+    }
 
     pub fn alloc_framebuffer(&self) {
-        self.framebuffers.alloc_buffers(FRAMEBUFFER_ALIGNMENT, WIDTH, HEIGHT);
+        self.framebuffers
+            .alloc_buffers(FRAMEBUFFER_ALIGNMENT, WIDTH, HEIGHT);
         self.activate_frontbuffer();
-        unsafe { VI_BASE_REG.add(RegisterOffset::HWidth as usize >> 2).write_volatile(WIDTH); }
+        unsafe {
+            VI_BASE_REG
+                .add(RegisterOffset::HWidth as usize >> 2)
+                .write_volatile(WIDTH);
+        }
     }
 
     pub fn swap_buffers(&self) {
@@ -173,13 +204,19 @@ impl Video {
             }
 
             unsafe {
-                VI_BASE_REG.add(RegisterOffset::DRAMAddress as usize >> 2).write_volatile(dram_address);
+                VI_BASE_REG
+                    .add(RegisterOffset::DRAMAddress as usize >> 2)
+                    .write_volatile(dram_address);
             }
         }
     }
 
     pub fn current_scanline(&self) -> u32 {
-        unsafe { VI_BASE_REG.add(RegisterOffset::Current as usize >> 2).read_volatile() }
+        unsafe {
+            VI_BASE_REG
+                .add(RegisterOffset::Current as usize >> 2)
+                .read_volatile()
+        }
     }
 
     pub fn spinwait_for_vsync(&self) {

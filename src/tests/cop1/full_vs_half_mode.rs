@@ -1,14 +1,17 @@
 use alloc::boxed::Box;
 use alloc::string::String;
 use alloc::vec::Vec;
-use core::arch::asm;
 use core::any::Any;
-use crate::cop0::{RegisterIndex, set_status, Status};
-use crate::tests::{Level, Test};
+use core::arch::asm;
+
+use crate::cop0::{set_status, RegisterIndex, Status};
 use crate::tests::soft_asserts::soft_assert_eq;
+use crate::tests::{Level, Test};
 
 fn set_mode(full: bool) {
-    unsafe { set_status(Status::DEFAULT.with_fpu64(full)); }
+    unsafe {
+        set_status(Status::DEFAULT.with_fpu64(full));
+    }
 }
 
 // The next four assembly wrappers probably aren't fully legal as they assume that
@@ -21,7 +24,8 @@ fn mtc1<const REG: usize>(value: u32) {
             .set noat
             .set noreorder
             mtc1 {value}, ${cop1Reg}
-        ", value = in(reg) value, cop1Reg = const REG)}
+        ", value = in(reg) value, cop1Reg = const REG)
+    }
 }
 
 fn mfc1<const REG: usize>() -> u32 {
@@ -59,11 +63,17 @@ fn dmfc1<const REG: usize>() -> u64 {
 pub struct FullMode;
 
 impl Test for FullMode {
-    fn name(&self) -> &str { "Move To/From in Full Mode" }
+    fn name(&self) -> &str {
+        "Move To/From in Full Mode"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         dmtc1::<0>(0x00001111_22223333);
@@ -105,10 +115,26 @@ impl Test for FullMode {
         soft_assert_eq(dmfc1::<1>(), 0x44445555_77776666, "DMFC1 after MTC1 (1)")?;
         soft_assert_eq(dmfc1::<2>(), 0x88889999_BBBBAAAA, "DMFC1 after MTC1 (2)")?;
         soft_assert_eq(dmfc1::<3>(), 0xCCCCDDDD_FFFFEEEE, "DMFC1 after MTC1 (3)")?;
-        soft_assert_eq(dmfc1::<4>(), 0x00110011_22332233, "DMFC1 after DMTC1 (with MTC1 on different reg) (4)")?;
-        soft_assert_eq(dmfc1::<5>(), 0x44554455_66776677, "DMFC1 after DMTC1 (with MTC1 on different reg) (5)")?;
-        soft_assert_eq(dmfc1::<6>(), 0x88998899_AABBAABB, "DMFC1 after DMTC1 (with MTC1 on different reg) (6)")?;
-        soft_assert_eq(dmfc1::<7>(), 0xCCDDCCDD_EEFFEEFF, "DMFC1 after DMTC1 (with MTC1 on different reg) (7)")?;
+        soft_assert_eq(
+            dmfc1::<4>(),
+            0x00110011_22332233,
+            "DMFC1 after DMTC1 (with MTC1 on different reg) (4)",
+        )?;
+        soft_assert_eq(
+            dmfc1::<5>(),
+            0x44554455_66776677,
+            "DMFC1 after DMTC1 (with MTC1 on different reg) (5)",
+        )?;
+        soft_assert_eq(
+            dmfc1::<6>(),
+            0x88998899_AABBAABB,
+            "DMFC1 after DMTC1 (with MTC1 on different reg) (6)",
+        )?;
+        soft_assert_eq(
+            dmfc1::<7>(),
+            0xCCDDCCDD_EEFFEEFF,
+            "DMFC1 after DMTC1 (with MTC1 on different reg) (7)",
+        )?;
 
         Ok(())
     }
@@ -117,11 +143,17 @@ impl Test for FullMode {
 pub struct HalfMode;
 
 impl Test for HalfMode {
-    fn name(&self) -> &str { "Move To/From in Half Mode" }
+    fn name(&self) -> &str {
+        "Move To/From in Half Mode"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         // For 64 bit instructions, the odd numbers should be interpreted like even numbers
@@ -165,11 +197,26 @@ impl Test for HalfMode {
         soft_assert_eq(dmfc1::<1>(), 0x77776666_33332222, "DMFC1 after MTC1 (1)")?;
         soft_assert_eq(dmfc1::<2>(), 0xFFFFEEEE_BBBBAAAA, "DMFC1 after MTC1 (2)")?;
         soft_assert_eq(dmfc1::<3>(), 0xFFFFEEEE_BBBBAAAA, "DMFC1 after MTC1 (3)")?;
-        soft_assert_eq(dmfc1::<4>(), 0x44554455_66776677, "DMFC1 after DMTC1 (with MTC1 on different reg) (4)")?;
-        soft_assert_eq(dmfc1::<5>(), 0x44554455_66776677, "DMFC1 after DMTC1 (with MTC1 on different reg) (5)")?;
-        soft_assert_eq(dmfc1::<6>(), 0xCCDDCCDD_EEFFEEFF, "DMFC1 after DMTC1 (with MTC1 on different reg) (6)")?;
-        soft_assert_eq(dmfc1::<7>(), 0xCCDDCCDD_EEFFEEFF, "DMFC1 after DMTC1 (with MTC1 on different reg) (7)")?;
-
+        soft_assert_eq(
+            dmfc1::<4>(),
+            0x44554455_66776677,
+            "DMFC1 after DMTC1 (with MTC1 on different reg) (4)",
+        )?;
+        soft_assert_eq(
+            dmfc1::<5>(),
+            0x44554455_66776677,
+            "DMFC1 after DMTC1 (with MTC1 on different reg) (5)",
+        )?;
+        soft_assert_eq(
+            dmfc1::<6>(),
+            0xCCDDCCDD_EEFFEEFF,
+            "DMFC1 after DMTC1 (with MTC1 on different reg) (6)",
+        )?;
+        soft_assert_eq(
+            dmfc1::<7>(),
+            0xCCDDCCDD_EEFFEEFF,
+            "DMFC1 after DMTC1 (with MTC1 on different reg) (7)",
+        )?;
 
         Ok(())
     }
@@ -178,11 +225,17 @@ impl Test for HalfMode {
 pub struct MixedMode;
 
 impl Test for MixedMode {
-    fn name(&self) -> &str { "Move To/From in Mixed Mode" }
+    fn name(&self) -> &str {
+        "Move To/From in Mixed Mode"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         dmtc1::<0>(0x00001111_22223333);
@@ -197,15 +250,47 @@ impl Test for MixedMode {
         // Switch to 32 bit mode and read back
         set_mode(false);
 
-        soft_assert_eq(dmfc1::<0>(), 0x00001111_22223333, "DMFC1 after DMTC1 and switch to 32 bit mode (0)")?;
-        soft_assert_eq(dmfc1::<1>(), 0x00001111_22223333, "DMFC1 after DMTC1 and switch to 32 bit mode (1)")?;
-        soft_assert_eq(dmfc1::<2>(), 0x88889999_AAAABBBB, "DMFC1 after DMTC1 and switch to 32 bit mode (2)")?;
-        soft_assert_eq(dmfc1::<3>(), 0x88889999_AAAABBBB, "DMFC1 after DMTC1 and switch to 32 bit mode (3)")?;
+        soft_assert_eq(
+            dmfc1::<0>(),
+            0x00001111_22223333,
+            "DMFC1 after DMTC1 and switch to 32 bit mode (0)",
+        )?;
+        soft_assert_eq(
+            dmfc1::<1>(),
+            0x00001111_22223333,
+            "DMFC1 after DMTC1 and switch to 32 bit mode (1)",
+        )?;
+        soft_assert_eq(
+            dmfc1::<2>(),
+            0x88889999_AAAABBBB,
+            "DMFC1 after DMTC1 and switch to 32 bit mode (2)",
+        )?;
+        soft_assert_eq(
+            dmfc1::<3>(),
+            0x88889999_AAAABBBB,
+            "DMFC1 after DMTC1 and switch to 32 bit mode (3)",
+        )?;
 
-        soft_assert_eq(mfc1::<0>(), 0x22223333, "MFC1 after DMTC1 and switch to 32 bit mode (0)")?;
-        soft_assert_eq(mfc1::<1>(), 0x00001111, "MFC1 after DMTC1 and switch to 32 bit mode (1)")?;
-        soft_assert_eq(mfc1::<2>(), 0xAAAABBBB, "MFC1 after DMTC1 and switch to 32 bit mode (2)")?;
-        soft_assert_eq(mfc1::<3>(), 0x88889999, "MFC1 after DMTC1 and switch to 32 bit mode (3)")?;
+        soft_assert_eq(
+            mfc1::<0>(),
+            0x22223333,
+            "MFC1 after DMTC1 and switch to 32 bit mode (0)",
+        )?;
+        soft_assert_eq(
+            mfc1::<1>(),
+            0x00001111,
+            "MFC1 after DMTC1 and switch to 32 bit mode (1)",
+        )?;
+        soft_assert_eq(
+            mfc1::<2>(),
+            0xAAAABBBB,
+            "MFC1 after DMTC1 and switch to 32 bit mode (2)",
+        )?;
+        soft_assert_eq(
+            mfc1::<3>(),
+            0x88889999,
+            "MFC1 after DMTC1 and switch to 32 bit mode (3)",
+        )?;
 
         // Write in 32 bit mode
         mtc1::<0>(0x33332222);
@@ -214,14 +299,46 @@ impl Test for MixedMode {
 
         // Read back in 64 bit mode to see where things ended up (and to ensure that nothing was dropped)
         set_mode(true);
-        soft_assert_eq(dmfc1::<0>(), 0x77776666_33332222, "DMFC1 (64 bit) after various writes (0)")?;
-        soft_assert_eq(dmfc1::<1>(), 0x44445555_66667777, "DMFC1 (64 bit) after various writes (1)")?;
-        soft_assert_eq(dmfc1::<2>(), 0x88889999_BBBBAAAA, "DMFC1 (64 bit) after various writes (2)")?;
-        soft_assert_eq(dmfc1::<3>(), 0xCCCCDDDD_EEEEFFFF, "DMFC1 (64 bit) after various writes (3)")?;
-        soft_assert_eq(dmfc1::<4>(), 0x00110011_22332233, "DMFC1 (64 bit) after various writes (4)")?;
-        soft_assert_eq(dmfc1::<5>(), 0x44554455_66776677, "DMFC1 (64 bit) after various writes (5)")?;
-        soft_assert_eq(dmfc1::<6>(), 0x88998899_AABBAABB, "DMFC1 (64 bit) after various writes (6)")?;
-        soft_assert_eq(dmfc1::<7>(), 0xCCDDCCDD_EEFFEEFF, "DMFC1 (64 bit) after various writes (7)")?;
+        soft_assert_eq(
+            dmfc1::<0>(),
+            0x77776666_33332222,
+            "DMFC1 (64 bit) after various writes (0)",
+        )?;
+        soft_assert_eq(
+            dmfc1::<1>(),
+            0x44445555_66667777,
+            "DMFC1 (64 bit) after various writes (1)",
+        )?;
+        soft_assert_eq(
+            dmfc1::<2>(),
+            0x88889999_BBBBAAAA,
+            "DMFC1 (64 bit) after various writes (2)",
+        )?;
+        soft_assert_eq(
+            dmfc1::<3>(),
+            0xCCCCDDDD_EEEEFFFF,
+            "DMFC1 (64 bit) after various writes (3)",
+        )?;
+        soft_assert_eq(
+            dmfc1::<4>(),
+            0x00110011_22332233,
+            "DMFC1 (64 bit) after various writes (4)",
+        )?;
+        soft_assert_eq(
+            dmfc1::<5>(),
+            0x44554455_66776677,
+            "DMFC1 (64 bit) after various writes (5)",
+        )?;
+        soft_assert_eq(
+            dmfc1::<6>(),
+            0x88998899_AABBAABB,
+            "DMFC1 (64 bit) after various writes (6)",
+        )?;
+        soft_assert_eq(
+            dmfc1::<7>(),
+            0xCCDDCCDD_EEFFEEFF,
+            "DMFC1 (64 bit) after various writes (7)",
+        )?;
 
         Ok(())
     }
@@ -234,11 +351,17 @@ impl Test for MixedMode {
 pub struct UpperBitsOf32BitOperationFull;
 
 impl Test for UpperBitsOf32BitOperationFull {
-    fn name(&self) -> &str { "Upper bits of 32 bit operation (full mode)" }
+    fn name(&self) -> &str {
+        "Upper bits of 32 bit operation (full mode)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         dmtc1::<0>(0x00001111_22223333);
@@ -259,7 +382,6 @@ impl Test for UpperBitsOf32BitOperationFull {
         dmtc1::<15>(0x30303030_40404040);
         dmtc1::<16>(0x50505050_60606060);
         dmtc1::<17>(0x70707070_80808080);
-
 
         dmtc1::<24>(0x00000123_11223344);
         dmtc1::<25>(0x00001234_11223344);
@@ -299,17 +421,53 @@ impl Test for UpperBitsOf32BitOperationFull {
 
         // Read back as 64 bit values
         soft_assert_eq(dmfc1::<0>(), 6f32.to_bits() as u64, "DMFC1 after ADD.S (0)")?;
-        soft_assert_eq(dmfc1::<1>(), (-26f32).to_bits() as u64, "DMFC1 after SUB.S (1)")?;
-        soft_assert_eq(dmfc1::<2>(), (-160f32).to_bits() as u64, "DMFC1 after MUL.S (2)")?;
-        soft_assert_eq(dmfc1::<3>(), (-0.625f32).to_bits() as u64, "DMFC1 after DIV.S (3)")?;
-        soft_assert_eq(dmfc1::<4>(), 4f32.to_bits() as u64, "DMFC1 after SQRT.S (4)")?;
-        soft_assert_eq(dmfc1::<5>(), 10f32.to_bits() as u64, "DMFC1 after ABS.S (5)")?;
-        soft_assert_eq(dmfc1::<6>(), (-16f32).to_bits() as u64, "DMFC1 after NEG.S (6)")?;
+        soft_assert_eq(
+            dmfc1::<1>(),
+            (-26f32).to_bits() as u64,
+            "DMFC1 after SUB.S (1)",
+        )?;
+        soft_assert_eq(
+            dmfc1::<2>(),
+            (-160f32).to_bits() as u64,
+            "DMFC1 after MUL.S (2)",
+        )?;
+        soft_assert_eq(
+            dmfc1::<3>(),
+            (-0.625f32).to_bits() as u64,
+            "DMFC1 after DIV.S (3)",
+        )?;
+        soft_assert_eq(
+            dmfc1::<4>(),
+            4f32.to_bits() as u64,
+            "DMFC1 after SQRT.S (4)",
+        )?;
+        soft_assert_eq(
+            dmfc1::<5>(),
+            10f32.to_bits() as u64,
+            "DMFC1 after ABS.S (5)",
+        )?;
+        soft_assert_eq(
+            dmfc1::<6>(),
+            (-16f32).to_bits() as u64,
+            "DMFC1 after NEG.S (6)",
+        )?;
         soft_assert_eq(dmfc1::<7>(), 0x01234567_c1800000, "DMFC1 after MOV.S (7)")?;
 
-        soft_assert_eq(dmfc1::<8>(), 266f32.to_bits() as u64, "DMFC1 after CVT.S.D (8)")?;
-        soft_assert_eq(dmfc1::<9>(), (0x123_11223344u64 as f32).to_bits() as u64, "DMFC1 after CVT.S.L (9)")?;
-        soft_assert_eq(dmfc1::<10>(), (0x11223344u32 as f32).to_bits() as u64, "DMFC1 after CVT.S.W (10)")?;
+        soft_assert_eq(
+            dmfc1::<8>(),
+            266f32.to_bits() as u64,
+            "DMFC1 after CVT.S.D (8)",
+        )?;
+        soft_assert_eq(
+            dmfc1::<9>(),
+            (0x123_11223344u64 as f32).to_bits() as u64,
+            "DMFC1 after CVT.S.L (9)",
+        )?;
+        soft_assert_eq(
+            dmfc1::<10>(),
+            (0x11223344u32 as f32).to_bits() as u64,
+            "DMFC1 after CVT.S.W (10)",
+        )?;
 
         soft_assert_eq(dmfc1::<11>(), 16u64, "DMFC1 after CVT.W.S (11)")?;
         soft_assert_eq(dmfc1::<12>(), 16u64, "DMFC1 after ROUND.W.S (12)")?;
@@ -317,8 +475,16 @@ impl Test for UpperBitsOf32BitOperationFull {
         soft_assert_eq(dmfc1::<14>(), 16u64, "DMFC1 after CEIL.W.S (14)")?;
         soft_assert_eq(dmfc1::<15>(), 16u64, "DMFC1 after FLOOR.W.S (15)")?;
 
-        soft_assert_eq(dmfc1::<16>(), 0x50505050_00000000u64 | (1234.5f32.to_bits() as u64), "DMFC1 after LWC1 (16)")?;
-        soft_assert_eq(dmfc1::<17>(), 0x70707070_00000000u64 | (&a as *const f32 as u32 as u64), "DMFC1 after MTC1 (17)")?;
+        soft_assert_eq(
+            dmfc1::<16>(),
+            0x50505050_00000000u64 | (1234.5f32.to_bits() as u64),
+            "DMFC1 after LWC1 (16)",
+        )?;
+        soft_assert_eq(
+            dmfc1::<17>(),
+            0x70707070_00000000u64 | (&a as *const f32 as u32 as u64),
+            "DMFC1 after MTC1 (17)",
+        )?;
 
         Ok(())
     }
@@ -327,11 +493,17 @@ impl Test for UpperBitsOf32BitOperationFull {
 pub struct UpperBitsOf32BitOperationHalf;
 
 impl Test for UpperBitsOf32BitOperationHalf {
-    fn name(&self) -> &str { "Upper bits of 32 bit operation (half mode)" }
+    fn name(&self) -> &str {
+        "Upper bits of 32 bit operation (half mode)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         dmtc1::<0>(0x00001111_22223333);
@@ -429,28 +601,84 @@ impl Test for UpperBitsOf32BitOperationHalf {
         // Read back as 64 bit values
         soft_assert_eq(result[0], 6f32.to_bits() as u64, "Result after ADD.S (0)")?;
         soft_assert_eq(result[1], 6f32.to_bits() as u64, "Result after ADD.S (1)")?;
-        soft_assert_eq(result[2], (-26f32).to_bits() as u64, "Result after ADD.S (2)")?;
+        soft_assert_eq(
+            result[2],
+            (-26f32).to_bits() as u64,
+            "Result after ADD.S (2)",
+        )?;
 
-        soft_assert_eq(result[3], (-26f32).to_bits() as u64, "Result after SUB.S (3)")?;
-        soft_assert_eq(result[4], (-26f32).to_bits() as u64, "Result after SUB.S (4)")?;
+        soft_assert_eq(
+            result[3],
+            (-26f32).to_bits() as u64,
+            "Result after SUB.S (3)",
+        )?;
+        soft_assert_eq(
+            result[4],
+            (-26f32).to_bits() as u64,
+            "Result after SUB.S (4)",
+        )?;
         soft_assert_eq(result[5], 6f32.to_bits() as u64, "Result after SUB.S (5)")?;
 
-        soft_assert_eq(result[6], (-160f32).to_bits() as u64, "Result after MUL.S (6)")?;
-        soft_assert_eq(result[7],(-160f32).to_bits() as u64, "Result after MUL.S (7)")?;
+        soft_assert_eq(
+            result[6],
+            (-160f32).to_bits() as u64,
+            "Result after MUL.S (6)",
+        )?;
+        soft_assert_eq(
+            result[7],
+            (-160f32).to_bits() as u64,
+            "Result after MUL.S (7)",
+        )?;
         soft_assert_eq(result[8], 160f32.to_bits() as u64, "Result after MUL.S (8)")?;
 
-        soft_assert_eq(result[9], (-0.625f32).to_bits() as u64, "Result after DIV.S (9)")?;
-        soft_assert_eq(result[10], (-0.625f32).to_bits() as u64, "Result after DIV.S (10)")?;
-        soft_assert_eq(result[11], (-0.625f32).to_bits() as u64, "Result after DIV.S (11)")?;
+        soft_assert_eq(
+            result[9],
+            (-0.625f32).to_bits() as u64,
+            "Result after DIV.S (9)",
+        )?;
+        soft_assert_eq(
+            result[10],
+            (-0.625f32).to_bits() as u64,
+            "Result after DIV.S (10)",
+        )?;
+        soft_assert_eq(
+            result[11],
+            (-0.625f32).to_bits() as u64,
+            "Result after DIV.S (11)",
+        )?;
 
-        soft_assert_eq(result[12], 4f32.to_bits() as u64, "Result after SQRT.S (12)")?;
-        soft_assert_eq(result[13], 4f32.to_bits() as u64, "Result after SQRT.S (13)")?;
+        soft_assert_eq(
+            result[12],
+            4f32.to_bits() as u64,
+            "Result after SQRT.S (12)",
+        )?;
+        soft_assert_eq(
+            result[13],
+            4f32.to_bits() as u64,
+            "Result after SQRT.S (13)",
+        )?;
 
-        soft_assert_eq(result[14], 10f32.to_bits() as u64, "Result after ABS.S (14)")?;
-        soft_assert_eq(result[15], 10f32.to_bits() as u64, "Result after ABS.S (15)")?;
+        soft_assert_eq(
+            result[14],
+            10f32.to_bits() as u64,
+            "Result after ABS.S (14)",
+        )?;
+        soft_assert_eq(
+            result[15],
+            10f32.to_bits() as u64,
+            "Result after ABS.S (15)",
+        )?;
 
-        soft_assert_eq(result[16], (-16f32).to_bits() as u64, "Result after NEG.S (16)")?;
-        soft_assert_eq(result[17], (-16f32).to_bits() as u64, "Result after NEG.S (17)")?;
+        soft_assert_eq(
+            result[16],
+            (-16f32).to_bits() as u64,
+            "Result after NEG.S (16)",
+        )?;
+        soft_assert_eq(
+            result[17],
+            (-16f32).to_bits() as u64,
+            "Result after NEG.S (17)",
+        )?;
 
         soft_assert_eq(result[18], 0x01234567_41800000, "Result after MOV.S (18)")?;
         soft_assert_eq(result[19], 0x01234567_41800000, "Result after MOV.S (19)")?;
@@ -462,11 +690,17 @@ impl Test for UpperBitsOf32BitOperationHalf {
 pub struct UpperBitsOf32BitConversionHalf;
 
 impl Test for UpperBitsOf32BitConversionHalf {
-    fn name(&self) -> &str { "Upper bits of 32 bit conversions (half mode)" }
+    fn name(&self) -> &str {
+        "Upper bits of 32 bit conversions (half mode)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         dmtc1::<0>(0x00001111_22223333);
@@ -567,13 +801,37 @@ impl Test for UpperBitsOf32BitConversionHalf {
         set_mode(true);
 
         // Read back as 64 bit values
-        soft_assert_eq(result[0], 266f32.to_bits() as u64, "Result after CVT.S.D (0)")?;
-        soft_assert_eq(result[1], 266f32.to_bits() as u64, "Result after CVT.S.D (1)")?;
+        soft_assert_eq(
+            result[0],
+            266f32.to_bits() as u64,
+            "Result after CVT.S.D (0)",
+        )?;
+        soft_assert_eq(
+            result[1],
+            266f32.to_bits() as u64,
+            "Result after CVT.S.D (1)",
+        )?;
 
-        soft_assert_eq(result[2], (0x123_11223344u64 as f32).to_bits() as u64, "Result after CVT.S.L (2)")?;
-        soft_assert_eq(result[3], (0x123_11223344u64 as f32).to_bits() as u64, "Result after CVT.S.L (3)")?;
-        soft_assert_eq(result[4], (0x11223344u32 as f32).to_bits() as u64, "Result after CVT.S.W (4)")?;
-        soft_assert_eq(result[5], (0x11223344u32 as f32).to_bits() as u64, "Result after CVT.S.W (5)")?;
+        soft_assert_eq(
+            result[2],
+            (0x123_11223344u64 as f32).to_bits() as u64,
+            "Result after CVT.S.L (2)",
+        )?;
+        soft_assert_eq(
+            result[3],
+            (0x123_11223344u64 as f32).to_bits() as u64,
+            "Result after CVT.S.L (3)",
+        )?;
+        soft_assert_eq(
+            result[4],
+            (0x11223344u32 as f32).to_bits() as u64,
+            "Result after CVT.S.W (4)",
+        )?;
+        soft_assert_eq(
+            result[5],
+            (0x11223344u32 as f32).to_bits() as u64,
+            "Result after CVT.S.W (5)",
+        )?;
 
         soft_assert_eq(result[6], 16u64, "Result after CVT.W.S (6)")?;
         soft_assert_eq(result[7], 16u64, "Result after CVT.W.S (7)")?;
@@ -604,11 +862,17 @@ impl Test for UpperBitsOf32BitConversionHalf {
 pub struct HalfMode64BitOperationsWithOddIndex;
 
 impl Test for HalfMode64BitOperationsWithOddIndex {
-    fn name(&self) -> &str { "64 bit with odd indices (half mode)" }
+    fn name(&self) -> &str {
+        "64 bit with odd indices (half mode)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         dmtc1::<0>(0x00001111_22223333);
@@ -708,7 +972,7 @@ impl Test for HalfMode64BitOperationsWithOddIndex {
         soft_assert_eq(result[5], 6f64.to_bits(), "Result after SUB.D (5)")?;
 
         soft_assert_eq(result[6], (-160f64).to_bits(), "Result after MUL.D (6)")?;
-        soft_assert_eq(result[7],(-160f64).to_bits(), "Result after MUL.D (7)")?;
+        soft_assert_eq(result[7], (-160f64).to_bits(), "Result after MUL.D (7)")?;
         soft_assert_eq(result[8], 160f64.to_bits(), "Result after MUL.D (8)")?;
 
         soft_assert_eq(result[9], (-0.625f64).to_bits(), "Result after DIV.D (9)")?;
@@ -734,11 +998,17 @@ impl Test for HalfMode64BitOperationsWithOddIndex {
 pub struct HalfMode64BitConversionsWithOddIndex;
 
 impl Test for HalfMode64BitConversionsWithOddIndex {
-    fn name(&self) -> &str { "64 bit with odd indices conversions (half mode)" }
+    fn name(&self) -> &str {
+        "64 bit with odd indices conversions (half mode)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         dmtc1::<0>(0x00001111_22223333);
@@ -839,13 +1109,37 @@ impl Test for HalfMode64BitConversionsWithOddIndex {
         set_mode(true);
 
         // Read back as 64 bit values
-        soft_assert_eq(result[0], 266f64.to_bits() as u64, "Result after CVT.D.S (0)")?;
-        soft_assert_eq(result[1], 266f64.to_bits() as u64, "Result after CVT.D.S (1)")?;
+        soft_assert_eq(
+            result[0],
+            266f64.to_bits() as u64,
+            "Result after CVT.D.S (0)",
+        )?;
+        soft_assert_eq(
+            result[1],
+            266f64.to_bits() as u64,
+            "Result after CVT.D.S (1)",
+        )?;
 
-        soft_assert_eq(result[2], (0x123_11223344u64 as f64).to_bits(), "Result after CVT.D.L (2)")?;
-        soft_assert_eq(result[3], (0x123_11223344u64 as f64).to_bits(), "Result after CVT.D.L (3)")?;
-        soft_assert_eq(result[4], (0x11223344u32 as f64).to_bits(), "Result after CVT.D.W (4)")?;
-        soft_assert_eq(result[5], (0x11223344u32 as f64).to_bits(), "Result after CVT.D.W (5)")?;
+        soft_assert_eq(
+            result[2],
+            (0x123_11223344u64 as f64).to_bits(),
+            "Result after CVT.D.L (2)",
+        )?;
+        soft_assert_eq(
+            result[3],
+            (0x123_11223344u64 as f64).to_bits(),
+            "Result after CVT.D.L (3)",
+        )?;
+        soft_assert_eq(
+            result[4],
+            (0x11223344u32 as f64).to_bits(),
+            "Result after CVT.D.W (4)",
+        )?;
+        soft_assert_eq(
+            result[5],
+            (0x11223344u32 as f64).to_bits(),
+            "Result after CVT.D.W (5)",
+        )?;
 
         soft_assert_eq(result[6], 16u64, "Result after CVT.W.D (6)")?;
         soft_assert_eq(result[7], 16u64, "Result after CVT.W.D (7)")?;
@@ -876,11 +1170,17 @@ impl Test for HalfMode64BitConversionsWithOddIndex {
 pub struct ComparisonInHalfModeWithOddRegisters;
 
 impl Test for ComparisonInHalfModeWithOddRegisters {
-    fn name(&self) -> &str { "Comparisons in half mode with odd register indices" }
+    fn name(&self) -> &str {
+        "Comparisons in half mode with odd register indices"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         dmtc1::<0>(0x00000000_22223333);
@@ -940,7 +1240,11 @@ impl Test for ComparisonInHalfModeWithOddRegisters {
         soft_assert_eq(different02, 0, "Upper bits in C.EQ.S should be ignored")?;
         soft_assert_eq(different54, 0, "Lowest bit of fs should be ignored")?;
         soft_assert_eq(different45, 1, "Lowest bit of ft should not be ignored")?;
-        soft_assert_eq(different55, 1, "Lowest bit of fs should be ignored, but not of ft")?;
+        soft_assert_eq(
+            different55,
+            1,
+            "Lowest bit of fs should be ignored, but not of ft",
+        )?;
 
         Ok(())
     }
@@ -950,11 +1254,17 @@ impl Test for ComparisonInHalfModeWithOddRegisters {
 pub struct LWC1InHalfMode;
 
 impl Test for LWC1InHalfMode {
-    fn name(&self) -> &str { "LWC1 with odd index in 32 bit mode" }
+    fn name(&self) -> &str {
+        "LWC1 with odd index in 32 bit mode"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         dmtc1::<0>(0x00001111_22223333);
@@ -976,9 +1286,11 @@ impl Test for LWC1InHalfMode {
 
         // First load
         set_mode(false);
-        unsafe { asm!("
+        unsafe {
+            asm!("
             .set noat
-            LWC1 $0, 4({a})", a = in(reg) &a) }
+            LWC1 $0, 4({a})", a = in(reg) &a)
+        }
         set_mode(true);
 
         soft_assert_eq(dmfc1::<0>(), 0x00001111_89ABCDEF, "DMFC1(0) after LWC1($0)")?;
@@ -988,9 +1300,11 @@ impl Test for LWC1InHalfMode {
 
         // Second load
         set_mode(false);
-        unsafe { asm!("
+        unsafe {
+            asm!("
             .set noat
-            LWC1 $1, 0({a})", a = in(reg) &a) }
+            LWC1 $1, 0({a})", a = in(reg) &a)
+        }
         set_mode(true);
 
         soft_assert_eq(dmfc1::<0>(), 0x01234567_89ABCDEF, "DMFC1(0) after LWC1($1)")?;
@@ -1000,9 +1314,11 @@ impl Test for LWC1InHalfMode {
 
         // Third load
         set_mode(false);
-        unsafe { asm!("
+        unsafe {
+            asm!("
             .set noat
-            LWC1 $2, 0({b})", b = in(reg) &b) }
+            LWC1 $2, 0({b})", b = in(reg) &b)
+        }
         set_mode(true);
 
         soft_assert_eq(dmfc1::<0>(), 0x01234567_89ABCDEF, "DMFC1(0) after LWC1($2)")?;
@@ -1012,9 +1328,11 @@ impl Test for LWC1InHalfMode {
 
         // Fourth load
         set_mode(false);
-        unsafe { asm!("
+        unsafe {
+            asm!("
             .set noat
-            LWC1 $3, 4({b})", b = in(reg) &b) }
+            LWC1 $3, 4({b})", b = in(reg) &b)
+        }
         set_mode(true);
 
         soft_assert_eq(dmfc1::<0>(), 0x01234567_89ABCDEF, "DMFC1(0) after LWC1($3)")?;
@@ -1030,11 +1348,17 @@ impl Test for LWC1InHalfMode {
 pub struct LDC1InHalfMode;
 
 impl Test for LDC1InHalfMode {
-    fn name(&self) -> &str { "LDC1 with odd index in 32 bit mode" }
+    fn name(&self) -> &str {
+        "LDC1 with odd index in 32 bit mode"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         dmtc1::<0>(0x00001111_22223333);
@@ -1056,9 +1380,11 @@ impl Test for LDC1InHalfMode {
 
         // First load
         set_mode(false);
-        unsafe { asm!("
+        unsafe {
+            asm!("
             .set noat
-            LDC1 $0, 0({a})", a = in(reg) &a) }
+            LDC1 $0, 0({a})", a = in(reg) &a)
+        }
         set_mode(true);
 
         soft_assert_eq(dmfc1::<0>(), 0x01234567_89ABCDEF, "DMFC1(0) after LDC1($0)")?;
@@ -1068,9 +1394,11 @@ impl Test for LDC1InHalfMode {
 
         // Second load
         set_mode(false);
-        unsafe { asm!("
+        unsafe {
+            asm!("
             .set noat
-            LDC1 $1, 0({b})", b = in(reg) &b) }
+            LDC1 $1, 0({b})", b = in(reg) &b)
+        }
         set_mode(true);
 
         soft_assert_eq(dmfc1::<0>(), 0xFEDCBA98_76543210, "DMFC1(0) after LDC1($1)")?;
@@ -1086,11 +1414,17 @@ impl Test for LDC1InHalfMode {
 pub struct SWC1InHalfMode;
 
 impl Test for SWC1InHalfMode {
-    fn name(&self) -> &str { "SWC1 with odd index in 32 bit mode" }
+    fn name(&self) -> &str {
+        "SWC1 with odd index in 32 bit mode"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         dmtc1::<0>(0x00001111_22223333);
@@ -1103,9 +1437,11 @@ impl Test for SWC1InHalfMode {
 
         // First store
         set_mode(false);
-        unsafe { asm!("
+        unsafe {
+            asm!("
             .set noat
-            SWC1 $0, 4({a})", a = in(reg) &mut a) }
+            SWC1 $0, 4({a})", a = in(reg) &mut a)
+        }
         set_mode(true);
 
         soft_assert_eq(a, 0x01234567_22223333, "a after SWC1($0)")?;
@@ -1113,9 +1449,11 @@ impl Test for SWC1InHalfMode {
 
         // Second store
         set_mode(false);
-        unsafe { asm!("
+        unsafe {
+            asm!("
             .set noat
-            SWC1 $1, 0({a})", a = in(reg) &mut a) }
+            SWC1 $1, 0({a})", a = in(reg) &mut a)
+        }
         set_mode(true);
 
         soft_assert_eq(a, 0x00001111_22223333, "a after SWC1($1)")?;
@@ -1123,9 +1461,11 @@ impl Test for SWC1InHalfMode {
 
         // Third store
         set_mode(false);
-        unsafe { asm!("
+        unsafe {
+            asm!("
             .set noat
-            SWC1 $2, 0({b})", b = in(reg) &mut b) }
+            SWC1 $2, 0({b})", b = in(reg) &mut b)
+        }
         set_mode(true);
 
         soft_assert_eq(a, 0x00001111_22223333, "a after SWC1($2)")?;
@@ -1133,9 +1473,11 @@ impl Test for SWC1InHalfMode {
 
         // Fourth store
         set_mode(false);
-        unsafe { asm!("
+        unsafe {
+            asm!("
             .set noat
-            SWC1 $3, 4({b})", b = in(reg) &mut b) }
+            SWC1 $3, 4({b})", b = in(reg) &mut b)
+        }
         set_mode(true);
 
         soft_assert_eq(a, 0x00001111_22223333, "a after SWC1($3)")?;
@@ -1149,11 +1491,17 @@ impl Test for SWC1InHalfMode {
 pub struct SDC1InHalfMode;
 
 impl Test for SDC1InHalfMode {
-    fn name(&self) -> &str { "SDC1 with odd index in 32 bit mode" }
+    fn name(&self) -> &str {
+        "SDC1 with odd index in 32 bit mode"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         dmtc1::<0>(0x00001111_22223333);
@@ -1166,9 +1514,11 @@ impl Test for SDC1InHalfMode {
 
         // First store
         set_mode(false);
-        unsafe { asm!("
+        unsafe {
+            asm!("
             .set noat
-            SDC1 $0, 0({a})", a = in(reg) &mut a) }
+            SDC1 $0, 0({a})", a = in(reg) &mut a)
+        }
         set_mode(true);
 
         soft_assert_eq(a, 0x00001111_22223333, "a after SDC1($0)")?;
@@ -1176,9 +1526,11 @@ impl Test for SDC1InHalfMode {
 
         // Second store
         set_mode(false);
-        unsafe { asm!("
+        unsafe {
+            asm!("
             .set noat
-            SDC1 $1, 0({b})", b = in(reg) &mut b) }
+            SDC1 $1, 0({b})", b = in(reg) &mut b)
+        }
         set_mode(true);
 
         soft_assert_eq(a, 0x00001111_22223333, "a after SDC1($1)")?;
@@ -1191,11 +1543,17 @@ impl Test for SDC1InHalfMode {
 pub struct MTC1InHalfMode;
 
 impl Test for MTC1InHalfMode {
-    fn name(&self) -> &str { "MTC1 with odd index in 32 bit mode" }
+    fn name(&self) -> &str {
+        "MTC1 with odd index in 32 bit mode"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         dmtc1::<0>(0x00001111_22223333);
@@ -1217,9 +1575,11 @@ impl Test for MTC1InHalfMode {
 
         // First load
         set_mode(false);
-        unsafe { asm!("
+        unsafe {
+            asm!("
             .set noat
-            MTC1 {a}, $0", a = in(reg) (a as u32)) }
+            MTC1 {a}, $0", a = in(reg) (a as u32))
+        }
         set_mode(true);
 
         soft_assert_eq(dmfc1::<0>(), 0x00001111_89ABCDEF, "DMFC1(0) after MTC1($0)")?;
@@ -1229,9 +1589,11 @@ impl Test for MTC1InHalfMode {
 
         // Second load
         set_mode(false);
-        unsafe { asm!("
+        unsafe {
+            asm!("
             .set noat
-            MTC1 {a}, $1", a = in(reg) ((a >> 32) as u32)) }
+            MTC1 {a}, $1", a = in(reg) ((a >> 32) as u32))
+        }
         set_mode(true);
 
         soft_assert_eq(dmfc1::<0>(), 0x01234567_89ABCDEF, "DMFC1(0) after MTC1($1)")?;
@@ -1241,9 +1603,11 @@ impl Test for MTC1InHalfMode {
 
         // Third load
         set_mode(false);
-        unsafe { asm!("
+        unsafe {
+            asm!("
             .set noat
-            MTC1 {b}, $2", b = in(reg) ((b >> 32) as u32)) }
+            MTC1 {b}, $2", b = in(reg) ((b >> 32) as u32))
+        }
         set_mode(true);
 
         soft_assert_eq(dmfc1::<0>(), 0x01234567_89ABCDEF, "DMFC1(0) after MTC1($2)")?;
@@ -1253,9 +1617,11 @@ impl Test for MTC1InHalfMode {
 
         // Third load
         set_mode(false);
-        unsafe { asm!("
+        unsafe {
+            asm!("
             .set noat
-            MTC1 {b}, $3", b = in(reg) (b as u32)) }
+            MTC1 {b}, $3", b = in(reg) (b as u32))
+        }
         set_mode(true);
 
         soft_assert_eq(dmfc1::<0>(), 0x01234567_89ABCDEF, "DMFC1(0) after MTC1($3)")?;
@@ -1270,11 +1636,17 @@ impl Test for MTC1InHalfMode {
 pub struct DMTC1InHalfMode;
 
 impl Test for DMTC1InHalfMode {
-    fn name(&self) -> &str { "DMTC1 with odd index in 32 bit mode" }
+    fn name(&self) -> &str {
+        "DMTC1 with odd index in 32 bit mode"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         dmtc1::<0>(0x00001111_22223333);
@@ -1299,20 +1671,52 @@ impl Test for DMTC1InHalfMode {
         dmtc1::<0>(a);
         set_mode(true);
 
-        soft_assert_eq(dmfc1::<0>(), 0x01234567_89ABCDEF, "DMFC1(0) after DMTC1($0)")?;
-        soft_assert_eq(dmfc1::<1>(), 0x44445555_66667777, "DMFC1(1) after DMTC1($0)")?;
-        soft_assert_eq(dmfc1::<2>(), 0x88889999_AAAABBBB, "DMFC1(2) after DMTC1($0)")?;
-        soft_assert_eq(dmfc1::<3>(), 0xCCCCDDDD_EEEEFFFF, "DMFC1(3) after DMTC1($0)")?;
+        soft_assert_eq(
+            dmfc1::<0>(),
+            0x01234567_89ABCDEF,
+            "DMFC1(0) after DMTC1($0)",
+        )?;
+        soft_assert_eq(
+            dmfc1::<1>(),
+            0x44445555_66667777,
+            "DMFC1(1) after DMTC1($0)",
+        )?;
+        soft_assert_eq(
+            dmfc1::<2>(),
+            0x88889999_AAAABBBB,
+            "DMFC1(2) after DMTC1($0)",
+        )?;
+        soft_assert_eq(
+            dmfc1::<3>(),
+            0xCCCCDDDD_EEEEFFFF,
+            "DMFC1(3) after DMTC1($0)",
+        )?;
 
         // Second load
         set_mode(false);
         dmtc1::<1>(b);
         set_mode(true);
 
-        soft_assert_eq(dmfc1::<0>(), 0x12345678_9ABCDEF0, "DMFC1(0) after DMTC1($1)")?;
-        soft_assert_eq(dmfc1::<1>(), 0x44445555_66667777, "DMFC1(1) after DMTC1($1)")?;
-        soft_assert_eq(dmfc1::<2>(), 0x88889999_AAAABBBB, "DMFC1(2) after DMTC1($1)")?;
-        soft_assert_eq(dmfc1::<3>(), 0xCCCCDDDD_EEEEFFFF, "DMFC1(3) after DMTC1($1)")?;
+        soft_assert_eq(
+            dmfc1::<0>(),
+            0x12345678_9ABCDEF0,
+            "DMFC1(0) after DMTC1($1)",
+        )?;
+        soft_assert_eq(
+            dmfc1::<1>(),
+            0x44445555_66667777,
+            "DMFC1(1) after DMTC1($1)",
+        )?;
+        soft_assert_eq(
+            dmfc1::<2>(),
+            0x88889999_AAAABBBB,
+            "DMFC1(2) after DMTC1($1)",
+        )?;
+        soft_assert_eq(
+            dmfc1::<3>(),
+            0xCCCCDDDD_EEEEFFFF,
+            "DMFC1(3) after DMTC1($1)",
+        )?;
 
         Ok(())
     }
@@ -1321,11 +1725,17 @@ impl Test for DMTC1InHalfMode {
 pub struct MFC1InHalfMode;
 
 impl Test for MFC1InHalfMode {
-    fn name(&self) -> &str { "MFC1 with odd index in 32 bit mode" }
+    fn name(&self) -> &str {
+        "MFC1 with odd index in 32 bit mode"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         dmtc1::<0>(0x00001111_22223333);
@@ -1366,11 +1776,17 @@ impl Test for MFC1InHalfMode {
 pub struct DMFC1InHalfMode;
 
 impl Test for DMFC1InHalfMode {
-    fn name(&self) -> &str { "DMFC1 with odd index in 32 bit mode" }
+    fn name(&self) -> &str {
+        "DMFC1 with odd index in 32 bit mode"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         dmtc1::<0>(0x00001111_22223333);

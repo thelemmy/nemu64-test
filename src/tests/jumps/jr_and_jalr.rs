@@ -3,17 +3,24 @@ use alloc::string::String;
 use alloc::vec::Vec;
 use core::any::Any;
 use core::arch::asm;
-use crate::tests::{Level, Test};
+
 use crate::tests::soft_asserts::{soft_assert_eq, soft_assert_neq};
+use crate::tests::{Level, Test};
 
 pub struct JRSimple {}
 
 impl Test for JRSimple {
-    fn name(&self) -> &str { "JR: Simple" }
+    fn name(&self) -> &str {
+        "JR: Simple"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut result: u32;
@@ -54,8 +61,16 @@ impl Test for JRSimple {
             ", out("$2") _, out("$3") result, out("$4") ra_result, out("$25") _)
         }
 
-        soft_assert_eq(result, 5, "Delay slot or jump target wasn't executed correctly")?;
-        soft_assert_eq(unsafe { *(ra_result as *const u32) }, 0x34630002, "Return address does not point to correct instruction")?;
+        soft_assert_eq(
+            result,
+            5,
+            "Delay slot or jump target wasn't executed correctly",
+        )?;
+        soft_assert_eq(
+            unsafe { *(ra_result as *const u32) },
+            0x34630002,
+            "Return address does not point to correct instruction",
+        )?;
 
         Ok(())
     }
@@ -64,11 +79,17 @@ impl Test for JRSimple {
 pub struct JALRSimple {}
 
 impl Test for JALRSimple {
-    fn name(&self) -> &str { "JALR: Simple" }
+    fn name(&self) -> &str {
+        "JALR: Simple"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut result: u32;
@@ -109,8 +130,16 @@ impl Test for JALRSimple {
             ", out("$2") _, out("$3") result, out("$4") ra_result, out("$25") _)
         }
 
-        soft_assert_eq(result, 5, "Delay slot or jump target wasn't executed correctly")?;
-        soft_assert_eq(unsafe { *(ra_result as *const u32) }, 0x34630002, "Return address does not point to correct instruction")?;
+        soft_assert_eq(
+            result,
+            5,
+            "Delay slot or jump target wasn't executed correctly",
+        )?;
+        soft_assert_eq(
+            unsafe { *(ra_result as *const u32) },
+            0x34630002,
+            "Return address does not point to correct instruction",
+        )?;
 
         Ok(())
     }
@@ -119,11 +148,17 @@ impl Test for JALRSimple {
 pub struct JALRWithSameRegister {}
 
 impl Test for JALRWithSameRegister {
-    fn name(&self) -> &str { "JALR: With same register" }
+    fn name(&self) -> &str {
+        "JALR: With same register"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut result: u32;
@@ -166,8 +201,16 @@ impl Test for JALRWithSameRegister {
         if (result & 2) != 0 {
             Err("Return address should have been set after JUMP")?
         }
-        soft_assert_eq(result, 5, "Delay slot or jump target wasn't executed correctly")?;
-        soft_assert_eq(unsafe { *(ra_result as *const u32) }, 0x34630002, "Return address does not point to correct instruction")?;
+        soft_assert_eq(
+            result,
+            5,
+            "Delay slot or jump target wasn't executed correctly",
+        )?;
+        soft_assert_eq(
+            unsafe { *(ra_result as *const u32) },
+            0x34630002,
+            "Return address does not point to correct instruction",
+        )?;
 
         Ok(())
     }
@@ -176,11 +219,17 @@ impl Test for JALRWithSameRegister {
 pub struct JALRDelayRAVisibility {}
 
 impl Test for JALRDelayRAVisibility {
-    fn name(&self) -> &str { "JALR: Read RA within delay slot" }
+    fn name(&self) -> &str {
+        "JALR: Read RA within delay slot"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         // If the delay slot reads RA, will it see the new or the old value?
@@ -210,21 +259,30 @@ impl Test for JALRDelayRAVisibility {
         }
 
         soft_assert_neq(ra_after, ra_before, "JALR didn't update RA")?;
-        soft_assert_eq(ra_delay, ra_after, "New RA value should be visible within delay slot")?;
+        soft_assert_eq(
+            ra_delay,
+            ra_after,
+            "New RA value should be visible within delay slot",
+        )?;
 
         Ok(())
     }
 }
 
-
 pub struct JRWithRegisterChangeInDelaySlot {}
 
 impl Test for JRWithRegisterChangeInDelaySlot {
-    fn name(&self) -> &str { "JR: Register change in delay slot" }
+    fn name(&self) -> &str {
+        "JR: Register change in delay slot"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         // What happens if the target address of a JALR is changed with its delay slot?
@@ -260,7 +318,11 @@ impl Test for JRWithRegisterChangeInDelaySlot {
             ", out("$2") _, out("$3") result, out("$25") _)
         }
 
-        soft_assert_eq(result, 6, "Jump target modification within delay slot should be ignored")?;
+        soft_assert_eq(
+            result,
+            6,
+            "Jump target modification within delay slot should be ignored",
+        )?;
 
         Ok(())
     }
@@ -269,11 +331,17 @@ impl Test for JRWithRegisterChangeInDelaySlot {
 pub struct JALRWithRegisterChangeInDelaySlot {}
 
 impl Test for JALRWithRegisterChangeInDelaySlot {
-    fn name(&self) -> &str { "JALR: With register change in delay slot" }
+    fn name(&self) -> &str {
+        "JALR: With register change in delay slot"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         // What happens if the target address of a JALR is changed with its delay slot?
@@ -309,7 +377,11 @@ impl Test for JALRWithRegisterChangeInDelaySlot {
             ", out("$2") _, out("$3") result, out("$25") _)
         }
 
-        soft_assert_eq(result, 6, "Jump target modification within delay slot should be ignored")?;
+        soft_assert_eq(
+            result,
+            6,
+            "Jump target modification within delay slot should be ignored",
+        )?;
 
         Ok(())
     }
@@ -318,11 +390,17 @@ impl Test for JALRWithRegisterChangeInDelaySlot {
 pub struct JRWithinDelayOfJALR {}
 
 impl Test for JRWithinDelayOfJALR {
-    fn name(&self) -> &str { "JR: Within delay slot of JALR" }
+    fn name(&self) -> &str {
+        "JR: Within delay slot of JALR"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut result: u32;
@@ -361,8 +439,16 @@ impl Test for JRWithinDelayOfJALR {
             ", out("$3") result, out("$4") ra_after_jalr, out("$22") _, out("$23") _, out("$24") original_ra, out("$25") _)
         }
 
-        soft_assert_eq(result, 0x3, "JALR within a delay slot should not take over target jump address")?;
-        soft_assert_eq(ra_after_jalr - original_ra, 20, "JALR writes address+4 into delay slot")?;
+        soft_assert_eq(
+            result,
+            0x3,
+            "JALR within a delay slot should not take over target jump address",
+        )?;
+        soft_assert_eq(
+            ra_after_jalr - original_ra,
+            20,
+            "JALR writes address+4 into delay slot",
+        )?;
 
         Ok(())
     }
@@ -371,11 +457,17 @@ impl Test for JRWithinDelayOfJALR {
 pub struct JALRWithinDelayOfJALR {}
 
 impl Test for JALRWithinDelayOfJALR {
-    fn name(&self) -> &str { "JALR: Within delay slot of JALR" }
+    fn name(&self) -> &str {
+        "JALR: Within delay slot of JALR"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut result: u32;
@@ -416,11 +508,22 @@ impl Test for JALRWithinDelayOfJALR {
             ", out("$3") result, out("$4") ra_after_jalr_1, out("$5") ra_after_jalr_2, out("$22") _, out("$23") _, out("$24") original_ra, out("$25") _)
         }
 
-        soft_assert_eq(result, 0x3, "JALR within a delay slot should not take over target jump address")?;
-        soft_assert_eq(ra_after_jalr_1 - original_ra, 20, "JALR writes address+4 into delay slot")?;
-        soft_assert_eq(ra_after_jalr_2 - original_ra, 44, "JALR in delay slot writes target address+4 of original jump into delay slot")?;
+        soft_assert_eq(
+            result,
+            0x3,
+            "JALR within a delay slot should not take over target jump address",
+        )?;
+        soft_assert_eq(
+            ra_after_jalr_1 - original_ra,
+            20,
+            "JALR writes address+4 into delay slot",
+        )?;
+        soft_assert_eq(
+            ra_after_jalr_2 - original_ra,
+            44,
+            "JALR in delay slot writes target address+4 of original jump into delay slot",
+        )?;
 
         Ok(())
     }
 }
-

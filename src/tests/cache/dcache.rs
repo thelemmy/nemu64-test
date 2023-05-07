@@ -1,4 +1,3 @@
-use arbitrary_int::{u2, u20, u27, u29, Number};
 use alloc::alloc::{alloc, dealloc, Layout};
 use alloc::boxed::Box;
 use alloc::format;
@@ -6,15 +5,20 @@ use alloc::string::String;
 use alloc::vec::Vec;
 use core::any::Any;
 use core::arch::asm;
+
+use arbitrary_int::{u2, u20, u27, u29, Number};
+
 use crate::assembler::{Assembler, GPR};
 use crate::cop0;
-use crate::cop0::{cache, cache_data_index_load_tag, CacheOp, Coherency, make_entry_hi, make_entry_lo, Pagemask, RegisterIndex, set_taglo, set_taglo64, TagLo, TagLoPState};
 use crate::cop0::CacheOp::DataHitWriteBackInvalidate;
+use crate::cop0::{
+    cache, cache_data_index_load_tag, make_entry_hi, make_entry_lo, set_taglo, set_taglo64,
+    CacheOp, Coherency, Pagemask, RegisterIndex, TagLo, TagLoPState,
+};
 use crate::math::KB;
-
 use crate::memory_map::MemoryMap;
-use crate::tests::{Level, Test};
 use crate::tests::soft_asserts::{soft_assert_eq, soft_assert_eq2};
+use crate::tests::{Level, Test};
 use crate::uncached_memory::UncachedHeapMemory;
 
 const GPR_CACHED: GPR = GPR::V1;
@@ -23,11 +27,17 @@ const GPR_UNCACHED: GPR = GPR::A0;
 pub struct ReadCachedVsUncached {}
 
 impl Test for ReadCachedVsUncached {
-    fn name(&self) -> &str { "cache: Read cached vs uncached" }
+    fn name(&self) -> &str {
+        "cache: Read cached vs uncached"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let layout = Layout::from_size_align(16 * KB, 16).unwrap();
@@ -147,28 +157,97 @@ impl Test for ReadCachedVsUncached {
             )
         }
 
-        unsafe { dealloc(data, layout); }
+        unsafe {
+            dealloc(data, layout);
+        }
 
         fn get64(v: *mut u8, offset: usize) -> u64 {
             unsafe { *(v.add(offset) as *const u64) }
         }
 
         fn assert_batch(data: *mut u8, index: usize, is_cached: bool) -> Result<(), String> {
-            soft_assert_eq2(get64(data, 1024 + index * 88 + 0), if is_cached { 0x77 } else { 0xFFFFFFFF_FFFFFFED }, || format!("LB {}", index))?;
-            soft_assert_eq2(get64(data, 1024 + index * 88 + 8), if is_cached { 0x77 } else { 0xED }, || format!("LBU {}", index))?;
-            soft_assert_eq2(get64(data, 1024 + index * 88 + 16), if is_cached { 0x6677 } else { 0xFFFFFFFF_FFFFEFED }, || format!("LH {}", index))?;
-            soft_assert_eq2(get64(data, 1024 + index * 88 + 24), if is_cached { 0x6677 } else { 0xEFED }, || format!("LHU {}", index))?;
-            soft_assert_eq2(get64(data, 1024 + index * 88 + 32), if is_cached { 0x44556677 } else { 0xFFFFFFFF_ABCDEFED }, || format!("LW {}", index))?;
-            soft_assert_eq2(get64(data, 1024 + index * 88 + 40), if is_cached { 0x44556677 } else { 0xABCDEFED }, || format!("LWU {}", index))?;
-            soft_assert_eq2(get64(data, 1024 + index * 88 + 48), if is_cached { 0x00112233_44556677 } else { 0xAABBCCDD_ABCDEFED }, || format!("LD {}", index))?;
-            soft_assert_eq2(get64(data, 1024 + index * 88 + 56), if is_cached { 0x44556677 } else { 0xFFFFFFFF_ABCDEFED }, || format!("LL {}", index))?;
-            soft_assert_eq2(get64(data, 1024 + index * 88 + 64), if is_cached { 0x00112233_44556677 } else { 0xAABBCCDD_ABCDEFED }, || format!("LLD {}", index))?;
-            soft_assert_eq2(get64(data, 1024 + index * 88 + 72), if is_cached { 0x44556677 } else { 0xABCDEFED }, || format!("LWC1 {}", index))?;
-            soft_assert_eq2(get64(data, 1024 + index * 88 + 80), if is_cached { 0x00112233_44556677 } else { 0xAABBCCDD_ABCDEFED }, || format!("LDC1 {}", index))?;
+            soft_assert_eq2(
+                get64(data, 1024 + index * 88 + 0),
+                if is_cached { 0x77 } else { 0xFFFFFFFF_FFFFFFED },
+                || format!("LB {}", index),
+            )?;
+            soft_assert_eq2(
+                get64(data, 1024 + index * 88 + 8),
+                if is_cached { 0x77 } else { 0xED },
+                || format!("LBU {}", index),
+            )?;
+            soft_assert_eq2(
+                get64(data, 1024 + index * 88 + 16),
+                if is_cached {
+                    0x6677
+                } else {
+                    0xFFFFFFFF_FFFFEFED
+                },
+                || format!("LH {}", index),
+            )?;
+            soft_assert_eq2(
+                get64(data, 1024 + index * 88 + 24),
+                if is_cached { 0x6677 } else { 0xEFED },
+                || format!("LHU {}", index),
+            )?;
+            soft_assert_eq2(
+                get64(data, 1024 + index * 88 + 32),
+                if is_cached {
+                    0x44556677
+                } else {
+                    0xFFFFFFFF_ABCDEFED
+                },
+                || format!("LW {}", index),
+            )?;
+            soft_assert_eq2(
+                get64(data, 1024 + index * 88 + 40),
+                if is_cached { 0x44556677 } else { 0xABCDEFED },
+                || format!("LWU {}", index),
+            )?;
+            soft_assert_eq2(
+                get64(data, 1024 + index * 88 + 48),
+                if is_cached {
+                    0x00112233_44556677
+                } else {
+                    0xAABBCCDD_ABCDEFED
+                },
+                || format!("LD {}", index),
+            )?;
+            soft_assert_eq2(
+                get64(data, 1024 + index * 88 + 56),
+                if is_cached {
+                    0x44556677
+                } else {
+                    0xFFFFFFFF_ABCDEFED
+                },
+                || format!("LL {}", index),
+            )?;
+            soft_assert_eq2(
+                get64(data, 1024 + index * 88 + 64),
+                if is_cached {
+                    0x00112233_44556677
+                } else {
+                    0xAABBCCDD_ABCDEFED
+                },
+                || format!("LLD {}", index),
+            )?;
+            soft_assert_eq2(
+                get64(data, 1024 + index * 88 + 72),
+                if is_cached { 0x44556677 } else { 0xABCDEFED },
+                || format!("LWC1 {}", index),
+            )?;
+            soft_assert_eq2(
+                get64(data, 1024 + index * 88 + 80),
+                if is_cached {
+                    0x00112233_44556677
+                } else {
+                    0xAABBCCDD_ABCDEFED
+                },
+                || format!("LDC1 {}", index),
+            )?;
 
             Ok(())
         }
-
 
         assert_batch(data, 0, true)?;
         assert_batch(data, 1, false)?;
@@ -179,7 +258,7 @@ impl Test for ReadCachedVsUncached {
     }
 }
 
-fn test_writeback<const INSTRUCTION: u32>(expect_writeback: bool) -> Result<(), String>{
+fn test_writeback<const INSTRUCTION: u32>(expect_writeback: bool) -> Result<(), String> {
     let layout = Layout::from_size_align(16 * KB, 16).unwrap();
     let data = unsafe { alloc(layout) } as *mut u8;
 
@@ -251,25 +330,83 @@ fn test_writeback<const INSTRUCTION: u32>(expect_writeback: bool) -> Result<(), 
         )
     }
 
-    unsafe { dealloc(data, layout); }
-
-    soft_assert_eq(out0_0, 0, "Read from uncached shouldn't see the cached value until cache line is written back (0)")?;
-    soft_assert_eq(out0_4, 0, "Read from uncached shouldn't see the cached value until cache line is written back (4)")?;
-    soft_assert_eq(out0_8, 0, "Read from uncached shouldn't see the cached value until cache line is written back (8)")?;
-    soft_assert_eq(out0_12, 0, "Read from uncached shouldn't see the cached value until cache line is written back (12)")?;
-    soft_assert_eq(out0_16, 0, "Read from uncached shouldn't see the cached value until cache line is written back (16)")?;
-    if expect_writeback {
-        soft_assert_eq(out1_0, 0x1234, "Cache line should have been written back by now (0)")?;
-        soft_assert_eq(out1_4, 0x2345, "Cache line should have been written back by now (4)")?;
-        soft_assert_eq(out1_8, 0x3456, "Cache line should have been written back by now (8)")?;
-        soft_assert_eq(out1_12, 0x4567, "Cache line should have been written back by now (12)")?;
-    } else {
-        soft_assert_eq(out1_0, 0, "Cache line should not have been written back by now (0)")?;
-        soft_assert_eq(out1_4, 0, "Cache line should not have been written back by now (4)")?;
-        soft_assert_eq(out1_8, 0, "Cache line should not have been written back by now (8)")?;
-        soft_assert_eq(out1_12, 0, "Cache line should not have been written back by now (12)")?;
+    unsafe {
+        dealloc(data, layout);
     }
-    soft_assert_eq(out1_16, 0, "Second cache line shouldn't have been written back (16)")?;
+
+    soft_assert_eq(
+        out0_0,
+        0,
+        "Read from uncached shouldn't see the cached value until cache line is written back (0)",
+    )?;
+    soft_assert_eq(
+        out0_4,
+        0,
+        "Read from uncached shouldn't see the cached value until cache line is written back (4)",
+    )?;
+    soft_assert_eq(
+        out0_8,
+        0,
+        "Read from uncached shouldn't see the cached value until cache line is written back (8)",
+    )?;
+    soft_assert_eq(
+        out0_12,
+        0,
+        "Read from uncached shouldn't see the cached value until cache line is written back (12)",
+    )?;
+    soft_assert_eq(
+        out0_16,
+        0,
+        "Read from uncached shouldn't see the cached value until cache line is written back (16)",
+    )?;
+    if expect_writeback {
+        soft_assert_eq(
+            out1_0,
+            0x1234,
+            "Cache line should have been written back by now (0)",
+        )?;
+        soft_assert_eq(
+            out1_4,
+            0x2345,
+            "Cache line should have been written back by now (4)",
+        )?;
+        soft_assert_eq(
+            out1_8,
+            0x3456,
+            "Cache line should have been written back by now (8)",
+        )?;
+        soft_assert_eq(
+            out1_12,
+            0x4567,
+            "Cache line should have been written back by now (12)",
+        )?;
+    } else {
+        soft_assert_eq(
+            out1_0,
+            0,
+            "Cache line should not have been written back by now (0)",
+        )?;
+        soft_assert_eq(
+            out1_4,
+            0,
+            "Cache line should not have been written back by now (4)",
+        )?;
+        soft_assert_eq(
+            out1_8,
+            0,
+            "Cache line should not have been written back by now (8)",
+        )?;
+        soft_assert_eq(
+            out1_12,
+            0,
+            "Cache line should not have been written back by now (12)",
+        )?;
+    }
+    soft_assert_eq(
+        out1_16,
+        0,
+        "Second cache line shouldn't have been written back (16)",
+    )?;
 
     Ok(())
 }
@@ -277,11 +414,17 @@ fn test_writeback<const INSTRUCTION: u32>(expect_writeback: bool) -> Result<(), 
 pub struct WriteBackLB {}
 
 impl Test for WriteBackLB {
-    fn name(&self) -> &str { "data cache: Write back (Using LB 8kb+15 later)" }
+    fn name(&self) -> &str {
+        "data cache: Write back (Using LB 8kb+15 later)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const INSTRUCTION: u32 = Assembler::make_lb(GPR::R0, (8 * KB + 15) as i16, GPR_CACHED);
@@ -292,11 +435,17 @@ impl Test for WriteBackLB {
 pub struct WriteBackLBU {}
 
 impl Test for WriteBackLBU {
-    fn name(&self) -> &str { "data cache: Write back (Using LBU 8kb+15 later)" }
+    fn name(&self) -> &str {
+        "data cache: Write back (Using LBU 8kb+15 later)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const INSTRUCTION: u32 = Assembler::make_lbu(GPR::R0, (8 * KB + 15) as i16, GPR_CACHED);
@@ -307,11 +456,17 @@ impl Test for WriteBackLBU {
 pub struct WriteBackLH {}
 
 impl Test for WriteBackLH {
-    fn name(&self) -> &str { "data cache: Write back (Using LH 8kb+14 later)" }
+    fn name(&self) -> &str {
+        "data cache: Write back (Using LH 8kb+14 later)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const INSTRUCTION: u32 = Assembler::make_lh(GPR::R0, (8 * KB + 14) as i16, GPR_CACHED);
@@ -322,11 +477,17 @@ impl Test for WriteBackLH {
 pub struct WriteBackLHU {}
 
 impl Test for WriteBackLHU {
-    fn name(&self) -> &str { "data cache: Write back (Using LW 8kb+14 later)" }
+    fn name(&self) -> &str {
+        "data cache: Write back (Using LW 8kb+14 later)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const INSTRUCTION: u32 = Assembler::make_lhu(GPR::R0, (8 * KB + 14) as i16, GPR_CACHED);
@@ -337,11 +498,17 @@ impl Test for WriteBackLHU {
 pub struct WriteBackLW {}
 
 impl Test for WriteBackLW {
-    fn name(&self) -> &str { "data cache: Write back (Using LW 8kb+12 later)" }
+    fn name(&self) -> &str {
+        "data cache: Write back (Using LW 8kb+12 later)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const INSTRUCTION: u32 = Assembler::make_lw(GPR::R0, (8 * KB + 12) as i16, GPR_CACHED);
@@ -352,11 +519,17 @@ impl Test for WriteBackLW {
 pub struct WriteBackLWU {}
 
 impl Test for WriteBackLWU {
-    fn name(&self) -> &str { "data cache: Write back (Using LWU 8kb+12 later)" }
+    fn name(&self) -> &str {
+        "data cache: Write back (Using LWU 8kb+12 later)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const INSTRUCTION: u32 = Assembler::make_lwu(GPR::R0, (8 * KB + 12) as i16, GPR_CACHED);
@@ -367,11 +540,17 @@ impl Test for WriteBackLWU {
 pub struct WriteBackLD {}
 
 impl Test for WriteBackLD {
-    fn name(&self) -> &str { "data cache: Write back (Using LD 8kb+8 later)" }
+    fn name(&self) -> &str {
+        "data cache: Write back (Using LD 8kb+8 later)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const INSTRUCTION: u32 = Assembler::make_ld(GPR::R0, (8 * KB + 8) as i16, GPR_CACHED);
@@ -382,11 +561,17 @@ impl Test for WriteBackLD {
 pub struct WriteBackSB {}
 
 impl Test for WriteBackSB {
-    fn name(&self) -> &str { "data cache: Write back (Using SB 8kb+15 later)" }
+    fn name(&self) -> &str {
+        "data cache: Write back (Using SB 8kb+15 later)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const INSTRUCTION: u32 = Assembler::make_sb(GPR::R0, (8 * KB + 15) as i16, GPR_CACHED);
@@ -397,11 +582,17 @@ impl Test for WriteBackSB {
 pub struct WriteBackSH {}
 
 impl Test for WriteBackSH {
-    fn name(&self) -> &str { "data cache: Write back (Using SH 8kb+14 later)" }
+    fn name(&self) -> &str {
+        "data cache: Write back (Using SH 8kb+14 later)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const INSTRUCTION: u32 = Assembler::make_sh(GPR::R0, (8 * KB + 14) as i16, GPR_CACHED);
@@ -412,11 +603,17 @@ impl Test for WriteBackSH {
 pub struct WriteBackSW {}
 
 impl Test for WriteBackSW {
-    fn name(&self) -> &str { "data cache: Write back (Using SW 8kb+12 later)" }
+    fn name(&self) -> &str {
+        "data cache: Write back (Using SW 8kb+12 later)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const INSTRUCTION: u32 = Assembler::make_sw(GPR::R0, (8 * KB + 12) as i16, GPR_CACHED);
@@ -427,11 +624,17 @@ impl Test for WriteBackSW {
 pub struct WriteBackSD {}
 
 impl Test for WriteBackSD {
-    fn name(&self) -> &str { "data cache: Write back (Using SD 8kb+8 later)" }
+    fn name(&self) -> &str {
+        "data cache: Write back (Using SD 8kb+8 later)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const INSTRUCTION: u32 = Assembler::make_sd(GPR::R0, (8 * KB + 8) as i16, GPR_CACHED);
@@ -442,14 +645,21 @@ impl Test for WriteBackSD {
 pub struct WriteBackCacheDataIndexWriteBackInvalidate {}
 
 impl Test for WriteBackCacheDataIndexWriteBackInvalidate {
-    fn name(&self) -> &str { "data cache: Write back (Using CACHE with Data-Index Write Back Invalidate)" }
+    fn name(&self) -> &str {
+        "data cache: Write back (Using CACHE with Data-Index Write Back Invalidate)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        const INSTRUCTION: u32 = Assembler::make_cache(CacheOp::DataIndexWriteBackInvalidate, 12 as i16, GPR_CACHED);
+        const INSTRUCTION: u32 =
+            Assembler::make_cache(CacheOp::DataIndexWriteBackInvalidate, 12 as i16, GPR_CACHED);
         test_writeback::<INSTRUCTION>(true)
     }
 }
@@ -457,14 +667,24 @@ impl Test for WriteBackCacheDataIndexWriteBackInvalidate {
 pub struct WriteBackCacheDataIndexWriteBackInvalidateUncachedAddress {}
 
 impl Test for WriteBackCacheDataIndexWriteBackInvalidateUncachedAddress {
-    fn name(&self) -> &str { "data cache: Write back (Using CACHE with Data-Index Write Back Invalidate with uncached address)" }
+    fn name(&self) -> &str {
+        "data cache: Write back (Using CACHE with Data-Index Write Back Invalidate with uncached address)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        const INSTRUCTION: u32 = Assembler::make_cache(CacheOp::DataIndexWriteBackInvalidate, 12 as i16, GPR_UNCACHED);
+        const INSTRUCTION: u32 = Assembler::make_cache(
+            CacheOp::DataIndexWriteBackInvalidate,
+            12 as i16,
+            GPR_UNCACHED,
+        );
         test_writeback::<INSTRUCTION>(true)
     }
 }
@@ -472,14 +692,24 @@ impl Test for WriteBackCacheDataIndexWriteBackInvalidateUncachedAddress {
 pub struct WriteBackCacheDataIndexWriteBackInvalidateNextBlock {}
 
 impl Test for WriteBackCacheDataIndexWriteBackInvalidateNextBlock {
-    fn name(&self) -> &str { "data cache: Write back (Using CACHE with Data-Index Write Back Invalidate)" }
+    fn name(&self) -> &str {
+        "data cache: Write back (Using CACHE with Data-Index Write Back Invalidate)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        const INSTRUCTION: u32 = Assembler::make_cache(CacheOp::DataIndexWriteBackInvalidate, (8 * KB + 8) as i16, GPR_CACHED);
+        const INSTRUCTION: u32 = Assembler::make_cache(
+            CacheOp::DataIndexWriteBackInvalidate,
+            (8 * KB + 8) as i16,
+            GPR_CACHED,
+        );
         test_writeback::<INSTRUCTION>(true)
     }
 }
@@ -487,20 +717,48 @@ impl Test for WriteBackCacheDataIndexWriteBackInvalidateNextBlock {
 pub struct DataCacheIndexLoadTag {}
 
 impl Test for DataCacheIndexLoadTag {
-    fn name(&self) -> &str { "data cache: Cache Index Load Tag" }
+    fn name(&self) -> &str {
+        "data cache: Cache Index Load Tag"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut data = UncachedHeapMemory::<u8>::new_with_align(16 * KB, 8 * KB);
         let physical = data.start_physical();
         let cached = MemoryMap::physical_to_cached_mut::<u8>(physical);
 
-        const HIT_WRITE_BACK_INVALIDATE_OP: u8 = CacheOp::DataHitWriteBackInvalidate.raw_value().value();
+        const HIT_WRITE_BACK_INVALIDATE_OP: u8 =
+            CacheOp::DataHitWriteBackInvalidate.raw_value().value();
 
-        for offset in [0, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 1024 * 2, 1024 * 3, 1024 * 4, 1024 * 5, 1024 * 6, 1024 * 7, 1024 * 8, 1024 * 8 + 4, 1024 * 9, 1024 * 13] {
+        for offset in [
+            0,
+            4,
+            8,
+            16,
+            32,
+            64,
+            128,
+            256,
+            512,
+            1024,
+            1024 * 2,
+            1024 * 3,
+            1024 * 4,
+            1024 * 5,
+            1024 * 6,
+            1024 * 7,
+            1024 * 8,
+            1024 * 8 + 4,
+            1024 * 9,
+            1024 * 13,
+        ] {
             unsafe {
                 set_taglo64(0x12345678_FFFFFFFF);
                 let expected_ptaglo = u20::extract_u32((physical + offset) as u32, 12);
@@ -511,17 +769,35 @@ impl Test for DataCacheIndexLoadTag {
                 cache::<HIT_WRITE_BACK_INVALIDATE_OP, 0>(p as usize);
                 let tag1 = cache_data_index_load_tag::<0>(p as usize);
 
-                soft_assert_eq(tag1, TagLo::DEFAULT.with_p_state(TagLoPState::Invalid).with_p_tag_lo(expected_ptaglo), "TagLo after CACHE (invalid)")?;
+                soft_assert_eq(
+                    tag1,
+                    TagLo::DEFAULT
+                        .with_p_state(TagLoPState::Invalid)
+                        .with_p_tag_lo(expected_ptaglo),
+                    "TagLo after CACHE (invalid)",
+                )?;
 
                 // Read - Even though it is clear, it will come back as dirty
                 let _ = p.read_volatile();
                 let tag2 = cache_data_index_load_tag::<0>(p as usize);
-                soft_assert_eq(tag2, TagLo::DEFAULT.with_p_state(TagLoPState::Dirty).with_p_tag_lo(expected_ptaglo), "TagLo after CACHE (clean)")?;
+                soft_assert_eq(
+                    tag2,
+                    TagLo::DEFAULT
+                        .with_p_state(TagLoPState::Dirty)
+                        .with_p_tag_lo(expected_ptaglo),
+                    "TagLo after CACHE (clean)",
+                )?;
 
                 // Write to make it dirty - TagLo won't tell us though
                 p.write_volatile(0);
                 let tag3 = cache_data_index_load_tag::<0>(p as usize);
-                soft_assert_eq(tag3, TagLo::DEFAULT.with_p_state(TagLoPState::Dirty).with_p_tag_lo(expected_ptaglo), "TagLo after CACHE (dirty)")?;
+                soft_assert_eq(
+                    tag3,
+                    TagLo::DEFAULT
+                        .with_p_state(TagLoPState::Dirty)
+                        .with_p_tag_lo(expected_ptaglo),
+                    "TagLo after CACHE (dirty)",
+                )?;
             }
         }
 
@@ -529,14 +805,20 @@ impl Test for DataCacheIndexLoadTag {
     }
 }
 
-fn test_cache_instruction<const CACHE_OP: u8, const N: usize>(expected_tag_offset_and_status: [u32; N], expected_result0: [u32; 6], expected_result1: [u32; 6], expected_result2: [u32; 6]) -> Result<(), String> {
+fn test_cache_instruction<const CACHE_OP: u8, const N: usize>(
+    expected_tag_offset_and_status: [u32; N],
+    expected_result0: [u32; 6],
+    expected_result1: [u32; 6],
+    expected_result2: [u32; 6],
+) -> Result<(), String> {
     let mut data = UncachedHeapMemory::<u8>::new_with_align(24 * KB, 8 * KB);
     let physical = data.start_physical();
     let cached = MemoryMap::physical_to_cached_mut::<u8>(physical);
     let uncached = MemoryMap::physical_to_uncached_mut::<u8>(physical);
 
     const INDEX_LOAD_TAG_OP: u8 = CacheOp::DataIndexLoadTag.raw_value().value();
-    const INDEX_WRITE_BACK_INVALIDATE_OP: u8 = CacheOp::DataIndexWriteBackInvalidate.raw_value().value();
+    const INDEX_WRITE_BACK_INVALIDATE_OP: u8 =
+        CacheOp::DataIndexWriteBackInvalidate.raw_value().value();
 
     let mut result_tag = [0u32; 6];
     let mut result_0 = [0u32; 6];
@@ -685,10 +967,26 @@ fn test_cache_instruction<const CACHE_OP: u8, const N: usize>(expected_tag_offse
 
     let expected_tag = expected_tag_offset_and_status.map(|x| x + base_result);
     assert!(N <= 6);
-    soft_assert_eq(&result_tag[0..N], &expected_tag, "Tag of cache line after cache instruction")?;
-    soft_assert_eq(result_0, expected_result0, "Value in memory after cache instruction")?;
-    soft_assert_eq(result_1, expected_result1, "Value in memory (1) after cache was invalidated")?;
-    soft_assert_eq(result_2, expected_result2, "Value in memory (2) after cache was invalidated")?;
+    soft_assert_eq(
+        &result_tag[0..N],
+        &expected_tag,
+        "Tag of cache line after cache instruction",
+    )?;
+    soft_assert_eq(
+        result_0,
+        expected_result0,
+        "Value in memory after cache instruction",
+    )?;
+    soft_assert_eq(
+        result_1,
+        expected_result1,
+        "Value in memory (1) after cache was invalidated",
+    )?;
+    soft_assert_eq(
+        result_2,
+        expected_result2,
+        "Value in memory (2) after cache was invalidated",
+    )?;
 
     Ok(())
 }
@@ -696,11 +994,17 @@ fn test_cache_instruction<const CACHE_OP: u8, const N: usize>(expected_tag_offse
 pub struct DataCacheHitWriteBackInvalidate {}
 
 impl Test for DataCacheHitWriteBackInvalidate {
-    fn name(&self) -> &str { "data cache: Cache Hit Write Back Invalidate)" }
+    fn name(&self) -> &str {
+        "data cache: Cache Hit Write Back Invalidate)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const OP: u8 = CacheOp::DataHitWriteBackInvalidate.raw_value().value();
@@ -710,18 +1014,25 @@ impl Test for DataCacheHitWriteBackInvalidate {
             [0, 0, 0, 0xc0, 0xc0],
             [0x222, 0x111, 0x111, 0x111, 0x111, 0x111],
             [1, 1, 1, 0, 1, 1],
-            [1, 1, 1, 1, 1, 1])
+            [1, 1, 1, 1, 1, 1],
+        )
     }
 }
 
 pub struct DataCacheHitWriteBack {}
 
 impl Test for DataCacheHitWriteBack {
-    fn name(&self) -> &str { "data cache: Cache Hit Write Back)" }
+    fn name(&self) -> &str {
+        "data cache: Cache Hit Write Back)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const OP: u8 = CacheOp::DataHitWriteBack.raw_value().value();
@@ -729,18 +1040,25 @@ impl Test for DataCacheHitWriteBack {
             [0xc0, 0xc0, 0, 0xc0, 0xc0, 0],
             [0x222, 0x111, 0x111, 0x111, 0x111, 0x111],
             [1, 1, 1, 0, 1, 1],
-            [1, 1, 1, 1, 1, 1])
+            [1, 1, 1, 1, 1, 1],
+        )
     }
 }
 
 pub struct DataCacheHitInvalidate {}
 
 impl Test for DataCacheHitInvalidate {
-    fn name(&self) -> &str { "data cache: Cache Hit Invalidate)" }
+    fn name(&self) -> &str {
+        "data cache: Cache Hit Invalidate)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const OP: u8 = CacheOp::DataHitInvalidate.raw_value().value();
@@ -748,18 +1066,25 @@ impl Test for DataCacheHitInvalidate {
             [0, 0, 0, 0xc0, 0xc0, 0],
             [0x111, 0x111, 0x111, 0x111, 0x111, 0x111],
             [1, 1, 1, 0, 1, 1],
-            [1, 1, 1, 1, 1, 1])
+            [1, 1, 1, 1, 1, 1],
+        )
     }
 }
 
 pub struct DataCacheIndexWriteBackInvalidate {}
 
 impl Test for DataCacheIndexWriteBackInvalidate {
-    fn name(&self) -> &str { "data cache: Index Write Back Invalidate)" }
+    fn name(&self) -> &str {
+        "data cache: Index Write Back Invalidate)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const OP: u8 = CacheOp::DataIndexWriteBackInvalidate.raw_value().value();
@@ -767,18 +1092,25 @@ impl Test for DataCacheIndexWriteBackInvalidate {
             [0, 0, 0, 0x200, 0x200, 0],
             [0x222, 0x111, 0x111, 0, 0x111, 0x111],
             [1, 1, 1, 1, 1, 1],
-            [1, 1, 1, 1, 1, 1])
+            [1, 1, 1, 1, 1, 1],
+        )
     }
 }
 
 pub struct DataCacheCreateDirtyExclusive {}
 
 impl Test for DataCacheCreateDirtyExclusive {
-    fn name(&self) -> &str { "data cache: Create Dirty Exclusive)" }
+    fn name(&self) -> &str {
+        "data cache: Create Dirty Exclusive)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const OP: u8 = CacheOp::DataCreateDirtyExclusive.raw_value().value();
@@ -786,7 +1118,8 @@ impl Test for DataCacheCreateDirtyExclusive {
             [0xc0, 0xc0, 0xc0, 0x2c0, 0x2c0, 0x2c0],
             [0x111, 0x111, 0x111, 0x0, 0x111, 0x111],
             [0x222, 1, 1, 1, 1, 1],
-            [1, 1, 1, 1, 1, 1])
+            [1, 1, 1, 1, 1, 1],
+        )
     }
 }
 
@@ -794,7 +1127,14 @@ fn test_write_cache_line_manually(p_state: TagLoPState) -> Result<(), String> {
     let layout = Layout::from_size_align(64, 8 * 1024).unwrap();
     let data = unsafe { alloc(layout) } as *mut u8;
 
-    set_taglo(TagLo::DEFAULT.with_p_state(p_state).with_p_tag_lo(u20::extract_u32(MemoryMap::cached_to_physical_mut(data) as u32, 12)));
+    set_taglo(
+        TagLo::DEFAULT
+            .with_p_state(p_state)
+            .with_p_tag_lo(u20::extract_u32(
+                MemoryMap::cached_to_physical_mut(data) as u32,
+                12,
+            )),
+    );
 
     const CACHED_VALUE: u32 = 1;
     const UNCACHED_VALUE: u32 = 2;
@@ -808,7 +1148,8 @@ fn test_write_cache_line_manually(p_state: TagLoPState) -> Result<(), String> {
     unsafe {
         const STORE_CACHE_OP: u8 = CacheOp::DataIndexStoreTag.raw_value().value();
         const HIT_WRITE_BACK_CACHE_OP: u8 = CacheOp::DataHitWriteBack.raw_value().value();
-        const HIT_WRITE_BACK_INVALIDATE_CACHE_OP: u8 = CacheOp::DataHitWriteBackInvalidate.raw_value().value();
+        const HIT_WRITE_BACK_INVALIDATE_CACHE_OP: u8 =
+            CacheOp::DataHitWriteBackInvalidate.raw_value().value();
         asm!("
             .set noat
             .set noreorder
@@ -859,25 +1200,75 @@ fn test_write_cache_line_manually(p_state: TagLoPState) -> Result<(), String> {
         )
     }
 
-    unsafe { dealloc(data, layout); }
+    unsafe {
+        dealloc(data, layout);
+    }
 
     // It seems that writing Clean or Dirty is exactly the same; so is Invalid and _Unused01
 
     if p_state == TagLoPState::Invalid || p_state == TagLoPState::_Unused01 {
         // Writing invalid to the cache line always drops the cache line
-        soft_assert_eq(cached, UNCACHED_VALUE, "Cached value after writing to cache line manually (0)")?;
-        soft_assert_eq(uncached, UNCACHED_VALUE, "Uncached value after writing to cache line manually (0)")?;
-        soft_assert_eq(cached16, UNCACHED_VALUE, "Cached value after writing to cache line manually (16)")?;
-        soft_assert_eq(uncached16, UNCACHED_VALUE, "Uncached value after writing to cache line manually (16)")?;
-        soft_assert_eq(cached32, UNCACHED_VALUE, "Cached value after writing to cache line manually (32)")?;
-        soft_assert_eq(uncached32, UNCACHED_VALUE, "Uncached value after writing to cache line manually (32)")?;
+        soft_assert_eq(
+            cached,
+            UNCACHED_VALUE,
+            "Cached value after writing to cache line manually (0)",
+        )?;
+        soft_assert_eq(
+            uncached,
+            UNCACHED_VALUE,
+            "Uncached value after writing to cache line manually (0)",
+        )?;
+        soft_assert_eq(
+            cached16,
+            UNCACHED_VALUE,
+            "Cached value after writing to cache line manually (16)",
+        )?;
+        soft_assert_eq(
+            uncached16,
+            UNCACHED_VALUE,
+            "Uncached value after writing to cache line manually (16)",
+        )?;
+        soft_assert_eq(
+            cached32,
+            UNCACHED_VALUE,
+            "Cached value after writing to cache line manually (32)",
+        )?;
+        soft_assert_eq(
+            uncached32,
+            UNCACHED_VALUE,
+            "Uncached value after writing to cache line manually (32)",
+        )?;
     } else {
-        soft_assert_eq(cached, CACHED_VALUE, "Cached value after writing to cache line manually (0)")?;
-        soft_assert_eq(uncached, UNCACHED_VALUE, "Uncached value after writing to cache line manually (0)")?;
-        soft_assert_eq(cached16, CACHED_VALUE, "Cached value after writing to cache line manually (16)")?;
-        soft_assert_eq(uncached16, CACHED_VALUE, "Uncached value after writing to cache line manually (16)")?;
-        soft_assert_eq(cached32, CACHED_VALUE, "Cached value after writing to cache line manually (32)")?;
-        soft_assert_eq(uncached32, UNCACHED_VALUE, "Uncached value after writing to cache line manually (32)")?;
+        soft_assert_eq(
+            cached,
+            CACHED_VALUE,
+            "Cached value after writing to cache line manually (0)",
+        )?;
+        soft_assert_eq(
+            uncached,
+            UNCACHED_VALUE,
+            "Uncached value after writing to cache line manually (0)",
+        )?;
+        soft_assert_eq(
+            cached16,
+            CACHED_VALUE,
+            "Cached value after writing to cache line manually (16)",
+        )?;
+        soft_assert_eq(
+            uncached16,
+            CACHED_VALUE,
+            "Uncached value after writing to cache line manually (16)",
+        )?;
+        soft_assert_eq(
+            cached32,
+            CACHED_VALUE,
+            "Cached value after writing to cache line manually (32)",
+        )?;
+        soft_assert_eq(
+            uncached32,
+            UNCACHED_VALUE,
+            "Uncached value after writing to cache line manually (32)",
+        )?;
     }
 
     Ok(())
@@ -886,11 +1277,17 @@ fn test_write_cache_line_manually(p_state: TagLoPState) -> Result<(), String> {
 pub struct WriteCacheLineManuallyInvalid {}
 
 impl Test for WriteCacheLineManuallyInvalid {
-    fn name(&self) -> &str { "cache: Write cache line manually (invalid)" }
+    fn name(&self) -> &str {
+        "cache: Write cache line manually (invalid)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         test_write_cache_line_manually(TagLoPState::Invalid)
@@ -900,11 +1297,17 @@ impl Test for WriteCacheLineManuallyInvalid {
 pub struct WriteCacheLineManuallyClean {}
 
 impl Test for WriteCacheLineManuallyClean {
-    fn name(&self) -> &str { "cache: Write cache line manually (clean)" }
+    fn name(&self) -> &str {
+        "cache: Write cache line manually (clean)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         test_write_cache_line_manually(TagLoPState::Clean)
@@ -914,11 +1317,17 @@ impl Test for WriteCacheLineManuallyClean {
 pub struct WriteCacheLineManuallyDirty {}
 
 impl Test for WriteCacheLineManuallyDirty {
-    fn name(&self) -> &str { "cache: Write cache line manually (dirty)" }
+    fn name(&self) -> &str {
+        "cache: Write cache line manually (dirty)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         test_write_cache_line_manually(TagLoPState::Dirty)
@@ -928,11 +1337,17 @@ impl Test for WriteCacheLineManuallyDirty {
 pub struct WriteCacheLineManually01 {}
 
 impl Test for WriteCacheLineManually01 {
-    fn name(&self) -> &str { "cache: Write cache line manually (illegal value 0b01)" }
+    fn name(&self) -> &str {
+        "cache: Write cache line manually (illegal value 0b01)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         test_write_cache_line_manually(TagLoPState::_Unused01)
@@ -943,17 +1358,28 @@ impl Test for WriteCacheLineManually01 {
 pub struct MoveCacheLine {}
 
 impl Test for MoveCacheLine {
-    fn name(&self) -> &str { "cache: Move cache line" }
+    fn name(&self) -> &str {
+        "cache: Move cache line"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let layout = Layout::from_size_align(16 * 1024, 8 * 1024).unwrap();
         let data = unsafe { alloc(layout) } as *mut u8;
 
-        let taglo_dirty = TagLo::DEFAULT.with_p_state(TagLoPState::Dirty).with_p_tag_lo(u20::extract_u32(MemoryMap::cached_to_physical_mut(data) as u32 + 8*1024, 12));
+        let taglo_dirty = TagLo::DEFAULT
+            .with_p_state(TagLoPState::Dirty)
+            .with_p_tag_lo(u20::extract_u32(
+                MemoryMap::cached_to_physical_mut(data) as u32 + 8 * 1024,
+                12,
+            ));
         let taglo_invalid = taglo_dirty.with_p_state(TagLoPState::Invalid);
 
         let moved0: u32;
@@ -961,7 +1387,8 @@ impl Test for MoveCacheLine {
         let moved2: u32;
         unsafe {
             const STORE_CACHE_OP: u8 = CacheOp::DataIndexStoreTag.raw_value().value();
-            const INVALIDATE_CACHE_OP: u8 = CacheOp::DataIndexWriteBackInvalidate.raw_value().value();
+            const INVALIDATE_CACHE_OP: u8 =
+                CacheOp::DataIndexWriteBackInvalidate.raw_value().value();
             asm!("
             .set noat
             .set noreorder
@@ -1032,9 +1459,15 @@ impl Test for MoveCacheLine {
             )
         }
 
-        unsafe { dealloc(data, layout); }
+        unsafe {
+            dealloc(data, layout);
+        }
 
-        soft_assert_eq(moved0, 0x01234567, "When a dirty cache line is moved via Cache(IndexStoreTag), its content moves")?;
+        soft_assert_eq(
+            moved0,
+            0x01234567,
+            "When a dirty cache line is moved via Cache(IndexStoreTag), its content moves",
+        )?;
         soft_assert_eq(moved1, 0x01234567, "When a dirty cache line is moved via Cache(IndexStoreTag), its content moves (even if it is temporarily marked as invalid)")?;
         soft_assert_eq(moved2, 0x00000000, "When a clean cache line is moved via Cache(IndexStoreTag), the new cache line will still be clean")?;
 
@@ -1046,11 +1479,17 @@ impl Test for MoveCacheLine {
 pub struct UnusedBitsInCacheReadWrite {}
 
 impl Test for UnusedBitsInCacheReadWrite {
-    fn name(&self) -> &str { "cache: Cache write unused bits" }
+    fn name(&self) -> &str {
+        "cache: Cache write unused bits"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let layout = Layout::from_size_align(16 * 1024, 8 * 1024).unwrap();
@@ -1060,7 +1499,8 @@ impl Test for UnusedBitsInCacheReadWrite {
         unsafe {
             const STORE_CACHE_OP: u8 = CacheOp::DataIndexStoreTag.raw_value().value();
             const LOAD_CACHE_OP: u8 = CacheOp::DataIndexLoadTag.raw_value().value();
-            const INVALIDATE_CACHE_OP: u8 = CacheOp::DataIndexWriteBackInvalidate.raw_value().value();
+            const INVALIDATE_CACHE_OP: u8 =
+                CacheOp::DataIndexWriteBackInvalidate.raw_value().value();
             asm!("
             .set noat
             .set noreorder
@@ -1091,7 +1531,9 @@ impl Test for UnusedBitsInCacheReadWrite {
             )
         }
 
-        unsafe { dealloc(data, layout); }
+        unsafe {
+            dealloc(data, layout);
+        }
 
         soft_assert_eq(result0, 0xfffffc0, "Result when writing way too many bits")?;
 
@@ -1103,7 +1545,12 @@ fn test_invalidate_keeps_dirty_flag<const INVALIDATE_CACHE_OP: u8>() -> Result<(
     let layout = Layout::from_size_align(16 * 1024, 8 * 1024).unwrap();
     let data = unsafe { alloc(layout) } as *mut u8;
 
-    let taglo_dirty = TagLo::DEFAULT.with_p_state(TagLoPState::Dirty).with_p_tag_lo(u20::extract_u32(MemoryMap::cached_to_physical_mut(data) as u32, 12));
+    let taglo_dirty = TagLo::DEFAULT
+        .with_p_state(TagLoPState::Dirty)
+        .with_p_tag_lo(u20::extract_u32(
+            MemoryMap::cached_to_physical_mut(data) as u32,
+            12,
+        ));
     let taglo_invalid = taglo_dirty.with_p_state(TagLoPState::Invalid);
 
     let result0: u32;
@@ -1185,26 +1632,49 @@ fn test_invalidate_keeps_dirty_flag<const INVALIDATE_CACHE_OP: u8>() -> Result<(
         )
     }
 
-    unsafe { dealloc(data, layout); }
+    unsafe {
+        dealloc(data, layout);
+    }
 
-    soft_assert_eq(result0, 0, "Hit Invalidate sets valid to false, but dirty is unaffected (0)")?;
-    soft_assert_eq(result1, 0x01234567, "Hit Invalidate sets valid to false, but dirty is unaffected (1)")?;
-    soft_assert_eq(result2, 0, "Hit Invalidate sets valid to false, but dirty is unaffected (2)")?;
-    soft_assert_eq(result3, 0x01234567, "Hit Invalidate sets valid to false, but dirty is unaffected (3)")?;
+    soft_assert_eq(
+        result0,
+        0,
+        "Hit Invalidate sets valid to false, but dirty is unaffected (0)",
+    )?;
+    soft_assert_eq(
+        result1,
+        0x01234567,
+        "Hit Invalidate sets valid to false, but dirty is unaffected (1)",
+    )?;
+    soft_assert_eq(
+        result2,
+        0,
+        "Hit Invalidate sets valid to false, but dirty is unaffected (2)",
+    )?;
+    soft_assert_eq(
+        result3,
+        0x01234567,
+        "Hit Invalidate sets valid to false, but dirty is unaffected (3)",
+    )?;
 
     Ok(())
-
 }
 
 /// The dirty flag is preserved while a cache line is invalid
 pub struct HitInvalidateKeepsDirtyFlag {}
 
 impl Test for HitInvalidateKeepsDirtyFlag {
-    fn name(&self) -> &str { "cache: Hit Invalidate keeps dirty flag" }
+    fn name(&self) -> &str {
+        "cache: Hit Invalidate keeps dirty flag"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const OP: u8 = CacheOp::DataHitInvalidate.raw_value().value();
@@ -1216,11 +1686,17 @@ impl Test for HitInvalidateKeepsDirtyFlag {
 pub struct HitWriteBackInvalidateKeepsDirtyFlag {}
 
 impl Test for HitWriteBackInvalidateKeepsDirtyFlag {
-    fn name(&self) -> &str { "cache: Hit Write Back Invalidate keeps dirty flag" }
+    fn name(&self) -> &str {
+        "cache: Hit Write Back Invalidate keeps dirty flag"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const OP: u8 = CacheOp::DataHitWriteBackInvalidate.raw_value().value();
@@ -1232,11 +1708,17 @@ impl Test for HitWriteBackInvalidateKeepsDirtyFlag {
 pub struct IndexWriteBackInvalidateKeepsDirtyFlag {}
 
 impl Test for IndexWriteBackInvalidateKeepsDirtyFlag {
-    fn name(&self) -> &str { "cache: Index Write Back Invalidate keeps dirty flag" }
+    fn name(&self) -> &str {
+        "cache: Index Write Back Invalidate keeps dirty flag"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const OP: u8 = CacheOp::DataIndexWriteBackInvalidate.raw_value().value();
@@ -1250,14 +1732,22 @@ impl Test for IndexWriteBackInvalidateKeepsDirtyFlag {
 pub struct CacheLineIndexPtagConflict {}
 
 impl Test for CacheLineIndexPtagConflict {
-    fn name(&self) -> &str { "cache: Conflicting CacheLineIndex vs Ptag" }
+    fn name(&self) -> &str {
+        "cache: Conflicting CacheLineIndex vs Ptag"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        unsafe { cop0::clear_tlb(); }
+        unsafe {
+            cop0::clear_tlb();
+        }
 
         let mut data = UncachedHeapMemory::<u8>::new_with_align(16 * KB, 16 * KB);
 
@@ -1266,9 +1756,22 @@ impl Test for CacheLineIndexPtagConflict {
             cop0::write_tlb(
                 0,
                 Pagemask::M4K,
-                make_entry_lo(true, true, true, Coherency::Cached, (data.start_physical() >> 12) as u32),
-                make_entry_lo(true, true, true, Coherency::Cached, (data.start_physical() >> 12) as u32),
-                make_entry_hi(1, u27::new(0xDEA0 >> 1), u2::new(0)))
+                make_entry_lo(
+                    true,
+                    true,
+                    true,
+                    Coherency::Cached,
+                    (data.start_physical() >> 12) as u32,
+                ),
+                make_entry_lo(
+                    true,
+                    true,
+                    true,
+                    Coherency::Cached,
+                    (data.start_physical() >> 12) as u32,
+                ),
+                make_entry_hi(1, u27::new(0xDEA0 >> 1), u2::new(0)),
+            )
         }
 
         // Preinit data (uncached)

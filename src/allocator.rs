@@ -29,4 +29,3 @@ pub fn init_allocator() {
     // Don't print before the allocator is setup as framebuffer_console needs the allocator
     println!("Heap range: {:x} to {:x}", heap_start, heap_end);
 }
-

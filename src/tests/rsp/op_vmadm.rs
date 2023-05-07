@@ -4,15 +4,31 @@ use alloc::vec::Vec;
 use core::any::Any;
 
 use crate::rsp::rsp::RSP;
-use crate::rsp::rsp_assembler::{E, Element, GPR, RSPAssembler, VR, VSARAccumulator};
+use crate::rsp::rsp_assembler::{Element, RSPAssembler, VSARAccumulator, E, GPR, VR};
 use crate::rsp::spmem::SPMEM;
-use crate::tests::{Level, Test};
 use crate::tests::soft_asserts::soft_assert_eq;
+use crate::tests::{Level, Test};
 
-fn run_test(e: Element, expected_result: [u16; 8], expected_acc_top: [u16; 8], expected_acc_mid: [u16; 8], expected_acc_low: [u16; 8]) -> Result<(), String> {
+fn run_test(
+    e: Element,
+    expected_result: [u16; 8],
+    expected_acc_top: [u16; 8],
+    expected_acc_mid: [u16; 8],
+    expected_acc_low: [u16; 8],
+) -> Result<(), String> {
     // Prepare input data
-    SPMEM::write_vector16_into_dmem(0x00, &[0x0000, 0x0000, 0x0000, 0xE000, 0x8001, 0x8000, 0x7FFF, 0x8000]);
-    SPMEM::write_vector16_into_dmem(0x10, &[0x0000, 0x0001, 0xFFFF, 0xFFFF, 0x8000, 0x7FFF, 0x7FFF, 0x8000]);
+    SPMEM::write_vector16_into_dmem(
+        0x00,
+        &[
+            0x0000, 0x0000, 0x0000, 0xE000, 0x8001, 0x8000, 0x7FFF, 0x8000,
+        ],
+    );
+    SPMEM::write_vector16_into_dmem(
+        0x10,
+        &[
+            0x0000, 0x0001, 0xFFFF, 0xFFFF, 0x8000, 0x7FFF, 0x7FFF, 0x8000,
+        ],
+    );
 
     // Assemble RSP program. First use VMULF to set accumulator to something known, then use VMADM
     let mut assembler = RSPAssembler::new(0);
@@ -47,12 +63,36 @@ fn run_test(e: Element, expected_result: [u16; 8], expected_acc_top: [u16; 8], e
 
     RSP::run_and_wait(0);
 
-    soft_assert_eq(SPMEM::read_vector16_from_dmem(0x100), expected_result, "VMADM result")?;
-    soft_assert_eq(SPMEM::read_vector16_from_dmem(0x110), expected_acc_top, "VMADM Acc[32..48]")?;
-    soft_assert_eq(SPMEM::read_vector16_from_dmem(0x120), expected_acc_mid, "VMADM Acc[16..32]")?;
-    soft_assert_eq(SPMEM::read_vector16_from_dmem(0x130), expected_acc_low, "VMADM Acc[0..16]")?;
-    soft_assert_eq(SPMEM::read_vector16_from_dmem(0x140), expected_result, "VMADM result when doing VMADM V6, V6, V1")?;
-    soft_assert_eq(SPMEM::read_vector16_from_dmem(0x150), expected_result, "VMADM result when doing VMADM V7, V0, V7")?;
+    soft_assert_eq(
+        SPMEM::read_vector16_from_dmem(0x100),
+        expected_result,
+        "VMADM result",
+    )?;
+    soft_assert_eq(
+        SPMEM::read_vector16_from_dmem(0x110),
+        expected_acc_top,
+        "VMADM Acc[32..48]",
+    )?;
+    soft_assert_eq(
+        SPMEM::read_vector16_from_dmem(0x120),
+        expected_acc_mid,
+        "VMADM Acc[16..32]",
+    )?;
+    soft_assert_eq(
+        SPMEM::read_vector16_from_dmem(0x130),
+        expected_acc_low,
+        "VMADM Acc[0..16]",
+    )?;
+    soft_assert_eq(
+        SPMEM::read_vector16_from_dmem(0x140),
+        expected_result,
+        "VMADM result when doing VMADM V6, V6, V1",
+    )?;
+    soft_assert_eq(
+        SPMEM::read_vector16_from_dmem(0x150),
+        expected_result,
+        "VMADM result when doing VMADM V7, V0, V7",
+    )?;
 
     Ok(())
 }
@@ -60,11 +100,17 @@ fn run_test(e: Element, expected_result: [u16; 8], expected_acc_top: [u16; 8], e
 pub struct VMADMAll {}
 
 impl Test for VMADMAll {
-    fn name(&self) -> &str { "RSP VMADM" }
+    fn name(&self) -> &str {
+        "RSP VMADM"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         run_test(
@@ -80,11 +126,17 @@ impl Test for VMADMAll {
 pub struct VMADM4 {}
 
 impl Test for VMADM4 {
-    fn name(&self) -> &str { "RSP VMADM (e=_4)" }
+    fn name(&self) -> &str {
+        "RSP VMADM (e=_4)"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         run_test(
@@ -100,11 +152,17 @@ impl Test for VMADM4 {
 pub struct VMADMAccumulatorOverflowed {}
 
 impl Test for VMADMAccumulatorOverflowed {
-    fn name(&self) -> &str { "RSP VMADM (accumulator itself overflowed)" }
+    fn name(&self) -> &str {
+        "RSP VMADM (accumulator itself overflowed)"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         // Prepare input data
@@ -124,7 +182,7 @@ impl Test for VMADMAccumulatorOverflowed {
         assembler.write_vmadm(VR::V2, VR::V0, VR::V1, Element::All);
         assembler.write_addiu(GPR::A0, GPR::A0, -1);
         assembler.write_bgtz(GPR::A0, -3);
-        assembler.write_nop();  // delay
+        assembler.write_nop(); // delay
 
         assembler.write_vsar_any_index(VR::V3, VR::V0, VR::V0, E::_8);
         assembler.write_vsar_any_index(VR::V4, VR::V0, VR::V0, E::_9);
@@ -140,7 +198,7 @@ impl Test for VMADMAccumulatorOverflowed {
         assembler.write_vmadm(VR::V2, VR::V0, VR::V1, Element::All);
         assembler.write_addiu(GPR::A0, GPR::A0, -1);
         assembler.write_bgtz(GPR::A0, -3);
-        assembler.write_nop();  // delay
+        assembler.write_nop(); // delay
 
         assembler.write_vsar_any_index(VR::V3, VR::V0, VR::V0, E::_8);
         assembler.write_vsar_any_index(VR::V4, VR::V0, VR::V0, E::_9);
@@ -156,16 +214,48 @@ impl Test for VMADMAccumulatorOverflowed {
         RSP::run_and_wait(0);
 
         // After first loop
-        soft_assert_eq(SPMEM::read_vector16_from_dmem(0x100), [0x7fff, 0x7fff, 0, 0, 0, 0, 0, 0], "Result after accumulator overflow in [1]")?;
-        soft_assert_eq(SPMEM::read_vector16_from_dmem(0x110), [0x7fff, 0x7fff, 0, 0, 0, 0, 0, 0], "Acc[32..48] after accumulator overflow in [1]")?;
-        soft_assert_eq(SPMEM::read_vector16_from_dmem(0x120), [0x4000, 0xc003, 0, 0, 0, 0, 0, 0], "Acc[16..32] after accumulator overflow in [1]")?;
-        soft_assert_eq(SPMEM::read_vector16_from_dmem(0x130), [0, 0, 0x8000, 0x8000, 0x8000, 0x8000, 0x8000, 0x8000], "Acc[0..16] after accumulator overflow in [1]")?;
+        soft_assert_eq(
+            SPMEM::read_vector16_from_dmem(0x100),
+            [0x7fff, 0x7fff, 0, 0, 0, 0, 0, 0],
+            "Result after accumulator overflow in [1]",
+        )?;
+        soft_assert_eq(
+            SPMEM::read_vector16_from_dmem(0x110),
+            [0x7fff, 0x7fff, 0, 0, 0, 0, 0, 0],
+            "Acc[32..48] after accumulator overflow in [1]",
+        )?;
+        soft_assert_eq(
+            SPMEM::read_vector16_from_dmem(0x120),
+            [0x4000, 0xc003, 0, 0, 0, 0, 0, 0],
+            "Acc[16..32] after accumulator overflow in [1]",
+        )?;
+        soft_assert_eq(
+            SPMEM::read_vector16_from_dmem(0x130),
+            [0, 0, 0x8000, 0x8000, 0x8000, 0x8000, 0x8000, 0x8000],
+            "Acc[0..16] after accumulator overflow in [1]",
+        )?;
 
         // After second loop
-        soft_assert_eq(SPMEM::read_vector16_from_dmem(0x140), [0x8000, 0x7fff, 0, 0, 0, 0, 0, 0], "Result after accumulator overflow in [0]")?;
-        soft_assert_eq(SPMEM::read_vector16_from_dmem(0x150), [0x8000, 0x7ffe, 0, 0, 0, 0, 0, 0], "Acc[32..48] after accumulator overflow in [0]")?;
-        soft_assert_eq(SPMEM::read_vector16_from_dmem(0x160), [0x3ffe, 0xc005, 0, 0, 0, 0, 0, 0], "Acc[16..32] after accumulator overflow in [0]")?;
-        soft_assert_eq(SPMEM::read_vector16_from_dmem(0x170), [0, 0, 0x8000, 0x8000, 0x8000, 0x8000, 0x8000, 0x8000], "Acc[0..16] after accumulator overflow in [0]")?;
+        soft_assert_eq(
+            SPMEM::read_vector16_from_dmem(0x140),
+            [0x8000, 0x7fff, 0, 0, 0, 0, 0, 0],
+            "Result after accumulator overflow in [0]",
+        )?;
+        soft_assert_eq(
+            SPMEM::read_vector16_from_dmem(0x150),
+            [0x8000, 0x7ffe, 0, 0, 0, 0, 0, 0],
+            "Acc[32..48] after accumulator overflow in [0]",
+        )?;
+        soft_assert_eq(
+            SPMEM::read_vector16_from_dmem(0x160),
+            [0x3ffe, 0xc005, 0, 0, 0, 0, 0, 0],
+            "Acc[16..32] after accumulator overflow in [0]",
+        )?;
+        soft_assert_eq(
+            SPMEM::read_vector16_from_dmem(0x170),
+            [0, 0, 0x8000, 0x8000, 0x8000, 0x8000, 0x8000, 0x8000],
+            "Acc[0..16] after accumulator overflow in [0]",
+        )?;
 
         Ok(())
     }

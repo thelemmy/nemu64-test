@@ -9,7 +9,10 @@ pub struct Cursor<'a, TColor: Copy + Color> {
 }
 
 impl<'a, TColor: Copy + Color> Cursor<'a, TColor> {
-    pub const fn new_with_font(font: &'a crate::graphics::font::Font<'a>, color: TColor) -> Cursor<'a, TColor> {
+    pub const fn new_with_font(
+        font: &'a crate::graphics::font::Font<'a>,
+        color: TColor,
+    ) -> Cursor<'a, TColor> {
         Cursor {
             font,
             x: 0,
@@ -47,7 +50,16 @@ impl<'a, TColor: Copy + Color> Cursor<'a, TColor> {
         for i in 0..8 {
             let shift = 28 - (i * 4);
             let digit = (n >> shift) & 0xF;
-            self.x += self.font.draw_char(image, self.x, self.y, self.color, char::from_digit(digit, 16).unwrap()).unwrap_or(0);
+            self.x += self
+                .font
+                .draw_char(
+                    image,
+                    self.x,
+                    self.y,
+                    self.color,
+                    char::from_digit(digit, 16).unwrap(),
+                )
+                .unwrap_or(0);
         }
     }
 
@@ -55,8 +67,16 @@ impl<'a, TColor: Copy + Color> Cursor<'a, TColor> {
         for i in 0..16 {
             let shift = 60 - (i * 4);
             let digit = ((n >> shift) & 0xF) as u32;
-            self.x += self.font.draw_char(image, self.x, self.y, self.color, char::from_digit(digit, 16).unwrap()).unwrap_or(0);
+            self.x += self
+                .font
+                .draw_char(
+                    image,
+                    self.x,
+                    self.y,
+                    self.color,
+                    char::from_digit(digit, 16).unwrap(),
+                )
+                .unwrap_or(0);
         }
     }
 }
-

@@ -25,7 +25,7 @@ pub enum Format {
     YUV = 1,
     CI = 2,
     IA = 3,
-    I = 4
+    I = 4,
 }
 
 #[bitenum(u2, exhaustive: true)]
@@ -43,7 +43,7 @@ pub enum PM {
     CombineColor = 0,
     MemoryColor = 1,
     BlendColor = 2,
-    FogColor = 3
+    FogColor = 3,
 }
 
 #[bitenum(u2, exhaustive: true)]
@@ -61,7 +61,7 @@ pub enum B {
     InverseA = 0,
     MemoryAlpha = 1,
     One = 2,
-    Zero = 3
+    Zero = 3,
 }
 
 #[bitfield(u64, default: 0)]
@@ -95,13 +95,11 @@ pub struct Othermode {
 
     #[bits(8..=9, rw)]
     coverage_mode: CoverageMode,
-
 }
 
 impl Othermode {
     pub const fn with_blender_0(&self, value: Blender) -> Self {
-        self
-            .with_blender_0p(value.p)
+        self.with_blender_0p(value.p)
             .with_blender_0a(value.a)
             .with_blender_0m(value.m)
             .with_blender_0b(value.b)
@@ -109,8 +107,7 @@ impl Othermode {
 
     #[allow(dead_code)]
     pub const fn with_blender_1(&self, value: Blender) -> Self {
-        self
-            .with_blender_1p(value.p)
+        self.with_blender_1p(value.p)
             .with_blender_1a(value.a)
             .with_blender_1m(value.m)
             .with_blender_1b(value.b)
@@ -125,5 +122,7 @@ pub struct Blender {
 }
 
 impl Blender {
-    pub fn new(a: A, p: PM, b: B, m: PM) -> Self { Self { a, p, b, m } }
+    pub fn new(a: A, p: PM, b: B, m: PM) -> Self {
+        Self { a, p, b, m }
+    }
 }

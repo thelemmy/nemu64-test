@@ -3,19 +3,26 @@ use alloc::string::String;
 use alloc::vec::Vec;
 use core::any::Any;
 use core::arch::asm;
-use crate::cop0::{CauseException, preset_cause_to_copindex2};
+
+use crate::cop0::{preset_cause_to_copindex2, CauseException};
 use crate::exception_handler::expect_exception;
-use crate::tests::{Level, Test};
 use crate::tests::soft_asserts::soft_assert_eq;
+use crate::tests::{Level, Test};
 
 pub struct AddOverflowPositive {}
 
 impl Test for AddOverflowPositive {
-    fn name(&self) -> &str { "ADD (overflow, positive)" }
+    fn name(&self) -> &str {
+        "ADD (overflow, positive)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         preset_cause_to_copindex2()?;
@@ -35,9 +42,21 @@ impl Test for AddOverflowPositive {
         })?;
 
         soft_assert_eq(result, 0xBADDECAF, "Result should be unchanged on overflow")?;
-        soft_assert_eq(exception_context.k0_exception_vector, 0xFFFFFFFF_80000180, "Exception Vector")?;
-        soft_assert_eq(exception_context.exceptpc & 0xFFFFFFFF_FF000000, 0xFFFFFFFF_80000000, "ExceptPC")?;
-        soft_assert_eq(unsafe { *(exception_context.exceptpc as *const u32) }, 0x851020, "ExceptPC points to wrong instruction")?;
+        soft_assert_eq(
+            exception_context.k0_exception_vector,
+            0xFFFFFFFF_80000180,
+            "Exception Vector",
+        )?;
+        soft_assert_eq(
+            exception_context.exceptpc & 0xFFFFFFFF_FF000000,
+            0xFFFFFFFF_80000000,
+            "ExceptPC",
+        )?;
+        soft_assert_eq(
+            unsafe { *(exception_context.exceptpc as *const u32) },
+            0x851020,
+            "ExceptPC points to wrong instruction",
+        )?;
         soft_assert_eq(exception_context.cause.raw_value(), 0x30, "Cause")?;
         soft_assert_eq(exception_context.status, 0x24000002, "Status")?;
 
@@ -48,11 +67,17 @@ impl Test for AddOverflowPositive {
 pub struct AddOverflowNegative {}
 
 impl Test for AddOverflowNegative {
-    fn name(&self) -> &str { "ADD (overflow, negative)" }
+    fn name(&self) -> &str {
+        "ADD (overflow, negative)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut result: u32 = 0xBADDECAF;
@@ -71,9 +96,21 @@ impl Test for AddOverflowNegative {
         })?;
 
         soft_assert_eq(result, 0xBADDECAF, "Result should be unchanged on overflow")?;
-        soft_assert_eq(exception_context.k0_exception_vector, 0xFFFFFFFF_80000180, "Exception Vector")?;
-        soft_assert_eq(exception_context.exceptpc & 0xFFFFFFFF_FF000000, 0xFFFFFFFF_80000000, "ExceptPC")?;
-        soft_assert_eq(unsafe { *(exception_context.exceptpc as *const u32) }, 0x851020, "ExceptPC points to wrong instruction")?;
+        soft_assert_eq(
+            exception_context.k0_exception_vector,
+            0xFFFFFFFF_80000180,
+            "Exception Vector",
+        )?;
+        soft_assert_eq(
+            exception_context.exceptpc & 0xFFFFFFFF_FF000000,
+            0xFFFFFFFF_80000000,
+            "ExceptPC",
+        )?;
+        soft_assert_eq(
+            unsafe { *(exception_context.exceptpc as *const u32) },
+            0x851020,
+            "ExceptPC points to wrong instruction",
+        )?;
         soft_assert_eq(exception_context.cause.raw_value(), 0x30, "Cause")?;
         soft_assert_eq(exception_context.status, 0x24000002, "Status")?;
 
@@ -84,11 +121,17 @@ impl Test for AddOverflowNegative {
 pub struct AddOverflowIntoR0 {}
 
 impl Test for AddOverflowIntoR0 {
-    fn name(&self) -> &str { "ADD (overflow, into R0)" }
+    fn name(&self) -> &str {
+        "ADD (overflow, into R0)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let exception_context = expect_exception(CauseException::Ov, 1, || {
@@ -105,9 +148,21 @@ impl Test for AddOverflowIntoR0 {
             Ok(())
         })?;
 
-        soft_assert_eq(exception_context.k0_exception_vector, 0xFFFFFFFF_80000180, "Exception Vector")?;
-        soft_assert_eq(exception_context.exceptpc & 0xFFFFFFFF_FF000000, 0xFFFFFFFF_80000000, "ExceptPC")?;
-        soft_assert_eq(unsafe { *(exception_context.exceptpc as *const u32) }, 0x850020, "ExceptPC points to wrong instruction")?;
+        soft_assert_eq(
+            exception_context.k0_exception_vector,
+            0xFFFFFFFF_80000180,
+            "Exception Vector",
+        )?;
+        soft_assert_eq(
+            exception_context.exceptpc & 0xFFFFFFFF_FF000000,
+            0xFFFFFFFF_80000000,
+            "ExceptPC",
+        )?;
+        soft_assert_eq(
+            unsafe { *(exception_context.exceptpc as *const u32) },
+            0x850020,
+            "ExceptPC points to wrong instruction",
+        )?;
         soft_assert_eq(exception_context.cause.raw_value(), 0x30, "Cause")?;
         soft_assert_eq(exception_context.status, 0x24000002, "Status")?;
 
@@ -118,11 +173,17 @@ impl Test for AddOverflowIntoR0 {
 pub struct AddOverflowDelaySlot1 {}
 
 impl Test for AddOverflowDelaySlot1 {
-    fn name(&self) -> &str { "ADD (overflow in delay, not taken)" }
+    fn name(&self) -> &str {
+        "ADD (overflow in delay, not taken)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut result: u32 = 0xBADDECAF;
@@ -145,9 +206,21 @@ impl Test for AddOverflowDelaySlot1 {
         })?;
 
         soft_assert_eq(result, 0xBADDECAF, "Result should be unchanged on overflow")?;
-        soft_assert_eq(exception_context.k0_exception_vector, 0xFFFFFFFF_80000180, "Exception Vector")?;
-        soft_assert_eq(exception_context.exceptpc & 0xFFFFFFFF_FF000000, 0xFFFFFFFF_80000000, "ExceptPC")?;
-        soft_assert_eq(unsafe { *(exception_context.exceptpc as *const u32).add(1) }, 0x861020, "ExceptPC points to wrong instruction")?;
+        soft_assert_eq(
+            exception_context.k0_exception_vector,
+            0xFFFFFFFF_80000180,
+            "Exception Vector",
+        )?;
+        soft_assert_eq(
+            exception_context.exceptpc & 0xFFFFFFFF_FF000000,
+            0xFFFFFFFF_80000000,
+            "ExceptPC",
+        )?;
+        soft_assert_eq(
+            unsafe { *(exception_context.exceptpc as *const u32).add(1) },
+            0x861020,
+            "ExceptPC points to wrong instruction",
+        )?;
         soft_assert_eq(exception_context.cause.raw_value(), 0x80000030, "Cause")?;
         soft_assert_eq(exception_context.status, 0x24000002, "Status")?;
 
@@ -158,11 +231,17 @@ impl Test for AddOverflowDelaySlot1 {
 pub struct AddOverflowDelaySlot2 {}
 
 impl Test for AddOverflowDelaySlot2 {
-    fn name(&self) -> &str { "ADD (overflow in delay, taken)" }
+    fn name(&self) -> &str {
+        "ADD (overflow in delay, taken)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut result: u32 = 0xBADDECAF;
@@ -185,9 +264,21 @@ impl Test for AddOverflowDelaySlot2 {
         })?;
 
         soft_assert_eq(result, 0xBADDECAF, "Result should be unchanged on overflow")?;
-        soft_assert_eq(exception_context.k0_exception_vector, 0xFFFFFFFF_80000180, "Exception Vector")?;
-        soft_assert_eq(exception_context.exceptpc & 0xFFFFFFFF_FF000000, 0xFFFFFFFF_80000000, "ExceptPC")?;
-        soft_assert_eq(unsafe { *(exception_context.exceptpc as *const u32).add(1) }, 0xA61020, "ExceptPC points to wrong instruction")?;
+        soft_assert_eq(
+            exception_context.k0_exception_vector,
+            0xFFFFFFFF_80000180,
+            "Exception Vector",
+        )?;
+        soft_assert_eq(
+            exception_context.exceptpc & 0xFFFFFFFF_FF000000,
+            0xFFFFFFFF_80000000,
+            "ExceptPC",
+        )?;
+        soft_assert_eq(
+            unsafe { *(exception_context.exceptpc as *const u32).add(1) },
+            0xA61020,
+            "ExceptPC points to wrong instruction",
+        )?;
         soft_assert_eq(exception_context.cause.raw_value(), 0x80000030, "Cause")?;
         soft_assert_eq(exception_context.status, 0x24000002, "Status")?;
 
@@ -198,11 +289,17 @@ impl Test for AddOverflowDelaySlot2 {
 pub struct DoubleAddOverflow {}
 
 impl Test for DoubleAddOverflow {
-    fn name(&self) -> &str { "DADD (overflow)" }
+    fn name(&self) -> &str {
+        "DADD (overflow)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut result: u32 = 0xBADDECAF;
@@ -223,9 +320,21 @@ impl Test for DoubleAddOverflow {
         })?;
 
         soft_assert_eq(result, 0xBADDECAF, "Result should be unchanged on overflow")?;
-        soft_assert_eq(exception_context.k0_exception_vector, 0xFFFFFFFF_80000180, "Exception Vector")?;
-        soft_assert_eq(exception_context.exceptpc & 0xFFFFFFFF_FF000000, 0xFFFFFFFF_80000000, "ExceptPC")?;
-        soft_assert_eq(unsafe { *(exception_context.exceptpc as *const u32) }, 0x85102C, "ExceptPC points to wrong instruction")?;
+        soft_assert_eq(
+            exception_context.k0_exception_vector,
+            0xFFFFFFFF_80000180,
+            "Exception Vector",
+        )?;
+        soft_assert_eq(
+            exception_context.exceptpc & 0xFFFFFFFF_FF000000,
+            0xFFFFFFFF_80000000,
+            "ExceptPC",
+        )?;
+        soft_assert_eq(
+            unsafe { *(exception_context.exceptpc as *const u32) },
+            0x85102C,
+            "ExceptPC points to wrong instruction",
+        )?;
         soft_assert_eq(exception_context.cause.raw_value(), 0x30, "Cause")?;
         soft_assert_eq(exception_context.status, 0x24000002, "Status")?;
 
@@ -236,11 +345,17 @@ impl Test for DoubleAddOverflow {
 pub struct DoubleAddOverflowIntoR0 {}
 
 impl Test for DoubleAddOverflowIntoR0 {
-    fn name(&self) -> &str { "DADD (overflow, into R0)" }
+    fn name(&self) -> &str {
+        "DADD (overflow, into R0)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let exception_context = expect_exception(CauseException::Ov, 1, || {
@@ -259,9 +374,21 @@ impl Test for DoubleAddOverflowIntoR0 {
             Ok(())
         })?;
 
-        soft_assert_eq(exception_context.k0_exception_vector, 0xFFFFFFFF_80000180, "Exception Vector")?;
-        soft_assert_eq(exception_context.exceptpc & 0xFFFFFFFF_FF000000, 0xFFFFFFFF_80000000, "ExceptPC")?;
-        soft_assert_eq(unsafe { *(exception_context.exceptpc as *const u32) }, 0x85002C, "ExceptPC points to wrong instruction")?;
+        soft_assert_eq(
+            exception_context.k0_exception_vector,
+            0xFFFFFFFF_80000180,
+            "Exception Vector",
+        )?;
+        soft_assert_eq(
+            exception_context.exceptpc & 0xFFFFFFFF_FF000000,
+            0xFFFFFFFF_80000000,
+            "ExceptPC",
+        )?;
+        soft_assert_eq(
+            unsafe { *(exception_context.exceptpc as *const u32) },
+            0x85002C,
+            "ExceptPC points to wrong instruction",
+        )?;
         soft_assert_eq(exception_context.cause.raw_value(), 0x30, "Cause")?;
         soft_assert_eq(exception_context.status, 0x24000002, "Status")?;
 
@@ -272,11 +399,17 @@ impl Test for DoubleAddOverflowIntoR0 {
 pub struct SubOverflow {}
 
 impl Test for SubOverflow {
-    fn name(&self) -> &str { "SUB (overflow)" }
+    fn name(&self) -> &str {
+        "SUB (overflow)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut result: u32 = 0xBADDECAF;
@@ -295,9 +428,21 @@ impl Test for SubOverflow {
         })?;
 
         soft_assert_eq(result, 0xBADDECAF, "Result should be unchanged on overflow")?;
-        soft_assert_eq(exception_context.k0_exception_vector, 0xFFFFFFFF_80000180, "Exception Vector")?;
-        soft_assert_eq(exception_context.exceptpc & 0xFFFFFFFF_FF000000, 0xFFFFFFFF_80000000, "ExceptPC")?;
-        soft_assert_eq(unsafe { *(exception_context.exceptpc as *const u32) }, 0x851022, "ExceptPC points to wrong instruction")?;
+        soft_assert_eq(
+            exception_context.k0_exception_vector,
+            0xFFFFFFFF_80000180,
+            "Exception Vector",
+        )?;
+        soft_assert_eq(
+            exception_context.exceptpc & 0xFFFFFFFF_FF000000,
+            0xFFFFFFFF_80000000,
+            "ExceptPC",
+        )?;
+        soft_assert_eq(
+            unsafe { *(exception_context.exceptpc as *const u32) },
+            0x851022,
+            "ExceptPC points to wrong instruction",
+        )?;
         soft_assert_eq(exception_context.cause.raw_value(), 0x30, "Cause")?;
         soft_assert_eq(exception_context.status, 0x24000002, "Status")?;
 
@@ -308,11 +453,17 @@ impl Test for SubOverflow {
 pub struct SubOverflowIntoR0 {}
 
 impl Test for SubOverflowIntoR0 {
-    fn name(&self) -> &str { "SUB (overflow, into R0)" }
+    fn name(&self) -> &str {
+        "SUB (overflow, into R0)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let exception_context = expect_exception(CauseException::Ov, 1, || {
@@ -329,9 +480,21 @@ impl Test for SubOverflowIntoR0 {
             Ok(())
         })?;
 
-        soft_assert_eq(exception_context.k0_exception_vector, 0xFFFFFFFF_80000180, "Exception Vector")?;
-        soft_assert_eq(exception_context.exceptpc & 0xFFFFFFFF_FF000000, 0xFFFFFFFF_80000000, "ExceptPC")?;
-        soft_assert_eq(unsafe { *(exception_context.exceptpc as *const u32) }, 0x850022, "ExceptPC points to wrong instruction")?;
+        soft_assert_eq(
+            exception_context.k0_exception_vector,
+            0xFFFFFFFF_80000180,
+            "Exception Vector",
+        )?;
+        soft_assert_eq(
+            exception_context.exceptpc & 0xFFFFFFFF_FF000000,
+            0xFFFFFFFF_80000000,
+            "ExceptPC",
+        )?;
+        soft_assert_eq(
+            unsafe { *(exception_context.exceptpc as *const u32) },
+            0x850022,
+            "ExceptPC points to wrong instruction",
+        )?;
         soft_assert_eq(exception_context.cause.raw_value(), 0x30, "Cause")?;
         soft_assert_eq(exception_context.status, 0x24000002, "Status")?;
 
@@ -342,11 +505,17 @@ impl Test for SubOverflowIntoR0 {
 pub struct DoubleSubOverflow {}
 
 impl Test for DoubleSubOverflow {
-    fn name(&self) -> &str { "DSUB (overflow)" }
+    fn name(&self) -> &str {
+        "DSUB (overflow)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut result: u32 = 0xBADDECAF;
@@ -367,9 +536,21 @@ impl Test for DoubleSubOverflow {
         })?;
 
         soft_assert_eq(result, 0xBADDECAF, "Result should be unchanged on overflow")?;
-        soft_assert_eq(exception_context.k0_exception_vector, 0xFFFFFFFF_80000180, "Exception Vector")?;
-        soft_assert_eq(exception_context.exceptpc & 0xFFFFFFFF_FF000000, 0xFFFFFFFF_80000000, "ExceptPC")?;
-        soft_assert_eq(unsafe { *(exception_context.exceptpc as *const u32) }, 0x85102E, "ExceptPC points to wrong instruction")?;
+        soft_assert_eq(
+            exception_context.k0_exception_vector,
+            0xFFFFFFFF_80000180,
+            "Exception Vector",
+        )?;
+        soft_assert_eq(
+            exception_context.exceptpc & 0xFFFFFFFF_FF000000,
+            0xFFFFFFFF_80000000,
+            "ExceptPC",
+        )?;
+        soft_assert_eq(
+            unsafe { *(exception_context.exceptpc as *const u32) },
+            0x85102E,
+            "ExceptPC points to wrong instruction",
+        )?;
         soft_assert_eq(exception_context.cause.raw_value(), 0x30, "Cause")?;
         soft_assert_eq(exception_context.status, 0x24000002, "Status")?;
 
@@ -380,11 +561,17 @@ impl Test for DoubleSubOverflow {
 pub struct DoubleSubOverflowIntoR0 {}
 
 impl Test for DoubleSubOverflowIntoR0 {
-    fn name(&self) -> &str { "DSUB (overflow, into R0)" }
+    fn name(&self) -> &str {
+        "DSUB (overflow, into R0)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let exception_context = expect_exception(CauseException::Ov, 1, || {
@@ -403,9 +590,21 @@ impl Test for DoubleSubOverflowIntoR0 {
             Ok(())
         })?;
 
-        soft_assert_eq(exception_context.k0_exception_vector, 0xFFFFFFFF_80000180, "Exception Vector")?;
-        soft_assert_eq(exception_context.exceptpc & 0xFFFFFFFF_FF000000, 0xFFFFFFFF_80000000, "ExceptPC")?;
-        soft_assert_eq(unsafe { *(exception_context.exceptpc as *const u32) }, 0x85002E, "ExceptPC points to wrong instruction")?;
+        soft_assert_eq(
+            exception_context.k0_exception_vector,
+            0xFFFFFFFF_80000180,
+            "Exception Vector",
+        )?;
+        soft_assert_eq(
+            exception_context.exceptpc & 0xFFFFFFFF_FF000000,
+            0xFFFFFFFF_80000000,
+            "ExceptPC",
+        )?;
+        soft_assert_eq(
+            unsafe { *(exception_context.exceptpc as *const u32) },
+            0x85002E,
+            "ExceptPC points to wrong instruction",
+        )?;
         soft_assert_eq(exception_context.cause.raw_value(), 0x30, "Cause")?;
         soft_assert_eq(exception_context.status, 0x24000002, "Status")?;
 
@@ -416,11 +615,17 @@ impl Test for DoubleSubOverflowIntoR0 {
 pub struct AddImmediateOverflow {}
 
 impl Test for AddImmediateOverflow {
-    fn name(&self) -> &str { "ADDI (overflow)" }
+    fn name(&self) -> &str {
+        "ADDI (overflow)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut result: u32 = 0xBADDECAF;
@@ -438,9 +643,21 @@ impl Test for AddImmediateOverflow {
         })?;
 
         soft_assert_eq(result, 0xBADDECAF, "Result should be unchanged on overflow")?;
-        soft_assert_eq(exception_context.k0_exception_vector, 0xFFFFFFFF_80000180, "Exception Vector")?;
-        soft_assert_eq(exception_context.exceptpc & 0xFFFFFFFF_FF000000, 0xFFFFFFFF_80000000, "ExceptPC")?;
-        soft_assert_eq(unsafe { *(exception_context.exceptpc as *const u32) }, 0x20820001, "ExceptPC points to wrong instruction")?;
+        soft_assert_eq(
+            exception_context.k0_exception_vector,
+            0xFFFFFFFF_80000180,
+            "Exception Vector",
+        )?;
+        soft_assert_eq(
+            exception_context.exceptpc & 0xFFFFFFFF_FF000000,
+            0xFFFFFFFF_80000000,
+            "ExceptPC",
+        )?;
+        soft_assert_eq(
+            unsafe { *(exception_context.exceptpc as *const u32) },
+            0x20820001,
+            "ExceptPC points to wrong instruction",
+        )?;
         soft_assert_eq(exception_context.cause.raw_value(), 0x30, "Cause")?;
         soft_assert_eq(exception_context.status, 0x24000002, "Status")?;
 
@@ -451,11 +668,17 @@ impl Test for AddImmediateOverflow {
 pub struct AddImmediateOverflowIntoR0 {}
 
 impl Test for AddImmediateOverflowIntoR0 {
-    fn name(&self) -> &str { "ADDI (overflow, into R0)" }
+    fn name(&self) -> &str {
+        "ADDI (overflow, into R0)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let exception_context = expect_exception(CauseException::Ov, 1, || {
@@ -471,9 +694,21 @@ impl Test for AddImmediateOverflowIntoR0 {
             Ok(())
         })?;
 
-        soft_assert_eq(exception_context.k0_exception_vector, 0xFFFFFFFF_80000180, "Exception Vector")?;
-        soft_assert_eq(exception_context.exceptpc & 0xFFFFFFFF_FF000000, 0xFFFFFFFF_80000000, "ExceptPC")?;
-        soft_assert_eq(unsafe { *(exception_context.exceptpc as *const u32) }, 0x20800001, "ExceptPC points to wrong instruction")?;
+        soft_assert_eq(
+            exception_context.k0_exception_vector,
+            0xFFFFFFFF_80000180,
+            "Exception Vector",
+        )?;
+        soft_assert_eq(
+            exception_context.exceptpc & 0xFFFFFFFF_FF000000,
+            0xFFFFFFFF_80000000,
+            "ExceptPC",
+        )?;
+        soft_assert_eq(
+            unsafe { *(exception_context.exceptpc as *const u32) },
+            0x20800001,
+            "ExceptPC points to wrong instruction",
+        )?;
         soft_assert_eq(exception_context.cause.raw_value(), 0x30, "Cause")?;
         soft_assert_eq(exception_context.status, 0x24000002, "Status")?;
 
@@ -484,11 +719,17 @@ impl Test for AddImmediateOverflowIntoR0 {
 pub struct DoubleAddImmediateOverflow {}
 
 impl Test for DoubleAddImmediateOverflow {
-    fn name(&self) -> &str { "DADDI (overflow)" }
+    fn name(&self) -> &str {
+        "DADDI (overflow)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut result: u32 = 0xBADDECAF;
@@ -515,9 +756,21 @@ impl Test for DoubleAddImmediateOverflow {
         })?;
 
         soft_assert_eq(result, 0xBADDECAF, "Result should be unchanged on overflow")?;
-        soft_assert_eq(exception_context.k0_exception_vector, 0xFFFFFFFF_80000180, "Exception Vector")?;
-        soft_assert_eq(exception_context.exceptpc & 0xFFFFFFFF_FF000000, 0xFFFFFFFF_80000000, "ExceptPC")?;
-        soft_assert_eq(unsafe { *(exception_context.exceptpc as *const u32) }, 0x60C20001, "ExceptPC points to wrong instruction")?;
+        soft_assert_eq(
+            exception_context.k0_exception_vector,
+            0xFFFFFFFF_80000180,
+            "Exception Vector",
+        )?;
+        soft_assert_eq(
+            exception_context.exceptpc & 0xFFFFFFFF_FF000000,
+            0xFFFFFFFF_80000000,
+            "ExceptPC",
+        )?;
+        soft_assert_eq(
+            unsafe { *(exception_context.exceptpc as *const u32) },
+            0x60C20001,
+            "ExceptPC points to wrong instruction",
+        )?;
         soft_assert_eq(exception_context.cause.raw_value(), 0x30, "Cause")?;
         soft_assert_eq(exception_context.status, 0x24000002, "Status")?;
 
@@ -528,11 +781,17 @@ impl Test for DoubleAddImmediateOverflow {
 pub struct DoubleAddImmediateOverflowIntoR0 {}
 
 impl Test for DoubleAddImmediateOverflowIntoR0 {
-    fn name(&self) -> &str { "DADDI (overflow, into R0)" }
+    fn name(&self) -> &str {
+        "DADDI (overflow, into R0)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let exception_context = expect_exception(CauseException::Ov, 1, || {
@@ -557,13 +816,24 @@ impl Test for DoubleAddImmediateOverflowIntoR0 {
             Ok(())
         })?;
 
-        soft_assert_eq(exception_context.k0_exception_vector, 0xFFFFFFFF_80000180, "Exception Vector")?;
-        soft_assert_eq(exception_context.exceptpc & 0xFFFFFFFF_FF000000, 0xFFFFFFFF_80000000, "ExceptPC")?;
-        soft_assert_eq(unsafe { *(exception_context.exceptpc as *const u32) }, 0x60C00001, "ExceptPC points to wrong instruction")?;
+        soft_assert_eq(
+            exception_context.k0_exception_vector,
+            0xFFFFFFFF_80000180,
+            "Exception Vector",
+        )?;
+        soft_assert_eq(
+            exception_context.exceptpc & 0xFFFFFFFF_FF000000,
+            0xFFFFFFFF_80000000,
+            "ExceptPC",
+        )?;
+        soft_assert_eq(
+            unsafe { *(exception_context.exceptpc as *const u32) },
+            0x60C00001,
+            "ExceptPC points to wrong instruction",
+        )?;
         soft_assert_eq(exception_context.cause.raw_value(), 0x30, "Cause")?;
         soft_assert_eq(exception_context.status, 0x24000002, "Status")?;
 
         Ok(())
     }
 }
-

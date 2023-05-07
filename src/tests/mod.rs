@@ -4,26 +4,27 @@ use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use core::any::Any;
 use core::cmp::{min, Ordering};
+
 use arbitrary_int::{u2, u27, u5};
 
-use crate::cop0::{count, set_status, Status};
-use crate::exception_handler::drain_seen_exception;
-use crate::{FramebufferConsole, print, println};
 use crate::assembler::GPR;
-use crate::cop1::{FCSR, FCSRFlags, FCSRRoundingMode, set_fcsr};
+use crate::cop0::{count, set_status, Status};
+use crate::cop1::{set_fcsr, FCSRFlags, FCSRRoundingMode, FCSR};
+use crate::exception_handler::drain_seen_exception;
 use crate::isviewer::text_out;
 use crate::math::soft_float::{SoftF32, SoftF64};
 use crate::tests::cop1::compares::FPUSpecialNumber;
 use crate::tests::timing::ExceptionTimingMode;
 use crate::tests::traps::Immediate;
+use crate::{print, println, FramebufferConsole};
 
-mod arithmetic;
 mod address_error_exception;
+mod arithmetic;
 mod cache;
 mod cart_memory;
-mod cop_unusable;
 mod cop0;
 mod cop1;
+mod cop_unusable;
 mod exception_instructions;
 mod jumps;
 mod overflow_exception;
@@ -31,9 +32,9 @@ mod pif_memory;
 mod rdp;
 mod rdram;
 mod rsp;
-mod startup;
 mod soft_asserts;
 mod sp_memory;
+mod startup;
 mod testlist;
 mod timing;
 mod tlb;
@@ -94,26 +95,25 @@ pub trait Test {
     fn name(&self) -> &str;
 
     /// Returns the [level](Level) of the test.
-    /// 
+    ///
     /// Some levels may be filtered out of the compiled test rom by default.
     fn level(&self) -> Level;
 
     /// Returns a list of values to run the test with.
-    /// 
+    ///
     /// If the list is empty, the test will only be run once, using a dummy value. Otherwise, the
     /// test will be run once for every value in the list.
     fn values(&self) -> Vec<Box<dyn Any>>;
 
     /// Run the test with a provided value.
-    /// 
+    ///
     /// Value may be a dummy, if [`Self::values()`] returned an empty list.
-    /// 
+    ///
     /// If the test fails, return a human-readable description of the issue.
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String>;
 }
 
-fn cycles_to_seconds(value: u32) -> f32
-{
+fn cycles_to_seconds(value: u32) -> f32 {
     value as f32 / (93_750_000f32 / 2f32)
 }
 
@@ -122,67 +122,73 @@ pub fn run() {
     let mut succeeded = [0u32; LEVEL_COUNT];
     let mut failed = [0u32; LEVEL_COUNT];
 
-    fn test_value(test: &Box<dyn Test>, value: &Box<dyn Any>, failed: &mut u32, succeeded: &mut u32, time: &mut u32) {
+    fn test_value(
+        test: &Box<dyn Test>,
+        value: &Box<dyn Any>,
+        failed: &mut u32,
+        succeeded: &mut u32,
+        time: &mut u32,
+    ) {
         fn value_desc(value: &Box<dyn Any>) -> String {
             match (*value).downcast_ref::<()>() {
                 Some(_) => return String::new(),
-                None => {},
+                None => {}
             }
             match (*value).downcast_ref::<u32>() {
                 Some(v) => return format!(" with '{:x?}'", v),
-                None => {},
+                None => {}
             }
             match (*value).downcast_ref::<bool>() {
                 Some(v) => return format!(" with '{:?}'", v),
-                None => {},
+                None => {}
             }
             match (*value).downcast_ref::<(bool, u32)>() {
                 Some(v) => return format!(" with '{:x?}'", v),
-                None => {},
+                None => {}
             }
             match (*value).downcast_ref::<(bool, u64)>() {
                 Some(v) => return format!(" with '{:x?}'", v),
-                None => {},
+                None => {}
             }
             match (*value).downcast_ref::<(bool, u32, u32)>() {
                 Some(v) => return format!(" with '{:x?}'", v),
-                None => {},
+                None => {}
             }
             match (*value).downcast_ref::<(bool, usize, usize)>() {
                 Some(v) => return format!(" with '{:x?}'", v),
-                None => {},
+                None => {}
             }
             match (*value).downcast_ref::<GPR>() {
                 Some(v) => return format!(" with '{:x?}'", v),
-                None => {},
+                None => {}
             }
             match (*value).downcast_ref::<(u32, u32)>() {
                 Some(v) => return format!(" with '{:x?}'", v),
-                None => {},
+                None => {}
             }
             match (*value).downcast_ref::<(u32, u32, u32)>() {
                 Some(v) => return format!(" with '{:x?}'", v),
-                None => {},
+                None => {}
             }
             match (*value).downcast_ref::<(u32, u5, u32)>() {
                 Some(v) => return format!(" with '{:x?}'", v),
-                None => {},
+                None => {}
             }
             match (*value).downcast_ref::<(u64, u32, u64)>() {
                 Some(v) => return format!(" with '{:x?}'", v),
-                None => {},
+                None => {}
             }
             match (*value).downcast_ref::<(u64, u32, u8)>() {
                 Some(v) => return format!(" with '{:x?}'", v),
-                None => {},
+                None => {}
             }
             match (*value).downcast_ref::<(u64, u27, u2)>() {
                 Some(v) => return format!(" with '{:x?}'", v),
-                None => {},
+                None => {}
             }
             match (*value).downcast_ref::<(bool, i64, i64)>() {
                 Some(v) => return format!(" with '{:x?}'", v),
-                None => {},
+                None => {}
             }
             match (*value).downcast_ref::<(bool, u64, u64)>() {
                 Some(v) => return format!(" with '{:x?}'", v),
@@ -198,38 +204,66 @@ pub fn run() {
                     let temp = (*flag, *number, SoftF32::new(*f));
                     return format!(" with '{:x?}'", temp);
                 }
-                None => {},
+                None => {}
             }
-            match (*value).downcast_ref::<(bool, FCSRRoundingMode, f32, Result<(FCSRFlags, f32), ()>)>() {
+            match (*value)
+                .downcast_ref::<(bool, FCSRRoundingMode, f32, Result<(FCSRFlags, f32), ()>)>()
+            {
                 Some((flush_denorm_to_zero, rounding_mode, value, expected)) => {
                     // Convert f32 to SoftF32 - it prints more nicely
                     let new_expected = expected.map(|(flags, f)| (flags, SoftF32::new(f)));
-                    let temp = (*flush_denorm_to_zero, *rounding_mode, SoftF32::new(*value), new_expected);
+                    let temp = (
+                        *flush_denorm_to_zero,
+                        *rounding_mode,
+                        SoftF32::new(*value),
+                        new_expected,
+                    );
                     return format!(" with '{:x?}'", temp);
                 }
                 None => {}
             }
-            match (*value).downcast_ref::<(bool, FCSRRoundingMode, f32, Result<(FCSRFlags, f64), ()>)>() {
+            match (*value)
+                .downcast_ref::<(bool, FCSRRoundingMode, f32, Result<(FCSRFlags, f64), ()>)>()
+            {
                 Some((flush_denorm_to_zero, rounding_mode, value, expected)) => {
                     // Convert f32 to SoftF32 - it prints more nicely
                     let new_expected = expected.map(|(flags, f)| (flags, SoftF64::new(f)));
-                    let temp = (*flush_denorm_to_zero, *rounding_mode, SoftF32::new(*value), new_expected);
+                    let temp = (
+                        *flush_denorm_to_zero,
+                        *rounding_mode,
+                        SoftF32::new(*value),
+                        new_expected,
+                    );
                     return format!(" with '{:x?}'", temp);
                 }
                 None => {}
             }
-            match (*value).downcast_ref::<(bool, FCSRRoundingMode, f32, Result<(FCSRFlags, i32), ()>)>() {
+            match (*value)
+                .downcast_ref::<(bool, FCSRRoundingMode, f32, Result<(FCSRFlags, i32), ()>)>()
+            {
                 Some((flush_denorm_to_zero, rounding_mode, value, expected)) => {
                     // Convert f32 to SoftF32 - it prints more nicely
-                    let temp = (*flush_denorm_to_zero, *rounding_mode, SoftF32::new(*value), expected);
+                    let temp = (
+                        *flush_denorm_to_zero,
+                        *rounding_mode,
+                        SoftF32::new(*value),
+                        expected,
+                    );
                     return format!(" with '{:x?}'", temp);
                 }
                 None => {}
             }
-            match (*value).downcast_ref::<(bool, FCSRRoundingMode, f32, Result<(FCSRFlags, i64), ()>)>() {
+            match (*value)
+                .downcast_ref::<(bool, FCSRRoundingMode, f32, Result<(FCSRFlags, i64), ()>)>()
+            {
                 Some((flush_denorm_to_zero, rounding_mode, value, expected)) => {
                     // Convert f32 to SoftF32 - it prints more nicely
-                    let temp = (*flush_denorm_to_zero, *rounding_mode, SoftF32::new(*value), expected);
+                    let temp = (
+                        *flush_denorm_to_zero,
+                        *rounding_mode,
+                        SoftF32::new(*value),
+                        expected,
+                    );
                     return format!(" with '{:x?}'", temp);
                 }
                 None => {}
@@ -242,45 +276,85 @@ pub fn run() {
                 }
                 None => {}
             }
-            match (*value).downcast_ref::<(bool, FCSRRoundingMode, f32, f32, Result<(FCSRFlags, f32), ()>)>() {
+            match (*value).downcast_ref::<(
+                bool,
+                FCSRRoundingMode,
+                f32,
+                f32,
+                Result<(FCSRFlags, f32), ()>,
+            )>() {
                 Some((flush_denorm_to_zero, rounding_mode, value1, value2, expected)) => {
                     // Convert f32 to SoftF32 - it prints more nicely
                     let new_expected = expected.map(|(flags, f)| (flags, SoftF32::new(f)));
-                    let temp = (*flush_denorm_to_zero, *rounding_mode, SoftF32::new(*value1), SoftF32::new(*value2), new_expected);
+                    let temp = (
+                        *flush_denorm_to_zero,
+                        *rounding_mode,
+                        SoftF32::new(*value1),
+                        SoftF32::new(*value2),
+                        new_expected,
+                    );
                     return format!(" with '{:x?}'", temp);
                 }
                 None => {}
             }
-            match (*value).downcast_ref::<(bool, FCSRRoundingMode, f64, Result<(FCSRFlags, f32), ()>)>() {
+            match (*value)
+                .downcast_ref::<(bool, FCSRRoundingMode, f64, Result<(FCSRFlags, f32), ()>)>()
+            {
                 Some((flush_denorm_to_zero, rounding_mode, value, expected)) => {
                     // Convert f32 to SoftF32 - it prints more nicely
                     let new_expected = expected.map(|(flags, f)| (flags, SoftF32::new(f)));
-                    let temp = (*flush_denorm_to_zero, *rounding_mode, SoftF64::new(*value), new_expected);
+                    let temp = (
+                        *flush_denorm_to_zero,
+                        *rounding_mode,
+                        SoftF64::new(*value),
+                        new_expected,
+                    );
                     return format!(" with '{:x?}'", temp);
                 }
                 None => {}
             }
-            match (*value).downcast_ref::<(bool, FCSRRoundingMode, f64, Result<(FCSRFlags, f64), ()>)>() {
+            match (*value)
+                .downcast_ref::<(bool, FCSRRoundingMode, f64, Result<(FCSRFlags, f64), ()>)>()
+            {
                 Some((flush_denorm_to_zero, rounding_mode, value, expected)) => {
                     // Convert f32 to SoftF32 - it prints more nicely
                     let new_expected = expected.map(|(flags, f)| (flags, SoftF64::new(f)));
-                    let temp = (*flush_denorm_to_zero, *rounding_mode, SoftF64::new(*value), new_expected);
+                    let temp = (
+                        *flush_denorm_to_zero,
+                        *rounding_mode,
+                        SoftF64::new(*value),
+                        new_expected,
+                    );
                     return format!(" with '{:x?}'", temp);
                 }
                 None => {}
             }
-            match (*value).downcast_ref::<(bool, FCSRRoundingMode, f64, Result<(FCSRFlags, i32), ()>)>() {
+            match (*value)
+                .downcast_ref::<(bool, FCSRRoundingMode, f64, Result<(FCSRFlags, i32), ()>)>()
+            {
                 Some((flush_denorm_to_zero, rounding_mode, value, expected)) => {
                     // Convert f32 to SoftF32 - it prints more nicely
-                    let temp = (*flush_denorm_to_zero, *rounding_mode, SoftF64::new(*value), expected);
+                    let temp = (
+                        *flush_denorm_to_zero,
+                        *rounding_mode,
+                        SoftF64::new(*value),
+                        expected,
+                    );
                     return format!(" with '{:x?}'", temp);
                 }
                 None => {}
             }
-            match (*value).downcast_ref::<(bool, FCSRRoundingMode, f64, Result<(FCSRFlags, i64), ()>)>() {
+            match (*value)
+                .downcast_ref::<(bool, FCSRRoundingMode, f64, Result<(FCSRFlags, i64), ()>)>()
+            {
                 Some((flush_denorm_to_zero, rounding_mode, value, expected)) => {
                     // Convert f32 to SoftF32 - it prints more nicely
-                    let temp = (*flush_denorm_to_zero, *rounding_mode, SoftF64::new(*value), expected);
+                    let temp = (
+                        *flush_denorm_to_zero,
+                        *rounding_mode,
+                        SoftF64::new(*value),
+                        expected,
+                    );
                     return format!(" with '{:x?}'", temp);
                 }
                 None => {}
@@ -293,7 +367,9 @@ pub fn run() {
                 }
                 None => {}
             }
-            match (*value).downcast_ref::<(bool, FCSRRoundingMode, i32, Result<(FCSRFlags, f32), ()>)>() {
+            match (*value)
+                .downcast_ref::<(bool, FCSRRoundingMode, i32, Result<(FCSRFlags, f32), ()>)>()
+            {
                 Some((flush_denorm_to_zero, rounding_mode, value, expected)) => {
                     // Convert f32 to SoftF32 - it prints more nicely
                     let new_expected = expected.map(|(flags, f)| (flags, SoftF32::new(f)));
@@ -302,7 +378,9 @@ pub fn run() {
                 }
                 None => {}
             }
-            match (*value).downcast_ref::<(bool, FCSRRoundingMode, i32, Result<(FCSRFlags, f64), ()>)>() {
+            match (*value)
+                .downcast_ref::<(bool, FCSRRoundingMode, i32, Result<(FCSRFlags, f64), ()>)>()
+            {
                 Some((flush_denorm_to_zero, rounding_mode, value, expected)) => {
                     // Convert f32 to SoftF32 - it prints more nicely
                     let new_expected = expected.map(|(flags, f)| (flags, SoftF64::new(f)));
@@ -319,7 +397,9 @@ pub fn run() {
                 Some(v) => return format!(" with '{:x?}'", v),
                 None => {}
             }
-            match (*value).downcast_ref::<(bool, FCSRRoundingMode, i64, Result<(FCSRFlags, f64), ()>)>() {
+            match (*value)
+                .downcast_ref::<(bool, FCSRRoundingMode, i64, Result<(FCSRFlags, f64), ()>)>()
+            {
                 Some((flush_denorm_to_zero, rounding_mode, value, expected)) => {
                     // Convert f32 to SoftF32 - it prints more nicely
                     let new_expected = expected.map(|(flags, f)| (flags, SoftF64::new(f)));
@@ -328,7 +408,9 @@ pub fn run() {
                 }
                 None => {}
             }
-            match (*value).downcast_ref::<(bool, FCSRRoundingMode, i64, Result<(FCSRFlags, f32), ()>)>() {
+            match (*value)
+                .downcast_ref::<(bool, FCSRRoundingMode, i64, Result<(FCSRFlags, f32), ()>)>()
+            {
                 Some((flush_denorm_to_zero, rounding_mode, value, expected)) => {
                     // Convert f32 to SoftF32 - it prints more nicely
                     let new_expected = expected.map(|(flags, f)| (flags, SoftF32::new(f)));
@@ -340,15 +422,15 @@ pub fn run() {
             match (*value).downcast_ref::<(f32, Result<(FCSRFlags, i32), ()>)>() {
                 Some((value, expected)) => {
                     let temp = (SoftF32::new(*value), expected);
-                    return format!(" with '{:x?}'", temp)
-                },
+                    return format!(" with '{:x?}'", temp);
+                }
                 None => {}
             }
             match (*value).downcast_ref::<(f64, Result<(FCSRFlags, i32), ()>)>() {
                 Some((value, expected)) => {
                     let temp = (SoftF64::new(*value), expected);
-                    return format!(" with '{:x?}'", temp)
-                },
+                    return format!(" with '{:x?}'", temp);
+                }
                 None => {}
             }
             match (*value).downcast_ref::<(i64, Result<(FCSRFlags, i32), ()>)>() {
@@ -359,12 +441,24 @@ pub fn run() {
                 Some(v) => return format!(" with '{:x?}'", v),
                 None => {}
             }
-            match (*value).downcast_ref::<(bool, FCSRRoundingMode, f64, f64, Result<(FCSRFlags, f64), ()>)>() {
+            match (*value).downcast_ref::<(
+                bool,
+                FCSRRoundingMode,
+                f64,
+                f64,
+                Result<(FCSRFlags, f64), ()>,
+            )>() {
                 Some((flush_denorm_to_zero, rounding_mode, f1, f2, expected)) => {
                     // Convert f32 to SoftF32 - it prints more nicely
-                    let temp = (*flush_denorm_to_zero, *rounding_mode, SoftF64::new(*f1), SoftF64::new(*f2), *expected);
+                    let temp = (
+                        *flush_denorm_to_zero,
+                        *rounding_mode,
+                        SoftF64::new(*f1),
+                        SoftF64::new(*f2),
+                        *expected,
+                    );
                     return format!(" with '{:x?}'", temp);
-                },
+                }
                 None => {}
             }
             match (*value).downcast_ref::<(f32, f32, Ordering, FPUSpecialNumber)>() {
@@ -372,7 +466,7 @@ pub fn run() {
                     // Convert f32 to SoftF32 - it prints more nicely
                     let temp = (SoftF32::new(*f1), SoftF32::new(*f2), *ordering, *special);
                     return format!(" with '{:x?}'", temp);
-                },
+                }
                 None => {}
             }
             match (*value).downcast_ref::<(f64, f64, Ordering, FPUSpecialNumber)>() {
@@ -380,7 +474,7 @@ pub fn run() {
                     // Convert f64 to SoftF64 - it prints more nicely
                     let temp = (SoftF64::new(*f1), SoftF64::new(*f2), *ordering, *special);
                     return format!(" with '{:x?}'", temp);
-                },
+                }
                 None => {}
             }
             match (*value).downcast_ref::<(&str, u32, u32)>() {
@@ -418,7 +512,13 @@ pub fn run() {
             match (*value).downcast_ref::<(&str, u32, f32, f32, u32)>() {
                 Some((context, cycles, f1, f2, instruction)) => {
                     // Convert f32 to SoftF32 - it prints more nicely
-                    let temp = (context, cycles, SoftF32::new(*f1), SoftF32::new(*f2), instruction);
+                    let temp = (
+                        context,
+                        cycles,
+                        SoftF32::new(*f1),
+                        SoftF32::new(*f2),
+                        instruction,
+                    );
                     return format!(" with '{:x?}'", temp);
                 }
                 None => {}
@@ -426,7 +526,14 @@ pub fn run() {
             match (*value).downcast_ref::<(&str, u32, f32, f32, u32, u32)>() {
                 Some((context, cycles, f1, f2, instruction1, instruction2)) => {
                     // Convert f32 to SoftF32 - it prints more nicely
-                    let temp = (context, cycles, SoftF32::new(*f1), SoftF32::new(*f2), instruction1, instruction2);
+                    let temp = (
+                        context,
+                        cycles,
+                        SoftF32::new(*f1),
+                        SoftF32::new(*f2),
+                        instruction1,
+                        instruction2,
+                    );
                     return format!(" with '{:x?}'", temp);
                 }
                 None => {}
@@ -434,7 +541,14 @@ pub fn run() {
             match (*value).downcast_ref::<(&str, u32, f64, f64, u32, u32)>() {
                 Some((context, cycles, f1, f2, instruction1, instruction2)) => {
                     // Convert f64 to SoftF64 - it prints more nicely
-                    let temp = (context, cycles, SoftF64::new(*f1), SoftF64::new(*f2), instruction1, instruction2);
+                    let temp = (
+                        context,
+                        cycles,
+                        SoftF64::new(*f1),
+                        SoftF64::new(*f2),
+                        instruction1,
+                        instruction2,
+                    );
                     return format!(" with '{:x?}'", temp);
                 }
                 None => {}
@@ -442,19 +556,33 @@ pub fn run() {
             match (*value).downcast_ref::<(&str, u32, f64, f64, u32)>() {
                 Some((context, cycles, f1, f2, instruction)) => {
                     // Convert f64 to SoftF64 - it prints more nicely
-                    let temp = (context, cycles, SoftF64::new(*f1), SoftF64::new(*f2), instruction);
+                    let temp = (
+                        context,
+                        cycles,
+                        SoftF64::new(*f1),
+                        SoftF64::new(*f2),
+                        instruction,
+                    );
                     return format!(" with '{:x?}'", temp);
                 }
                 None => {}
             }
-            match (*value).downcast_ref::<(&str, u64, u64, Status, ExceptionTimingMode, u32, u32)>() {
+            match (*value).downcast_ref::<(&str, u64, u64, Status, ExceptionTimingMode, u32, u32)>()
+            {
                 Some(v) => return format!(" with '{:x?}'", v),
                 None => {}
             }
             match (*value).downcast_ref::<(&str, u32, f32, f32, ExceptionTimingMode, u32)>() {
                 Some((context, cycles, f1, f2, exception_timing_mode, instruction)) => {
                     // Convert f32 to SoftF32 - it prints more nicely
-                    let temp = (context, cycles, SoftF32::new(*f1), SoftF32::new(*f2), exception_timing_mode, instruction);
+                    let temp = (
+                        context,
+                        cycles,
+                        SoftF32::new(*f1),
+                        SoftF32::new(*f2),
+                        exception_timing_mode,
+                        instruction,
+                    );
                     return format!(" with '{:x?}'", temp);
                 }
                 None => {}
@@ -462,7 +590,14 @@ pub fn run() {
             match (*value).downcast_ref::<(&str, u32, f64, f64, ExceptionTimingMode, u32)>() {
                 Some((context, cycles, f1, f2, exception_timing_mode, instruction)) => {
                     // Convert f64 to SoftF64 - it prints more nicely
-                    let temp = (context, cycles, SoftF64::new(*f1), SoftF64::new(*f2), exception_timing_mode, instruction);
+                    let temp = (
+                        context,
+                        cycles,
+                        SoftF64::new(*f1),
+                        SoftF64::new(*f2),
+                        exception_timing_mode,
+                        instruction,
+                    );
                     return format!(" with '{:x?}'", temp);
                 }
                 None => {}
@@ -473,7 +608,9 @@ pub fn run() {
         if test.name() != "StartupTest" {
             // Set sane environment for any test except the startup test (that one tests values that
             // were set at boot/reset
-            unsafe { set_status(Status::DEFAULT); }
+            unsafe {
+                set_status(Status::DEFAULT);
+            }
             set_fcsr(FCSR::DEFAULT);
         }
 
@@ -482,30 +619,43 @@ pub fn run() {
         let counter_after = count();
         *time += counter_after - counter_before;
 
-        unsafe { set_status(Status::DEFAULT); }
+        unsafe {
+            set_status(Status::DEFAULT);
+        }
         set_fcsr(FCSR::DEFAULT);
 
         match drain_seen_exception() {
             Some((exception, _)) => {
                 // If the test caused an exception, don't even bother looking at the result. Just count it as failed
                 match exception.cause.exception() {
-                    Ok(e) => println!("Test '{}'{} failed with exception: {:?}\n", test.name(), value_desc(value), e),
-                    Err(e) => println!("Test '{}'{} failed with unknown exception: {:?}\n", test.name(), value_desc(value), e),
+                    Ok(e) => println!(
+                        "Test '{}'{} failed with exception: {:?}\n",
+                        test.name(),
+                        value_desc(value),
+                        e
+                    ),
+                    Err(e) => println!(
+                        "Test '{}'{} failed with unknown exception: {:?}\n",
+                        test.name(),
+                        value_desc(value),
+                        e
+                    ),
                 }
 
                 *failed += 1;
             }
-            None => {
-                match test_result {
-                    Ok(_) => {
-                        *succeeded += 1
-                    }
-                    Err(error) => {
-                        println!("Test '{}'{} failed: {}\n", test.name(), value_desc(value), error);
-                        *failed += 1;
-                    }
+            None => match test_result {
+                Ok(_) => *succeeded += 1,
+                Err(error) => {
+                    println!(
+                        "Test '{}'{} failed: {}\n",
+                        test.name(),
+                        value_desc(value),
+                        error
+                    );
+                    *failed += 1;
                 }
-            }
+            },
         }
     }
 
@@ -518,7 +668,11 @@ pub fn run() {
         let level = test.level();
 
         let execute_test = match level {
-            Level::BasicFunctionality | Level::RarelyUsed | Level::Weird | Level::RDPBasic | Level::RDPPrecise => configuration::BASE,
+            Level::BasicFunctionality
+            | Level::RarelyUsed
+            | Level::Weird
+            | Level::RDPBasic
+            | Level::RDPPrecise => configuration::BASE,
             Level::Timing => configuration::TIMING,
             Level::Cycle => configuration::CYCLE,
             Level::COP0Hazard => configuration::COP0HAZARD,
@@ -527,7 +681,7 @@ pub fn run() {
                 // stresstests have individual feature flags in cargo.toml - if we see it here it means it's supposed
                 // to be included
                 true
-            },
+            }
             Level::_COUNT => panic!("Don't use _COUNT as Level"),
         };
 
@@ -538,10 +692,22 @@ pub fn run() {
 
             let mut time = 0u32;
             if values.len() == 0 {
-                test_value(&test, &dummy_test_value, &mut failed[level as usize], &mut succeeded[level as usize], &mut time);
+                test_value(
+                    &test,
+                    &dummy_test_value,
+                    &mut failed[level as usize],
+                    &mut succeeded[level as usize],
+                    &mut time,
+                );
             } else {
                 for value in values {
-                    test_value(&test, &value, &mut failed[level as usize], &mut succeeded[level as usize], &mut time);
+                    test_value(
+                        &test,
+                        &value,
+                        &mut failed[level as usize],
+                        &mut succeeded[level as usize],
+                        &mut time,
+                    );
                 }
             }
             test_times.push((index, time));
@@ -562,7 +728,13 @@ pub fn run() {
 
         fn stat_string(friendly_name: &str, succeeded: u32, failed: u32) -> String {
             if succeeded + failed != 0 {
-                format!("{}: Failed {} of {} tests ({}% success rate)\n", friendly_name, failed, failed + succeeded, succeeded * 100 / (failed + succeeded))
+                format!(
+                    "{}: Failed {} of {} tests ({}% success rate)\n",
+                    friendly_name,
+                    failed,
+                    failed + succeeded,
+                    succeeded * 100 / (failed + succeeded)
+                )
             } else {
                 format!("")
             }
@@ -579,15 +751,24 @@ pub fn run() {
         let timing_stat = category_stat("Timing", Level::Timing);
         let cycle_stat = category_stat("Cycle", Level::Cycle);
         let cp0_hazards_stat = category_stat("CP0-hazards", Level::COP0Hazard);
-        let poorly_understood_quirk_stat = category_stat("Poorly-understood-quirk", Level::PoorlyUnderstoodQuirk);
+        let poorly_understood_quirk_stat =
+            category_stat("Poorly-understood-quirk", Level::PoorlyUnderstoodQuirk);
         let base_stat = stat_string("Base", succeeded_base, failed_base);
 
         let debug_msg = format!(
             "n64-systemtest {} (base={} timing={} cycle={} cp0-hazards={})
 Finished in {:0.2}s. {}{}{}{}{}",
-            VERSION, configuration::BASE as u8, configuration::TIMING as u8, configuration::CYCLE as u8, configuration::COP0HAZARD as u8,
+            VERSION,
+            configuration::BASE as u8,
+            configuration::TIMING as u8,
+            configuration::CYCLE as u8,
+            configuration::COP0HAZARD as u8,
             cycles_to_seconds(counter_after - counter_before),
-            base_stat, timing_stat, cycle_stat, cp0_hazards_stat, poorly_understood_quirk_stat
+            base_stat,
+            timing_stat,
+            cycle_stat,
+            cp0_hazards_stat,
+            poorly_understood_quirk_stat
         );
         // Print to the console, at the end
         text_out(&debug_msg);
@@ -595,7 +776,7 @@ Finished in {:0.2}s. {}{}{}{}{}",
         // For the on-screen console, prepend it. This way it's visible even if there are a lot of failed tests
         FramebufferConsole::instance().lock().prepend(&debug_msg);
 
-        test_times.sort_by(|(_, a), (_, b)| { a.cmp(b).reverse() });
+        test_times.sort_by(|(_, a), (_, b)| a.cmp(b).reverse());
         println!();
         print!("Slowest tests: ");
         for i in 0..min(5, test_times.len()) {

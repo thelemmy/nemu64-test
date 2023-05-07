@@ -1,37 +1,43 @@
+use alloc::alloc::{alloc, dealloc, Layout};
 use alloc::boxed::Box;
 use alloc::format;
 use alloc::string::String;
-use alloc::vec::Vec;
 use alloc::vec;
+use alloc::vec::Vec;
 use core::any::Any;
 use core::arch::asm;
-use core::mem::transmute;
 use core::cmp::{max, min};
+use core::mem::transmute;
 use core::ops::RangeInclusive;
-use alloc::alloc::{alloc, dealloc, Layout};
+
 use crate::assembler::{Assembler, GPR};
 use crate::cop0::RegisterIndex;
 use crate::memory_map::MemoryMap;
-
-use crate::tests::{Level, Test};
-use crate::tests::soft_asserts::{soft_assert_eq, soft_assert_eq_with_epsilon, soft_assert_range_contained_within_expected};
+use crate::tests::soft_asserts::{
+    soft_assert_eq, soft_assert_eq_with_epsilon, soft_assert_range_contained_within_expected,
+};
 use crate::tests::timing::ExceptionTimingMode;
+use crate::tests::{Level, Test};
 use crate::uncached_memory::{UncachedHeapMemory, UncachedHeapMemoryWriter};
 
 // TODO: Time CACHE instruction
 // TODO: Time writes, in particular once the write buffer has been filled
 
 /// This tests determines the amount of cache
-pub struct CacheSizeTest {
-
-}
+pub struct CacheSizeTest {}
 
 impl Test for CacheSizeTest {
-    fn name(&self) -> &str { "Timing: Data cache Size" }
+    fn name(&self) -> &str {
+        "Timing: Data cache Size"
+    }
 
-    fn level(&self) -> Level { Level::Timing }
+    fn level(&self) -> Level {
+        Level::Timing
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         fn fits_within_cache(size: usize, pagesize: usize) -> bool {
@@ -81,22 +87,44 @@ impl Test for CacheSizeTest {
                     break;
                 }
             }
-            unsafe { dealloc(test_data as *mut u8, layout); }
+            unsafe {
+                dealloc(test_data as *mut u8, layout);
+            }
 
             result
         }
 
-        soft_assert_eq(true, fits_within_cache(2 * 1024, 16), "2kb should fit within data cache")?;
-        soft_assert_eq(true, fits_within_cache(4 * 1024, 16), "4kb should fit within data cache")?;
-        soft_assert_eq(true, fits_within_cache(8 * 1024, 16), "8kb should fit within data cache")?;
-        soft_assert_eq(false, fits_within_cache(16 * 1024, 16), "16kb should not fit within data cache")?;
+        soft_assert_eq(
+            true,
+            fits_within_cache(2 * 1024, 16),
+            "2kb should fit within data cache",
+        )?;
+        soft_assert_eq(
+            true,
+            fits_within_cache(4 * 1024, 16),
+            "4kb should fit within data cache",
+        )?;
+        soft_assert_eq(
+            true,
+            fits_within_cache(8 * 1024, 16),
+            "8kb should fit within data cache",
+        )?;
+        soft_assert_eq(
+            false,
+            fits_within_cache(16 * 1024, 16),
+            "16kb should not fit within data cache",
+        )?;
 
         Ok(())
     }
 }
 
 #[inline(never)]
-fn get_cycles(memory: &mut UncachedHeapMemory<u64>, configure_preconditions: extern "C" fn(), execute: extern "C" fn()) -> u32 {
+fn get_cycles(
+    memory: &mut UncachedHeapMemory<u64>,
+    configure_preconditions: extern "C" fn(),
+    execute: extern "C" fn(),
+) -> u32 {
     let ticks1: u32;
     let ticks2: u32;
     unsafe {
@@ -216,24 +244,39 @@ struct AveragedCycles {
     average: f32,
 }
 
-fn get_averaged_cycles_with_codegen<F: FnOnce(&mut UncachedHeapMemoryWriter<u32>), F2: FnOnce(&mut UncachedHeapMemoryWriter<u32>)>(iterations: usize, configure_preconditions: F, execute: F2) -> AveragedCycles {
+fn get_averaged_cycles_with_codegen<
+    F: FnOnce(&mut UncachedHeapMemoryWriter<u32>),
+    F2: FnOnce(&mut UncachedHeapMemoryWriter<u32>),
+>(
+    iterations: usize,
+    configure_preconditions: F,
+    execute: F2,
+) -> AveragedCycles {
     // Dynamically generate both functions
     let mut code_memory = UncachedHeapMemory::<u32>::new_with_align(64, 64);
     let mut writer = UncachedHeapMemoryWriter::new(&mut code_memory);
 
     configure_preconditions(&mut writer);
     writer.write(Assembler::make_jr(GPR::RA));
-    writer.write(Assembler::make_nop());   // delay slot
+    writer.write(Assembler::make_nop()); // delay slot
 
     let execute_offset = writer.index() << 2;
 
     execute(&mut writer);
     writer.write(Assembler::make_jr(GPR::RA));
-    writer.write(Assembler::make_nop());   // delay slot
+    writer.write(Assembler::make_nop()); // delay slot
 
     // Turn the pointer into a function pointer
-    let preconditions_ptr: extern "C" fn() = unsafe { transmute(MemoryMap::physical_to_cached::<u8>(code_memory.start_physical())) };
-    let execute_ptr: extern "C" fn() = unsafe { transmute(MemoryMap::physical_to_cached::<u8>(code_memory.start_physical() + execute_offset)) };
+    let preconditions_ptr: extern "C" fn() = unsafe {
+        transmute(MemoryMap::physical_to_cached::<u8>(
+            code_memory.start_physical(),
+        ))
+    };
+    let execute_ptr: extern "C" fn() = unsafe {
+        transmute(MemoryMap::physical_to_cached::<u8>(
+            code_memory.start_physical() + execute_offset,
+        ))
+    };
 
     let mut memory = UncachedHeapMemory::<u64>::new_with_align(16 * 1024, 64);
     let mut sum = 0u64;
@@ -253,44 +296,61 @@ fn get_averaged_cycles_with_codegen<F: FnOnce(&mut UncachedHeapMemoryWriter<u32>
     all_cycles.sort();
 
     AveragedCycles {
-        range : min_value..=max_value,
+        range: min_value..=max_value,
         median: all_cycles[all_cycles.len() >> 1],
-        average : sum as f32 / iterations as f32,
+        average: sum as f32 / iterations as f32,
     }
 }
 
-fn assert_averaged_cycles_with_codegen<F: FnOnce(&mut UncachedHeapMemoryWriter<u32>), F2: FnOnce(&mut UncachedHeapMemoryWriter<u32>)>(
+fn assert_averaged_cycles_with_codegen<
+    F: FnOnce(&mut UncachedHeapMemoryWriter<u32>),
+    F2: FnOnce(&mut UncachedHeapMemoryWriter<u32>),
+>(
     expected_range: RangeInclusive<u32>,
     expected_median: u32,
     expected_average: f32,
     average_epsilon: f32,
     configure_preconditions: F,
-    execute: F2) -> Result<(), String> {
+    execute: F2,
+) -> Result<(), String> {
     let averaged_cycles = get_averaged_cycles_with_codegen(1_000, configure_preconditions, execute);
 
     // crate::println!("Avg {} Med {} ({}..={})", averaged_cycles.average, averaged_cycles.median, averaged_cycles.range.start(), averaged_cycles.range.end());
 
-    soft_assert_range_contained_within_expected(expected_range, averaged_cycles.range, "Cycle count (min and max)")?;
-    soft_assert_eq_with_epsilon(1, averaged_cycles.median, expected_median, "Median cycle count")?;
-    soft_assert_eq_with_epsilon(average_epsilon, averaged_cycles.average, expected_average, "Average cycle count")?;
+    soft_assert_range_contained_within_expected(
+        expected_range,
+        averaged_cycles.range,
+        "Cycle count (min and max)",
+    )?;
+    soft_assert_eq_with_epsilon(
+        1,
+        averaged_cycles.median,
+        expected_median,
+        "Median cycle count",
+    )?;
+    soft_assert_eq_with_epsilon(
+        average_epsilon,
+        averaged_cycles.average,
+        expected_average,
+        "Average cycle count",
+    )?;
 
     Ok(())
 }
 
-pub struct LoadMissVIEnabled {
-
-}
+pub struct LoadMissVIEnabled {}
 
 impl Test for LoadMissVIEnabled {
-    fn name(&self) -> &str { "Timing: Load Miss (with VI enabled)" }
+    fn name(&self) -> &str {
+        "Timing: Load Miss (with VI enabled)"
+    }
 
-    fn level(&self) -> Level { Level::Timing }
+    fn level(&self) -> Level {
+        Level::Timing
+    }
 
     fn values(&self) -> Vec<Box<dyn Any>> {
-        vec! {
-            Box::new(true),
-            Box::new(false),
-        }
+        vec![Box::new(true), Box::new(false)]
     }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
@@ -301,34 +361,45 @@ impl Test for LoadMissVIEnabled {
                 let base_address = if *in_same_bank_as_vi {
                     0x80000000 | frontbuffer_bank_base
                 } else {
-                    0x80000000 | ((frontbuffer_bank_base + 1 * 1024 * 1024) & (MemoryMap::memory_size() as u32 - 1))
+                    0x80000000
+                        | ((frontbuffer_bank_base + 1 * 1024 * 1024)
+                            & (MemoryMap::memory_size() as u32 - 1))
                 };
                 crate::VIDEO.lock().spinwait_for_vsync();
-                assert_averaged_cycles_with_codegen(38..=103, 42, 43.25f32, 1.0f32, |writer| {
-                    writer.write(Assembler::make_lui(GPR::T2, (base_address >> 16) as i16));
-                    writer.write(Assembler::make_ori(GPR::T2, GPR::T2, base_address as u16));
-                    // Load the same cache line in the next 8k block. This guarantees that below we'll have a cache miss
-                    writer.write(Assembler::make_lw(GPR::R0, 8 * 1024, GPR::T2));
-                }, |writer| {
-                    writer.write(Assembler::make_lw(GPR::R0, 0, GPR::T2));
-                })
+                assert_averaged_cycles_with_codegen(
+                    38..=103,
+                    42,
+                    43.25f32,
+                    1.0f32,
+                    |writer| {
+                        writer.write(Assembler::make_lui(GPR::T2, (base_address >> 16) as i16));
+                        writer.write(Assembler::make_ori(GPR::T2, GPR::T2, base_address as u16));
+                        // Load the same cache line in the next 8k block. This guarantees that below we'll have a cache miss
+                        writer.write(Assembler::make_lw(GPR::R0, 8 * 1024, GPR::T2));
+                    },
+                    |writer| {
+                        writer.write(Assembler::make_lw(GPR::R0, 0, GPR::T2));
+                    },
+                )
             }
             _ => Err(format!("Unhandled pattern")),
         }
     }
 }
 
-pub struct LoadMissVIDisabled {
-
-}
+pub struct LoadMissVIDisabled {}
 
 impl Test for LoadMissVIDisabled {
-    fn name(&self) -> &str { "Timing: Load Miss (with VI disabled)" }
+    fn name(&self) -> &str {
+        "Timing: Load Miss (with VI disabled)"
+    }
 
-    fn level(&self) -> Level { Level::Timing }
+    fn level(&self) -> Level {
+        Level::Timing
+    }
 
     fn values(&self) -> Vec<Box<dyn Any>> {
-        vec! {
+        vec![
             Box::new(0x80000000u32 + 0 * 1024 * 1024),
             Box::new(0x80000000u32 + 1 * 1024 * 1024),
             Box::new(0x80000000u32 + 2 * 1024 * 1024),
@@ -337,7 +408,7 @@ impl Test for LoadMissVIDisabled {
             Box::new(0x80000000u32 + 5 * 1024 * 1024),
             Box::new(0x80000000u32 + 6 * 1024 * 1024),
             Box::new(0x80000000u32 + 7 * 1024 * 1024),
-        }
+        ]
     }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
@@ -345,35 +416,44 @@ impl Test for LoadMissVIDisabled {
         let _disable = lock.disable_video();
         match (*value).downcast_ref::<u32>() {
             Some(base_address) => {
-                assert_averaged_cycles_with_codegen(41..=103, 41, 42.5f32, 0.5f32, |writer| {
-                    writer.write(Assembler::make_lui(GPR::T2, (*base_address >> 16) as i16));
-                    writer.write(Assembler::make_ori(GPR::T2, GPR::T2, *base_address as u16));
-                    // Load the same cache line in the next 8k block. This guarantees that below we'll have a cache miss
-                    writer.write(Assembler::make_lw(GPR::R0, 8 * 1024, GPR::T2));
-                }, |writer| {
-                    writer.write(Assembler::make_lw(GPR::R0, 0, GPR::T2));
-                })
+                assert_averaged_cycles_with_codegen(
+                    41..=103,
+                    41,
+                    42.5f32,
+                    0.5f32,
+                    |writer| {
+                        writer.write(Assembler::make_lui(GPR::T2, (*base_address >> 16) as i16));
+                        writer.write(Assembler::make_ori(GPR::T2, GPR::T2, *base_address as u16));
+                        // Load the same cache line in the next 8k block. This guarantees that below we'll have a cache miss
+                        writer.write(Assembler::make_lw(GPR::R0, 8 * 1024, GPR::T2));
+                    },
+                    |writer| {
+                        writer.write(Assembler::make_lw(GPR::R0, 0, GPR::T2));
+                    },
+                )
             }
             _ => Err(format!("Unhandled pattern")),
         }
     }
 }
 
-pub struct LoadFromUncachedVIEnabled {
-
-}
+pub struct LoadFromUncachedVIEnabled {}
 
 impl Test for LoadFromUncachedVIEnabled {
-    fn name(&self) -> &str { "Timing: Load from uncached (with VI enabled)" }
+    fn name(&self) -> &str {
+        "Timing: Load from uncached (with VI enabled)"
+    }
 
-    fn level(&self) -> Level { Level::Timing }
+    fn level(&self) -> Level {
+        Level::Timing
+    }
 
     fn values(&self) -> Vec<Box<dyn Any>> {
-        vec! {
+        vec![
             // These measurements are all pretty unstable - will need to revise as things are better understood
             Box::new((true, 36u32, 40.7f32)),
             Box::new((false, 32u32, 32.5f32)),
-        }
+        ]
     }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
@@ -384,33 +464,43 @@ impl Test for LoadFromUncachedVIEnabled {
                 let base_address = if *in_same_bank_as_vi {
                     0xA0000000 | frontbuffer_bank_base
                 } else {
-                    0xA0000000 | ((frontbuffer_bank_base + 1 * 1024 * 1024) & (MemoryMap::memory_size() as u32 - 1))
+                    0xA0000000
+                        | ((frontbuffer_bank_base + 1 * 1024 * 1024)
+                            & (MemoryMap::memory_size() as u32 - 1))
                 };
                 crate::VIDEO.lock().spinwait_for_vsync();
-                assert_averaged_cycles_with_codegen(32..=93, *expected_median, *expected_average, 4.0f32, |writer| {
-                    writer.write(Assembler::make_lui(GPR::T2, (base_address >> 16) as i16));
-                    writer.write(Assembler::make_ori(GPR::T2, GPR::T2, base_address as u16));
-                }, |writer| {
-                    writer.write(Assembler::make_lw(GPR::R0, 0, GPR::T2));
-                })
+                assert_averaged_cycles_with_codegen(
+                    32..=93,
+                    *expected_median,
+                    *expected_average,
+                    4.0f32,
+                    |writer| {
+                        writer.write(Assembler::make_lui(GPR::T2, (base_address >> 16) as i16));
+                        writer.write(Assembler::make_ori(GPR::T2, GPR::T2, base_address as u16));
+                    },
+                    |writer| {
+                        writer.write(Assembler::make_lw(GPR::R0, 0, GPR::T2));
+                    },
+                )
             }
             _ => Err(format!("Unhandled pattern")),
         }
     }
 }
 
-
-pub struct LoadFromUncachedVIDisabled {
-
-}
+pub struct LoadFromUncachedVIDisabled {}
 
 impl Test for LoadFromUncachedVIDisabled {
-    fn name(&self) -> &str { "Timing: Load from uncached (with VI disabled)" }
+    fn name(&self) -> &str {
+        "Timing: Load from uncached (with VI disabled)"
+    }
 
-    fn level(&self) -> Level { Level::Timing }
+    fn level(&self) -> Level {
+        Level::Timing
+    }
 
     fn values(&self) -> Vec<Box<dyn Any>> {
-        vec! {
+        vec![
             Box::new(0xA0000000u32 + 0 * 1024 * 1024),
             Box::new(0xA0000000u32 + 1 * 1024 * 1024),
             Box::new(0xA0000000u32 + 2 * 1024 * 1024),
@@ -420,24 +510,27 @@ impl Test for LoadFromUncachedVIDisabled {
             Box::new(0xA0000000u32 + 6 * 1024 * 1024),
             Box::new(0xA0000000u32 + 7 * 1024 * 1024),
             Box::new(0xA0000000u32 + 7 * 1024 * 1024),
-        }
+        ]
     }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
         let lock = crate::VIDEO.lock();
         let _disable = lock.disable_video();
         match (*value).downcast_ref::<u32>() {
-            Some(base_address) => {
-                assert_averaged_cycles_with_codegen(32..=93, 32, 32.54f32, 1.0f32, |writer| {
+            Some(base_address) => assert_averaged_cycles_with_codegen(
+                32..=93,
+                32,
+                32.54f32,
+                1.0f32,
+                |writer| {
                     writer.write(Assembler::make_lui(GPR::T2, (*base_address >> 16) as i16));
                     writer.write(Assembler::make_ori(GPR::T2, GPR::T2, *base_address as u16));
-                }, |writer| {
+                },
+                |writer| {
                     writer.write(Assembler::make_lw(GPR::R0, 0, GPR::T2));
-                })
-            }
+                },
+            ),
             _ => Err(format!("Unhandled pattern")),
         }
     }
 }
-
-

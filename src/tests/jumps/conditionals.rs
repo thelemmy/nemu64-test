@@ -3,8 +3,9 @@ use alloc::string::String;
 use alloc::vec::Vec;
 use core::any::Any;
 use core::arch::asm;
-use crate::tests::{Level, Test};
+
 use crate::tests::soft_asserts::{soft_assert_eq, soft_assert_neq};
+use crate::tests::{Level, Test};
 
 fn bgezal_basic<const VALUE: u64>(expected_jump: bool) -> Result<(), String> {
     let mut result: u32;
@@ -29,22 +30,35 @@ fn bgezal_basic<const VALUE: u64>(expected_jump: bool) -> Result<(), String> {
         ", out("$3") result, in("$4") VALUE, out("$5") ra_result)
     }
 
-    soft_assert_eq(result, if expected_jump { 5 } else { 7 }, "BGEZAL should have jumped")?;
+    soft_assert_eq(
+        result,
+        if expected_jump { 5 } else { 7 },
+        "BGEZAL should have jumped",
+    )?;
     soft_assert_neq(ra_result, 0, "Return address should have been set")?;
-    soft_assert_eq(unsafe { *(ra_result as *const u32) }, 0x34630002, "Return address does not point to correct instruction")?;
+    soft_assert_eq(
+        unsafe { *(ra_result as *const u32) },
+        0x34630002,
+        "Return address does not point to correct instruction",
+    )?;
 
     Ok(())
 }
 
-
 pub struct BGEZALTaken {}
 
 impl Test for BGEZALTaken {
-    fn name(&self) -> &str { "BGEZAL: Taken" }
+    fn name(&self) -> &str {
+        "BGEZAL: Taken"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         bgezal_basic::<0>(true)?;
@@ -60,11 +74,17 @@ impl Test for BGEZALTaken {
 pub struct BGEZALNotTaken {}
 
 impl Test for BGEZALNotTaken {
-    fn name(&self) -> &str { "BGEZAL: Not taken" }
+    fn name(&self) -> &str {
+        "BGEZAL: Not taken"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         bgezal_basic::<0xFFFFFFFF_FFFFFFFF>(false)?;
@@ -78,11 +98,17 @@ impl Test for BGEZALNotTaken {
 pub struct BGEZALThatChangesItsOwnCondition {}
 
 impl Test for BGEZALThatChangesItsOwnCondition {
-    fn name(&self) -> &str { "BGEZAL: Changes its own condition" }
+    fn name(&self) -> &str {
+        "BGEZAL: Changes its own condition"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut result: u32;
@@ -110,7 +136,11 @@ impl Test for BGEZALThatChangesItsOwnCondition {
 
         soft_assert_eq(result, 5, "BGEZAL should have jumped")?;
         soft_assert_neq(ra_result, 0, "Return address should have been set")?;
-        soft_assert_eq(unsafe { *(ra_result as *const u32) }, 0x34630002, "Return address does not point to correct instruction")?;
+        soft_assert_eq(
+            unsafe { *(ra_result as *const u32) },
+            0x34630002,
+            "Return address does not point to correct instruction",
+        )?;
 
         Ok(())
     }
@@ -139,22 +169,35 @@ fn bgezall_basic<const VALUE: u64>(expected_jump: bool) -> Result<(), String> {
         ", in("$4") VALUE, out("$3") result, out("$5") ra_result)
     }
 
-    soft_assert_eq(result, if expected_jump { 5 } else { 6 }, "BGEZALL should have jumped")?;
+    soft_assert_eq(
+        result,
+        if expected_jump { 5 } else { 6 },
+        "BGEZALL should have jumped",
+    )?;
     soft_assert_neq(ra_result, 0, "Return address should have been set")?;
-    soft_assert_eq(unsafe { *(ra_result as *const u32) }, 0x34630002, "Return address does not point to correct instruction")?;
+    soft_assert_eq(
+        unsafe { *(ra_result as *const u32) },
+        0x34630002,
+        "Return address does not point to correct instruction",
+    )?;
 
     Ok(())
 }
 
-
 pub struct BGEZALLTaken {}
 
 impl Test for BGEZALLTaken {
-    fn name(&self) -> &str { "BGEZALL: Taken" }
+    fn name(&self) -> &str {
+        "BGEZALL: Taken"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         bgezall_basic::<0>(true)?;
@@ -170,11 +213,17 @@ impl Test for BGEZALLTaken {
 pub struct BGEZALLNotTaken {}
 
 impl Test for BGEZALLNotTaken {
-    fn name(&self) -> &str { "BGEZALL: Not taken" }
+    fn name(&self) -> &str {
+        "BGEZALL: Not taken"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         bgezall_basic::<0xFFFFFFFF_FFFFFFFF>(false)?;
@@ -188,11 +237,17 @@ impl Test for BGEZALLNotTaken {
 pub struct BGEZALWithinDelay {}
 
 impl Test for BGEZALWithinDelay {
-    fn name(&self) -> &str { "BGEZAL: Within delay slot of J" }
+    fn name(&self) -> &str {
+        "BGEZAL: Within delay slot of J"
+    }
 
-    fn level(&self) -> Level { Level::Cycle }
+    fn level(&self) -> Level {
+        Level::Cycle
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut result: u32;
@@ -233,7 +288,11 @@ impl Test for BGEZALWithinDelay {
             ", out("$3") result, out("$4") ra_offset, out("$24") _, out("$25") _)
         }
 
-        soft_assert_eq(result, 769, "BGEZAL within a delay slot should add its offset to the branch target address")?;
+        soft_assert_eq(
+            result,
+            769,
+            "BGEZAL within a delay slot should add its offset to the branch target address",
+        )?;
         soft_assert_eq(ra_offset, 36, "BGEZAL return address is incorrect")?;
 
         Ok(())
@@ -243,11 +302,17 @@ impl Test for BGEZALWithinDelay {
 pub struct BGEZALWithinDelayOfBEQ {}
 
 impl Test for BGEZALWithinDelayOfBEQ {
-    fn name(&self) -> &str { "BGEZAL: Within delay slot of BEQ" }
+    fn name(&self) -> &str {
+        "BGEZAL: Within delay slot of BEQ"
+    }
 
-    fn level(&self) -> Level { Level::Cycle }
+    fn level(&self) -> Level {
+        Level::Cycle
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut result: u32;
@@ -288,7 +353,11 @@ impl Test for BGEZALWithinDelayOfBEQ {
             ", out("$3") result, out("$4") ra_offset, out("$24") _, out("$25") _)
         }
 
-        soft_assert_eq(result, 769, "BGEZAL within a delay slot should add its offset to the branch target address")?;
+        soft_assert_eq(
+            result,
+            769,
+            "BGEZAL within a delay slot should add its offset to the branch target address",
+        )?;
         soft_assert_eq(ra_offset, 36, "BGEZAL return address is incorrect")?;
 
         Ok(())
@@ -298,11 +367,17 @@ impl Test for BGEZALWithinDelayOfBEQ {
 pub struct BGEZALNotTakenWithinDelay {}
 
 impl Test for BGEZALNotTakenWithinDelay {
-    fn name(&self) -> &str { "BGEZAL: Within delay slot of J, but not taken" }
+    fn name(&self) -> &str {
+        "BGEZAL: Within delay slot of J, but not taken"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut result: u32;
@@ -344,7 +419,11 @@ impl Test for BGEZALNotTakenWithinDelay {
             ", out("$3") result, out("$4") ra_offset, out("$24") _, out("$25") _)
         }
 
-        soft_assert_eq(result, 1023, "BGEZAL within a delay slot should add its offset to the branch target address")?;
+        soft_assert_eq(
+            result,
+            1023,
+            "BGEZAL within a delay slot should add its offset to the branch target address",
+        )?;
         soft_assert_eq(ra_offset, 36, "BGEZAL return address is incorrect")?;
 
         Ok(())
@@ -354,11 +433,17 @@ impl Test for BGEZALNotTakenWithinDelay {
 pub struct BEQWithinDelay {}
 
 impl Test for BEQWithinDelay {
-    fn name(&self) -> &str { "BEQ: Within delay slot of J" }
+    fn name(&self) -> &str {
+        "BEQ: Within delay slot of J"
+    }
 
-    fn level(&self) -> Level { Level::Cycle }
+    fn level(&self) -> Level {
+        Level::Cycle
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut result: u32;
@@ -397,7 +482,11 @@ impl Test for BEQWithinDelay {
             ", out("$3") result, out("$25") _)
         }
 
-        soft_assert_eq(result, 769, "BEQ within a delay slot should add its offset to the branch target address")?;
+        soft_assert_eq(
+            result,
+            769,
+            "BEQ within a delay slot should add its offset to the branch target address",
+        )?;
 
         Ok(())
     }
@@ -406,11 +495,17 @@ impl Test for BEQWithinDelay {
 pub struct BEQWithinDelayOfJR {}
 
 impl Test for BEQWithinDelayOfJR {
-    fn name(&self) -> &str { "BEQ: Within delay slot of JR" }
+    fn name(&self) -> &str {
+        "BEQ: Within delay slot of JR"
+    }
 
-    fn level(&self) -> Level { Level::Cycle }
+    fn level(&self) -> Level {
+        Level::Cycle
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut result: u32;
@@ -448,7 +543,11 @@ impl Test for BEQWithinDelayOfJR {
             ", out("$3") result, out("$4") _, out("$25") _)
         }
 
-        soft_assert_eq(result, 514, "BEQ within a delay slot should add its offset to the branch target address")?;
+        soft_assert_eq(
+            result,
+            514,
+            "BEQ within a delay slot should add its offset to the branch target address",
+        )?;
 
         Ok(())
     }
@@ -457,11 +556,17 @@ impl Test for BEQWithinDelayOfJR {
 pub struct BEQNotTakenWithinDelay {}
 
 impl Test for BEQNotTakenWithinDelay {
-    fn name(&self) -> &str { "BEQ: Within delay slot of J, but not taken" }
+    fn name(&self) -> &str {
+        "BEQ: Within delay slot of J, but not taken"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let mut result: u32;
@@ -495,9 +600,12 @@ impl Test for BEQNotTakenWithinDelay {
             ", out("$3") result, out("$4") _, out("$25") _)
         }
 
-        soft_assert_eq(result, 1023, "BEQ within a delay slot should add its offset to the branch target address")?;
+        soft_assert_eq(
+            result,
+            1023,
+            "BEQ within a delay slot should add its offset to the branch target address",
+        )?;
 
         Ok(())
     }
 }
-

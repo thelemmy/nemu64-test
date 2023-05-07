@@ -4,21 +4,27 @@ use alloc::vec::Vec;
 use core::any::Any;
 
 use crate::rsp::rsp::RSP;
-use crate::rsp::rsp_assembler::{GPR, RSPAssembler};
+use crate::rsp::rsp_assembler::{RSPAssembler, GPR};
 use crate::rsp::spmem::SPMEM;
-use crate::tests::{Level, Test};
 use crate::tests::soft_asserts::soft_assert_eq;
+use crate::tests::{Level, Test};
 
 // LWU: For whatever reason, this exists on the RSP. It seems to do the same thing as LW
 
 pub struct LWU {}
 
 impl Test for LWU {
-    fn name(&self) -> &str { "RSP LWU" }
+    fn name(&self) -> &str {
+        "RSP LWU"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         // Assemble RSP program

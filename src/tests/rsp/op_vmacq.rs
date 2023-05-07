@@ -6,14 +6,15 @@ use core::any::Any;
 
 use crate::math::vector::Vector;
 use crate::rsp::rsp::RSP;
-use crate::rsp::rsp_assembler::{E, Element, GPR, RSPAssembler, VR, VSARAccumulator};
+use crate::rsp::rsp_assembler::{Element, RSPAssembler, VSARAccumulator, E, GPR, VR};
 use crate::rsp::rsp_macros::assemble_set_accumulator_to;
 use crate::rsp::spmem::SPMEM;
-use crate::tests::{Level, Test};
 use crate::tests::soft_asserts::soft_assert_eq2;
+use crate::tests::{Level, Test};
 
 fn simulate(acc_top: u16, acc_mid: u16, acc_low: u16) -> (u16, u16, u16, u16) {
-    let acc_input = (((acc_top as i64) << 48) | ((acc_mid as i64) << 32) | ((acc_low as i64) << 16)) >> 16;
+    let acc_input =
+        (((acc_top as i64) << 48) | ((acc_mid as i64) << 32) | ((acc_low as i64) << 16)) >> 16;
 
     // Add/Remove value, depending on bits in the accumulator
     let should_change = (acc_input & 0x20_0000) == 0;
@@ -47,10 +48,22 @@ fn simulate(acc_top: u16, acc_mid: u16, acc_low: u16) -> (u16, u16, u16, u16) {
         }
     };
     let result = clamped_and_shifted & 0xFFF0;
-    (result, (acc_output >> 32) as u16, (acc_output >> 16) as u16, acc_output as u16)
+    (
+        result,
+        (acc_output >> 32) as u16,
+        (acc_output >> 16) as u16,
+        acc_output as u16,
+    )
 }
 
-fn run_test(input_acc_top: Vector, input_acc_mid: Vector, input_acc_low: Vector, vs: VR, vt: VR, e: Element) -> Result<(), String> {
+fn run_test(
+    input_acc_top: Vector,
+    input_acc_mid: Vector,
+    input_acc_low: Vector,
+    vs: VR,
+    vt: VR,
+    e: Element,
+) -> Result<(), String> {
     // Prepare input data
     SPMEM::write_vector_into_dmem(0x00, &input_acc_top);
     SPMEM::write_vector_into_dmem(0x10, &input_acc_mid);
@@ -62,7 +75,16 @@ fn run_test(input_acc_top: Vector, input_acc_mid: Vector, input_acc_low: Vector,
     assembler.write_lqv(VR::V1, E::_0, 0x010, GPR::R0);
     assembler.write_lqv(VR::V2, E::_0, 0x020, GPR::R0);
 
-    assemble_set_accumulator_to(&mut assembler, VR::V0, VR::V1, VR::V2, VR::V3, VR::V4, VR::V5, GPR::AT);
+    assemble_set_accumulator_to(
+        &mut assembler,
+        VR::V0,
+        VR::V1,
+        VR::V2,
+        VR::V3,
+        VR::V4,
+        VR::V5,
+        GPR::AT,
+    );
 
     assembler.write_vmacq(VR::V3, vt, vs, e);
 
@@ -85,12 +107,48 @@ fn run_test(input_acc_top: Vector, input_acc_mid: Vector, input_acc_low: Vector,
     let acc_low = SPMEM::read_vector_from_dmem(0x130);
 
     for i in 0..8 {
-        let (expected_result, expected_acc_top, expected_acc_mid, expected_acc_low) = simulate(input_acc_top.get16(i), input_acc_mid.get16(i), input_acc_low.get16(i));
+        let (expected_result, expected_acc_top, expected_acc_mid, expected_acc_low) = simulate(
+            input_acc_top.get16(i),
+            input_acc_mid.get16(i),
+            input_acc_low.get16(i),
+        );
 
-        soft_assert_eq2(acc_top.get16(i), expected_acc_top, || format!("Acc[32..48] for VMACQ (element {}) with previous accumulator {:04x} {:04x} {:04x}", i, input_acc_top.get16(i), input_acc_mid.get16(i), input_acc_low.get16(i)))?;
-        soft_assert_eq2(acc_mid.get16(i), expected_acc_mid, || format!("Acc[16..32] for VMACQ (element {}) with previous accumulator {:04x} {:04x} {:04x}", i, input_acc_top.get16(i), input_acc_mid.get16(i), input_acc_low.get16(i)))?;
-        soft_assert_eq2(acc_low.get16(i), expected_acc_low, || format!("Acc[0..16] for VMACQ (element {}) with previous accumulator {:04x} {:04x} {:04x}", i, input_acc_top.get16(i), input_acc_mid.get16(i), input_acc_low.get16(i)))?;
-        soft_assert_eq2(result.get16(i), expected_result, || format!("Result(vd) for 3VMACQ (element {}) with previous accumulator {:04x} {:04x} {:04x}", i, input_acc_top.get16(i), input_acc_mid.get16(i), input_acc_low.get16(i)))?;
+        soft_assert_eq2(acc_top.get16(i), expected_acc_top, || {
+            format!(
+                "Acc[32..48] for VMACQ (element {}) with previous accumulator {:04x} {:04x} {:04x}",
+                i,
+                input_acc_top.get16(i),
+                input_acc_mid.get16(i),
+                input_acc_low.get16(i)
+            )
+        })?;
+        soft_assert_eq2(acc_mid.get16(i), expected_acc_mid, || {
+            format!(
+                "Acc[16..32] for VMACQ (element {}) with previous accumulator {:04x} {:04x} {:04x}",
+                i,
+                input_acc_top.get16(i),
+                input_acc_mid.get16(i),
+                input_acc_low.get16(i)
+            )
+        })?;
+        soft_assert_eq2(acc_low.get16(i), expected_acc_low, || {
+            format!(
+                "Acc[0..16] for VMACQ (element {}) with previous accumulator {:04x} {:04x} {:04x}",
+                i,
+                input_acc_top.get16(i),
+                input_acc_mid.get16(i),
+                input_acc_low.get16(i)
+            )
+        })?;
+        soft_assert_eq2(result.get16(i), expected_result, || {
+            format!(
+                "Result(vd) for 3VMACQ (element {}) with previous accumulator {:04x} {:04x} {:04x}",
+                i,
+                input_acc_top.get16(i),
+                input_acc_mid.get16(i),
+                input_acc_low.get16(i)
+            )
+        })?;
     }
 
     Ok(())
@@ -99,11 +157,17 @@ fn run_test(input_acc_top: Vector, input_acc_mid: Vector, input_acc_low: Vector,
 pub struct VMACQ {}
 
 impl Test for VMACQ {
-    fn name(&self) -> &str { "RSP VMACQ" }
+    fn name(&self) -> &str {
+        "RSP VMACQ"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let test_mid_top = [
@@ -169,9 +233,20 @@ impl Test for VMACQ {
                 top,
                 mid,
                 low,
-                VR::from_index(get_pseudo_random(&pseudo_random_bits, &mut pseudo_random_index) as usize & 0x1F).unwrap(),
-                VR::from_index(get_pseudo_random(&pseudo_random_bits, &mut pseudo_random_index) as usize & 0x1F).unwrap(),
-                Element::from_index(get_pseudo_random(&pseudo_random_bits, &mut pseudo_random_index) as usize & 0xF).unwrap(),
+                VR::from_index(
+                    get_pseudo_random(&pseudo_random_bits, &mut pseudo_random_index) as usize
+                        & 0x1F,
+                )
+                .unwrap(),
+                VR::from_index(
+                    get_pseudo_random(&pseudo_random_bits, &mut pseudo_random_index) as usize
+                        & 0x1F,
+                )
+                .unwrap(),
+                Element::from_index(
+                    get_pseudo_random(&pseudo_random_bits, &mut pseudo_random_index) as usize & 0xF,
+                )
+                .unwrap(),
             )?;
         }
 

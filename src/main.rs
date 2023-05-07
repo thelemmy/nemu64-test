@@ -1,5 +1,5 @@
 //! Testsuite for a wide variety of N64 features and behaviors.
-//! 
+//!
 //! All tests included in this suite are found in the [`tests`] module.
 
 #![no_std]
@@ -18,8 +18,8 @@ extern crate alloc;
 use core::arch::global_asm;
 
 use spinning_top::Spinlock;
-use crate::graphics::framebuffer_console::FramebufferConsole;
 
+use crate::graphics::framebuffer_console::FramebufferConsole;
 use crate::graphics::vi::Video;
 use crate::memory_map::MemoryMap;
 
@@ -47,7 +47,6 @@ pub static VIDEO: Spinlock<Video> = Spinlock::new(Video::new());
 
 #[no_mangle]
 unsafe extern "C" fn rust_entrypoint() -> ! {
-
     MemoryMap::init();
     allocator::init_allocator();
     main();
@@ -64,6 +63,8 @@ fn main() {
     tests::run();
 
     let v = VIDEO.lock();
-    FramebufferConsole::instance().lock().render(v.framebuffers().backbuffer().lock().as_mut().unwrap());
+    FramebufferConsole::instance()
+        .lock()
+        .render(v.framebuffers().backbuffer().lock().as_mut().unwrap());
     v.swap_buffers();
 }
