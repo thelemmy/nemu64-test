@@ -3,7 +3,7 @@ use core::alloc::Layout;
 use core::cmp::max;
 use core::mem::size_of;
 
-use linked_list_allocator::align_up;
+use linked_list_allocator::align_up_size;
 
 use crate::{cop0, MemoryMap};
 
@@ -31,7 +31,8 @@ impl<T: Copy + Clone> UncachedHeapMemory<T> {
         let effective_align = max(align, element_size);
         assert!(effective_align.is_power_of_two());
         let layout =
-            Layout::from_size_align(align_up(byte_size, effective_align), effective_align).unwrap();
+            Layout::from_size_align(align_up_size(byte_size, effective_align), effective_align)
+                .unwrap();
         let original_data = unsafe { alloc(layout) };
         Self::invalidate_caches(original_data, byte_size);
         let uncached_data = MemoryMap::uncached_mut(original_data) as *mut T;

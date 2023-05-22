@@ -4,9 +4,9 @@ version = 3
 
 [[package]]
 name = "arbitrary-int"
-version = "1.2.4"
+version = "1.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "075b7e65e44001acfd1f493e313421c6667a561c88d97b31e2d4c2388549dbf3"
+checksum = "6a49f791c7c8885e8221d31bc3a34455b0fd869810d8ddff608dbe08a598f9d9"
 
 [[package]]
 name = "arrayref"
@@ -22,8 +22,9 @@ checksum = "d468802bab17cbc0cc575e9b053f41e72aa36bfa6b7f55e3529ffa43161b97fa"
 
 [[package]]
 name = "bitbybit"
-version = "1.1.5"
-source = "git+https://github.com/danlehmann/bitfield?branch=alternative-default-syntax#f0fa97f2693de6ebd0e59c1cdd19df4783da38dc"
+version = "1.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bb4dec92c2e0ee3c2d3f2b57fba0df0683f2d660aa27b723e4ecc3b14eee8cf9"
 dependencies = [
  "arbitrary-int",
  "proc-macro2",
@@ -33,9 +34,9 @@ dependencies = [
 
 [[package]]
 name = "linked_list_allocator"
-version = "0.9.1"
+version = "0.10.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "549ce1740e46b291953c4340adcd74c59bcf4308f4cac050fd33ba91b7168f4a"
+checksum = "9afa463f5405ee81cdb9cc2baf37e08ec7e4c8209442b5d72c04cfb2cd6e6286"
 dependencies = [
  "spinning_top",
 ]
@@ -94,9 +95,9 @@ checksum = "d29ab0c6d3fc0ee92fe66e2d99f700eab17a8d57d1c1d3b748380fb20baa78cd"
 
 [[package]]
 name = "spinning_top"
-version = "0.2.4"
+version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "75adad84ee84b521fb2cca2d4fd0f1dab1d8d026bda3c5bea4ca63b5f9f9293c"
+checksum = "5b9eb1a2f4c41445a3a0ff9abc5221c5fcd28e1f13cd7c0397706f9ac938ddb0"
 dependencies = [
  "lock_api",
 ]

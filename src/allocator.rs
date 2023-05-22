@@ -23,7 +23,7 @@ pub fn init_allocator() {
 
     unsafe {
         let mut guard = ALLOCATOR.lock();
-        guard.init(heap_start, heap_end - heap_start);
+        guard.init(heap_start as *mut u8, heap_end - heap_start);
     }
 
     // Don't print before the allocator is setup as framebuffer_console needs the allocator
