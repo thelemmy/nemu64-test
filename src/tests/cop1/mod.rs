@@ -9440,7 +9440,7 @@ pub struct ConvertToW;
 
 impl Test for ConvertToW {
     fn name(&self) -> &str {
-        "COP1: CVT.W, ROUND.W, TRUNC.W, CEIL.W"
+        "COP1: CVT.W, ROUND.W, TRUNC.W, FLOOR.W, CEIL.W"
     }
 
     fn level(&self) -> Level {
@@ -10110,7 +10110,7 @@ pub struct ConvertToL;
 
 impl Test for ConvertToL {
     fn name(&self) -> &str {
-        "COP1: CVT.L, ROUND.L, TRUNC.L, CEIL.L"
+        "COP1: CVT.L, ROUND.L, TRUNC.L, FLOOR.L, CEIL.L"
     }
 
     fn level(&self) -> Level {
