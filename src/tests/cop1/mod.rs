@@ -1936,7 +1936,7 @@ impl Test for DivS {
             Box::new((
                 true,
                 FCSRRoundingMode::Nearest,
-                FConst::SUBNORMAL_MIN_NEGATIVE_32,
+                FConst::SUBNORMAL_MAX_NEGATIVE_32,
                 1f32,
                 expected_unimplemented_f32(),
             )),
@@ -1965,7 +1965,7 @@ impl Test for DivS {
                 true,
                 FCSRRoundingMode::Nearest,
                 0f32,
-                FConst::SUBNORMAL_MIN_NEGATIVE_32,
+                FConst::SUBNORMAL_MAX_NEGATIVE_32,
                 expected_unimplemented_f32(),
             )),
             Box::new((
