@@ -29,6 +29,7 @@ use crate::uncached_memory::{UncachedHeapMemory, UncachedHeapMemoryWriter};
 //     In that case, the test becomes a lot slower.
 //     To properly fix this, the main test runner should be generated into an array that is allocated
 //     with precise alignment.
+// TODO: Set register to immediate, then jump to that register via JR
 
 #[naked]
 extern "C" fn instant_return_function() {
