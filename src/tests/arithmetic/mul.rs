@@ -240,6 +240,7 @@ impl Test for MULTRandomized {
             let hi: u64;
             unsafe {
                 asm!("
+                    .set noat
                     MULT {f1}, {f2}
                     MFLO {lo}
                     MFHI {hi}
