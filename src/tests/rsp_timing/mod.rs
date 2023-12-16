@@ -204,7 +204,7 @@ impl Test for CyclesSLL {
     }
 
     fn level(&self) -> Level {
-        Level::BasicFunctionality
+        Level::Timing
     }
 
     fn values(&self) -> Vec<Box<dyn Any>> {
