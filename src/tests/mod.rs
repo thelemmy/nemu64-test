@@ -32,6 +32,7 @@ mod pif_memory;
 mod rdp;
 mod rdram;
 mod rsp;
+mod rsp_timing;
 mod soft_asserts;
 mod sp_memory;
 mod startup;

@@ -7,6 +7,9 @@ name = "arbitrary-int"
 version = "1.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6a49f791c7c8885e8221d31bc3a34455b0fd869810d8ddff608dbe08a598f9d9"
+dependencies = [
+ "num-traits",
+]
 
 [[package]]
 name = "arrayref"
@@ -59,8 +62,18 @@ dependencies = [
  "arrayref",
  "bitbybit",
  "linked_list_allocator",
+ "num-traits",
  "oorandom",
  "spinning_top",
+]
+
+[[package]]
+name = "num-traits"
+version = "0.2.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "578ede34cf02f8924ab9447f50c28075b4d3e5b269972345e7e0372b38c6cdcd"
+dependencies = [
+ "autocfg",
 ]
 
 [[package]]

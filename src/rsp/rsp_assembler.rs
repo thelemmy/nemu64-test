@@ -226,6 +226,12 @@ impl Step for Element {
 }
 
 #[allow(dead_code)]
+#[bitenum(u6)]
+pub enum EMUXFunction {
+    BreakpointNow = 0x10,
+}
+
+#[allow(dead_code)]
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum E {
@@ -812,6 +818,16 @@ impl RSPAssembler {
 
     pub fn write_sltu(&mut self, rd: GPR, rs: GPR, rt: GPR) {
         self.write_special(SpecialOP::SLTU, u5::new(0), rd, rs, rt);
+    }
+
+    /// emux is an emulator only instruction, which uses TNE with the same registers.
+    /// See https://hackmd.io/@rasky/r1k7na6Jn
+    #[allow(dead_code)]
+    pub fn write_emux(&mut self, r: GPR, emux_function: EMUXFunction) {
+        let code = emux_function.raw_value().value() as u32;
+        let r = r as u32;
+        self.writer
+            .write(54 | (code << 6) | (r << 16) | (r << 21) | ((OP::SPECIAL as u32) << 26));
     }
 
     pub fn write_jr(&mut self, rs: GPR) {

@@ -1,3 +1,5 @@
+use arbitrary_int::u24;
+
 use crate::memory_map::MemoryMap;
 use crate::rdp::rdp_assembler::RDPAssembler;
 
@@ -9,6 +11,7 @@ enum RegisterOffset {
     End = 0x04,
     Current = 0x08,
     Status = 0x0C,
+    Clock = 0x10,
 }
 
 pub const DP_STATUS_XBUS: u32 = 0x1;
@@ -53,6 +56,18 @@ impl RDP {
 
     pub fn current() -> u32 {
         Self::get_register(RegisterOffset::Current)
+    }
+
+    pub fn set_clock_32(value: u32) {
+        Self::set_register(RegisterOffset::Clock, value)
+    }
+
+    pub fn clock_32() -> u32 {
+        Self::get_register(RegisterOffset::Clock)
+    }
+
+    pub fn clock() -> u24 {
+        u24::extract_u32(Self::clock_32(), 0)
     }
 
     pub unsafe fn set_status(value: u32) {
