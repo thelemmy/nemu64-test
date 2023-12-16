@@ -199,6 +199,14 @@ pub fn run() {
                 Some(v) => return format!(" with '{:x?}'", v),
                 None => {}
             }
+            match (*value).downcast_ref::<(u64, u64, u64, u64)>() {
+                Some(v) => return format!(" with '{:x?}'", v),
+                None => {}
+            }
+            match (*value).downcast_ref::<(u64, u64, u128)>() {
+                Some(v) => return format!(" with '{:x?}'", v),
+                None => {}
+            }
             match (*value).downcast_ref::<(bool, u32, f32)>() {
                 Some((flag, number, f)) => {
                     // Convert f32 to SoftF32 - it prints more nicely
