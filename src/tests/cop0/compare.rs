@@ -80,7 +80,7 @@ impl Test for CompareInterruptSignalling2 {
     }
 
     fn level(&self) -> Level {
-        Level::Cycle
+        Level::Timing
     }
 
     fn values(&self) -> Vec<Box<dyn Any>> {
