@@ -4,11 +4,8 @@ use alloc::vec;
 use alloc::vec::Vec;
 use core::any::Any;
 use core::arch::asm;
-
 use arbitrary_int::u2;
-
 use crate::cop0::{cause, compare, count, preset_cause_to_copindex2, set_compare, RegisterIndex};
-use crate::println;
 use crate::tests::soft_asserts::{soft_assert_eq, soft_assert_greater_or_equal};
 use crate::tests::{Level, Test};
 
