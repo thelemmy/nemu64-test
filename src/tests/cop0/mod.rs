@@ -1,3 +1,5 @@
+pub mod compare;
+
 use alloc::boxed::Box;
 use alloc::format;
 use alloc::string::String;

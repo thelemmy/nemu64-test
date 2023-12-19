@@ -516,6 +516,16 @@ pub unsafe fn set_entry_hi_32_64(value: u64) {
     unsafe { write_cop0_32_64::<INDEX>(value) }
 }
 
+pub fn compare() -> u32 {
+    const INDEX: u32 = RegisterIndex::Compare as u32;
+    unsafe { read_cop0::<INDEX>() }
+}
+
+pub fn set_compare(value: u32) {
+    const INDEX: u32 = RegisterIndex::Compare as u32;
+    unsafe { write_cop0::<INDEX>(value) }
+}
+
 pub fn status() -> Status {
     const INDEX: u32 = RegisterIndex::Status as u32;
     Status::new_with_raw_value(unsafe { read_cop0::<INDEX>() })
@@ -534,6 +544,11 @@ pub fn status_64() -> u64 {
 pub unsafe fn set_status_64(value: u64) {
     const INDEX: u32 = RegisterIndex::Status as u32;
     unsafe { write_cop0_64::<INDEX>(value) }
+}
+
+pub fn cause() -> Cause {
+    const INDEX: u32 = RegisterIndex::Cause as u32;
+    Cause::new_with_raw_value(unsafe { read_cop0::<INDEX>() })
 }
 
 pub fn exceptpc() -> u64 {
