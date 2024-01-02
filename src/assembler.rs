@@ -4,6 +4,7 @@ use arbitrary_int::{u26, u5, u6};
 use bitbybit::bitenum;
 
 use crate::cop0::{CacheOp, RegisterIndex};
+use crate::rsp::rsp_assembler::EMUXFunction;
 
 #[bitenum(u5, exhaustive: true)]
 #[allow(dead_code)]
@@ -596,6 +597,10 @@ impl Assembler {
         Self::make_main_immediate(Opcode::XORI, rt, rs, immediate)
     }
 
+    pub const fn make_b(offset_as_instruction_count: i16) -> u32 {
+        Self::make_beq(GPR::R0, GPR::R0, offset_as_instruction_count)
+    }
+
     pub const fn make_beq(rt: GPR, rs: GPR, offset_as_instruction_count: i16) -> u32 {
         Self::make_main_immediate(Opcode::BEQ, rt, rs, offset_as_instruction_count as u16)
     }
@@ -792,6 +797,17 @@ impl Assembler {
             rs.raw_value(),
             rt.raw_value(),
         )
+    }
+
+    /// emux is an emulator only instruction, which uses TNE with the same registers.
+    /// See https://hackmd.io/@rasky/r1k7na6Jn
+    #[allow(dead_code)]
+    pub const fn make_emux(r: GPR, function: EMUXFunction) -> u32 {
+        (SpecialOpcode::TNE as u32)
+            | ((function.raw_value().value() as u32) << 6)
+            | ((r.raw_value().value() as u32) << 16)
+            | ((r.raw_value().value() as u32) << 21)
+            | ((Opcode::SPECIAL as u32) << 26)
     }
 
     pub const fn make_teq(rs: GPR, rt: GPR) -> u32 {
