@@ -948,7 +948,7 @@ impl Test for TLBUseTestReadMatchViaASID {
 
         // Write a value without TLB
         unsafe {
-            (MemoryMap::addr32_to_usize(0xA0200018) as *mut u32).write_volatile(0xDECAFBAD);
+            ((MemoryMap::HEAP_END_VIRTUAL_UNCACHED + 0x18) as *mut u32).write_volatile(0xDECAFBAD);
         }
 
         // Read it back using the TLB
