@@ -62,7 +62,7 @@ Entrypoint:
   mtc0 r0, Compare
 
   // ** Memory size detection. Save into 0x80000318 **
-  la t0, 0x8000'0000 + 4*1024*1024
+  la t0, 0xA000'0000 + 4*1024*1024
   la t1, 0xBADDECAF
   sw t1, 0(t0)
   lw t2, 0(t0)
