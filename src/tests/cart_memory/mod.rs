@@ -10,6 +10,7 @@ use crate::tests::{Level, Test};
 use crate::MemoryMap;
 
 pub mod write;
+pub mod dma;
 
 // Reading from cart:
 // - LW works as expected

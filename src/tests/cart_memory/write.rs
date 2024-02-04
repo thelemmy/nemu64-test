@@ -6,9 +6,10 @@ use core::any::Any;
 use core::arch::asm;
 
 use crate::assembler::{Assembler, GPR};
+use crate::MemoryMap;
+use crate::pi::Pi;
 use crate::tests::soft_asserts::{soft_assert_eq, soft_assert_neq};
 use crate::tests::{Level, Test};
-use crate::{pi, MemoryMap};
 
 // Writing to CART:
 // - Writing to any place in CART will make the next READ return that (even if addresses are different)
@@ -544,11 +545,11 @@ impl Test for WriteAndCheckPIFlag {
         unsafe { (p_cart as *mut u64).write_volatile(0x01010101_23232323) }
 
         // After writing, the IO BUSY flag should be set
-        let b1 = pi::is_io_busy();
+        let b1 = Pi::status().io_busy();
 
         // Do a read from cart - that should be synchronous and ensure that IO is no longer busy
         unsafe { p_cart.read_volatile() };
-        let b2 = pi::is_io_busy();
+        let b2 = Pi::status().io_busy();
 
         soft_assert_eq(
             b1,

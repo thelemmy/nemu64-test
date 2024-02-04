@@ -1,5 +1,5 @@
 use crate::memory_map::MemoryMap;
-use crate::pi;
+use crate::pi::Pi;
 
 /// Write the length of the text here
 const ISVIEWER_WRITE_LEN: *mut u32 = MemoryMap::addr32_to_usize(0xB3FF0014) as *mut u32;
@@ -9,7 +9,7 @@ const ISVIEWER_BUFFER_START: *mut u32 = MemoryMap::addr32_to_usize(0xB3FF0020) a
 const ISVIEWER_BUFFER_LENGTH: usize = 0x200;
 
 fn pi_wait() {
-    while pi::is_io_busy() {}
+    while Pi::status().io_busy() {}
 }
 
 // This method simply prints text without synchronization. This should only be used from within
