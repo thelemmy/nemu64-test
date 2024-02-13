@@ -56,7 +56,7 @@ dependencies = [
 
 [[package]]
 name = "n64-systemtest"
-version = "2.0.3"
+version = "2.0.4"
 dependencies = [
  "arbitrary-int",
  "arrayref",
