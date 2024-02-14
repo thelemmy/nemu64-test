@@ -1018,6 +1018,7 @@ fn default_tests() -> Vec<Box<dyn Test>> {
         Box::new(super::sp_memory::dma::SPDMAIntoIMEMUntilEnd {}),
         Box::new(super::sp_memory::dma::SPDMAIntoIMEMWithOverflow {}),
         Box::new(super::sp_memory::dma::SPDMAFromDMEMWithOverflow {}),
+        Box::new(super::sp_memory::dma::SPDMAFromNowhereExceptZeroes {}),
         Box::new(super::tlb::WiredRandom {}),
         Box::new(super::tlb::WiredOutOfBoundsRandom {}),
         Box::new(super::tlb::WriteRandomExpectIgnored {}),

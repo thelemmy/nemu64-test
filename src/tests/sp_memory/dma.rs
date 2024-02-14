@@ -15,6 +15,39 @@ use crate::MemoryMap;
 // - Length: To the written value 1 is added and then it is rounded up to the next multiple of 8 (e.g. 0..7 ==> 8 bytes, 8..15 => 16 bytes)
 // - A DMA goes either into IMEM or DMEM. If it overflows, it will overflow within that memory but never overlap into the other one
 
+fn dma_test_with_source<const N: usize>(
+    source_ptr: *const u8,
+    spmem_index: u32,
+    length: u32,
+    expected_start_offset: usize,
+    expected_sp_address_after_dma: u32,
+    expected: [[u16; 8]; N],
+) -> Result<(), String> {
+    // Clear SPMEM
+    for i in 0..(N * 4) {
+        SPMEM::write(expected_start_offset + i * 4, 0xBADDECAF);
+    }
+
+    // DMA simple
+    RSP::start_dma_cpu_to_sp(source_ptr, spmem_index, length);
+    RSP::wait_until_dma_completed();
+
+    // Ensure the data arrived as expected
+    for i in 0..N {
+        soft_assert_eq2(
+            SPMEM::read_vector16_from_dmem_or_imem(expected_start_offset + i * 0x10),
+            expected[i],
+            || format!("SPMEM[0x{:x}] after DMA", expected_start_offset + i * 0x10),
+        )?;
+    }
+
+    soft_assert_eq2(RSP::sp_address(), expected_sp_address_after_dma, || {
+        "SP-Address after DMA".to_string()
+    })?;
+
+    Ok(())
+}
+
 fn dma_test<const N: usize>(
     source_index: usize,
     spmem_index: u32,
@@ -42,30 +75,8 @@ fn dma_test<const N: usize>(
         ]);
     }
 
-    // Clear SPMEM
-    for i in 0..(N * 4) {
-        SPMEM::write(expected_start_offset + i * 4, 0xBADDECAF);
-    }
-
-    // DMA simple
     let source_ptr = unsafe { (source_data_uncached as *mut u8).add(source_index) };
-    RSP::start_dma_cpu_to_sp(source_ptr, spmem_index, length);
-    RSP::wait_until_dma_completed();
-
-    // Ensure the data arrived as expected
-    for i in 0..N {
-        soft_assert_eq2(
-            SPMEM::read_vector16_from_dmem_or_imem(expected_start_offset + i * 0x10),
-            expected[i],
-            || format!("SPMEM[0x{:x}] after DMA", expected_start_offset + i * 0x10),
-        )?;
-    }
-
-    soft_assert_eq2(RSP::sp_address(), expected_sp_address_after_dma, || {
-        "SP-Address after DMA".to_string()
-    })?;
-
-    Ok(())
+    dma_test_with_source::<N>(source_ptr, spmem_index, length, expected_start_offset, expected_sp_address_after_dma, expected)
 }
 
 pub struct SPDMA0_8_7 {}
@@ -516,5 +527,60 @@ impl Test for SPDMAFromDMEMWithOverflow {
 
         Ok(())
     }
-
 }
+
+pub struct SPDMAFromNowhereExceptZeroes {}
+
+impl Test for SPDMAFromNowhereExceptZeroes {
+    fn name(&self) -> &str {
+        "spmem: DMA (nowhere) -> IMEM (overflow, except zeroes)"
+    }
+
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
+
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
+
+    fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
+        // expected will read from both IMEM and DMEM. Ensure that nothing spilled into DMEM
+        // read from outside rdram bounds, which should fill in zeroes
+        dma_test_with_source(
+            MemoryMap::addr32_to_usize(0x80000000 + 12 * 1024 * 1024) as *const u8,
+            0x1FF0,
+            31,
+            0x1FE0,
+            0x1010,
+            [
+                [
+                    0xBADD, 0xECAF, 0xBADD, 0xECAF, 0xBADD, 0xECAF, 0xBADD, 0xECAF,
+                ],
+                [
+                    0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+                ],
+                [
+                    0xBADD, 0xECAF, 0xBADD, 0xECAF, 0xBADD, 0xECAF, 0xBADD, 0xECAF,
+                ],
+                [
+                    0xBADD, 0xECAF, 0xBADD, 0xECAF, 0xBADD, 0xECAF, 0xBADD, 0xECAF,
+                ],
+                [
+                    0xBADD, 0xECAF, 0xBADD, 0xECAF, 0xBADD, 0xECAF, 0xBADD, 0xECAF,
+                ],
+            ],
+        )?;
+
+        // But also ensure that IMEM properly overflowed
+        soft_assert_eq2(
+            SPMEM::read_vector16_from_dmem_or_imem(0x1000),
+            [
+                0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+            ],
+            || "SPMEM[0x1000] after DMA".to_string(),
+        )?;
+        Ok(())
+    }
+}
+
