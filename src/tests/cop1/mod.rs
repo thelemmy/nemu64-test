@@ -5133,6 +5133,35 @@ impl Test for AddS {
                 FConst::QUIET_NAN_START_32,
                 expected_unimplemented_f32(),
             )),
+            Box::new((
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::SIGNALLING_NAN_START_32,
+                FConst::QUIET_NAN_START_32,
+                expected_unimplemented_f32(),
+            )),
+            Box::new((
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
+                expected_unimplemented_f32(),
+            )),
+            // Mixing NAN with subnormal cause unimplemented
+            Box::new((
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::QUIET_NAN_START_32,
+                FConst::SUBNORMAL_MIN_POSITIVE_32,
+                expected_unimplemented_f32(),
+            )),
+            Box::new((
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::SUBNORMAL_MIN_POSITIVE_32,
+                FConst::QUIET_NAN_START_32,
+                expected_unimplemented_f32(),
+            )),
         ]
     }
 
@@ -10493,7 +10522,6 @@ impl Test for ConvertToL {
             )),
             // W => L (which doesn't exist)
             Box::new((4i32, expected_unimplemented_i64())),
-
             // L => L (which doesn't exist)
             Box::new((4i64, expected_unimplemented_i64())),
         ]
