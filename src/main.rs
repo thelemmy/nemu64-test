@@ -15,13 +15,14 @@
 
 extern crate alloc;
 
-use core::arch::global_asm;
-
 use spinning_top::Spinlock;
 
+use crate::cop1::set_fcsr;
+use crate::cop1::FCSR;
 use crate::graphics::framebuffer_console::FramebufferConsole;
 use crate::graphics::vi::Video;
 use crate::memory_map::MemoryMap;
+use crate::rsp::spmem::SPMEM;
 
 mod allocator;
 mod assembler;
@@ -41,13 +42,24 @@ mod rsp;
 mod tests;
 mod uncached_memory;
 
-global_asm!(include_str!("boot.s"));
-
-pub static VIDEO: Spinlock<Video> = Spinlock::new(Video::new());
+static VIDEO: Spinlock<Video> = Spinlock::new(Video::new());
 
 #[no_mangle]
-unsafe extern "C" fn rust_entrypoint() -> ! {
-    MemoryMap::init();
+unsafe extern "C" fn entrypoint() -> ! {
+    // IPL3 (the bootloader) write the memory size to DMEM. We can read it from there
+    let memory_size = SPMEM::read(0) as usize;
+    let elf_header_offset = ((SPMEM::read(12) >> 16) << 8) as usize;
+    MemoryMap::init(memory_size, elf_header_offset);
+
+    // fcsr isn't reset on boot. Use a good default for the main loop - some tests will change and
+    // restore this
+    set_fcsr(
+        FCSR::DEFAULT
+            .with_flush_denorm_to_zero(true)
+            .with_enable_invalid_operation(true),
+    );
+
+    mi::clear_interrupt_mask();
     allocator::init_allocator();
     main();
 
