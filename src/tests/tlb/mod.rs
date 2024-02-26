@@ -793,10 +793,10 @@ impl Test for TLBUseTestRead0 {
                     true,
                     true,
                     false,
-                    Coherency::Cached,
+                    Coherency::Uncached,
                     (MemoryMap::HEAP_END >> 12) as u32,
                 ),
-                make_entry_lo(true, false, false, Coherency::Cached, 0),
+                make_entry_lo(true, false, false, Coherency::Uncached, 0),
                 make_entry_hi(1, u27::new(0xDEA0 >> 1), u2::new(0)),
             )
         }
@@ -859,12 +859,12 @@ impl Test for TLBUseTestRead1 {
             cop0::write_tlb(
                 10,
                 Pagemask::M16K,
-                make_entry_lo(true, false, false, Coherency::Cached, 0),
+                make_entry_lo(true, false, false, Coherency::Uncached, 0),
                 make_entry_lo(
                     true,
                     true,
                     false,
-                    Coherency::Cached,
+                    Coherency::Uncached,
                     (MemoryMap::HEAP_END >> 12) as u32,
                 ),
                 make_entry_hi(1, u27::new(0xDEA0 >> 1), u2::new(0)),
@@ -933,10 +933,10 @@ impl Test for TLBUseTestReadMatchViaASID {
                     false,
                     true,
                     false,
-                    Coherency::Cached,
+                    Coherency::Uncached,
                     (MemoryMap::HEAP_END >> 12) as u32,
                 ),
-                make_entry_lo(false, false, false, Coherency::Cached, 0),
+                make_entry_lo(false, false, false, Coherency::Uncached, 0),
                 make_entry_hi(1, u27::new(0xDEA0 >> 1), u2::new(0)),
             )
         }
@@ -948,13 +948,13 @@ impl Test for TLBUseTestReadMatchViaASID {
 
         // Write a value without TLB
         unsafe {
-            ((MemoryMap::HEAP_END_VIRTUAL_UNCACHED + 0x18) as *mut u32).write_volatile(0xDECAFBAD);
+            ((MemoryMap::HEAP_END_VIRTUAL_UNCACHED + 0x18) as *mut u32).write_volatile(0xCAFFEE11);
         }
 
         // Read it back using the TLB
         soft_assert_eq(
             unsafe { (0x0DEA0018 as *mut u32).read_volatile() },
-            0xDECAFBAD,
+            0xCAFFEE11,
             "Value read back through TLB mapped memory",
         )?;
 
