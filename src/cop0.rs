@@ -830,8 +830,8 @@ pub fn preset_cause_to_copindex2() -> Result<(), String> {
         Ok(c) => c,
         Err(e) => return Err(format!("Failed to preset Cause.copindex to 2: {}", e))
     };
-    if temp_context.cause != Cause::DEFAULT.with_coprocessor_error(u2::new(2)).with_exception(CauseException::CopUnusable) {
-        return Err("Cause.copindex was supposed to be preset to 2, but it didn't change".to_string());
+    if temp_context.cause.coprocessor_error() != u2::new(2) || temp_context.cause.exception() != Ok(CauseException::CopUnusable) {
+        return Err("Cause.copindex was supposed to be preset to 2/CopUnusable, but it didn't change: {:x} vs {:x}".to_string());
     };
 
     Ok(())
