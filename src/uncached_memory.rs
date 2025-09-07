@@ -90,6 +90,10 @@ impl<T: Copy + Clone> UncachedHeapMemory<T> {
         unsafe { self.uncached_data.add(index).read_volatile() }
     }
 
+    pub fn as_ptr(&self) -> *mut T {
+        self.uncached_data
+    }
+
     /// Pointer to physical start of memory
     pub fn start_physical(&mut self) -> usize {
         MemoryMap::uncached_to_physical_mut(self.uncached_data)
