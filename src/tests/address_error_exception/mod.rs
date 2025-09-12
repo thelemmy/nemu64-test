@@ -56,8 +56,8 @@ impl Test for UnalignedLW {
                     .set noat
                     DLA {fault_address}, 1f
 1:
-                    LW $0, 0({gpr})
-                ", gpr = in(reg) p, fault_address = out(reg) fault_address)
+                    LW $0, 0($3)
+                ", in("$3") p, fault_address = out(reg) fault_address)
             }
 
             Ok(())
