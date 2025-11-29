@@ -42,7 +42,7 @@ impl Test for SB {
     }
 
     fn level(&self) -> Level {
-        Level::BasicFunctionality
+        Level::Weird
     }
 
     fn values(&self) -> Vec<Box<dyn Any>> {
@@ -103,7 +103,7 @@ impl Test for SH {
     }
 
     fn level(&self) -> Level {
-        Level::BasicFunctionality
+        Level::Weird
     }
 
     fn values(&self) -> Vec<Box<dyn Any>> {
@@ -164,7 +164,7 @@ impl Test for SW {
     }
 
     fn level(&self) -> Level {
-        Level::BasicFunctionality
+        Level::Weird
     }
 
     fn values(&self) -> Vec<Box<dyn Any>> {
@@ -220,7 +220,7 @@ impl Test for SD {
     }
 
     fn level(&self) -> Level {
-        Level::BasicFunctionality
+        Level::Weird
     }
 
     fn values(&self) -> Vec<Box<dyn Any>> {
@@ -276,7 +276,7 @@ impl Test for Wrap2KiB {
     }
 
     fn level(&self) -> Level {
-        Level::BasicFunctionality
+        Level::Weird
     }
 
     fn values(&self) -> Vec<Box<dyn Any>> {
