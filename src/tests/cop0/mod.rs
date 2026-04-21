@@ -1452,3 +1452,11 @@ impl Test for CountHazards {
         Ok(())
     }
 }
+
+mod cache_common;
+mod dcache_cache;
+mod icache_cache;
+mod icache_functional;
+pub use dcache_cache::*;
+pub use icache_cache::*;
+pub use icache_functional::*;
