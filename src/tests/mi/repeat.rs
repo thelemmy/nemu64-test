@@ -16,7 +16,7 @@ fn test_repeat(
     func: fn(u32, u32, u64, i32, &mut UncachedHeapMemory<u64>) -> Result<(), String>,
 ) -> Result<(), String> {
     // align to cache line
-    let mut buf = UncachedHeapMemory::<u64>::new_with_align(32, 256);
+    let mut buf = UncachedHeapMemory::<u64>::new_with_align(130, 256);
     let value = 0x1234_5678_9ABC_DEF1;
     let mi_regs = 0xA430_0000u32 as i32;
     for length in 1..=0x80 {
@@ -56,6 +56,7 @@ impl Test for SB {
                 asm!("
                     .set noat
                     .set noreorder
+                    .balign 32
                     LD {tmp}, 0({value})
                     SW {len}, 0({mi})
                     SB {tmp}, 0({ptr})
@@ -114,9 +115,11 @@ impl Test for SH {
         test_repeat(2, |start, length, value, mi_regs, buf| {
             unsafe {
                 let ptr = buf.as_ptr().cast::<u16>().add(start as usize / 2);
+                assert!(start % 2 == 0, "Start must be even");
                 asm!("
                     .set noat
                     .set noreorder
+                    .balign 32
                     LD {tmp}, 0({value})
                     SW {len}, 0({mi})
                     SH {tmp}, 0({ptr})
@@ -178,6 +181,7 @@ impl Test for SW {
                 asm!("
                     .set noat
                     .set noreorder
+                    .balign 32
                     LD {tmp}, 0({value})
                     SW {len}, 0({mi})
                     SW {tmp}, 0({ptr})
@@ -234,6 +238,7 @@ impl Test for SD {
                 asm!("
                     .set noat
                     .set noreorder
+                    .balign 32
                     LD {tmp}, 0({value})
                     SW {len}, 0({mi})
                     SD {tmp}, 0({ptr})
@@ -295,6 +300,7 @@ impl Test for Wrap2KiB {
             asm!("
                 .set noat
                 .set noreorder
+                .balign 32
                 SW {len}, 0({mi})
                 SD $0, 0({ptr})
             ", len = in(reg) 0x100 | (128 - 1), mi = in(reg) mi_regs, ptr = in(reg) ptr)
