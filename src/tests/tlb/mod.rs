@@ -14,6 +14,7 @@ use crate::memory_map::MemoryMap;
 use crate::tests::soft_asserts::{soft_assert_eq, soft_assert_greater_or_equal, soft_assert_less};
 use crate::tests::{Level, Test};
 
+pub mod cross_page_exec;
 pub mod exceptions;
 
 // TODO: TLBWR
