@@ -30,6 +30,7 @@ macro_rules! panic_println {
 #[no_mangle]
 fn panic(_info: &PanicInfo<'_>) -> ! {
     panic_println!("{}", _info);
+    crate::emux::xioctl_exit();
 
     // Best-effort: render the console (accumulated results + the test that was running) to the
     // screen so a panic shows something instead of a black screen. Non-blocking, so a held lock

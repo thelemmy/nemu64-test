@@ -30,6 +30,7 @@ mod allocator;
 mod assembler;
 mod cop0;
 mod cop1;
+mod emux;
 mod exception_handler;
 mod graphics;
 mod isviewer;
@@ -83,6 +84,7 @@ unsafe extern "C" fn entrypoint() -> ! {
 
 fn main() {
     exception_handler::install_exception_handlers();
+    emux::xioctl_fast();
     let video_init = VIDEO.lock();
     video_init.init(unsafe { IPL3_TV_TYPE });
     video_init.alloc_framebuffer();
@@ -94,6 +96,8 @@ fn main() {
         .lock()
         .render(v.framebuffers().backbuffer().lock().as_mut().unwrap());
     v.swap_buffers();
+
+    emux::xioctl_exit();
 }
 
 /// Renders the framebuffer console to the screen. Best-effort and non-blocking (uses
