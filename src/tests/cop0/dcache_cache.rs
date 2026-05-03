@@ -4,12 +4,13 @@ use alloc::vec::Vec;
 use core::any::Any;
 use core::arch::asm;
 
-use super::cache_common::{
-    self, DCACHE_CREATE_DIRTY_EXCLUSIVE, DCACHE_HIT_INVALIDATE, DCACHE_HIT_WRITEBACK,
+use super::cache_common;
+use crate::cop0;
+use crate::cop0::{
+    DCACHE_CREATE_DIRTY_EXCLUSIVE, DCACHE_HIT_INVALIDATE, DCACHE_HIT_WRITEBACK,
     DCACHE_HIT_WRITEBACK_INVALIDATE, DCACHE_INDEX_LOAD_TAG, DCACHE_INDEX_STORE_TAG,
     DCACHE_INDEX_WRITEBACK_INVALIDATE,
 };
-use crate::cop0;
 use crate::tests::soft_asserts::soft_assert_eq;
 use crate::tests::{Level, Test};
 use crate::MemoryMap;

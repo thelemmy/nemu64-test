@@ -4,10 +4,11 @@ use alloc::vec::Vec;
 use core::any::Any;
 use core::arch::asm;
 
-use super::cache_common::{
-    self, ICACHE_FILL, ICACHE_HIT_INVALIDATE, ICACHE_HIT_WRITEBACK, ICACHE_INDEX_INVALIDATE,
-};
+use super::cache_common;
 use crate::cop0;
+use crate::cop0::{
+    ICACHE_FILL, ICACHE_HIT_INVALIDATE, ICACHE_HIT_WRITEBACK, ICACHE_INDEX_INVALIDATE,
+};
 use crate::tests::soft_asserts::soft_assert_eq;
 use crate::tests::{Level, Test};
 use crate::MemoryMap;

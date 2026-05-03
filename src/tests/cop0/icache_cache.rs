@@ -3,14 +3,13 @@ use alloc::string::String;
 use alloc::vec::Vec;
 use core::any::Any;
 
-use super::cache_common::{self, ICACHE_INDEX_INVALIDATE};
+use super::cache_common;
 use crate::cop0;
 use crate::tests::soft_asserts::soft_assert_eq;
 use crate::tests::{Level, Test};
 
 const ICACHE_LOAD_TAG: u8 = 4;
 const ICACHE_STORE_TAG: u8 = 8;
-const ICACHE_HIT_INVALIDATE: u8 = 16;
 
 fn icache_tag_lo(valid: bool, physical_address: u32) -> u32 {
     let pstate = if valid { 2u32 } else { 0 };
@@ -47,7 +46,7 @@ impl Test for IcacheStoreTagThenLoadTag {
             let phys = 0x0000_1000u32;
             let want = icache_tag_lo(true, phys);
             unsafe {
-                cop0::cache::<ICACHE_INDEX_INVALIDATE, 0>(addr);
+                cop0::cache::<{ cop0::ICACHE_INDEX_INVALIDATE }, 0>(addr);
                 cop0::set_tag_lo(want);
                 cop0::cache::<ICACHE_STORE_TAG, 0>(addr);
                 cop0::cache::<ICACHE_LOAD_TAG, 0>(addr);
@@ -81,7 +80,7 @@ impl Test for IcacheIndexInvalidateClearsValidInTagLo {
             let phys = 0x0000_2000u32;
             let before_store = icache_tag_lo(true, phys);
             unsafe {
-                cop0::cache::<ICACHE_INDEX_INVALIDATE, 0>(addr);
+                cop0::cache::<{ cop0::ICACHE_INDEX_INVALIDATE }, 0>(addr);
                 cop0::set_tag_lo(before_store);
                 cop0::cache::<ICACHE_STORE_TAG, 0>(addr);
                 cop0::cache::<ICACHE_LOAD_TAG, 0>(addr);
@@ -93,7 +92,7 @@ impl Test for IcacheIndexInvalidateClearsValidInTagLo {
                 "PState before invalidate (valid)",
             )?;
             unsafe {
-                cop0::cache::<ICACHE_INDEX_INVALIDATE, 0>(addr);
+                cop0::cache::<{ cop0::ICACHE_INDEX_INVALIDATE }, 0>(addr);
                 cop0::cache::<ICACHE_LOAD_TAG, 0>(addr);
                 cop0::sync();
             }
@@ -128,7 +127,7 @@ impl Test for IcacheHitInvalidateClearsValidWhenLineHits {
             let addr = 0xFFFF_FFFF_8000_3000usize;
             let phys = 0x0000_3000u32;
             unsafe {
-                cop0::cache::<ICACHE_INDEX_INVALIDATE, 0>(addr);
+                cop0::cache::<{ cop0::ICACHE_INDEX_INVALIDATE }, 0>(addr);
                 cop0::set_tag_lo(icache_tag_lo(true, phys));
                 cop0::cache::<ICACHE_STORE_TAG, 0>(addr);
                 cop0::cache::<ICACHE_LOAD_TAG, 0>(addr);
@@ -140,7 +139,7 @@ impl Test for IcacheHitInvalidateClearsValidWhenLineHits {
                 "line valid before hit invalidate",
             )?;
             unsafe {
-                cop0::cache::<ICACHE_HIT_INVALIDATE, 0>(addr);
+                cop0::cache::<{ cop0::ICACHE_HIT_INVALIDATE }, 0>(addr);
                 cop0::cache::<ICACHE_LOAD_TAG, 0>(addr);
                 cop0::sync();
             }

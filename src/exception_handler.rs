@@ -5,7 +5,7 @@ use core::ops::{Deref, DerefMut};
 use spinning_top::Spinlock;
 
 use super::cop0;
-use crate::cop0::{CacheOp, Cause, CauseException, Context, XContext};
+use crate::cop0::{Cause, CauseException, Context, XContext};
 use crate::cop1::FCSR;
 use crate::graphics::color::Color;
 use crate::graphics::cursor::Cursor;
@@ -411,43 +411,8 @@ pub fn install_exception_handlers() {
         0x180,
     );
 
-    // Invalidate the full 8Kbytes in the Data Cache
-    invalidate_data_cache(
-        MemoryMap::addr32_to_usize(0x8000_0000) as *const u32,
-        8 * 1024,
-    );
-
-    // Invalidate the full 16Kbytes in the Instruction Cache
-    invalidate_instruction_cache(
-        MemoryMap::addr32_to_usize(0x8000_0000) as *const u32,
-        16 * 1024,
-    );
-    invalidate_instruction_cache(
-        MemoryMap::addr32_to_usize(0x8000_0000) as *const u32,
-        16 * 1024,
-    );
-}
-
-fn invalidate_instruction_cache(start: *const u32, bytes: usize) {
-    assert_eq!(start as usize & 31, 0);
-    assert_eq!(bytes & 31, 0);
-    for i in (0..bytes).step_by(32) {
-        unsafe {
-            const OP: u8 = CacheOp::InstructionIndexInvalidate.raw_value().value();
-            cop0::cache::<OP, 0>((start as usize) + i);
-        }
-    }
-}
-
-fn invalidate_data_cache(start: *const u32, bytes: usize) {
-    assert_eq!(start as usize & 15, 0);
-    assert_eq!(bytes & 15, 0);
-    for i in (0..bytes).step_by(16) {
-        unsafe {
-            const OP: u8 = CacheOp::DataIndexWriteBackInvalidate.raw_value().value();
-            cop0::cache::<OP, 0>((start as usize) + i);
-        }
-    }
+    cop0::dcache_invalidate_all();
+    cop0::icache_invalidate_all();
 }
 
 /// Attempts to take over video and show various cop0 registers.
