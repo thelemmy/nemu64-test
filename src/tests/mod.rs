@@ -11,11 +11,11 @@ use crate::assembler::GPR;
 use crate::cop0::{count, set_status, Status};
 use crate::cop1::{set_fcsr, FCSRFlags, FCSRRoundingMode, FCSR};
 use crate::exception_handler::drain_seen_exception;
-use crate::isviewer::text_out;
 use crate::math::soft_float::{SoftF32, SoftF64};
 use crate::tests::cop1::compares::FPUSpecialNumber;
 use crate::tests::timing::ExceptionTimingMode;
 use crate::tests::traps::Immediate;
+use crate::text_out::text_out;
 use crate::{print, println, FramebufferConsole};
 
 mod address_error_exception;

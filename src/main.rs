@@ -42,7 +42,9 @@ mod pi;
 mod print;
 mod rdp;
 mod rsp;
+mod sc64;
 mod tests;
+mod text_out;
 mod uncached_memory;
 
 static VIDEO: Spinlock<Video> = Spinlock::new(Video::new());

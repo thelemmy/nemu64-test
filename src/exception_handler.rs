@@ -275,7 +275,7 @@ extern "C" fn exception_handler_compiled(stackpointer: usize) -> usize {
                 .exceptpc
                 .wrapping_add(skip_guard.unwrap().wrapping_mul(4));
         } else {
-            crate::isviewer::text_out("Got unhandled exception. Attempting to continue\n");
+            crate::text_out::text_out("Got unhandled exception. Attempting to continue\n");
             context.return_to =
                 context.exceptpc + (if context.cause.branch_delay() { 8 } else { 4 });
         }
@@ -293,7 +293,7 @@ extern "C" fn exception_handler_compiled(stackpointer: usize) -> usize {
         return stackpointer;
     }
 
-    crate::isviewer::text_out(
+    crate::text_out::text_out(
         "Got an exception but already got an exception previously. Showing bluescreen\n",
     );
     show_bluescreen_of_death(context);
