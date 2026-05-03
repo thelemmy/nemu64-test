@@ -599,9 +599,13 @@ impl Test for ExecuteTLBMapped4k {
         test_nomiss_exception(Pagemask::M4K, 4096, true, true, |address| {
             unsafe {
                 // Write a small function into the tlb mapped area, at the end. It sets V0 and returns to A0
-                ((address - 12) as *mut u32).write_volatile(0x2402FACE); // ADDIU V0, R0, 0xFACE
-                ((address - 8) as *mut u32).write_volatile(0x00800008); // JR A0
-                ((address - 4) as *mut u32).write_volatile(0x00000000); // NOP (delay slot)
+                ((address - 12) as *mut u32).write_volatile(Assembler::make_addiu(
+                    GPR::V0,
+                    GPR::R0,
+                    0xFACEu16 as i16,
+                ));
+                ((address - 8) as *mut u32).write_volatile(Assembler::make_jr(GPR::A0));
+                ((address - 4) as *mut u32).write_volatile(Assembler::make_nop());
 
                 // Invalidate the code so that it can be executed
                 cop0::cache::<1, 0>((address - 32) as usize);
@@ -682,7 +686,7 @@ impl Test for ExecuteTLBMappedMiss {
                     GPR::V0,
                     4,
                 ));
-                ((fault_address - 8) as *mut u32).write_volatile(Assembler::make_jr(GPR::RA));
+                ((fault_address - 8) as *mut u32).write_volatile(Assembler::make_jr(GPR::A0));
                 ((fault_address - 4) as *mut u32).write_volatile(Assembler::make_nop());
 
                 // Invalidate the code so that it can be executed (16-byte lines: -48, -32, -16 cover -36..-4)
@@ -697,13 +701,11 @@ impl Test for ExecuteTLBMappedMiss {
                 let mut result: u32;
                 let mut link_register: u64;
                 asm!("
-                    move $8, $31
                     LI $2, 0
                     LI $6, 0
-                    JALR $31, $3
+                    JALR $4, $3
                     NOP
-                    move $31, $8
-                ", out("$2") result, in("$3") (fault_address - 36), out("$6") link_register, out("$8") _);
+                ", out("$2") result, in("$3") (fault_address - 36), out("$4") _, out("$6") link_register);
                 if result != 6 {
                     return Err("Didn't return correct value. Most likely, ExceptPC during TLB exception was wrong");
                 }
@@ -779,12 +781,27 @@ impl Test for ExecuteTLBMappedMissInDelay {
             // in unmapped space, which should fire an exception. Once we get that, we'll go back a few instructions
             // and return
             unsafe {
-                ((fault_address - 24) as *mut u32).write_volatile(0x24420001); // ADDIU $2, $2, 1
-                ((fault_address - 20) as *mut u32).write_volatile(0x24420002); // ADDIU $2, $2, 2 <-- The exception should land us here
-                ((fault_address - 16) as *mut u32).write_volatile(0x24420004); // ADDIU $2, $2, 4
-                ((fault_address - 12) as *mut u32).write_volatile(0x00800008); // JR $4
-                ((fault_address - 8) as *mut u32).write_volatile(0x00000000); // NOP
-                ((fault_address - 4) as *mut u32).write_volatile(0x00603009); // JALR $6, $3 (with a delay slot in unmapped space)
+                // The exception should resume us at -20 (ADDIU $2,$2,2)
+                ((fault_address - 24) as *mut u32).write_volatile(Assembler::make_addiu(
+                    GPR::V0,
+                    GPR::V0,
+                    1,
+                ));
+                ((fault_address - 20) as *mut u32).write_volatile(Assembler::make_addiu(
+                    GPR::V0,
+                    GPR::V0,
+                    2,
+                ));
+                ((fault_address - 16) as *mut u32).write_volatile(Assembler::make_addiu(
+                    GPR::V0,
+                    GPR::V0,
+                    4,
+                ));
+                ((fault_address - 12) as *mut u32).write_volatile(Assembler::make_jr(GPR::A0));
+                ((fault_address - 8) as *mut u32).write_volatile(Assembler::make_nop());
+                // JALR $6, $3, with a delay slot in unmapped space
+                ((fault_address - 4) as *mut u32)
+                    .write_volatile(Assembler::make_jalr(GPR::A2, GPR::V1));
 
                 // Invalidate the code so that it can be executed
                 cop0::cache::<1, 0>((fault_address - 32) as usize);
@@ -870,11 +887,23 @@ impl Test for TlbMissFetchAfterEret {
         let fault_address = virtual_page_base + 4096;
         let exception_context = expect_exception(CauseException::TLBL, -4i64 as u64, || {
             unsafe {
-                ((fault_address - 20) as *mut u32).write_volatile(0x24420001);
-                ((fault_address - 16) as *mut u32).write_volatile(0x24420002);
-                ((fault_address - 12) as *mut u32).write_volatile(0x24420004);
-                ((fault_address - 8) as *mut u32).write_volatile(0x00800008);
-                ((fault_address - 4) as *mut u32).write_volatile(0x00000000);
+                ((fault_address - 20) as *mut u32).write_volatile(Assembler::make_addiu(
+                    GPR::V0,
+                    GPR::V0,
+                    1,
+                ));
+                ((fault_address - 16) as *mut u32).write_volatile(Assembler::make_addiu(
+                    GPR::V0,
+                    GPR::V0,
+                    2,
+                ));
+                ((fault_address - 12) as *mut u32).write_volatile(Assembler::make_addiu(
+                    GPR::V0,
+                    GPR::V0,
+                    4,
+                ));
+                ((fault_address - 8) as *mut u32).write_volatile(Assembler::make_jr(GPR::A0));
+                ((fault_address - 4) as *mut u32).write_volatile(Assembler::make_nop());
 
                 cop0::cache::<1, 0>((fault_address - 32) as usize);
                 cop0::cache::<1, 0>((fault_address - 16) as usize);
