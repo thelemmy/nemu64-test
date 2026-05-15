@@ -6,10 +6,7 @@ use core::arch::asm;
 
 use arbitrary_int::{u2, u27};
 
-use crate::cop0::CauseException;
-use crate::cop0::{self, Status};
-use crate::cop0::{make_entry_hi, make_entry_lo, Coherency, Pagemask};
-use crate::exception_handler::expect_exception;
+use crate::cop0::{self, make_entry_hi, make_entry_lo, Coherency, Pagemask, Status};
 use crate::tests::soft_asserts::{soft_assert_eq, soft_assert_neq};
 use crate::tests::{Level, Test};
 use crate::uncached_memory::UncachedHeapMemory;
@@ -212,36 +209,33 @@ impl Test for SCAfterERET {
         let ptr = (&mut memory as *mut u32) as isize as u64;
 
         let mut ll_value: u64 = 0;
-        unsafe {
-            asm!("
-                .set noat
-                LD $3, 0($2)
-                LL $4, 0($3)
-                SD $4, 0($5)
-            ", in("$2") &ptr, out("$3") _, out("$4") _, in("$5") &mut ll_value);
-        }
-
-        expect_exception(CauseException::Bp, 1, || {
-            unsafe {
-                asm!(
-                    "
-                    BREAK
-                "
-                );
-            }
-            Ok(())
-        })?;
-
         let mut sc_status: u64 = 0;
         unsafe {
             asm!("
                 .set noat
+                .set noreorder
                 LD $3, 0($2)
+                LL $4, 0($3)
+                SD $4, 0($5)
+                MFC0 $6, $12
+                ORI $6, $6, 0X2
+                MTC0 $6, $12
+                NOP
+                NOP
+                LUI $7, %hi(1f)
+                ADDIU $7, $7, %lo(1f)
+                DMTC0 $7, $14
+                NOP
+                NOP
+                NOP
+                ERET
+            1:
                 LUI $4, 0x1357
                 ORI $4, $4, 0x9BDF
                 SC $4, 0($3)
-                SD $4, 0($5)
-            ", in("$2") &ptr, out("$3") _, out("$4") _, in("$5") &mut sc_status);
+                SD $4, 0($8)
+            ", in("$2") &ptr, in("$5") &mut ll_value, in("$8") &mut sc_status,
+               out("$3") _, out("$4") _, out("$6") _, out("$7") _);
         }
 
         soft_assert_eq(ll_value, 0xFFFF_FFFF_89AB_CDEF, "LL value before ERET")?;
@@ -281,31 +275,27 @@ impl Test for SCDAfterERET {
         let ptr = (&mut memory as *mut u64) as isize as u64;
 
         let mut lld_value: u64 = 0;
-        unsafe {
-            asm!("
-                .set noat
-                LD $3, 0($2)
-                LLD $4, 0($3)
-                SD $4, 0($5)
-            ", in("$2") &ptr, out("$3") _, out("$4") _, in("$5") &mut lld_value);
-        }
-
-        expect_exception(CauseException::Bp, 1, || {
-            unsafe {
-                asm!(
-                    "
-                    BREAK
-                "
-                );
-            }
-            Ok(())
-        })?;
-
         let mut scd_status: u64 = 0;
         unsafe {
             asm!("
                 .set noat
+                .set noreorder
                 LD $3, 0($2)
+                LLD $4, 0($3)
+                SD $4, 0($5)
+                MFC0 $6, $12
+                ORI $6, $6, 0x2
+                MTC0 $6, $12
+                NOP
+                NOP
+                LUI $7, %hi(1f)
+                ADDIU $7, $7, %lo(1f)
+                DMTC0 $7, $14
+                NOP
+                NOP
+                NOP
+                ERET
+            1:
                 LUI $4, 0x1020
                 ORI $4, $4, 0x3040
                 DSLL32 $4, $4, 0
@@ -313,8 +303,9 @@ impl Test for SCDAfterERET {
                 DSLL $4, $4, 16
                 ORI $4, $4, 0x7080
                 SCD $4, 0($3)
-                SD $4, 0($5)
-            ", in("$2") &ptr, out("$3") _, out("$4") _, in("$5") &mut scd_status);
+                SD $4, 0($8)
+            ", in("$2") &ptr, in("$5") &mut lld_value, in("$8") &mut scd_status,
+               out("$3") _, out("$4") _, out("$6") _, out("$7") _);
         }
 
         soft_assert_eq(lld_value, 0x89AB_CDEF_0123_4567, "LLD value before ERET")?;
