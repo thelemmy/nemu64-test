@@ -3,8 +3,6 @@ use core::alloc::Layout;
 use core::cmp::max;
 use core::mem::size_of;
 
-use linked_list_allocator::align_up_size;
-
 use crate::{cop0, MemoryMap};
 
 /// A dynamically allocated chunk of memory that is accessed as uncached memory. This is
@@ -28,11 +26,9 @@ impl<T: Copy + Clone> UncachedHeapMemory<T> {
     pub fn new_with_align(count: usize, align: usize) -> Self {
         let element_size = size_of::<T>();
         let byte_size = count * element_size;
-        let effective_align = max(align, element_size);
-        assert!(effective_align.is_power_of_two());
-        let layout =
-            Layout::from_size_align(align_up_size(byte_size, effective_align), effective_align)
-                .unwrap();
+        let byte_size = (byte_size + 15) & !15;
+        let align = max(max(align, element_size), 16).next_power_of_two();
+        let layout = Layout::from_size_align(byte_size, align).unwrap();
         let original_data = unsafe { alloc(layout) };
         Self::invalidate_caches(original_data, byte_size);
         let uncached_data = MemoryMap::uncached_mut(original_data) as *mut T;
