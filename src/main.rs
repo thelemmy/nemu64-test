@@ -15,6 +15,8 @@
 
 extern crate alloc;
 
+use core::arch::asm;
+
 use spinning_top::Spinlock;
 
 use crate::cop1::set_fcsr;
@@ -46,6 +48,11 @@ static VIDEO: Spinlock<Video> = Spinlock::new(Video::new());
 
 #[no_mangle]
 unsafe extern "C" fn entrypoint() -> ! {
+    // Tests require these to be 0. Can't mark as clobbered as they are reserved as far as the compiler is concerned
+    unsafe {
+        asm!("move $26, $zero", "move $27, $zero", options(nomem, nostack));
+    }
+
     // IPL3 (the bootloader) write the memory size to DMEM. We can read it from there
     let memory_size = SPMEM::read(0) as usize;
     let elf_header_offset = ((SPMEM::read(12) >> 16) << 8) as usize;
