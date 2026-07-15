@@ -54,14 +54,16 @@ impl MemoryMap {
 
     /// Returns the cartridge (rom) address of a given constant
     pub fn physical_cart_address<T>(p: *const T) -> u32 {
-        // The bootcode copies from ROM to 0x8000_0400. If we have some other pointer,
-        // it doesn't come from the cart
-        let memory_address = p as u32;
-        assert!(memory_address >= 0x8000_0400);
+        extern "C" {
+            static loaded_rom_start: u8;
+            static loaded_rom_end: u8;
+        }
 
-        // TODO: Replace 3MB with the actual cart size
-        let ram_end = 0x8000_0400 + 3 * 1024 * 1024;
-        assert!(memory_address < ram_end);
+        let memory_address = p as u32;
+        let start = unsafe { &loaded_rom_start as *const u8 as u32 };
+        let end = unsafe { &loaded_rom_end as *const u8 as u32 };
+        assert!(memory_address >= start);
+        assert!(memory_address < end);
 
         memory_address - 0x8000_0000 + 0x10000000 + MemoryMap::elf_header_offset() as u32
     }

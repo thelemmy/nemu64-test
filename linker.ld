@@ -2,8 +2,9 @@ ENTRY(entrypoint)
 
 SECTIONS {
     . = 0xFFFFFFFF80000400;
-    __boot_start = .;
+    loaded_rom_start = .;
 
+    __boot_start = .;
     .boot : {
         *(.boot)
         . = ALIGN(16);
@@ -26,6 +27,8 @@ SECTIONS {
 
     # Everything until here needs to be loaded into RAM
     __binary_size = . - __boot_start;
+
+    loaded_rom_end = .;
 
     .bss : {
         __bss_start = .;
