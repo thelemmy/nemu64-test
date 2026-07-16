@@ -19,9 +19,14 @@ use crate::tests::{Level, Test};
 fn mult<const INSTRUCTION: u32>(f1: u64, f2: u64) -> u128 {
     let lo: u64;
     let hi: u64;
+    // You can't declare LO/HI as clobbered, so we save and restore them ourselves
     unsafe {
         asm!("
             .set noat
+            MFLO {save_lo}
+            MFHI {save_hi}
+            NOP
+            NOP
             MTLO $0
             MTHI $0
             NOP
@@ -31,12 +36,18 @@ fn mult<const INSTRUCTION: u32>(f1: u64, f2: u64) -> u128 {
             NOP
             MFLO {lo}
             MFHI {hi}
+            NOP
+            NOP
+            MTLO {save_lo}
+            MTHI {save_hi}
         ",
         INSTRUCTION = const INSTRUCTION,
         in("$2") f1,
         in("$3") f2,
         lo = out(reg) lo,
-        hi = out(reg) hi)
+        hi = out(reg) hi,
+        save_lo = out(reg) _,
+        save_hi = out(reg) _)
     }
     ((hi as u128) << 64) | (lo as u128)
 }
@@ -241,14 +252,26 @@ impl Test for MULTRandomized {
             unsafe {
                 asm!("
                     .set noat
+                    MFLO {save_lo}
+                    MFHI {save_hi}
+                    NOP
+                    NOP
                     MULT {f1}, {f2}
+                    NOP
+                    NOP
                     MFLO {lo}
                     MFHI {hi}
+                    NOP
+                    NOP
+                    MTLO {save_lo}
+                    MTHI {save_hi}
                 ",
                 f1 = in(reg) f1,
                 f2 = in(reg) f2,
                 lo = out(reg) lo,
-                hi = out(reg) hi);
+                hi = out(reg) hi,
+                save_lo = out(reg) _,
+                save_hi = out(reg) _);
             }
 
             // Expected: rt is a 35-bit number, so simulate that here

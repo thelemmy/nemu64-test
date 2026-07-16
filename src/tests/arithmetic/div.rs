@@ -16,6 +16,8 @@ fn test_div(dividend: u64, divisor: u64) -> (u64, u64) {
             .set noat
             .set noreorder
 
+            MFLO {save_lo}
+            MFHI {save_hi}
             LD $2, 0($4)
             LD $3, 0($5)
             DIV $0, $2, $3
@@ -23,8 +25,10 @@ fn test_div(dividend: u64, divisor: u64) -> (u64, u64) {
             MFHI $3
             SD $2, 0($6)
             SD $3, 0($7)
+            MTLO {save_lo}
+            MTHI {save_hi}
 
-        ", out("$2") _, out("$3") _, in("$4") &dividend, in("$5") &divisor, in("$6") &mut quotient, in("$7") &mut remainder)
+        ", out("$2") _, out("$3") _, in("$4") &dividend, in("$5") &divisor, in("$6") &mut quotient, in("$7") &mut remainder, save_lo = out(reg) _, save_hi = out(reg) _)
     }
     (quotient, remainder)
 }
@@ -37,6 +41,8 @@ fn test_divu(dividend: u64, divisor: u64) -> (u64, u64) {
             .set noat
             .set noreorder
 
+            MFLO {save_lo}
+            MFHI {save_hi}
             LD $2, 0($4)
             LD $3, 0($5)
             DIVU $0, $2, $3
@@ -44,8 +50,10 @@ fn test_divu(dividend: u64, divisor: u64) -> (u64, u64) {
             MFHI $3
             SD $2, 0($6)
             SD $3, 0($7)
+            MTLO {save_lo}
+            MTHI {save_hi}
 
-        ", out("$2") _, out("$3") _, in("$4") &dividend, in("$5") &divisor, in("$6") &mut quotient, in("$7") &mut remainder)
+        ", out("$2") _, out("$3") _, in("$4") &dividend, in("$5") &divisor, in("$6") &mut quotient, in("$7") &mut remainder, save_lo = out(reg) _, save_hi = out(reg) _)
     }
     (quotient, remainder)
 }
@@ -58,6 +66,8 @@ fn test_ddiv(dividend: u64, divisor: u64) -> (u64, u64) {
             .set noat
             .set noreorder
 
+            MFLO {save_lo}
+            MFHI {save_hi}
             LD $2, 0($4)
             LD $3, 0($5)
             DDIV $0, $2, $3
@@ -65,8 +75,10 @@ fn test_ddiv(dividend: u64, divisor: u64) -> (u64, u64) {
             MFHI $3
             SD $2, 0($6)
             SD $3, 0($7)
+            MTLO {save_lo}
+            MTHI {save_hi}
 
-        ", out("$2") _, out("$3") _, in("$4") &dividend, in("$5") &divisor, in("$6") &mut quotient, in("$7") &mut remainder)
+        ", out("$2") _, out("$3") _, in("$4") &dividend, in("$5") &divisor, in("$6") &mut quotient, in("$7") &mut remainder, save_lo = out(reg) _, save_hi = out(reg) _)
     }
     (quotient, remainder)
 }
@@ -79,6 +91,8 @@ fn test_ddivu(dividend: u64, divisor: u64) -> (u64, u64) {
             .set noat
             .set noreorder
 
+            MFLO {save_lo}
+            MFHI {save_hi}
             LD $2, 0($4)
             LD $3, 0($5)
             DDIVU $0, $2, $3
@@ -86,8 +100,10 @@ fn test_ddivu(dividend: u64, divisor: u64) -> (u64, u64) {
             MFHI $3
             SD $2, 0($6)
             SD $3, 0($7)
+            MTLO {save_lo}
+            MTHI {save_hi}
 
-        ", out("$2") _, out("$3") _, in("$4") &dividend, in("$5") &divisor, in("$6") &mut quotient, in("$7") &mut remainder)
+        ", out("$2") _, out("$3") _, in("$4") &dividend, in("$5") &divisor, in("$6") &mut quotient, in("$7") &mut remainder, save_lo = out(reg) _, save_hi = out(reg) _)
     }
     (quotient, remainder)
 }

@@ -1112,7 +1112,7 @@ impl Test for UnusedRegistersExtraUnrelated {
                     .set noat
                     addiu $0, $0, 0xABCD
                     xor $0, $5, $9
-                    mult $0, $0
+                    mflo $0
                 ",
                 );
             }
@@ -1123,7 +1123,7 @@ impl Test for UnusedRegistersExtraUnrelated {
         macro_rules! perform_test {
             ($reg:expr, $value:expr) => {
                 let readback = write_read_cop0::<$reg>($value);
-                soft_assert_eq(readback, $value, &format!("Unused COP0 Reg{} written with {:#010X}, then various unrelated CPU instructions (ADDIU, XOR, MULT) before DMFC0. Expecting same value back.", $reg, $value))?;
+                soft_assert_eq(readback, $value, &format!("Unused COP0 Reg{} written with {:#010X}, then various unrelated CPU instructions (ADDIU, XOR, MFLO) before DMFC0. Expecting same value back.", $reg, $value))?;
             }
         }
 
