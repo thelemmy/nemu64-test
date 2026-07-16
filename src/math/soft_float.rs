@@ -1,6 +1,7 @@
 use alloc::format;
 use core::fmt::{Debug, Formatter};
 use core::mem::transmute;
+
 use arbitrary_int::{u11, u23, u52, Number};
 use bitbybit::bitfield;
 
@@ -28,7 +29,6 @@ struct F64Bits {
     mantissa: u52,
 }
 
-
 /// Wrapper for f32 which prints more nicely. This has two benefits:
 /// - Special types like sNAN don't print all kinds of exceptions
 /// - Broken COP1 implementations are less likely to affect the printing
@@ -47,16 +47,18 @@ impl SoftF32 {
 impl Debug for SoftF32 {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
         match self.0.exponent() {
-            u8::MIN => if self.0.mantissa().value() == 0 {
-                if self.0.is_negative() {
-                    f.write_str("-0.0")
+            u8::MIN => {
+                if self.0.mantissa().value() == 0 {
+                    if self.0.is_negative() {
+                        f.write_str("-0.0")
+                    } else {
+                        f.write_str("0.0")
+                    }
                 } else {
-                    f.write_str("0.0")
+                    f.write_str(format!("denorm (0x{:x})", self.0.raw_value()).as_str())
                 }
-            } else {
-                f.write_str(format!("denorm (0x{:x})", self.0.raw_value()).as_str())
-            },
-            u8::MAX =>
+            }
+            u8::MAX => {
                 if self.0.mantissa().value() == 0 {
                     if self.0.is_negative() {
                         f.write_str("-inf")
@@ -70,6 +72,7 @@ impl Debug for SoftF32 {
                         f.write_str(format!("sNAN (0x{:x})", self.0.raw_value()).as_str())
                     }
                 }
+            }
             _ => {
                 // This is a regular float. Fallback to the built-in formatting (and hope the COP1 is
                 // working well enough to handle it.
@@ -97,16 +100,18 @@ impl SoftF64 {
 impl Debug for SoftF64 {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
         match self.0.exponent() {
-            u11::MIN => if self.0.mantissa().value() == 0 {
-                if self.0.is_negative() {
-                    f.write_str("-0.0")
+            u11::MIN => {
+                if self.0.mantissa().value() == 0 {
+                    if self.0.is_negative() {
+                        f.write_str("-0.0")
+                    } else {
+                        f.write_str("0.0")
+                    }
                 } else {
-                    f.write_str("0.0")
+                    f.write_str(format!("denorm (0x{:x})", self.0.raw_value()).as_str())
                 }
-            } else {
-                f.write_str(format!("denorm (0x{:x})", self.0.raw_value()).as_str())
-            },
-            u11::MAX =>
+            }
+            u11::MAX => {
                 if self.0.mantissa().value() == 0 {
                     if self.0.is_negative() {
                         f.write_str("-inf")
@@ -120,6 +125,7 @@ impl Debug for SoftF64 {
                         f.write_str(format!("sNAN (0x{:x})", self.0.raw_value()).as_str())
                     }
                 }
+            }
             _ => {
                 // This is a regular float. Fallback to the built-in formatting (and hope the COP1 is
                 // working well enough to handle it.

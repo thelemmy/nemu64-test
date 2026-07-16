@@ -4,21 +4,27 @@ use alloc::vec::Vec;
 use core::any::Any;
 
 use crate::rsp::rsp::RSP;
-use crate::rsp::rsp_assembler::{GPR, RSPAssembler};
+use crate::rsp::rsp_assembler::{RSPAssembler, GPR};
 use crate::rsp::spmem::SPMEM;
-use crate::tests::{Level, Test};
 use crate::tests::soft_asserts::soft_assert_eq;
+use crate::tests::{Level, Test};
 
 // Various tests using SB. Nothing special to see here
 
 pub struct SB {}
 
 impl Test for SB {
-    fn name(&self) -> &str { "RSP SB" }
+    fn name(&self) -> &str {
+        "RSP SB"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         // Assemble RSP program
@@ -72,7 +78,6 @@ impl Test for SB {
         soft_assert_eq(SPMEM::read(0x0C), 0xBADDEC77, "SB to DMEM[0x0F]")?;
         soft_assert_eq(SPMEM::read(0x10), 0xBA11ECAF, "SB to DMEM[0x11]")?;
         soft_assert_eq(SPMEM::read(0xFFC), 0xBADDEC21, "SB to DMEM[0xFFF]")?;
-
 
         Ok(())
     }

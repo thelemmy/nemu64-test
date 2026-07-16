@@ -1,4 +1,4 @@
-pub struct Bitmasks16 { }
+pub struct Bitmasks16 {}
 
 #[allow(dead_code)]
 impl Bitmasks16 {
@@ -20,7 +20,7 @@ impl Bitmasks16 {
     pub const M16: u32 = 0xFFFF;
 }
 
-pub struct Bitmasks32 { }
+pub struct Bitmasks32 {}
 
 #[allow(dead_code)]
 impl Bitmasks32 {
@@ -58,7 +58,7 @@ impl Bitmasks32 {
     pub const M32: u32 = 0xFFFF_FFFF;
 }
 
-pub struct Bitmasks64 { }
+pub struct Bitmasks64 {}
 
 #[allow(dead_code)]
 impl Bitmasks64 {

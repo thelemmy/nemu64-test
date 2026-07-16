@@ -4,19 +4,25 @@ use alloc::vec::Vec;
 use core::any::Any;
 
 use crate::rsp::rsp::RSP;
-use crate::rsp::rsp_assembler::{GPR, RSPAssembler};
+use crate::rsp::rsp_assembler::{RSPAssembler, GPR};
 use crate::rsp::spmem::SPMEM;
-use crate::tests::{Level, Test};
 use crate::tests::soft_asserts::soft_assert_eq;
+use crate::tests::{Level, Test};
 
 pub struct LH {}
 
 impl Test for LH {
-    fn name(&self) -> &str { "RSP LH" }
+    fn name(&self) -> &str {
+        "RSP LH"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         // Assemble RSP program
@@ -62,7 +68,6 @@ impl Test for LH {
         soft_assert_eq(SPMEM::read(0x20), 0x00007E8F, "LH FROM DMEM[0xFFE]")?;
         soft_assert_eq(SPMEM::read(0x24), 0xFFFF8FBA, "LH FROM DMEM[0xFFF]")?;
         soft_assert_eq(SPMEM::read(0x28), 0x00000000, "LH into R0")?;
-
 
         Ok(())
     }

@@ -170,7 +170,7 @@ pub fn run() {
             }
             match (*value).downcast_ref::<(u32, u32)>() {
                 Some(v) => return format!(" with '{:#x?}'", v),
-                None => {},
+                None => {}
             }
             match (*value).downcast_ref::<(u32, u32, u32)>() {
                 Some(v) => return format!(" with '{:x?}'", v),

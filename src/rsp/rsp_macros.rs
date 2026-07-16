@@ -1,7 +1,16 @@
-use crate::rsp::rsp_assembler::{E, Element, GPR, RSPAssembler, VR};
+use crate::rsp::rsp_assembler::{Element, RSPAssembler, E, GPR, VR};
 
 /// Sets the accumulator to the value that is currently in the three registers top::mid::low
-pub fn assemble_set_accumulator_to(assembler: &mut RSPAssembler, top: VR, mid: VR, low: VR, scratch: VR, scratch2: VR, scratch3: VR, scratch_gpr: GPR) {
+pub fn assemble_set_accumulator_to(
+    assembler: &mut RSPAssembler,
+    top: VR,
+    mid: VR,
+    low: VR,
+    scratch: VR,
+    scratch2: VR,
+    scratch3: VR,
+    scratch_gpr: GPR,
+) {
     // Put some constants that we need into scratch2:
     // 0000 40000 0001
     assembler.write_mtc2(scratch2, GPR::R0, E::_0);
@@ -35,4 +44,3 @@ pub fn assemble_set_accumulator_to(assembler: &mut RSPAssembler, top: VR, mid: V
 
     assembler.write_vaddc(scratch3, scratch2, low, Element::_0);
 }
-

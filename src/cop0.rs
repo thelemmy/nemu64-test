@@ -824,13 +824,17 @@ pub unsafe fn cache64<const OP: u8, const OFFSET: i16>(location: u64) {
 pub fn preset_cause_to_copindex2() -> Result<(), String> {
     // Fire a COP2 unusable exception. This is to write something into Cause.copindex so that we can see whether it gets overwritten
     let temp_context = match expect_exception(CauseException::CopUnusable, 1, || {
-        unsafe { asm!("MFC2 $0, $0"); }
+        unsafe {
+            asm!("MFC2 $0, $0");
+        }
         Ok(())
     }) {
         Ok(c) => c,
-        Err(e) => return Err(format!("Failed to preset Cause.copindex to 2: {}", e))
+        Err(e) => return Err(format!("Failed to preset Cause.copindex to 2: {}", e)),
     };
-    if temp_context.cause.coprocessor_error() != u2::new(2) || temp_context.cause.exception() != Ok(CauseException::CopUnusable) {
+    if temp_context.cause.coprocessor_error() != u2::new(2)
+        || temp_context.cause.exception() != Ok(CauseException::CopUnusable)
+    {
         return Err("Cause.copindex was supposed to be preset to 2/CopUnusable, but it didn't change: {:x} vs {:x}".to_string());
     };
 

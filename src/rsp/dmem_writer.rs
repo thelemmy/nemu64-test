@@ -8,7 +8,9 @@ pub struct DMEMWriter {
 
 impl DMEMWriter {
     pub const fn new(start_offset: usize) -> Self {
-        Self { offset: start_offset & 0xFFC }
+        Self {
+            offset: start_offset & 0xFFC,
+        }
     }
 
     pub fn write(&mut self, value: u32) {
@@ -16,5 +18,7 @@ impl DMEMWriter {
         self.offset = (self.offset + size_of::<u32>()) & 0xFFC;
     }
 
-    pub fn offset(&self) -> usize { return self.offset; }
+    pub fn offset(&self) -> usize {
+        return self.offset;
+    }
 }

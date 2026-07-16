@@ -322,47 +322,79 @@ impl Test for VRNDPAccumulatorOverflowed {
 pub struct VRNDPClampNegativeAccumulator {}
 
 impl Test for VRNDPClampNegativeAccumulator {
-	fn name(&self) -> &str { "RSP VRNDP (Negative accumulator is clamped before writing the result)" }
-	
-	fn level(&self) -> Level { Level::BasicFunctionality }
-	
-	fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
-	
-	fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-		const INPUT_ACC_TOP: Vector = Vector::new_with_broadcast_16(0xFFFF);
-		const INPUT_ACC_MID: Vector = Vector::new_with_broadcast_16(0x0000);
-		const INPUT_ACC_LOW: Vector = Vector::new_with_broadcast_16(0x0000);
-		
-		// Preexisting accumulator data
+    fn name(&self) -> &str {
+        "RSP VRNDP (Negative accumulator is clamped before writing the result)"
+    }
+
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
+
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
+
+    fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
+        const INPUT_ACC_TOP: Vector = Vector::new_with_broadcast_16(0xFFFF);
+        const INPUT_ACC_MID: Vector = Vector::new_with_broadcast_16(0x0000);
+        const INPUT_ACC_LOW: Vector = Vector::new_with_broadcast_16(0x0000);
+
+        // Preexisting accumulator data
         SPMEM::write_vector_into_dmem(0x00, &INPUT_ACC_TOP);
         SPMEM::write_vector_into_dmem(0x10, &INPUT_ACC_MID);
         SPMEM::write_vector_into_dmem(0x20, &INPUT_ACC_LOW);
-		SPMEM::write_vector16_into_dmem(0x30, &[0x0000, 0x0001, 0x0002, 0x0003, 0xFFFF, 0xFFFE, 0xFFFD, 0xFFFC]);
-		
-		let mut assembler = RSPAssembler::new(0);
-		
-		assembler.write_lqv(VR::V0, E::_0, 0x000, GPR::R0);
+        SPMEM::write_vector16_into_dmem(
+            0x30,
+            &[
+                0x0000, 0x0001, 0x0002, 0x0003, 0xFFFF, 0xFFFE, 0xFFFD, 0xFFFC,
+            ],
+        );
+
+        let mut assembler = RSPAssembler::new(0);
+
+        assembler.write_lqv(VR::V0, E::_0, 0x000, GPR::R0);
         assembler.write_lqv(VR::V1, E::_0, 0x010, GPR::R0);
         assembler.write_lqv(VR::V2, E::_0, 0x020, GPR::R0);
 
-        assemble_set_accumulator_to(&mut assembler, VR::V0, VR::V1, VR::V2, VR::V3, VR::V4, VR::V5, GPR::AT);
-		
-		assembler.write_lqv(VR::V0, E::_0, 0x030, GPR::R0);
-		assembler.write_lqv(VR::V1, E::_0, 0x030, GPR::R0);
-		
-		assembler.write_vrndp(VR::V2, VR::V0, VR::V0, Element::All);
-		assembler.write_vrndp(VR::V3, VR::V1, VR::V1, Element::All);
-		
-		assembler.write_sqv(VR::V2, E::_0, 0x100, GPR::R0);
-		assembler.write_sqv(VR::V3, E::_0, 0x110, GPR::R0);
-		
-		assembler.write_break();
-		
-		RSP::run_and_wait(0);
-		
-		soft_assert_eq(SPMEM::read_vector16_from_dmem(0x100), [0x8000, 0x8000, 0x8000, 0x8000, 0x8000, 0x8000, 0x8000, 0x8000], "Result after clamping negative accumulator (even vs)")?;
-		soft_assert_eq(SPMEM::read_vector16_from_dmem(0x110), [0x8000, 0x8000, 0x8000, 0x8000, 0x8000, 0x8000, 0x8000, 0x8000], "Result after clamping negative accumulator (odd vs)")?;
-		
-		Ok(())
-	}
+        assemble_set_accumulator_to(
+            &mut assembler,
+            VR::V0,
+            VR::V1,
+            VR::V2,
+            VR::V3,
+            VR::V4,
+            VR::V5,
+            GPR::AT,
+        );
+
+        assembler.write_lqv(VR::V0, E::_0, 0x030, GPR::R0);
+        assembler.write_lqv(VR::V1, E::_0, 0x030, GPR::R0);
+
+        assembler.write_vrndp(VR::V2, VR::V0, VR::V0, Element::All);
+        assembler.write_vrndp(VR::V3, VR::V1, VR::V1, Element::All);
+
+        assembler.write_sqv(VR::V2, E::_0, 0x100, GPR::R0);
+        assembler.write_sqv(VR::V3, E::_0, 0x110, GPR::R0);
+
+        assembler.write_break();
+
+        RSP::run_and_wait(0);
+
+        soft_assert_eq(
+            SPMEM::read_vector16_from_dmem(0x100),
+            [
+                0x8000, 0x8000, 0x8000, 0x8000, 0x8000, 0x8000, 0x8000, 0x8000,
+            ],
+            "Result after clamping negative accumulator (even vs)",
+        )?;
+        soft_assert_eq(
+            SPMEM::read_vector16_from_dmem(0x110),
+            [
+                0x8000, 0x8000, 0x8000, 0x8000, 0x8000, 0x8000, 0x8000, 0x8000,
+            ],
+            "Result after clamping negative accumulator (odd vs)",
+        )?;
+
+        Ok(())
+    }
 }

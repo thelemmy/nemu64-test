@@ -4,7 +4,9 @@ use alloc::vec;
 use alloc::vec::Vec;
 use core::any::Any;
 use core::arch::asm;
+
 use arbitrary_int::u2;
+
 use crate::assembler::{Assembler, GPR};
 use crate::cop0::{cause, compare, count, preset_cause_to_copindex2, set_compare, RegisterIndex};
 use crate::tests::soft_asserts::{soft_assert_eq, soft_assert_greater_or_equal};
@@ -90,7 +92,6 @@ impl Test for CompareInterruptSignalling2 {
             Box::new((500u32, 0u32)),
             Box::new((100u32, 0u32)),
             Box::new((50u32, 0u32)),
-
             Box::new((4u32, 0u32)),
             Box::new((4u32, 1u32)),
             Box::new((4u32, 2u32)),
@@ -155,7 +156,6 @@ impl Test for CompareInterruptSignalling2 {
 
             Ok(())
         }
-
 
         match (*value).downcast_ref::<(u32, u32)>() {
             Some((offset, mode)) => {

@@ -4,17 +4,16 @@ use alloc::vec::Vec;
 use core::any::Any;
 
 use crate::rsp::rsp::RSP;
-use crate::rsp::rsp_assembler::{CP0Register, GPR, RSPAssembler};
+use crate::rsp::rsp_assembler::{CP0Register, RSPAssembler, GPR};
 use crate::rsp::spmem::SPMEM;
-use crate::tests::{Level, Test};
 use crate::tests::soft_asserts::{soft_assert_eq, soft_assert_neq};
+use crate::tests::{Level, Test};
 
-pub mod registers;
+pub mod op_add_addu;
 pub mod op_addi;
 pub mod op_addiu;
 pub mod op_and;
 pub mod op_andi;
-pub mod op_add_addu;
 pub mod op_branches;
 pub mod op_break;
 pub mod op_cfc2_ctc2;
@@ -63,39 +62,54 @@ pub mod op_vrndp;
 pub mod op_vsar;
 pub mod op_xor;
 pub mod op_xori;
+pub mod registers;
 pub mod stresstests;
 pub mod stresstests_div;
 pub mod wrap_around;
 
 /// Ensure that the PC reg is properly masked with 0xFFC when being written to
-pub struct PCRegMasking {
-
-}
+pub struct PCRegMasking {}
 
 impl Test for PCRegMasking {
-    fn name(&self) -> &str { "RSP PC REG" }
+    fn name(&self) -> &str {
+        "RSP PC REG"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         RSP::set_pc(0xFFFFFFFF);
-        soft_assert_eq(RSP::pc(), 0xFFC, "RSP PC isn't masked properly on write (0xFFFFFFFF was written)")?;
+        soft_assert_eq(
+            RSP::pc(),
+            0xFFC,
+            "RSP PC isn't masked properly on write (0xFFFFFFFF was written)",
+        )?;
 
         Ok(())
     }
 }
 
 /// This test ensures that the RSP and CPU are actually running in parallel
-pub struct ParallelRunning { }
+pub struct ParallelRunning {}
 
 impl Test for ParallelRunning {
-    fn name(&self) -> &str { "RSP running in parallel to the CPU" }
+    fn name(&self) -> &str {
+        "RSP running in parallel to the CPU"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const MAX_ITERATIONS: u32 = 10000;
@@ -138,7 +152,11 @@ impl Test for ParallelRunning {
         RSP::wait_until_rsp_is_halted();
 
         soft_assert_neq(counter, 0, "Timed out in CPU waiting for signal 0 from RSP")?;
-        soft_assert_neq(SPMEM::read(0x0), 0, "Timed out on RSP waiting for signal 1 from CPU")?;
+        soft_assert_neq(
+            SPMEM::read(0x0),
+            0,
+            "Timed out on RSP waiting for signal 1 from CPU",
+        )?;
 
         Ok(())
     }

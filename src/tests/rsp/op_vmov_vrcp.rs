@@ -1,17 +1,17 @@
-use alloc::format;
 use alloc::boxed::Box;
+use alloc::format;
 use alloc::string::String;
 use alloc::vec::Vec;
 use core::any::Any;
 
-use crate::{print, println};
 use crate::math::vector::Vector;
 use crate::rsp::rsp::RSP;
-use crate::rsp::rsp_assembler::{E, Element, GPR, RSPAssembler, VR, VSARAccumulator};
+use crate::rsp::rsp_assembler::{Element, RSPAssembler, VSARAccumulator, E, GPR, VR};
 use crate::rsp::rsp_macros::assemble_set_accumulator_to;
 use crate::rsp::spmem::SPMEM;
-use crate::tests::{Level, Test};
 use crate::tests::soft_asserts::{soft_assert_eq2, soft_assert_eq_vector};
+use crate::tests::{Level, Test};
+use crate::{print, println};
 
 // The generation of the RCP and RSP tables was ported from Ares: https://github.com/ares-emulator/ares/blob/acd2130a4d4c9e7208f61e0ff762895f7c9b8dc6/ares/n64/rsp/rsp.cpp#L102
 // which uses the following license:
@@ -43,7 +43,11 @@ const fn rsq_table_value(index: usize) -> u16 {
     // - indexes are different to match the algorithm here
     // - using the increment loop this function was made faster; it is now fast enough to run
     //   in a const context
-    let a = (if index < 256 { index + 256 } else { ((index - 256) << 1) + 512 }) as u64;
+    let a = (if index < 256 {
+        index + 256
+    } else {
+        ((index - 256) << 1) + 512
+    }) as u64;
     let mut b = 1u64 << 17;
     // find the largest b where b < 1.0 / sqrt(a)
     let mut increment = 512;
@@ -80,11 +84,38 @@ const RCP_DATA: [u16; 512] = make_rcp_table();
 const RSQ_DATA: [u16; 512] = make_rsq_table();
 
 const TEST_VALUES_32: [u32; 32] = [
-    0, 1, 2, 0x2000, 0x7FFF, 0x8000, 0x8001, 0xFFFF, 0x7FFF_FFFE, 0x7FFF_FFFF,
-    0x8000_0000, 0x8000_0001, 0x8000_0002, 0x8040_0000, 0xC000_0000, 0xC000_0002,
-    0xDEAD_F00D, 0xFFFE_FFFF, 0xFFFF_0000, 0xFFFF_0001, 0xFFFF_0012, 0xFFFF_7FFF,
-    0xFFFF_8000, 0xFFFF_8001, 0xFFFF_801E, 0xFFFF_801F, 0xFFFF_8020, 0xFFFF_8021, 0xFFFF_8040,
-    0xFFFF_FFFD, 0xFFFF_FFFE, 0xFFFF_FFFF
+    0,
+    1,
+    2,
+    0x2000,
+    0x7FFF,
+    0x8000,
+    0x8001,
+    0xFFFF,
+    0x7FFF_FFFE,
+    0x7FFF_FFFF,
+    0x8000_0000,
+    0x8000_0001,
+    0x8000_0002,
+    0x8040_0000,
+    0xC000_0000,
+    0xC000_0002,
+    0xDEAD_F00D,
+    0xFFFE_FFFF,
+    0xFFFF_0000,
+    0xFFFF_0001,
+    0xFFFF_0012,
+    0xFFFF_7FFF,
+    0xFFFF_8000,
+    0xFFFF_8001,
+    0xFFFF_801E,
+    0xFFFF_801F,
+    0xFFFF_8020,
+    0xFFFF_8021,
+    0xFFFF_8040,
+    0xFFFF_FFFD,
+    0xFFFF_FFFE,
+    0xFFFF_FFFF,
 ];
 
 pub const fn rcp(value: u32) -> u32 {
@@ -95,13 +126,25 @@ pub const fn rcp(value: u32) -> u32 {
         return 0xFFFF_0000;
     }
     // After 0xFFFF_8000, everything is shifted by one. Why? No idea
-    let adjusted_value = if value > 0xFFFF_8000 { value - 1 } else { value };
+    let adjusted_value = if value > 0xFFFF_8000 {
+        value - 1
+    } else {
+        value
+    };
     let is_negative = (adjusted_value as i32).is_negative();
-    let positive_value = if is_negative { !adjusted_value } else { adjusted_value };
+    let positive_value = if is_negative {
+        !adjusted_value
+    } else {
+        adjusted_value
+    };
     let shift = positive_value.leading_zeros() + 1;
     let index = positive_value.wrapping_shl(shift).wrapping_shr(23) as usize;
     let positive_result = (0x4000_0000 | ((RCP_DATA[index] as u32) << 14)) >> (32 - shift);
-    if is_negative { !positive_result } else { positive_result }
+    if is_negative {
+        !positive_result
+    } else {
+        positive_result
+    }
 }
 
 pub fn rsq(value: u32) -> u32 {
@@ -112,17 +155,39 @@ pub fn rsq(value: u32) -> u32 {
         return 0xFFFF_0000;
     }
     // After 0xFFFF_8000, everything is offset by one. Why? No idea
-    let adjusted_value = if value > 0xFFFF_8000 { value - 1 } else { value };
+    let adjusted_value = if value > 0xFFFF_8000 {
+        value - 1
+    } else {
+        value
+    };
     let is_negative = (adjusted_value as i32).is_negative();
-    let positive_value = if is_negative { !adjusted_value } else { adjusted_value };
+    let positive_value = if is_negative {
+        !adjusted_value
+    } else {
+        adjusted_value
+    };
     let shift = positive_value.leading_zeros() + 1;
     // For uneven shifts, take the second half of the table
     let index = (positive_value.wrapping_shl(shift).wrapping_shr(24) | ((shift & 1) << 8)) as usize;
     let positive_result = (0x4000_0000 | ((RSQ_DATA[index] as u32) << 14)) >> ((32 - shift) >> 1);
-    if is_negative { !positive_result } else { positive_result }
+    if is_negative {
+        !positive_result
+    } else {
+        positive_result
+    }
 }
 
-fn run_test<FEmitter: Fn(&mut RSPAssembler, VR, VR, VR, Element), FEmulate: Fn(u16) -> u16>(apply_element_to_vt_for_result: bool, check_accumulators: bool, vt_vector: Vector, vd: VR, vs: VR, vt: VR, e: Element, emit: FEmitter, emulate: FEmulate) -> Result<(), String> {
+fn run_test<FEmitter: Fn(&mut RSPAssembler, VR, VR, VR, Element), FEmulate: Fn(u16) -> u16>(
+    apply_element_to_vt_for_result: bool,
+    check_accumulators: bool,
+    vt_vector: Vector,
+    vd: VR,
+    vs: VR,
+    vt: VR,
+    e: Element,
+    emit: FEmitter,
+    emulate: FEmulate,
+) -> Result<(), String> {
     const INPUT_ACC_TOP: Vector = Vector::new_with_broadcast_16(0x0123);
     const INPUT_ACC_MID: Vector = Vector::new_with_broadcast_16(0x4567);
     const INPUT_ACC_LOW: Vector = Vector::new_with_broadcast_16(0x89AB);
@@ -134,10 +199,17 @@ fn run_test<FEmitter: Fn(&mut RSPAssembler, VR, VR, VR, Element), FEmulate: Fn(u
     }
 
     // Data that is in source and target vectors
-    let vd_pre_vector = Vector::from_u16([0x0000, 0x1001, 0x2002, 0x3003, 0x4004, 0x5005, 0x6006, 0x7007]);
+    let vd_pre_vector = Vector::from_u16([
+        0x0000, 0x1001, 0x2002, 0x3003, 0x4004, 0x5005, 0x6006, 0x7007,
+    ]);
     SPMEM::write_vector_into_dmem(0x30, &vd_pre_vector);
     SPMEM::write_vector_into_dmem(0x40, &vt_vector);
-    SPMEM::write_vector_into_dmem(0x50, &Vector::from_u16([0xDECA, 0xF15B, 0xADC0, 0xFFEE, 0xDECA, 0xF15B, 0xADC0, 0xFFEE]));
+    SPMEM::write_vector_into_dmem(
+        0x50,
+        &Vector::from_u16([
+            0xDECA, 0xF15B, 0xADC0, 0xFFEE, 0xDECA, 0xF15B, 0xADC0, 0xFFEE,
+        ]),
+    );
 
     let mut assembler = RSPAssembler::new(0);
 
@@ -146,7 +218,16 @@ fn run_test<FEmitter: Fn(&mut RSPAssembler, VR, VR, VR, Element), FEmulate: Fn(u
         assembler.write_lqv(VR::V1, E::_0, 0x010, GPR::R0);
         assembler.write_lqv(VR::V2, E::_0, 0x020, GPR::R0);
 
-        assemble_set_accumulator_to(&mut assembler, VR::V0, VR::V1, VR::V2, VR::V3, VR::V4, VR::V5, GPR::AT);
+        assemble_set_accumulator_to(
+            &mut assembler,
+            VR::V0,
+            VR::V1,
+            VR::V2,
+            VR::V3,
+            VR::V4,
+            VR::V5,
+            GPR::AT,
+        );
     }
 
     assembler.write_lqv(vs, E::_0, 0x050, GPR::R0);
@@ -177,36 +258,59 @@ fn run_test<FEmitter: Fn(&mut RSPAssembler, VR, VR, VR, Element), FEmulate: Fn(u
         let acc_top = SPMEM::read_vector_from_dmem(0x110);
         let acc_mid = SPMEM::read_vector_from_dmem(0x120);
         let acc_low = SPMEM::read_vector_from_dmem(0x130);
-        soft_assert_eq_vector(acc_top, INPUT_ACC_TOP, || format!("Acc[32..48] for {:?}, {:?}, {:?}, {:?} is expected to be unchanged", vd, vs, vt, e))?;
-        soft_assert_eq_vector(acc_mid, INPUT_ACC_MID, || format!("Acc[16..32] for {:?}, {:?}, {:?}, {:?} is expected to be unchanged", vd, vs, vt, e))?;
-        soft_assert_eq_vector(acc_low, vt_with_elements, || format!("Acc[0..16] for {:?}, {:?}, {:?}, {:?} is expected to be equal to input vt", vd, vs, vt, e))?;
+        soft_assert_eq_vector(acc_top, INPUT_ACC_TOP, || {
+            format!(
+                "Acc[32..48] for {:?}, {:?}, {:?}, {:?} is expected to be unchanged",
+                vd, vs, vt, e
+            )
+        })?;
+        soft_assert_eq_vector(acc_mid, INPUT_ACC_MID, || {
+            format!(
+                "Acc[16..32] for {:?}, {:?}, {:?}, {:?} is expected to be unchanged",
+                vd, vs, vt, e
+            )
+        })?;
+        soft_assert_eq_vector(acc_low, vt_with_elements, || {
+            format!(
+                "Acc[0..16] for {:?}, {:?}, {:?}, {:?} is expected to be equal to input vt",
+                vd, vs, vt, e
+            )
+        })?;
     }
 
     let mut expected = Vector::new();
     for i in 0..8 {
-        expected.set16(i, if i == vs.index() & 7 {
-            let source =
-                if apply_element_to_vt_for_result {
+        expected.set16(
+            i,
+            if i == vs.index() & 7 {
+                let source = if apply_element_to_vt_for_result {
                     vt_with_elements.get16(i)
                 } else {
                     vt_vector.get16((e as usize) & 7)
                 };
-            emulate(source)
-        } else {
-            if vd == vt {
-                vt_vector.get16(i)
+                emulate(source)
             } else {
-                vd_pre_vector.get16(i)
-            }
-        });
+                if vd == vt {
+                    vt_vector.get16(i)
+                } else {
+                    vd_pre_vector.get16(i)
+                }
+            },
+        );
     }
-    soft_assert_eq_vector(result, expected, || format!("Result (vd) for {:?}, {:?}, {:?}, {:?}", vd, vs, vt, e))?;
+    soft_assert_eq_vector(result, expected, || {
+        format!("Result (vd) for {:?}, {:?}, {:?}, {:?}", vd, vs, vt, e)
+    })?;
 
     Ok(())
 }
 
 /// Like run_test above, but this one checks two outputs. input values is in first two 16 bit values, output value is next 2
-fn run_test_result_only_16<FEmitter: Fn(&mut RSPAssembler, VR, VR, Element)>(input_value: u16, expected_value: u16, emit: FEmitter) -> Result<(), String> {
+fn run_test_result_only_16<FEmitter: Fn(&mut RSPAssembler, VR, VR, Element)>(
+    input_value: u16,
+    expected_value: u16,
+    emit: FEmitter,
+) -> Result<(), String> {
     SPMEM::write(0x40, (input_value as u32) << 16);
 
     let mut assembler = RSPAssembler::new(0);
@@ -218,13 +322,19 @@ fn run_test_result_only_16<FEmitter: Fn(&mut RSPAssembler, VR, VR, Element)>(inp
     RSP::run_and_wait(0);
 
     let result = SPMEM::read(0x100) as u16;
-    soft_assert_eq2(result, expected_value, || format!("Result for value {}", input_value))?;
+    soft_assert_eq2(result, expected_value, || {
+        format!("Result for value {}", input_value)
+    })?;
 
     Ok(())
 }
 
 /// Like run_test above, but this one checks two outputs. input values is in first two 16 bit values, output value is next 2
-fn run_test_result_only_32<FEmitter: Fn(&mut RSPAssembler, VR)>(input_value: u32, expected_value: u32, emit: FEmitter) -> Result<(), String> {
+fn run_test_result_only_32<FEmitter: Fn(&mut RSPAssembler, VR)>(
+    input_value: u32,
+    expected_value: u32,
+    emit: FEmitter,
+) -> Result<(), String> {
     SPMEM::write(0x40, input_value);
 
     let mut assembler = RSPAssembler::new(0);
@@ -236,7 +346,9 @@ fn run_test_result_only_32<FEmitter: Fn(&mut RSPAssembler, VR)>(input_value: u32
     RSP::run_and_wait(0);
 
     let result = SPMEM::read(0x104);
-    soft_assert_eq2(result, expected_value, || format!("Result for value 0x{:x}", input_value))?;
+    soft_assert_eq2(result, expected_value, || {
+        format!("Result for value 0x{:x}", input_value)
+    })?;
 
     Ok(())
 }
@@ -244,14 +356,22 @@ fn run_test_result_only_32<FEmitter: Fn(&mut RSPAssembler, VR)>(input_value: u32
 pub struct VMOV {}
 
 impl Test for VMOV {
-    fn name(&self) -> &str { "RSP VMOV" }
+    fn name(&self) -> &str {
+        "RSP VMOV"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        let vt_vector = Vector::from_u16([0x0880, 0x0990, 0x0AA0, 0x0BB0, 0x0CC0, 0x0DD0, 0x0EE0, 0x0FF0]);
+        let vt_vector = Vector::from_u16([
+            0x0880, 0x0990, 0x0AA0, 0x0BB0, 0x0CC0, 0x0DD0, 0x0EE0, 0x0FF0,
+        ]);
         for vt in [VR::V0, VR::V1] {
             for vd in [VR::V0, VR::V1] {
                 for vs in VR::V0..=VR::V31 {
@@ -264,7 +384,9 @@ impl Test for VMOV {
                             vs,
                             vt,
                             e,
-                            &|assembler: &mut RSPAssembler, vd, vt, vs, e| { assembler.write_vmov(vd, vt, vs, e); },
+                            &|assembler: &mut RSPAssembler, vd, vt, vs, e| {
+                                assembler.write_vmov(vd, vt, vs, e);
+                            },
                             |value| value,
                         )?;
                     }
@@ -279,36 +401,55 @@ impl Test for VMOV {
 pub struct VRCPRegisterCombinations {}
 
 impl Test for VRCPRegisterCombinations {
-    fn name(&self) -> &str { "RSP VRCP (register and element combinations)" }
+    fn name(&self) -> &str {
+        "RSP VRCP (register and element combinations)"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         for vt in [VR::V0, VR::V1] {
             for vd in [VR::V0, VR::V1] {
-                for vs in [VR::V0, VR::V1, VR::V2, VR::V3, VR::V15, VR::V16, VR::V17, VR::V30, VR::V31] {
+                for vs in [
+                    VR::V0,
+                    VR::V1,
+                    VR::V2,
+                    VR::V3,
+                    VR::V15,
+                    VR::V16,
+                    VR::V17,
+                    VR::V30,
+                    VR::V31,
+                ] {
                     for e in Element::range() {
                         for i in [0, 1835, 31456, 32767, 65535] {
                             run_test(
                                 false,
                                 true,
-                                Vector::from_u16(
-                                    [i,
-                                        i.wrapping_add(1),
-                                        i.wrapping_add(2),
-                                        i.wrapping_add(3),
-                                        i.wrapping_add(4),
-                                        i.wrapping_add(5),
-                                        i.wrapping_add(6),
-                                        i.wrapping_add(7)]),
+                                Vector::from_u16([
+                                    i,
+                                    i.wrapping_add(1),
+                                    i.wrapping_add(2),
+                                    i.wrapping_add(3),
+                                    i.wrapping_add(4),
+                                    i.wrapping_add(5),
+                                    i.wrapping_add(6),
+                                    i.wrapping_add(7),
+                                ]),
                                 vd,
                                 vs,
                                 vt,
                                 e,
-                                &|assembler: &mut RSPAssembler, vd, vt, vs, e| { assembler.write_vrcp(vd, vt, vs, e); },
-                                |value| { rcp(value as i16 as u32) as u16 },
+                                &|assembler: &mut RSPAssembler, vd, vt, vs, e| {
+                                    assembler.write_vrcp(vd, vt, vs, e);
+                                },
+                                |value| rcp(value as i16 as u32) as u16,
                             )?;
                         }
                     }
@@ -323,30 +464,47 @@ impl Test for VRCPRegisterCombinations {
 pub struct VRCPHRegisterCombinations {}
 
 impl Test for VRCPHRegisterCombinations {
-    fn name(&self) -> &str { "RSP VRCPH (register and element combinations)" }
+    fn name(&self) -> &str {
+        "RSP VRCPH (register and element combinations)"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         for vt in [VR::V0, VR::V1] {
             for vd in [VR::V0, VR::V1] {
-                for vs in [VR::V0, VR::V1, VR::V2, VR::V3, VR::V15, VR::V16, VR::V17, VR::V30, VR::V31] {
+                for vs in [
+                    VR::V0,
+                    VR::V1,
+                    VR::V2,
+                    VR::V3,
+                    VR::V15,
+                    VR::V16,
+                    VR::V17,
+                    VR::V30,
+                    VR::V31,
+                ] {
                     for e in Element::range() {
                         for i in [0, 1835, 31456, 32767, 65535] {
                             run_test(
                                 false,
                                 true,
-                                Vector::from_u16(
-                                    [i,
-                                        i.wrapping_add(1),
-                                        i.wrapping_add(2),
-                                        i.wrapping_add(3),
-                                        i.wrapping_add(4),
-                                        i.wrapping_add(5),
-                                        i.wrapping_add(6),
-                                        i.wrapping_add(7)]),
+                                Vector::from_u16([
+                                    i,
+                                    i.wrapping_add(1),
+                                    i.wrapping_add(2),
+                                    i.wrapping_add(3),
+                                    i.wrapping_add(4),
+                                    i.wrapping_add(5),
+                                    i.wrapping_add(6),
+                                    i.wrapping_add(7),
+                                ]),
                                 vd,
                                 vs,
                                 vt,
@@ -355,7 +513,7 @@ impl Test for VRCPHRegisterCombinations {
                                     assembler.write_vrcp(VR::V31, vt, vs, e);
                                     assembler.write_vrcph(vd, vt, vs, e);
                                 },
-                                |value| { (rcp(value as i16 as u32) >> 16) as u16 },
+                                |value| (rcp(value as i16 as u32) >> 16) as u16,
                             )?;
                         }
                     }
@@ -370,30 +528,47 @@ impl Test for VRCPHRegisterCombinations {
 pub struct VRCPLRegisterCombinations {}
 
 impl Test for VRCPLRegisterCombinations {
-    fn name(&self) -> &str { "RSP VRCPL (register and element combinations)" }
+    fn name(&self) -> &str {
+        "RSP VRCPL (register and element combinations)"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         for vt in [VR::V0, VR::V1] {
             for vd in [VR::V0, VR::V1] {
-                for vs in [VR::V0, VR::V1, VR::V2, VR::V3, VR::V15, VR::V16, VR::V17, VR::V30, VR::V31] {
+                for vs in [
+                    VR::V0,
+                    VR::V1,
+                    VR::V2,
+                    VR::V3,
+                    VR::V15,
+                    VR::V16,
+                    VR::V17,
+                    VR::V30,
+                    VR::V31,
+                ] {
                     for e in Element::range() {
                         for i in [0, 1835, 31456, 32767, 65535] {
                             run_test(
                                 false,
                                 true,
-                                Vector::from_u16(
-                                    [i,
-                                        i.wrapping_add(1),
-                                        i.wrapping_add(2),
-                                        i.wrapping_add(3),
-                                        i.wrapping_add(4),
-                                        i.wrapping_add(5),
-                                        i.wrapping_add(6),
-                                        i.wrapping_add(7)]),
+                                Vector::from_u16([
+                                    i,
+                                    i.wrapping_add(1),
+                                    i.wrapping_add(2),
+                                    i.wrapping_add(3),
+                                    i.wrapping_add(4),
+                                    i.wrapping_add(5),
+                                    i.wrapping_add(6),
+                                    i.wrapping_add(7),
+                                ]),
                                 vd,
                                 vs,
                                 vt,
@@ -402,7 +577,7 @@ impl Test for VRCPLRegisterCombinations {
                                     assembler.write_vrcp(VR::V31, vt, vs, e);
                                     assembler.write_vrcpl(vd, vt, vs, e);
                                 },
-                                |value| { rcp(value as i16 as u32) as u16 },
+                                |value| rcp(value as i16 as u32) as u16,
                             )?;
                         }
                     }
@@ -417,36 +592,55 @@ impl Test for VRCPLRegisterCombinations {
 pub struct VRSQRegisterCombinations {}
 
 impl Test for VRSQRegisterCombinations {
-    fn name(&self) -> &str { "RSP VRSQ (register and element combinations)" }
+    fn name(&self) -> &str {
+        "RSP VRSQ (register and element combinations)"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         for vt in [VR::V0, VR::V1] {
             for vd in [VR::V0, VR::V1] {
-                for vs in [VR::V0, VR::V1, VR::V2, VR::V3, VR::V15, VR::V16, VR::V17, VR::V30, VR::V31] {
+                for vs in [
+                    VR::V0,
+                    VR::V1,
+                    VR::V2,
+                    VR::V3,
+                    VR::V15,
+                    VR::V16,
+                    VR::V17,
+                    VR::V30,
+                    VR::V31,
+                ] {
                     for e in Element::range() {
                         for i in [0, 1835, 31456, 32767, 65535] {
                             run_test(
                                 false,
                                 true,
-                                Vector::from_u16(
-                                    [i,
-                                        i.wrapping_add(1),
-                                        i.wrapping_add(2),
-                                        i.wrapping_add(3),
-                                        i.wrapping_add(4),
-                                        i.wrapping_add(5),
-                                        i.wrapping_add(6),
-                                        i.wrapping_add(7)]),
+                                Vector::from_u16([
+                                    i,
+                                    i.wrapping_add(1),
+                                    i.wrapping_add(2),
+                                    i.wrapping_add(3),
+                                    i.wrapping_add(4),
+                                    i.wrapping_add(5),
+                                    i.wrapping_add(6),
+                                    i.wrapping_add(7),
+                                ]),
                                 vd,
                                 vs,
                                 vt,
                                 e,
-                                &|assembler: &mut RSPAssembler, vd, vt, vs, e| { assembler.write_vrsq(vd, vt, vs, e); },
-                                |value| { rsq(value as i16 as u32) as u16 },
+                                &|assembler: &mut RSPAssembler, vd, vt, vs, e| {
+                                    assembler.write_vrsq(vd, vt, vs, e);
+                                },
+                                |value| rsq(value as i16 as u32) as u16,
                             )?;
                         }
                     }
@@ -461,30 +655,47 @@ impl Test for VRSQRegisterCombinations {
 pub struct VRSQLRegisterCombinations {}
 
 impl Test for VRSQLRegisterCombinations {
-    fn name(&self) -> &str { "RSP VRSQL (register and element combinations)" }
+    fn name(&self) -> &str {
+        "RSP VRSQL (register and element combinations)"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         for vt in [VR::V0, VR::V1] {
             for vd in [VR::V0, VR::V1] {
-                for vs in [VR::V0, VR::V1, VR::V2, VR::V3, VR::V15, VR::V16, VR::V17, VR::V30, VR::V31] {
+                for vs in [
+                    VR::V0,
+                    VR::V1,
+                    VR::V2,
+                    VR::V3,
+                    VR::V15,
+                    VR::V16,
+                    VR::V17,
+                    VR::V30,
+                    VR::V31,
+                ] {
                     for e in Element::range() {
                         for i in [0, 1835, 31456, 32767, 65535] {
                             run_test(
                                 false,
                                 true,
-                                Vector::from_u16(
-                                    [i,
-                                        i.wrapping_add(1),
-                                        i.wrapping_add(2),
-                                        i.wrapping_add(3),
-                                        i.wrapping_add(4),
-                                        i.wrapping_add(5),
-                                        i.wrapping_add(6),
-                                        i.wrapping_add(7)]),
+                                Vector::from_u16([
+                                    i,
+                                    i.wrapping_add(1),
+                                    i.wrapping_add(2),
+                                    i.wrapping_add(3),
+                                    i.wrapping_add(4),
+                                    i.wrapping_add(5),
+                                    i.wrapping_add(6),
+                                    i.wrapping_add(7),
+                                ]),
                                 vd,
                                 vs,
                                 vt,
@@ -493,7 +704,7 @@ impl Test for VRSQLRegisterCombinations {
                                     assembler.write_vrsq(VR::V31, vt, vs, e);
                                     assembler.write_vrsql(vd, vt, vs, e);
                                 },
-                                |value| { rsq(value as i16 as u32) as u16 },
+                                |value| rsq(value as i16 as u32) as u16,
                             )?;
                         }
                     }
@@ -508,30 +719,47 @@ impl Test for VRSQLRegisterCombinations {
 pub struct VRSQHRegisterCombinations {}
 
 impl Test for VRSQHRegisterCombinations {
-    fn name(&self) -> &str { "RSP VRSQH (register and element combinations)" }
+    fn name(&self) -> &str {
+        "RSP VRSQH (register and element combinations)"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         for vt in [VR::V0, VR::V1] {
             for vd in [VR::V0, VR::V1] {
-                for vs in [VR::V0, VR::V1, VR::V2, VR::V3, VR::V15, VR::V16, VR::V17, VR::V30, VR::V31] {
+                for vs in [
+                    VR::V0,
+                    VR::V1,
+                    VR::V2,
+                    VR::V3,
+                    VR::V15,
+                    VR::V16,
+                    VR::V17,
+                    VR::V30,
+                    VR::V31,
+                ] {
                     for e in Element::range() {
                         for i in [0, 1835, 31456, 32767, 65535] {
                             run_test(
                                 false,
                                 true,
-                                Vector::from_u16(
-                                    [i,
-                                        i.wrapping_add(1),
-                                        i.wrapping_add(2),
-                                        i.wrapping_add(3),
-                                        i.wrapping_add(4),
-                                        i.wrapping_add(5),
-                                        i.wrapping_add(6),
-                                        i.wrapping_add(7)]),
+                                Vector::from_u16([
+                                    i,
+                                    i.wrapping_add(1),
+                                    i.wrapping_add(2),
+                                    i.wrapping_add(3),
+                                    i.wrapping_add(4),
+                                    i.wrapping_add(5),
+                                    i.wrapping_add(6),
+                                    i.wrapping_add(7),
+                                ]),
                                 vd,
                                 vs,
                                 vt,
@@ -540,7 +768,7 @@ impl Test for VRSQHRegisterCombinations {
                                     assembler.write_vrsq(VR::V31, vt, vs, e);
                                     assembler.write_vrsqh(vd, vt, vs, e);
                                 },
-                                |value| { (rsq(value as i16 as u32) >> 16) as u16 },
+                                |value| (rsq(value as i16 as u32) >> 16) as u16,
                             )?;
                         }
                     }
@@ -555,11 +783,17 @@ impl Test for VRSQHRegisterCombinations {
 pub struct VRCPValues {}
 
 impl Test for VRCPValues {
-    fn name(&self) -> &str { "RSP VRCP (all 16 bit values)" }
+    fn name(&self) -> &str {
+        "RSP VRCP (all 16 bit values)"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         // We'll skip testing Element-specifiers, accumulators etc as we trust that VRCPRegisterCombinations
@@ -568,7 +802,9 @@ impl Test for VRCPValues {
             run_test_result_only_16(
                 i,
                 rcp(i as i16 as u32) as u16,
-                &|assembler: &mut RSPAssembler, vd, vt, e| { assembler.write_vrcp(vd, vt, VR::V1, e); },
+                &|assembler: &mut RSPAssembler, vd, vt, e| {
+                    assembler.write_vrcp(vd, vt, VR::V1, e);
+                },
             )?;
         }
 
@@ -579,11 +815,17 @@ impl Test for VRCPValues {
 pub struct VRSQValues {}
 
 impl Test for VRSQValues {
-    fn name(&self) -> &str { "RSP VRSQ (all 16 bit values)" }
+    fn name(&self) -> &str {
+        "RSP VRSQ (all 16 bit values)"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         // We'll skip testing Element-specifiers, accumulators etc as we trust that VRSQRegisterCombinations
@@ -592,7 +834,9 @@ impl Test for VRSQValues {
             run_test_result_only_16(
                 i,
                 rsq(i as i16 as u32) as u16,
-                &|assembler: &mut RSPAssembler, vd, vt, e| { assembler.write_vrsq(vd, vt, VR::V1, e); },
+                &|assembler: &mut RSPAssembler, vd, vt, e| {
+                    assembler.write_vrsq(vd, vt, VR::V1, e);
+                },
             )?;
         }
 
@@ -603,23 +847,25 @@ impl Test for VRSQValues {
 pub struct VRCP32Bit {}
 
 impl Test for VRCP32Bit {
-    fn name(&self) -> &str { "RSP VRCPH/VRCPL (32 bit)" }
+    fn name(&self) -> &str {
+        "RSP VRCPH/VRCPL (32 bit)"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         for i in TEST_VALUES_32 {
-            run_test_result_only_32(
-                i,
-                rcp(i),
-                &|assembler: &mut RSPAssembler, reg| {
-                    assembler.write_vrcph(reg, reg, VR::V2, Element::_0);
-                    assembler.write_vrcpl(reg, reg, VR::V3, Element::_1);
-                    assembler.write_vrcph(reg, reg, VR::V2, Element::_0);
-                },
-            )?;
+            run_test_result_only_32(i, rcp(i), &|assembler: &mut RSPAssembler, reg| {
+                assembler.write_vrcph(reg, reg, VR::V2, Element::_0);
+                assembler.write_vrcpl(reg, reg, VR::V3, Element::_1);
+                assembler.write_vrcph(reg, reg, VR::V2, Element::_0);
+            })?;
         }
 
         Ok(())
@@ -629,23 +875,25 @@ impl Test for VRCP32Bit {
 pub struct VRSQ32Bit {}
 
 impl Test for VRSQ32Bit {
-    fn name(&self) -> &str { "RSP VRSQH/VRSQL (32 bit)" }
+    fn name(&self) -> &str {
+        "RSP VRSQH/VRSQL (32 bit)"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         for i in TEST_VALUES_32 {
-            run_test_result_only_32(
-                i,
-                rsq(i),
-                &|assembler: &mut RSPAssembler, reg| {
-                    assembler.write_vrsqh(reg, reg, VR::V2, Element::_0);
-                    assembler.write_vrsql(reg, reg, VR::V3, Element::_1);
-                    assembler.write_vrsqh(reg, reg, VR::V2, Element::_0);
-                },
-            )?;
+            run_test_result_only_32(i, rsq(i), &|assembler: &mut RSPAssembler, reg| {
+                assembler.write_vrsqh(reg, reg, VR::V2, Element::_0);
+                assembler.write_vrsql(reg, reg, VR::V3, Element::_1);
+                assembler.write_vrsqh(reg, reg, VR::V2, Element::_0);
+            })?;
         }
 
         Ok(())
@@ -655,15 +903,23 @@ impl Test for VRSQ32Bit {
 pub struct RCPTable {}
 
 impl Test for RCPTable {
-    fn name(&self) -> &str { "RSP RCP (verify table)" }
+    fn name(&self) -> &str {
+        "RSP RCP (verify table)"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let table = make_rcp_table();
-        soft_assert_eq2(table.len(), 512, || format!("RCP-Table is setup incorrectly"))?;
+        soft_assert_eq2(table.len(), 512, || {
+            format!("RCP-Table is setup incorrectly")
+        })?;
         for (i, &expected) in table.iter().enumerate() {
             let value = 0x1000 + (i << 3) as u16;
             SPMEM::write_vector_into_dmem(0x0, &Vector::new_with_broadcast_16(value));
@@ -693,15 +949,25 @@ impl Test for RCPTable {
 pub struct RSQTable {}
 
 impl Test for RSQTable {
-    fn name(&self) -> &str { "RSP RSQ (verify table)" }
+    fn name(&self) -> &str {
+        "RSP RSQ (verify table)"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         for (i, &expected) in RSQ_DATA.iter().enumerate() {
-            let value = (if i > 255 { 0x2000 + ((i - 256) << 5) } else { 0x1000 + (i << 4) }) as u16;
+            let value = (if i > 255 {
+                0x2000 + ((i - 256) << 5)
+            } else {
+                0x1000 + (i << 4)
+            }) as u16;
             SPMEM::write_vector_into_dmem(0x0, &Vector::new_with_broadcast_16(value));
 
             let mut assembler = RSPAssembler::new(0);
@@ -726,7 +992,10 @@ impl Test for RSQTable {
     }
 }
 
-fn test_high_uses_output<FEmit: Fn(&mut RSPAssembler)>(expected_result: u16, emit: FEmit) -> Result<(), String> {
+fn test_high_uses_output<FEmit: Fn(&mut RSPAssembler)>(
+    expected_result: u16,
+    emit: FEmit,
+) -> Result<(), String> {
     SPMEM::write_vector_into_dmem(0, &Vector::new_with_broadcast_16(0xE834));
 
     let mut assembler = RSPAssembler::new(0);
@@ -750,10 +1019,18 @@ fn test_high_uses_output<FEmit: Fn(&mut RSPAssembler)>(expected_result: u16, emi
 
     RSP::run_and_wait(0);
 
-    soft_assert_eq2((SPMEM::read(0x100) >> 16) as u16, expected_result, || format!("VRCPH should write upper value (first time)"))?;
-    soft_assert_eq2((SPMEM::read(0x110) >> 16) as u16, expected_result, || format!("VRCPH should write upper value (second time)"))?;
-    soft_assert_eq2((SPMEM::read(0x120) >> 16) as u16, expected_result, || format!("VRSQH should write upper value (first time)"))?;
-    soft_assert_eq2((SPMEM::read(0x130) >> 16) as u16, expected_result, || format!("VRSQH should write upper value (second time)"))?;
+    soft_assert_eq2((SPMEM::read(0x100) >> 16) as u16, expected_result, || {
+        format!("VRCPH should write upper value (first time)")
+    })?;
+    soft_assert_eq2((SPMEM::read(0x110) >> 16) as u16, expected_result, || {
+        format!("VRCPH should write upper value (second time)")
+    })?;
+    soft_assert_eq2((SPMEM::read(0x120) >> 16) as u16, expected_result, || {
+        format!("VRSQH should write upper value (first time)")
+    })?;
+    soft_assert_eq2((SPMEM::read(0x130) >> 16) as u16, expected_result, || {
+        format!("VRSQH should write upper value (second time)")
+    })?;
 
     Ok(())
 }
@@ -761,67 +1038,105 @@ fn test_high_uses_output<FEmit: Fn(&mut RSPAssembler)>(expected_result: u16, emi
 pub struct HighUsesOutputVRCPTest {}
 
 impl Test for HighUsesOutputVRCPTest {
-    fn name(&self) -> &str { "RSP VRCPH/VRSQH (read high VRCP) )" }
+    fn name(&self) -> &str {
+        "RSP VRCPH/VRSQH (read high VRCP) )"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        test_high_uses_output(0xfffa, |assembler| assembler.write_vrcp(VR::V1, VR::V0, VR::V1, Element::_0))
+        test_high_uses_output(0xfffa, |assembler| {
+            assembler.write_vrcp(VR::V1, VR::V0, VR::V1, Element::_0)
+        })
     }
 }
 
 pub struct HighUsesOutputVRCPLTest {}
 
 impl Test for HighUsesOutputVRCPLTest {
-    fn name(&self) -> &str { "RSP VRCPH/VRSQH (read high VRCPL) )" }
+    fn name(&self) -> &str {
+        "RSP VRCPH/VRSQH (read high VRCPL) )"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        test_high_uses_output(0xfffe, |assembler| assembler.write_vrcpl(VR::V1, VR::V0, VR::V1, Element::_0))
+        test_high_uses_output(0xfffe, |assembler| {
+            assembler.write_vrcpl(VR::V1, VR::V0, VR::V1, Element::_0)
+        })
     }
 }
 
 pub struct HighUsesOutputVRSQTest {}
 
 impl Test for HighUsesOutputVRSQTest {
-    fn name(&self) -> &str { "RSP VRCPH/VRSQH (read high VRSQ) )" }
+    fn name(&self) -> &str {
+        "RSP VRCPH/VRSQH (read high VRSQ) )"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        test_high_uses_output(0xfe5b, |assembler| assembler.write_vrsq(VR::V1, VR::V0, VR::V1, Element::_0))
+        test_high_uses_output(0xfe5b, |assembler| {
+            assembler.write_vrsq(VR::V1, VR::V0, VR::V1, Element::_0)
+        })
     }
 }
 
 pub struct HighUsesOutputVRSQLTest {}
 
 impl Test for HighUsesOutputVRSQLTest {
-    fn name(&self) -> &str { "RSP VRCPH/VRSQH (read high VRSQL) )" }
+    fn name(&self) -> &str {
+        "RSP VRCPH/VRSQH (read high VRSQL) )"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        test_high_uses_output(0xfffe, |assembler| assembler.write_vrsql(VR::V1, VR::V0, VR::V1, Element::_0))
+        test_high_uses_output(0xfffe, |assembler| {
+            assembler.write_vrsql(VR::V1, VR::V0, VR::V1, Element::_0)
+        })
     }
 }
 
 pub struct VRCPHSetsInputForVRCPL {}
 
 impl Test for VRCPHSetsInputForVRCPL {
-    fn name(&self) -> &str { "RSP VRCPH sets input for VRCPL" }
+    fn name(&self) -> &str {
+        "RSP VRCPH sets input for VRCPL"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         // There's a hidden input register. It is:
@@ -874,7 +1189,6 @@ impl Test for VRCPHSetsInputForVRCPL {
                 assembler.write_vrsql(VR::V4, VR::V0, VR::V0, Element::_0);
             }
 
-
             assembler.write_sqv(VR::V2, E::_0, 0x100, GPR::R0);
             assembler.write_sqv(VR::V3, E::_0, 0x110, GPR::R0);
             assembler.write_sqv(VR::V4, E::_0, 0x120, GPR::R0);
@@ -884,16 +1198,40 @@ impl Test for VRCPHSetsInputForVRCPL {
             RSP::run_and_wait(0);
 
             if (i & 2) != 0 {
-                soft_assert_eq2((SPMEM::read(0x100) >> 16) as u16, 0xFFFA, || format!("{} should write the hidden register for VRCPL", if (i & 1) != 0 { "VRCPH" } else { "VRSQH" }))?;
-                soft_assert_eq2((SPMEM::read(0x110) >> 16) as u16, 0x9E1B, || format!("VRCPL clears the hidden register"))?;
+                soft_assert_eq2((SPMEM::read(0x100) >> 16) as u16, 0xFFFA, || {
+                    format!(
+                        "{} should write the hidden register for VRCPL",
+                        if (i & 1) != 0 { "VRCPH" } else { "VRSQH" }
+                    )
+                })?;
+                soft_assert_eq2((SPMEM::read(0x110) >> 16) as u16, 0x9E1B, || {
+                    format!("VRCPL clears the hidden register")
+                })?;
             } else {
-                soft_assert_eq2((SPMEM::read(0x100) >> 16) as u16, 0x5BC2, || format!("{} should write the hidden register for VRSQL", if (i & 1) != 0 { "VRCPH" } else { "VRSQH" }))?;
-                soft_assert_eq2((SPMEM::read(0x110) >> 16) as u16, 0xC2FF, || format!("VRSQL clears the hidden register"))?;
+                soft_assert_eq2((SPMEM::read(0x100) >> 16) as u16, 0x5BC2, || {
+                    format!(
+                        "{} should write the hidden register for VRSQL",
+                        if (i & 1) != 0 { "VRCPH" } else { "VRSQH" }
+                    )
+                })?;
+                soft_assert_eq2((SPMEM::read(0x110) >> 16) as u16, 0xC2FF, || {
+                    format!("VRSQL clears the hidden register")
+                })?;
             }
             if (i & 16) != 0 {
-                soft_assert_eq2((SPMEM::read(0x120) >> 16) as u16, 0x9E1B, || format!("{} should clear the hidden register", if (i & 8) != 0 { "VRCP" } else { "VRSQ" }))?;
+                soft_assert_eq2((SPMEM::read(0x120) >> 16) as u16, 0x9E1B, || {
+                    format!(
+                        "{} should clear the hidden register",
+                        if (i & 8) != 0 { "VRCP" } else { "VRSQ" }
+                    )
+                })?;
             } else {
-                soft_assert_eq2((SPMEM::read(0x120) >> 16) as u16, 0xC2FF, || format!("{} should clear the hidden register", if (i & 8) != 0 { "VRCP" } else { "VRSQ" }))?;
+                soft_assert_eq2((SPMEM::read(0x120) >> 16) as u16, 0xC2FF, || {
+                    format!(
+                        "{} should clear the hidden register",
+                        if (i & 8) != 0 { "VRCP" } else { "VRSQ" }
+                    )
+                })?;
             }
         }
 
@@ -904,11 +1242,17 @@ impl Test for VRCPHSetsInputForVRCPL {
 pub struct VRCPHSetsInputForVRSQL {}
 
 impl Test for VRCPHSetsInputForVRSQL {
-    fn name(&self) -> &str { "RSP VRCPH sets input for VRSQL" }
+    fn name(&self) -> &str {
+        "RSP VRCPH sets input for VRSQL"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         // There's a hidden input register. It is:
@@ -945,9 +1289,15 @@ impl Test for VRCPHSetsInputForVRSQL {
 
         RSP::run_and_wait(0);
 
-        soft_assert_eq2((SPMEM::read(0x100) >> 16) as u16, 0xFFFA, || format!("VRCPH should write the hidden register for VRCPL"))?;
-        soft_assert_eq2((SPMEM::read(0x110) >> 16) as u16, 0x9E1B, || format!("VRCPL clears the hidden register"))?;
-        soft_assert_eq2((SPMEM::read(0x120) >> 16) as u16, 0x9E1B, || format!("VRCP should clear the hidden register"))?;
+        soft_assert_eq2((SPMEM::read(0x100) >> 16) as u16, 0xFFFA, || {
+            format!("VRCPH should write the hidden register for VRCPL")
+        })?;
+        soft_assert_eq2((SPMEM::read(0x110) >> 16) as u16, 0x9E1B, || {
+            format!("VRCPL clears the hidden register")
+        })?;
+        soft_assert_eq2((SPMEM::read(0x120) >> 16) as u16, 0x9E1B, || {
+            format!("VRCP should clear the hidden register")
+        })?;
 
         Ok(())
     }
@@ -956,11 +1306,17 @@ impl Test for VRCPHSetsInputForVRSQL {
 pub struct VRCPLHiddenRegisterFlagExists {}
 
 impl Test for VRCPLHiddenRegisterFlagExists {
-    fn name(&self) -> &str { "RSP hidden flag register" }
+    fn name(&self) -> &str {
+        "RSP hidden flag register"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         // There are two (reasonable) ways how whether the temp register is being filled could be expressed:
@@ -1001,21 +1357,25 @@ impl Test for VRCPLHiddenRegisterFlagExists {
     }
 }
 
-
-
 /// This is not a real test. It dumps the tables used by VRCP/VRSQ to screen
 /// Run via "make rcq_rsq_dump". Adjust the rsq and page variables to get the whole table
 pub struct GenerateDump {}
 
 impl Test for GenerateDump {
-    fn name(&self) -> &str { "RSP RCP/RSQ (generate dump)" }
+    fn name(&self) -> &str {
+        "RSP RCP/RSQ (generate dump)"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        let rsq = false;  // true for RSQ, false for RCP
+        let rsq = false; // true for RSQ, false for RCP
         let page = 0;
         let range = if rsq {
             match page {
@@ -1058,7 +1418,10 @@ impl Test for GenerateDump {
 
             let result = SPMEM::read_vector_from_dmem(0x100);
 
-            print!("{:x} ", (result.get32(0) >> (if rsq { 8 } else { 2 })) & !0x10000);
+            print!(
+                "{:x} ",
+                (result.get32(0) >> (if rsq { 8 } else { 2 })) & !0x10000
+            );
             counter += 1;
             if counter % 8 == 0 {
                 println!();

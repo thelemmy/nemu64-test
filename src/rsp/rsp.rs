@@ -27,8 +27,7 @@ pub const SP_STATUS_SET_SET_INTERRUPT: u32 = 0b1_0000;
 pub const SP_STATUS_SET_CLEAR_INTERRUPT_ON_BREAK: u32 = 0b1_0000_000;
 pub const SP_STATUS_SET_SET_INTERRUPT_ON_BREAK: u32 = 0b10_0000_000;
 
-pub struct RSP {
-}
+pub struct RSP {}
 
 impl RSP {
     fn set_register(reg: RegisterOffset, value: u32) {
@@ -83,9 +82,11 @@ impl RSP {
         Self::set_pc(pc as u32);
 
         // Clear status and clear interrupt just in case
-        Self::set_status(SP_STATUS_SET_CLEAR_HALT |
-            SP_STATUS_SET_CLEAR_INTERRUPT |
-            SP_STATUS_SET_CLEAR_INTERRUPT_ON_BREAK);
+        Self::set_status(
+            SP_STATUS_SET_CLEAR_HALT
+                | SP_STATUS_SET_CLEAR_INTERRUPT
+                | SP_STATUS_SET_CLEAR_INTERRUPT_ON_BREAK,
+        );
     }
 
     pub unsafe fn start_dma_sp_to_cpu(spmem: u32, to: *mut u8, length: u32) {
@@ -101,21 +102,15 @@ impl RSP {
     }
 
     pub fn wait_until_rsp_is_halted() {
-        while (Self::status() & SP_STATUS_HALT) == 0 {
-
-        }
+        while (Self::status() & SP_STATUS_HALT) == 0 {}
     }
 
     pub fn wait_until_rsp_is_halted_and_dma_completed() {
-        while (Self::status() & (SP_STATUS_DMA_BUSY | SP_STATUS_HALT)) != SP_STATUS_HALT {
-
-        }
+        while (Self::status() & (SP_STATUS_DMA_BUSY | SP_STATUS_HALT)) != SP_STATUS_HALT {}
     }
 
     pub fn wait_until_dma_completed() {
-        while (Self::status() & SP_STATUS_DMA_BUSY) != 0 {
-
-        }
+        while (Self::status() & SP_STATUS_DMA_BUSY) != 0 {}
     }
 
     pub fn run_and_wait(pc: usize) {
@@ -181,5 +176,4 @@ impl RSP {
     pub fn semaphore() -> u32 {
         Self::get_register(RegisterOffset::Semaphore)
     }
-
 }

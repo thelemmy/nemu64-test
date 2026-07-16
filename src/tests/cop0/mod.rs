@@ -18,25 +18,31 @@ use crate::tests::{Level, Test};
 pub struct IndexMasking;
 
 impl Test for IndexMasking {
-    fn name(&self) -> &str { "Index (masking)" }
+    fn name(&self) -> &str {
+        "Index (masking)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let previous = cop0::index();
-        
+
         unsafe { cop0::set_index(0xFFFFFFFF) }
         let readback = cop0::index();
         soft_assert_eq(readback, 0x8000003F, "Index written with 0xFFFFFFFF")?;
-        
+
         unsafe { cop0::set_index(0x00000000) }
         let readback = cop0::index();
         soft_assert_eq(readback, 0x00000000, "Index written with 0x00000000")?; // verifies bit 31 is mutable
-        
+
         unsafe { cop0::set_index(previous) }
-        
+
         Ok(())
     }
 }

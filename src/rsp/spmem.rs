@@ -14,7 +14,10 @@ impl SPMEM {
     pub fn write_vector16_into_dmem(addr: usize, vec: &[u16; 8]) {
         assert!((addr & 3) == 0);
         for i in 0..4 {
-            Self::write((addr + (i << 2)) & 0xFFC, ((vec[i << 1] as u32) << 16) | (vec[(i << 1) + 1] as u32));
+            Self::write(
+                (addr + (i << 2)) & 0xFFC,
+                ((vec[i << 1] as u32) << 16) | (vec[(i << 1) + 1] as u32),
+            );
         }
     }
 
@@ -22,10 +25,13 @@ impl SPMEM {
         assert!((addr & 3) == 0);
         assert!((COUNT & 3) == 0);
         for i in 0..COUNT >> 2 {
-            Self::write((addr + (i << 2)) & 0xFFC, ((vec[i << 2] as u32) << 24) |
-                ((vec[(i << 2) + 1] as u32) << 16) |
-                ((vec[(i << 2) + 2] as u32) << 8) |
-                (vec[(i << 2) + 3] as u32));
+            Self::write(
+                (addr + (i << 2)) & 0xFFC,
+                ((vec[i << 2] as u32) << 24)
+                    | ((vec[(i << 2) + 1] as u32) << 16)
+                    | ((vec[(i << 2) + 2] as u32) << 8)
+                    | (vec[(i << 2) + 3] as u32),
+            );
         }
     }
 
@@ -39,9 +45,7 @@ impl SPMEM {
 
     pub fn read(addr: usize) -> u32 {
         let spmem = MemoryMap::uncached_spmem_address::<u32>(addr);
-        unsafe {
-            spmem.read_volatile()
-        }
+        unsafe { spmem.read_volatile() }
     }
 
     pub fn read_vector16_from_dmem(addr: usize) -> [u16; 8] {
@@ -86,7 +90,7 @@ impl SPMEM {
             Self::read(addr & 0xFFC),
             Self::read((addr + 4) & 0xFFC),
             Self::read((addr + 8) & 0xFFC),
-            Self::read((addr + 12) & 0xFFC)
+            Self::read((addr + 12) & 0xFFC),
         )
     }
 }

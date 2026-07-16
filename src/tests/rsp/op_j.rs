@@ -4,19 +4,25 @@ use alloc::vec::Vec;
 use core::any::Any;
 
 use crate::rsp::rsp::RSP;
-use crate::rsp::rsp_assembler::{GPR, RSPAssembler};
+use crate::rsp::rsp_assembler::{RSPAssembler, GPR};
 use crate::rsp::spmem::SPMEM;
-use crate::tests::{Level, Test};
 use crate::tests::soft_asserts::soft_assert_eq;
+use crate::tests::{Level, Test};
 
 pub struct J {}
 
 impl Test for J {
-    fn name(&self) -> &str { "RSP J" }
+    fn name(&self) -> &str {
+        "RSP J"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         // Assemble RSP program at end of DMEM
@@ -49,8 +55,16 @@ impl Test for J {
 
         RSP::run_and_wait(0xFF4);
 
-        soft_assert_eq(SPMEM::read(0x0), 11, "J is expected to handle delay slot in 0x000 and jump to 0x008, skipping 0x004")?;
-        soft_assert_eq(SPMEM::read(0x4), 0, "J is not expected to change the RA register")?;
+        soft_assert_eq(
+            SPMEM::read(0x0),
+            11,
+            "J is expected to handle delay slot in 0x000 and jump to 0x008, skipping 0x004",
+        )?;
+        soft_assert_eq(
+            SPMEM::read(0x4),
+            0,
+            "J is not expected to change the RA register",
+        )?;
 
         Ok(())
     }

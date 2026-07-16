@@ -50,7 +50,11 @@ static VIDEO: Spinlock<Video> = Spinlock::new(Video::new());
 unsafe extern "C" fn entrypoint() -> ! {
     // Tests require these to be 0. Can't mark as clobbered as they are reserved as far as the compiler is concerned
     unsafe {
-        asm!("move $26, $zero", "move $27, $zero", options(nomem, nostack));
+        asm!(
+            "move $26, $zero",
+            "move $27, $zero",
+            options(nomem, nostack)
+        );
     }
 
     // IPL3 (the bootloader) write the memory size to DMEM. We can read it from there

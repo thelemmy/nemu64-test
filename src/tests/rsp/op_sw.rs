@@ -4,10 +4,10 @@ use alloc::vec::Vec;
 use core::any::Any;
 
 use crate::rsp::rsp::RSP;
-use crate::rsp::rsp_assembler::{GPR, RSPAssembler};
+use crate::rsp::rsp_assembler::{RSPAssembler, GPR};
 use crate::rsp::spmem::SPMEM;
-use crate::tests::{Level, Test};
 use crate::tests::soft_asserts::soft_assert_eq;
+use crate::tests::{Level, Test};
 
 // Various tests using SW. Lessons learned:
 // - SW works to any memory location, including unaligned.
@@ -16,11 +16,17 @@ use crate::tests::soft_asserts::soft_assert_eq;
 pub struct SWAligned {}
 
 impl Test for SWAligned {
-    fn name(&self) -> &str { "RSP SW (aligned)" }
+    fn name(&self) -> &str {
+        "RSP SW (aligned)"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         // Assemble RSP program
@@ -70,7 +76,6 @@ impl Test for SWAligned {
         soft_assert_eq(SPMEM::read(0x14), 0x22110011, "SW to DMEM[0x14]")?;
         soft_assert_eq(SPMEM::read(0xFFC), 0x94678213, "SW to DMEM[0xFFC]")?;
 
-
         Ok(())
     }
 }
@@ -78,11 +83,17 @@ impl Test for SWAligned {
 pub struct SWUnaligned {}
 
 impl Test for SWUnaligned {
-    fn name(&self) -> &str { "RSP SW (unaligned)" }
+    fn name(&self) -> &str {
+        "RSP SW (unaligned)"
+    }
 
-    fn level(&self) -> Level { Level::BasicFunctionality }
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         // Assemble RSP program
@@ -125,8 +136,16 @@ impl Test for SWUnaligned {
         soft_assert_eq(SPMEM::read(0x14), 0xBADDEC12, "SW to DMEM[0x17], lower u32")?;
         soft_assert_eq(SPMEM::read(0x18), 0x345678AF, "SW to DMEM[0x17], upper u32")?;
 
-        soft_assert_eq(SPMEM::read(0xFFC), 0xBADD9182, "SW to DMEM[0xFFE], lower u32")?;
-        soft_assert_eq(SPMEM::read(0x00), 0x7364ECAF, "SW to DMEM[0xFFE], upper u32 (wrapped around to start of DMEM)")?;
+        soft_assert_eq(
+            SPMEM::read(0xFFC),
+            0xBADD9182,
+            "SW to DMEM[0xFFE], lower u32",
+        )?;
+        soft_assert_eq(
+            SPMEM::read(0x00),
+            0x7364ECAF,
+            "SW to DMEM[0xFFE], upper u32 (wrapped around to start of DMEM)",
+        )?;
 
         Ok(())
     }

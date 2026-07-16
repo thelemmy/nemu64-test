@@ -14,15 +14,11 @@ pub union Vector {
 
 impl Vector {
     pub const fn new() -> Self {
-        Self {
-            as_u64: [0, 0],
-        }
+        Self { as_u64: [0, 0] }
     }
 
     pub const fn new_with_broadcast_16(value: u16) -> Self {
-        Self {
-            as_u16: [value; 8],
-        }
+        Self { as_u16: [value; 8] }
     }
 
     pub const fn new_with_u32_elements(data0: u32, data1: u32, data2: u32, data3: u32) -> Self {
@@ -32,15 +28,11 @@ impl Vector {
     }
 
     pub const fn from_u16(data: [u16; 8]) -> Self {
-        Self {
-            as_u16: data,
-        }
+        Self { as_u16: data }
     }
 
     pub const fn from_u8(data: [u8; 16]) -> Self {
-        Self {
-            as_u8: data,
-        }
+        Self { as_u8: data }
     }
 
     pub fn copy_with_broadcast_16(&self, index: usize) -> Vector {
@@ -61,20 +53,28 @@ impl Vector {
         }
     }
 
-    pub fn get32(&self, index: usize) -> u32 { unsafe { self.as_u32[index] } }
+    pub fn get32(&self, index: usize) -> u32 {
+        unsafe { self.as_u32[index] }
+    }
 
-    pub fn get16(&self, index: usize) -> u16 { unsafe { self.as_u16[index] } }
-    pub fn set16(&mut self, index: usize, value: u16) { unsafe { self.as_u16[index] = value } }
+    pub fn get16(&self, index: usize) -> u16 {
+        unsafe { self.as_u16[index] }
+    }
+    pub fn set16(&mut self, index: usize, value: u16) {
+        unsafe { self.as_u16[index] = value }
+    }
 
-    pub fn get8(&self, index: usize) -> u8 { unsafe { self.as_u8[index] } }
-    pub fn set8(&mut self, index: usize, value: u8) { unsafe { self.as_u8[index] = value } }
+    pub fn get8(&self, index: usize) -> u8 {
+        unsafe { self.as_u8[index] }
+    }
+    pub fn set8(&mut self, index: usize, value: u8) {
+        unsafe { self.as_u8[index] = value }
+    }
 }
 
 impl Debug for Vector {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
-        f.debug_list()
-            .entries(unsafe { &self.as_u16 })
-            .finish()
+        f.debug_list().entries(unsafe { &self.as_u16 }).finish()
     }
 }
 
@@ -87,6 +87,7 @@ impl PartialEq for Vector {
 impl Eq for Vector {}
 
 impl Default for Vector {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
-

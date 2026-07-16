@@ -76,7 +76,14 @@ fn dma_test<const N: usize>(
     }
 
     let source_ptr = unsafe { (source_data_uncached as *mut u8).add(source_index) };
-    dma_test_with_source::<N>(source_ptr, spmem_index, length, expected_start_offset, expected_sp_address_after_dma, expected)
+    dma_test_with_source::<N>(
+        source_ptr,
+        spmem_index,
+        length,
+        expected_start_offset,
+        expected_sp_address_after_dma,
+        expected,
+    )
 }
 
 pub struct SPDMA0_8_7 {}
@@ -489,15 +496,20 @@ impl Test for SPDMAIntoIMEMWithOverflow {
     }
 }
 
-
 pub struct SPDMAFromDMEMWithOverflow {}
 
 impl Test for SPDMAFromDMEMWithOverflow {
-    fn name(&self) -> &str { "spmem: DMA RDRAM <- DMEM (overflow)" }
+    fn name(&self) -> &str {
+        "spmem: DMA RDRAM <- DMEM (overflow)"
+    }
 
-    fn level(&self) -> Level { Level::Weird }
+    fn level(&self) -> Level {
+        Level::Weird
+    }
 
-    fn values(&self) -> Vec<Box<dyn Any>> { Vec::new() }
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         SPMEM::write(0x0000, 0x01234567);
@@ -516,13 +528,21 @@ impl Test for SPDMAFromDMEMWithOverflow {
         unsafe {
             RSP::start_dma_sp_to_cpu(0x0FF8, source_ptr, 16);
             RSP::wait_until_dma_completed();
-            soft_assert_eq2(*source_data_uncached, [0xFEDCBA98, 0x76543210, 0x01234567, 0x89ABCDEF], || "RDRAM data after DMA overflow from DMEM".to_string())?;
+            soft_assert_eq2(
+                *source_data_uncached,
+                [0xFEDCBA98, 0x76543210, 0x01234567, 0x89ABCDEF],
+                || "RDRAM data after DMA overflow from DMEM".to_string(),
+            )?;
         }
 
         unsafe {
             RSP::start_dma_sp_to_cpu(0x1FF8, source_ptr, 16);
             RSP::wait_until_dma_completed();
-            soft_assert_eq2(*source_data_uncached, [0x99AABBCC, 0xDDEEFF00, 0x11223344, 0x55667788], || "RDRAM data after DMA overflow from IMEM".to_string())?;
+            soft_assert_eq2(
+                *source_data_uncached,
+                [0x99AABBCC, 0xDDEEFF00, 0x11223344, 0x55667788],
+                || "RDRAM data after DMA overflow from IMEM".to_string(),
+            )?;
         }
 
         Ok(())
