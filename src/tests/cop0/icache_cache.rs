@@ -43,7 +43,7 @@ impl Test for IcacheStoreTagThenLoadTag {
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         run_icache_test(|| {
-            let addr = 0x8000_1000usize;
+            let addr = 0xFFFF_FFFF_8000_1000usize;
             let phys = 0x0000_1000u32;
             let want = icache_tag_lo(true, phys);
             unsafe {
@@ -77,7 +77,7 @@ impl Test for IcacheIndexInvalidateClearsValidInTagLo {
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         run_icache_test(|| {
-            let addr = 0x8000_2000usize;
+            let addr = 0xFFFF_FFFF_8000_2000usize;
             let phys = 0x0000_2000u32;
             let before_store = icache_tag_lo(true, phys);
             unsafe {
@@ -125,7 +125,7 @@ impl Test for IcacheHitInvalidateClearsValidWhenLineHits {
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         run_icache_test(|| {
-            let addr = 0x8000_3000usize;
+            let addr = 0xFFFF_FFFF_8000_3000usize;
             let phys = 0x0000_3000u32;
             unsafe {
                 cop0::cache::<ICACHE_INDEX_INVALIDATE, 0>(addr);

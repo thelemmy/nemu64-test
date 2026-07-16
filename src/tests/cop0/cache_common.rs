@@ -20,7 +20,7 @@ const DCACHE_BYTES: usize = 8 * 1024;
 const DCACHE_LINE_BYTES: usize = 16;
 
 pub fn icache_invalidate_all() {
-    let base = 0x8000_0000usize;
+    let base = 0xFFFF_FFFF_8000_0000usize;
     for i in (0..ICACHE_BYTES).step_by(ICACHE_LINE_BYTES) {
         unsafe {
             cop0::cache::<ICACHE_INDEX_INVALIDATE, 0>(base + i);
@@ -29,7 +29,7 @@ pub fn icache_invalidate_all() {
 }
 
 pub fn dcache_invalidate_all() {
-    let base = 0x8000_0000usize;
+    let base = 0xFFFF_FFFF_8000_0000usize;
     for i in (0..DCACHE_BYTES).step_by(DCACHE_LINE_BYTES) {
         unsafe {
             cop0::cache::<DCACHE_INDEX_WRITEBACK_INVALIDATE, 0>(base + i);
