@@ -91,3 +91,26 @@ fn main() {
         .render(v.framebuffers().backbuffer().lock().as_mut().unwrap());
     v.swap_buffers();
 }
+
+/// Renders the framebuffer console to the screen. Best-effort and non-blocking (uses
+/// `try_lock`), so it is safe to call from the panic handler and from the hot test loop
+/// without risking a deadlock. This is what keeps a hang or panic from showing a black
+/// screen: the last state (including the currently running test) stays visible.
+pub fn render_console() {
+    let Some(video) = VIDEO.try_lock() else {
+        return;
+    };
+    let Some(console) = FramebufferConsole::instance().try_lock() else {
+        return;
+    };
+    {
+        let Some(mut backbuffer) = video.framebuffers().backbuffer().try_lock() else {
+            return;
+        };
+        let Some(image) = backbuffer.as_mut() else {
+            return;
+        };
+        console.render(image);
+    }
+    video.swap_buffers();
+}

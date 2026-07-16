@@ -704,6 +704,16 @@ pub fn run() {
             text_out(test.name());
             text_out("...\n");
 
+            // Show the currently running test on screen before we run it, so a hang or panic
+            // leaves its name visible instead of a black screen.
+            FramebufferConsole::instance().lock().set_header(&format!(
+                "Running [{}/{}]: {}",
+                index + 1,
+                tests.len(),
+                test.name()
+            ));
+            crate::render_console();
+
             let mut time = 0u32;
             if values.len() == 0 {
                 test_value(
@@ -728,6 +738,9 @@ pub fn run() {
         }
     }
     let counter_after = count();
+
+    // Clear the live status line so the final summary screen doesn't show a stale "Running..."
+    FramebufferConsole::instance().lock().set_header("");
 
     println!();
     let succeeded_total: u32 = succeeded.iter().sum();

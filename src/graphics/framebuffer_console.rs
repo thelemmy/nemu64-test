@@ -14,6 +14,7 @@ static INSTANCE: Spinlock<FramebufferConsole> = Spinlock::new(FramebufferConsole
 pub struct FramebufferConsole {
     contents: String,
     is_full: bool,
+    header: String,
 }
 
 impl<'a> FramebufferConsole {
@@ -25,7 +26,16 @@ impl<'a> FramebufferConsole {
         Self {
             contents: String::new(),
             is_full: false,
+            header: String::new(),
         }
+    }
+
+    /// Sets a single status line shown above the console contents (e.g. the currently running
+    /// test). Rendered live during the run so a hang or panic leaves the culprit on screen
+    /// instead of a black screen.
+    pub fn set_header(&mut self, s: &str) {
+        self.header.clear();
+        self.header.push_str(s);
     }
 
     pub fn instance() -> &'static Spinlock<FramebufferConsole> {
@@ -51,6 +61,11 @@ impl<'a> FramebufferConsole {
         let mut cursor = Cursor::new_with_font(&font, PixelType::BLACK);
         cursor.x = 16;
         cursor.y = 16;
+        for line in self.header.lines() {
+            cursor.x = 16;
+            cursor.draw_text(buffer, line);
+            cursor.draw_text(buffer, "\n");
+        }
         for line in self.contents.lines() {
             cursor.x = 16;
             cursor.draw_text(buffer, line);

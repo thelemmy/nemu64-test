@@ -31,5 +31,10 @@ macro_rules! panic_println {
 fn panic(_info: &PanicInfo<'_>) -> ! {
     panic_println!("{}", _info);
 
+    // Best-effort: render the console (accumulated results + the test that was running) to the
+    // screen so a panic shows something instead of a black screen. Non-blocking, so a held lock
+    // just means we fall through to the loop below. Full panic details are on ISViewer.
+    crate::render_console();
+
     loop {}
 }
