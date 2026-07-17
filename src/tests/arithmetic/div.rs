@@ -9,8 +9,8 @@ use crate::tests::soft_asserts::soft_assert_eq;
 use crate::tests::{Level, Test};
 
 fn test_div(dividend: u64, divisor: u64) -> (u64, u64) {
-    let mut quotient: u64 = 0;
-    let mut remainder: u64 = 0;
+    let quotient: u64;
+    let remainder: u64;
     unsafe {
         asm!("
             .set noat
@@ -18,24 +18,20 @@ fn test_div(dividend: u64, divisor: u64) -> (u64, u64) {
 
             MFLO {save_lo}
             MFHI {save_hi}
-            LD $2, 0($4)
-            LD $3, 0($5)
             DIV $0, $2, $3
             MFLO $2
             MFHI $3
-            SD $2, 0($6)
-            SD $3, 0($7)
             MTLO {save_lo}
             MTHI {save_hi}
 
-        ", out("$2") _, out("$3") _, in("$4") &dividend, in("$5") &divisor, in("$6") &mut quotient, in("$7") &mut remainder, save_lo = out(reg) _, save_hi = out(reg) _)
+        ", inout("$2") dividend => quotient, inout("$3") divisor => remainder, save_lo = out(reg) _, save_hi = out(reg) _)
     }
     (quotient, remainder)
 }
 
 fn test_divu(dividend: u64, divisor: u64) -> (u64, u64) {
-    let mut quotient: u64 = 0;
-    let mut remainder: u64 = 0;
+    let quotient: u64;
+    let remainder: u64;
     unsafe {
         asm!("
             .set noat
@@ -43,24 +39,20 @@ fn test_divu(dividend: u64, divisor: u64) -> (u64, u64) {
 
             MFLO {save_lo}
             MFHI {save_hi}
-            LD $2, 0($4)
-            LD $3, 0($5)
             DIVU $0, $2, $3
             MFLO $2
             MFHI $3
-            SD $2, 0($6)
-            SD $3, 0($7)
             MTLO {save_lo}
             MTHI {save_hi}
 
-        ", out("$2") _, out("$3") _, in("$4") &dividend, in("$5") &divisor, in("$6") &mut quotient, in("$7") &mut remainder, save_lo = out(reg) _, save_hi = out(reg) _)
+        ", inout("$2") dividend => quotient, inout("$3") divisor => remainder, save_lo = out(reg) _, save_hi = out(reg) _)
     }
     (quotient, remainder)
 }
 
 fn test_ddiv(dividend: u64, divisor: u64) -> (u64, u64) {
-    let mut quotient: u64 = 0;
-    let mut remainder: u64 = 0;
+    let quotient: u64;
+    let remainder: u64;
     unsafe {
         asm!("
             .set noat
@@ -68,24 +60,20 @@ fn test_ddiv(dividend: u64, divisor: u64) -> (u64, u64) {
 
             MFLO {save_lo}
             MFHI {save_hi}
-            LD $2, 0($4)
-            LD $3, 0($5)
             DDIV $0, $2, $3
             MFLO $2
             MFHI $3
-            SD $2, 0($6)
-            SD $3, 0($7)
             MTLO {save_lo}
             MTHI {save_hi}
 
-        ", out("$2") _, out("$3") _, in("$4") &dividend, in("$5") &divisor, in("$6") &mut quotient, in("$7") &mut remainder, save_lo = out(reg) _, save_hi = out(reg) _)
+        ", inout("$2") dividend => quotient, inout("$3") divisor => remainder, save_lo = out(reg) _, save_hi = out(reg) _)
     }
     (quotient, remainder)
 }
 
 fn test_ddivu(dividend: u64, divisor: u64) -> (u64, u64) {
-    let mut quotient: u64 = 0;
-    let mut remainder: u64 = 0;
+    let quotient: u64;
+    let remainder: u64;
     unsafe {
         asm!("
             .set noat
@@ -93,17 +81,13 @@ fn test_ddivu(dividend: u64, divisor: u64) -> (u64, u64) {
 
             MFLO {save_lo}
             MFHI {save_hi}
-            LD $2, 0($4)
-            LD $3, 0($5)
             DDIVU $0, $2, $3
             MFLO $2
             MFHI $3
-            SD $2, 0($6)
-            SD $3, 0($7)
             MTLO {save_lo}
             MTHI {save_hi}
 
-        ", out("$2") _, out("$3") _, in("$4") &dividend, in("$5") &divisor, in("$6") &mut quotient, in("$7") &mut remainder, save_lo = out(reg) _, save_hi = out(reg) _)
+        ", inout("$2") dividend => quotient, inout("$3") divisor => remainder, save_lo = out(reg) _, save_hi = out(reg) _)
     }
     (quotient, remainder)
 }

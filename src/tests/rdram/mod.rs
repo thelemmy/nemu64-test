@@ -56,13 +56,10 @@ impl Test for LWL {
             unsafe {
                 asm!("
                     .set noat
-                    LD {scratch}, 0 ({result})
-                    LWL {scratch}, 0 ({address})
-                    SD {scratch}, 0 ({result})
+                    LWL {result}, 0 ({address})
                 ",
                 address = in(reg) address + i,
-                scratch = out(reg) _,
-                result = in(reg) &mut result
+                result = inout(reg) result,
                 )
             }
 
@@ -113,13 +110,10 @@ impl Test for LWR {
             unsafe {
                 asm!("
                     .set noat
-                    LD {scratch}, 0 ({result})
-                    LWR {scratch}, 0 ({address})
-                    SD {scratch}, 0 ({result})
+                    LWR {result}, 0 ({address})
                 ",
                 address = in(reg) address + i,
-                scratch = out(reg) _,
-                result = in(reg) &mut result
+                result = inout(reg) result,
                 )
             }
 
@@ -171,13 +165,10 @@ impl Test for LDL {
             unsafe {
                 asm!("
                     .set noat
-                    LD {scratch}, 0 ({result})
-                    LDL {scratch}, 0 ({address})
-                    SD {scratch}, 0 ({result})
+                    LDL {result}, 0 ({address})
                 ",
                 address = in(reg) address + i,
-                scratch = out(reg) _,
-                result = in(reg) &mut result
+                result = inout(reg) result,
                 )
             }
 
@@ -228,13 +219,10 @@ impl Test for LDR {
             unsafe {
                 asm!("
                     .set noat
-                    LD {scratch}, 0 ({result})
-                    LDR {scratch}, 0 ({address})
-                    SD {scratch}, 0 ({result})
+                    LDR {result}, 0 ({address})
                 ",
                 address = in(reg) address + i,
-                scratch = out(reg) _,
-                result = in(reg) &mut result
+                result = inout(reg) result,
                 )
             }
 
@@ -270,8 +258,6 @@ fn test_unaligned_store<const INSTRUCTION: u32>(
         unsafe {
             asm!("
                 .set noat
-                LD $3, 0 ({value_and_result})
-
                 // Load next cache line
                 LD $0, 8 * 1024 ({address_aligned_cached})
 
@@ -282,12 +268,10 @@ fn test_unaligned_store<const INSTRUCTION: u32>(
                 LD $0, 8 * 1024 ({address_aligned_cached})
 
                 LD $3, 0 ({address_aligned_cached})
-                SD $3, 0 ({value_and_result})
             ",
             address_aligned_cached = in(reg) cached_address,
-            value_and_result = in(reg) &mut value_and_result,
             INSTRUCTION = const INSTRUCTION,
-            out("$3") _,
+            inout("$3") value_and_result,
             in("$4") address + i,
             )
         }

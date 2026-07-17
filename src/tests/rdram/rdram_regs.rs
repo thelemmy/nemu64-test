@@ -27,42 +27,29 @@ impl Test for Read00 {
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
         let cached = value.downcast_ref::<bool>().unwrap();
         let address = MemoryMap::addr32_to_usize(if *cached { 0x83F00000 } else { 0xA3F00000 });
-        let mut result1: u64 = 0xFEDCBA98_76543210;
-        let mut result2: u64 = 0xFEDCBA98_76543210;
-        let mut result3: u64 = 0xFEDCBA98_76543210;
-        let mut result4: u64 = 0xFEDCBA98_76543210;
-        let mut result5: u64 = 0xFEDCBA98_76543210;
+        let result1: u64;
+        let result2: u64;
+        let result3: u64;
+        let result4: u64;
+        let result5: u64;
         let mut result6: u64 = 0xFEDCBA98_76543210;
         unsafe {
             asm!("
                 .set noat
-                LD {scratch}, 0 ({address})
-                SD {scratch}, 0 ({result1})
-
-                LW {scratch}, 0 ({address})
-                SD {scratch}, 0 ({result2})
-
-                LH {scratch}, 0 ({address})
-                SD {scratch}, 0 ({result3})
-
-                LB {scratch}, 0 ({address})
-                SD {scratch}, 0 ({result4})
-
-                LB {scratch}, 1 ({address})
-                SD {scratch}, 0 ({result5})
-
-                LD {scratch}, 0 ({result6})
-                LWL {scratch}, 1 ({address})
-                SD {scratch}, 0 ({result6})
+                LD {result1}, 0 ({address})
+                LW {result2}, 0 ({address})
+                LH {result3}, 0 ({address})
+                LB {result4}, 0 ({address})
+                LB {result5}, 1 ({address})
+                LWL {result6}, 1 ({address})
             ",
             address = in(reg) address,
-            scratch = out(reg) _,
-            result1 = in(reg) &mut result1,
-            result2 = in(reg) &mut result2,
-            result3 = in(reg) &mut result3,
-            result4 = in(reg) &mut result4,
-            result5 = in(reg) &mut result5,
-            result6 = in(reg) &mut result6,
+            result1 = out(reg) result1,
+            result2 = out(reg) result2,
+            result3 = out(reg) result3,
+            result4 = out(reg) result4,
+            result5 = out(reg) result5,
+            result6 = inout(reg) result6,
             )
         }
 

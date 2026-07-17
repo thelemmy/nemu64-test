@@ -57,10 +57,9 @@ impl Test for SB {
                     .set noat
                     .set noreorder
                     .balign 32
-                    LD {tmp}, 0({value})
                     SW {len}, 0({mi})
-                    SB {tmp}, 0({ptr})
-                ", tmp = out(reg) _, len = in(reg) 0x100 | (length - 1), mi = in(reg) mi_regs, ptr = in(reg) ptr, value = in(reg) &value)
+                    SB {value}, 0({ptr})
+                ", len = in(reg) 0x100 | (length - 1), mi = in(reg) mi_regs, ptr = in(reg) ptr, value = in(reg) value)
             }
             let unalignstart = start & 3;
             let value = (value as u32) << (24 - (unalignstart * 8));
@@ -120,10 +119,9 @@ impl Test for SH {
                     .set noat
                     .set noreorder
                     .balign 32
-                    LD {tmp}, 0({value})
                     SW {len}, 0({mi})
-                    SH {tmp}, 0({ptr})
-                ", tmp = out(reg) _, len = in(reg) 0x100 | (length - 1), mi = in(reg) mi_regs, ptr = in(reg) ptr, value = in(reg) &value)
+                    SH {value}, 0({ptr})
+                ", len = in(reg) 0x100 | (length - 1), mi = in(reg) mi_regs, ptr = in(reg) ptr, value = in(reg) value)
             }
             let unalignstart = start & 3;
             let value = (value as u32) << (16 - (unalignstart * 8));
@@ -182,10 +180,9 @@ impl Test for SW {
                     .set noat
                     .set noreorder
                     .balign 32
-                    LD {tmp}, 0({value})
                     SW {len}, 0({mi})
-                    SW {tmp}, 0({ptr})
-                ", tmp = out(reg) _, len = in(reg) 0x100 | (length - 1), mi = in(reg) mi_regs, ptr = in(reg) ptr, value = in(reg) &value)
+                    SW {value}, 0({ptr})
+                ", len = in(reg) 0x100 | (length - 1), mi = in(reg) mi_regs, ptr = in(reg) ptr, value = in(reg) value)
             }
             let value = value as u32;
             let end = start + length.saturating_sub(start & 7);
@@ -239,10 +236,9 @@ impl Test for SD {
                     .set noat
                     .set noreorder
                     .balign 32
-                    LD {tmp}, 0({value})
                     SW {len}, 0({mi})
-                    SD {tmp}, 0({ptr})
-                ", tmp = out(reg) _, len = in(reg) 0x100 | (length - 1), mi = in(reg) mi_regs, ptr = in(reg) ptr, value = in(reg) &value)
+                    SD {value}, 0({ptr})
+                ", len = in(reg) 0x100 | (length - 1), mi = in(reg) mi_regs, ptr = in(reg) ptr, value = in(reg) value)
             }
             let unalign = length & 7;
             let end = start + length;

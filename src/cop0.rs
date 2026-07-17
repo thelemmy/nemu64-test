@@ -827,12 +827,10 @@ pub unsafe fn cache64<const OP: u8, const OFFSET: i16>(location: u64) {
     unsafe {
         asm!("
             .set noat
-            ld {temp}, 0 ({location})
-            cache {op}, {offset} ({temp})",
-        location = in(reg) &location,
+            cache {op}, {offset} ({location})",
+        location = in(reg) location,
         offset = const OFFSET,
-        op = const OP,
-        temp = out(reg) _)
+        op = const OP)
     }
 }
 

@@ -143,13 +143,10 @@ impl Test for LWL {
             unsafe {
                 asm!("
                     .set noat
-                    LD {scratch}, 0 ({result})
-                    LWL {scratch}, 0 ({address})
-                    SD {scratch}, 0 ({result})
+                    LWL {result}, 0 ({address})
                 ",
                 address = in(reg) MemoryMap::uncached_cart_address(&DATA[0] as *const u64 as *const u32) as usize + i,
-                scratch = out(reg) _,
-                result = in(reg) &mut result
+                result = inout(reg) result,
                 )
             }
 
