@@ -17,6 +17,9 @@ jobs:
       - name: Install toolchain from rust-toolchain.toml
         uses: mkroening/rust-toolchain-toml@v1.3.5
 
+      - name: Check formatting
+        run: cargo fmt --all --check
+
       - name: Install stable toolchain for nust64
         run: rustup toolchain install stable --profile minimal
 
@@ -25,6 +28,10 @@ jobs:
 
       - name: Build ROM
         run: cargo run --release
+        env:
+          # Fail the build on any warning. RUSTFLAGS overrides the config's target rustflags, so the
+          # linker-plugin-lto flag from .cargo/config.toml has to be repeated here.
+          RUSTFLAGS: "-Clinker-plugin-lto -D warnings"
 
       - name: Upload ROM artifact
         uses: actions/upload-artifact@v6
