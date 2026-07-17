@@ -298,12 +298,12 @@ impl Test for ShiftsIntoR0 {
             asm!("
                 LUI $2, 0x1234
                 SLL $0, $2, 1
-                SD $0, 0($3)
+                DADDU {z0}, $0, $0
                 SRL $0, $2, 1
-                SD $0, 0($4)
+                DADDU {z1}, $0, $0
                 SRA $0, $2, 1
-                SD $0, 0($5)
-            ", out("$2") _, in("$3") &mut sll, in("$4") &mut srl, in("$5") &mut sra)
+                DADDU {z2}, $0, $0
+            ", out("$2") _, z0 = inout(reg) sll, z1 = inout(reg) srl, z2 = inout(reg) sra)
         }
 
         soft_assert_eq(sll, 0, "SLL into R0")?;
