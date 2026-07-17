@@ -7,9 +7,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-rom:
+  fmt:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -20,14 +19,32 @@ jobs:
       - name: Check formatting
         run: cargo fmt --all --check
 
+  build-rom:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: base
+            args: ""
+          - name: base-cycle-timing
+            args: "--features cycle,timing"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install toolchain from rust-toolchain.toml
+        uses: mkroening/rust-toolchain-toml@v1.3.5
+
       - name: Install stable toolchain for nust64
         run: rustup toolchain install stable --profile minimal
 
       - name: Install nust64
         run: cargo +stable install nust64 --locked
 
-      - name: Build ROM
-        run: cargo run --release
+      - name: Build ROM (${{ matrix.name }})
+        run: cargo run --release ${{ matrix.args }}
         env:
           # Fail the build on any warning. RUSTFLAGS overrides the config's target rustflags, so the
           # linker-plugin-lto flag from .cargo/config.toml has to be repeated here.
@@ -36,6 +53,6 @@ jobs:
       - name: Upload ROM artifact
         uses: actions/upload-artifact@v6
         with:
-          name: n64-systemtest-z64
+          name: n64-systemtest-${{ matrix.name }}-z64
           path: target/mips-nintendo64-none/release/n64-systemtest.z64
           if-no-files-found: error
