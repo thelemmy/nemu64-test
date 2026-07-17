@@ -45,11 +45,26 @@ pub enum GPR {
 }
 
 impl Step for GPR {
-    fn steps_between(start: &Self, end: &Self) -> Option<usize> {
-        if (*start as usize) < (*end as usize) {
-            Some(*end as usize - *start as usize)
+    fn steps_between(start: &Self, end: &Self) -> (usize, Option<usize>) {
+        if (*start as usize) <= (*end as usize) {
+            let d = *end as usize - *start as usize;
+            (d, Some(d))
         } else {
-            None
+            (0, None)
+        }
+    }
+
+    fn forward_overflowing(start: Self, count: usize) -> (Self, bool) {
+        match Self::forward_checked(start, count) {
+            Some(v) => (v, false),
+            None => (start, true),
+        }
+    }
+
+    fn backward_overflowing(start: Self, count: usize) -> (Self, bool) {
+        match Self::backward_checked(start, count) {
+            Some(v) => (v, false),
+            None => (start, true),
         }
     }
 
@@ -111,11 +126,26 @@ pub enum FR {
 }
 
 impl Step for FR {
-    fn steps_between(start: &Self, end: &Self) -> Option<usize> {
-        if (*start as usize) < (*end as usize) {
-            Some(*end as usize - *start as usize)
+    fn steps_between(start: &Self, end: &Self) -> (usize, Option<usize>) {
+        if (*start as usize) <= (*end as usize) {
+            let d = *end as usize - *start as usize;
+            (d, Some(d))
         } else {
-            None
+            (0, None)
+        }
+    }
+
+    fn forward_overflowing(start: Self, count: usize) -> (Self, bool) {
+        match Self::forward_checked(start, count) {
+            Some(v) => (v, false),
+            None => (start, true),
+        }
+    }
+
+    fn backward_overflowing(start: Self, count: usize) -> (Self, bool) {
+        match Self::backward_checked(start, count) {
+            Some(v) => (v, false),
+            None => (start, true),
         }
     }
 
@@ -400,11 +430,26 @@ pub enum Cop1Condition {
 }
 
 impl Step for Cop1Condition {
-    fn steps_between(start: &Self, end: &Self) -> Option<usize> {
-        if (*start as usize) < (*end as usize) {
-            Some(*end as usize - *start as usize)
+    fn steps_between(start: &Self, end: &Self) -> (usize, Option<usize>) {
+        if (*start as usize) <= (*end as usize) {
+            let d = *end as usize - *start as usize;
+            (d, Some(d))
         } else {
-            None
+            (0, None)
+        }
+    }
+
+    fn forward_overflowing(start: Self, count: usize) -> (Self, bool) {
+        match Self::forward_checked(start, count) {
+            Some(v) => (v, false),
+            None => (start, true),
+        }
+    }
+
+    fn backward_overflowing(start: Self, count: usize) -> (Self, bool) {
+        match Self::backward_checked(start, count) {
+            Some(v) => (v, false),
+            None => (start, true),
         }
     }
 

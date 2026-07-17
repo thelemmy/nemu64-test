@@ -1,5 +1,5 @@
 use alloc::format;
-use core::arch::{asm, global_asm};
+use core::arch::{asm, naked_asm};
 use core::ops::{Deref, DerefMut};
 
 use spinning_top::Spinlock;
@@ -34,91 +34,89 @@ static SEEN_EXCEPTION: Spinlock<Option<(ExceptionContext, u32)>> = Spinlock::new
 // TODO: named labels (like exception_handler_000_start) raise a warning. Our usage should be fine,
 // as we only use them to calculate a delta and as we only use it within [naked] functions.
 // However, we should rewrite the code so that we don't have to disable the warning named_asm_labels
-// Switching to global_asm would be an option here
-
-global_asm!("
-    .macro quick_exception_return
-    // if $26 is set to anything non-0, we'll get the count and return asap
-    // This is useful for timing tests that need to stay fully within icache
-    mfc0 $27, ${COUNT}
-    beq $26, $0, 1f
-    mfc0 $26, ${EXCEPTPC}
-    add $26, $26, 4
-    mtc0 $26, ${EXCEPTPC}
-    nop
-    nop
-    eret
-1:
-    .endm
-",
-    COUNT = const cop0::RegisterIndex::Count as usize,
-    EXCEPTPC = const cop0::RegisterIndex::ExceptPC as usize,
-);
+// The quick_exception_return sequence is inlined into each handler below: with stabilized naked
+// functions each naked_asm! assembles separately, so a global_asm! .macro is not visible to them.
 
 #[allow(named_asm_labels)]
 // This code will be copied to 0x80000000.
-#[naked]
+#[unsafe(naked)]
 extern "C" fn exception_handler_000() {
-    unsafe {
-        asm!("
+    naked_asm!("
             .set noat
             .set noreorder
             exception_handler_000_start:
-            quick_exception_return
+            mfc0 $27, ${COUNT}
+            beq $26, $0, 1f
+            mfc0 $26, ${EXCEPTPC}
+            add $26, $26, 4
+            mtc0 $26, ${EXCEPTPC}
+            nop
+            nop
+            eret
+            1:
             li $26, 0x80000000
             j {exception_handler_generic}
             nop // delay slot
             exception_handler_000_size = . - exception_handler_000_start
             .global exception_handler_000_size
-   ", exception_handler_generic = sym exception_handler_generic, options(noreturn));
-    }
+   ", exception_handler_generic = sym exception_handler_generic, COUNT = const cop0::RegisterIndex::Count as usize, EXCEPTPC = const cop0::RegisterIndex::ExceptPC as usize);
 }
 
 #[allow(named_asm_labels)]
 // This code will be copied to 0x80000080.
-#[naked]
+#[unsafe(naked)]
 extern "C" fn exception_handler_080() {
-    unsafe {
-        asm!("
+    naked_asm!("
             .set noat
             .set noreorder
             exception_handler_080_start:
-            quick_exception_return
+            mfc0 $27, ${COUNT}
+            beq $26, $0, 1f
+            mfc0 $26, ${EXCEPTPC}
+            add $26, $26, 4
+            mtc0 $26, ${EXCEPTPC}
+            nop
+            nop
+            eret
+            1:
             li $26, 0x80000080
             j {exception_handler_generic}
             nop // delay slot
             exception_handler_080_size = . - exception_handler_080_start
             .global exception_handler_080_size
-   ", exception_handler_generic = sym exception_handler_generic, options(noreturn));
-    }
+   ", exception_handler_generic = sym exception_handler_generic, COUNT = const cop0::RegisterIndex::Count as usize, EXCEPTPC = const cop0::RegisterIndex::ExceptPC as usize);
 }
 
 #[allow(named_asm_labels)]
 // This code will be copied to 0x80000180.
-#[naked]
+#[unsafe(naked)]
 extern "C" fn exception_handler_180() {
-    unsafe {
-        asm!("
+    naked_asm!("
             .set noat
             .set noreorder
             exception_handler_180_start:
-            quick_exception_return
+            mfc0 $27, ${COUNT}
+            beq $26, $0, 1f
+            mfc0 $26, ${EXCEPTPC}
+            add $26, $26, 4
+            mtc0 $26, ${EXCEPTPC}
+            nop
+            nop
+            eret
+            1:
             li $26, 0x80000180
             j {exception_handler_generic}
             nop // delay slot
             exception_handler_180_size = . - exception_handler_180_start
             .global exception_handler_180_size
-   ", exception_handler_generic = sym exception_handler_generic,
-        options(noreturn));
-    }
+   ", exception_handler_generic = sym exception_handler_generic, COUNT = const cop0::RegisterIndex::Count as usize, EXCEPTPC = const cop0::RegisterIndex::ExceptPC as usize);
 }
 
 // The other three exception handlers just here.
-#[naked]
+#[unsafe(naked)]
 extern "C" fn exception_handler_generic() {
-    unsafe {
-        // Save GPR except: R0 (=0), R29 (=stack pointer)
-        asm!("
+    // Save GPR except: R0 (=0), R29 (=stack pointer)
+    naked_asm!("
             .set noat
             .set noreorder
             addi $sp, $sp, -{CONTEXT_SIZE}
@@ -256,8 +254,7 @@ extern "C" fn exception_handler_generic() {
         EntryHiRegisterIndex = const cop0::RegisterIndex::EntryHi as u32,
         CauseRegisterIndex = const cop0::RegisterIndex::Cause as u32,
         StatusRegisterIndex = const cop0::RegisterIndex::Status as u32,
-        CONTEXT_SIZE = const ExceptionContext::SIZE, options(noreturn));
-    }
+        CONTEXT_SIZE = const ExceptionContext::SIZE);
 }
 
 extern "C" fn exception_handler_compiled(stackpointer: usize) -> usize {

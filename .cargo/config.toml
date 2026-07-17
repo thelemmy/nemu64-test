@@ -3,6 +3,8 @@ target = "mips-nintendo64-none.json"
 
 [unstable]
 build-std = ["core", "alloc"]
+# Current nightly requires opting in to .json custom target specs.
+json-target-spec = true
 
 [target.mips-nintendo64-none]
 rustflags = ["-Clinker-plugin-lto"]

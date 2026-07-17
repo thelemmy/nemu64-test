@@ -3,7 +3,7 @@ use alloc::format;
 use alloc::string::String;
 use alloc::vec::Vec;
 use core::any::Any;
-use core::arch::asm;
+use core::arch::{asm, naked_asm};
 
 use arbitrary_int::{u2, u27, u5};
 
@@ -23,17 +23,14 @@ use crate::uncached_memory::UncachedHeapMemory;
 const KUSEG_EXEC_BASE: u32 = 0x0001_0000;
 const PAGE_WORDS: usize = 4096 / 4;
 
-#[naked]
+#[unsafe(naked)]
 extern "C" fn return_via_s0_stub() {
-    unsafe {
-        asm!(
-            ".set noat",
-            ".set noreorder",
-            "jr $16",
-            "nop",
-            options(noreturn)
-        );
-    }
+    naked_asm!(
+        ".set noat",
+        ".set noreorder",
+        "jr $16",
+        "nop",
+    );
 }
 
 fn load_u64_sequence(target: GPR, temp: GPR, value: u64) -> [u32; 6] {

@@ -6,7 +6,7 @@ use alloc::string::String;
 use alloc::vec;
 use alloc::vec::Vec;
 use core::any::Any;
-use core::arch::asm;
+use core::arch::{asm, naked_asm};
 use core::mem::transmute;
 
 use arbitrary_int::{u26, u5};
@@ -31,35 +31,29 @@ use crate::uncached_memory::{UncachedHeapMemory, UncachedHeapMemoryWriter};
 //     with precise alignment.
 // TODO: Set register to immediate, then jump to that register via JR
 
-#[naked]
+#[unsafe(naked)]
 extern "C" fn instant_return_function() {
-    unsafe {
-        asm!(
-            "
+    naked_asm!(
+        "
             .set noat
             .set noreorder
             JR $31
             NOP
-        ",
-            options(noreturn)
-        )
-    }
+        "
+    )
 }
 
-#[naked]
+#[unsafe(naked)]
 extern "C" fn one_nop_then_return_function() {
-    unsafe {
-        asm!(
-            "
+    naked_asm!(
+        "
             .set noat
             .set noreorder
             NOP
             JR $31
             NOP
-        ",
-            options(noreturn)
-        )
-    }
+        "
+    )
 }
 
 /// This test repeatedly reads COP0.Count and looks at the differences.

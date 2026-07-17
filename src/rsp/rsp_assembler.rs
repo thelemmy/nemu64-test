@@ -56,11 +56,26 @@ impl GPR {
 }
 
 impl Step for GPR {
-    fn steps_between(start: &Self, end: &Self) -> Option<usize> {
-        if (*start as usize) < (*end as usize) {
-            Some(*end as usize - *start as usize)
+    fn steps_between(start: &Self, end: &Self) -> (usize, Option<usize>) {
+        if (*start as usize) <= (*end as usize) {
+            let d = *end as usize - *start as usize;
+            (d, Some(d))
         } else {
-            None
+            (0, None)
+        }
+    }
+
+    fn forward_overflowing(start: Self, count: usize) -> (Self, bool) {
+        match Self::forward_checked(start, count) {
+            Some(v) => (v, false),
+            None => (start, true),
+        }
+    }
+
+    fn backward_overflowing(start: Self, count: usize) -> (Self, bool) {
+        match Self::backward_checked(start, count) {
+            Some(v) => (v, false),
+            None => (start, true),
         }
     }
 
@@ -126,11 +141,26 @@ impl VR {
 }
 
 impl Step for VR {
-    fn steps_between(start: &Self, end: &Self) -> Option<usize> {
-        if (*start as usize) < (*end as usize) {
-            Some(*end as usize - *start as usize)
+    fn steps_between(start: &Self, end: &Self) -> (usize, Option<usize>) {
+        if (*start as usize) <= (*end as usize) {
+            let d = *end as usize - *start as usize;
+            (d, Some(d))
         } else {
-            None
+            (0, None)
+        }
+    }
+
+    fn forward_overflowing(start: Self, count: usize) -> (Self, bool) {
+        match Self::forward_checked(start, count) {
+            Some(v) => (v, false),
+            None => (start, true),
+        }
+    }
+
+    fn backward_overflowing(start: Self, count: usize) -> (Self, bool) {
+        match Self::backward_checked(start, count) {
+            Some(v) => (v, false),
+            None => (start, true),
         }
     }
 
@@ -208,11 +238,26 @@ impl Element {
 }
 
 impl Step for Element {
-    fn steps_between(start: &Self, end: &Self) -> Option<usize> {
-        if (*start as usize) < (*end as usize) {
-            Some(*end as usize - *start as usize)
+    fn steps_between(start: &Self, end: &Self) -> (usize, Option<usize>) {
+        if (*start as usize) <= (*end as usize) {
+            let d = *end as usize - *start as usize;
+            (d, Some(d))
         } else {
-            None
+            (0, None)
+        }
+    }
+
+    fn forward_overflowing(start: Self, count: usize) -> (Self, bool) {
+        match Self::forward_checked(start, count) {
+            Some(v) => (v, false),
+            None => (start, true),
+        }
+    }
+
+    fn backward_overflowing(start: Self, count: usize) -> (Self, bool) {
+        match Self::backward_checked(start, count) {
+            Some(v) => (v, false),
+            None => (start, true),
         }
     }
 
@@ -268,11 +313,26 @@ impl E {
 }
 
 impl Step for E {
-    fn steps_between(start: &Self, end: &Self) -> Option<usize> {
-        if (*start as usize) < (*end as usize) {
-            Some(*end as usize - *start as usize)
+    fn steps_between(start: &Self, end: &Self) -> (usize, Option<usize>) {
+        if (*start as usize) <= (*end as usize) {
+            let d = *end as usize - *start as usize;
+            (d, Some(d))
         } else {
-            None
+            (0, None)
+        }
+    }
+
+    fn forward_overflowing(start: Self, count: usize) -> (Self, bool) {
+        match Self::forward_checked(start, count) {
+            Some(v) => (v, false),
+            None => (start, true),
+        }
+    }
+
+    fn backward_overflowing(start: Self, count: usize) -> (Self, bool) {
+        match Self::backward_checked(start, count) {
+            Some(v) => (v, false),
+            None => (start, true),
         }
     }
 

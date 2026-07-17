@@ -27,7 +27,6 @@ macro_rules! panic_println {
 }
 
 #[panic_handler]
-#[no_mangle]
 fn panic(_info: &PanicInfo<'_>) -> ! {
     panic_println!("{}", _info);
     crate::emux::xioctl_exit();

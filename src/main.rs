@@ -4,9 +4,7 @@
 
 #![no_std]
 #![feature(alloc_error_handler)]
-#![feature(asm_const)]
 #![feature(asm_experimental_arch)]
-#![feature(naked_functions)]
 #![feature(step_trait)]
 #![deny(unsafe_op_in_unsafe_fn)]
 #![allow(rustdoc::private_intra_doc_links)]

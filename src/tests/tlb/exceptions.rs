@@ -13,23 +13,20 @@ use crate::tests::soft_asserts::soft_assert_eq;
 use crate::tests::{Level, Test};
 use crate::{cop0, println, MemoryMap};
 
-#[naked]
+#[unsafe(naked)]
 extern "C" fn tlb_miss_after_eret_thunk() -> ! {
-    unsafe {
-        core::arch::asm!(
-            ".set noat",
-            ".set noreorder",
-            "mfc0 $8, $12",
-            "ori $8, $8, 2",
-            "mtc0 $8, $12",
-            "nop",
-            "dmtc0 $9, $14",
-            "nop",
-            "nop",
-            "eret",
-            options(noreturn),
-        );
-    }
+    core::arch::naked_asm!(
+        ".set noat",
+        ".set noreorder",
+        "mfc0 $8, $12",
+        "ori $8, $8, 2",
+        "mtc0 $8, $12",
+        "nop",
+        "dmtc0 $9, $14",
+        "nop",
+        "nop",
+        "eret",
+    );
 }
 
 pub fn setup_tlb_page(pagemask: Pagemask, valid: bool, dirty: bool) -> usize {
