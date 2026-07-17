@@ -141,10 +141,12 @@ impl Test for ModifyCached {
             asm!("
                 .set noat
                 .set noreorder
-                OR $5, $31, $0
+                DADDIU $sp, $sp, -16
+                SD $31, 0($sp)
                 JALR $2
                 NOP
-                OR $31, $5, $0
+                LD $31, 0($sp)
+                DADDIU $sp, $sp, 16
             ",
             in("$2") MemoryMap::physical_to_cached::<u32>(memory.start_physical() + (GENERATOR << 2)),
             in("$3") MemoryMap::physical_to_uncached_mut::<u32>(memory.start_physical() + (GENERATED << 2)),
@@ -329,10 +331,12 @@ impl Test for ModifyCached2 {
             asm!("
                 .set noat
                 .set noreorder
-                OR $5, $31, $0
+                DADDIU $sp, $sp, -16
+                SD $31, 0($sp)
                 JALR $2
                 NOP
-                OR $31, $5, $0
+                LD $31, 0($sp)
+                DADDIU $sp, $sp, 16
             ",
             in("$2") MemoryMap::physical_to_cached::<u32>(memory.start_physical() + (GENERATOR << 2)),
             in("$3") MemoryMap::physical_to_uncached_mut::<u32>(memory.start_physical() + (GENERATED << 2)),
@@ -1165,10 +1169,12 @@ fn test_invalidate<
         asm!("
             .set noat
             .set noreorder
-            OR $5, $31, $0
+            DADDIU $sp, $sp, -16
+            SD $31, 0($sp)
             JALR $2
             NOP
-            OR $31, $5, $0
+            LD $31, 0($sp)
+            DADDIU $sp, $sp, 16
         ",
         in("$2") MemoryMap::physical_to_cached::<u32>(memory.start_physical() + (GENERATOR << 2)),
         in("$3") MemoryMap::physical_to_uncached_mut::<u32>(memory.start_physical() + (GENERATED << 2)),
@@ -1438,10 +1444,12 @@ impl Test for InstructionCacheIndexStoreTag {
             asm!("
             .set noat
             .set noreorder
-            OR $5, $31, $0
+            DADDIU $sp, $sp, -16
+            SD $31, 0($sp)
             JALR $2
             NOP
-            OR $31, $5, $0
+            LD $31, 0($sp)
+            DADDIU $sp, $sp, 16
         ",
             in("$2") MemoryMap::physical_to_cached::<u32>(memory.start_physical() + (GENERATOR << 2)),
             in("$3") MemoryMap::physical_to_uncached_mut::<u32>(memory.start_physical() + (GENERATED << 2)),
@@ -1632,10 +1640,12 @@ impl Test for InstructionCacheHitWriteBack {
             asm!("
             .set noat
             .set noreorder
-            OR $5, $31, $0
+            DADDIU $sp, $sp, -16
+            SD $31, 0($sp)
             JALR $2
             NOP
-            OR $31, $5, $0
+            LD $31, 0($sp)
+            DADDIU $sp, $sp, 16
         ",
             in("$2") MemoryMap::physical_to_cached::<u32>(memory.start_physical() + (GENERATOR << 2)),
             in("$3") MemoryMap::physical_to_uncached_mut::<u32>(memory.start_physical() + (GENERATED << 2)),
