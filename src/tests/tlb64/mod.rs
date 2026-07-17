@@ -196,7 +196,7 @@ fn do_all_loads(ptr64: u64) -> AllLoadsResult {
             LDR $4, 7($3)
             SD $4, 272($5)
 
-        ", in("$2") &ptr64, out("$3") _, out("$4") _, out("$6") _, in("$5") &mut result)
+        ", in("$2") &ptr64, out("$3") _, out("$4") _, out("$6") _, out("$f4") _, in("$5") &mut result)
     }
 
     result

@@ -705,7 +705,7 @@ impl Test for ExecuteTLBMappedMiss {
                     LI $6, 0
                     JALR $4, $3
                     NOP
-                ", out("$2") result, in("$3") (fault_address - 36), out("$4") _, out("$6") link_register);
+                ", out("$2") result, inout("$3") (fault_address - 36) => _, out("$4") _, out("$6") link_register);
                 if result != 6 {
                     return Err("Didn't return correct value. Most likely, ExceptPC during TLB exception was wrong");
                 }
@@ -919,6 +919,7 @@ impl Test for TlbMissFetchAfterEret {
                     in("$3") tlb_miss_after_eret_thunk as usize,
                     in("$9") fault_address,
                     out("$4") _,
+                    out("$8") _,
                     lateout("$2") result,
                 );
 

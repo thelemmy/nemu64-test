@@ -27,7 +27,7 @@ fn bgezal_basic<const VALUE: u64>(expected_jump: bool) -> Result<(), String> {
 1:          ORI $3, $3, 4
             DADDIU $5, $31, 0
             DADDIU $31, $25, 0  // Restore original RA
-        ", out("$3") result, in("$4") VALUE, out("$5") ra_result)
+        ", out("$3") result, in("$4") VALUE, out("$5") ra_result, out("$25") _)
     }
 
     soft_assert_eq(
@@ -131,7 +131,7 @@ impl Test for BGEZALThatChangesItsOwnCondition {
 1:          ORI $3, $3, 4
             DADDIU $5, $31, 0
             DADDIU $31, $25, 0  // Restore original RA
-        ", out("$3") result, out("$5") ra_result)
+        ", out("$3") result, out("$5") ra_result, out("$25") _)
         }
 
         soft_assert_eq(result, 5, "BGEZAL should have jumped")?;
@@ -166,7 +166,7 @@ fn bgezall_basic<const VALUE: u64>(expected_jump: bool) -> Result<(), String> {
 1:          ORI $3, $3, 4
             DADDIU $5, $31, 0
             DADDIU $31, $25, 0  // Restore original RA
-        ", in("$4") VALUE, out("$3") result, out("$5") ra_result)
+        ", in("$4") VALUE, out("$3") result, out("$5") ra_result, out("$25") _)
     }
 
     soft_assert_eq(

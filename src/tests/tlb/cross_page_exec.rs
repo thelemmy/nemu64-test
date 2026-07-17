@@ -172,18 +172,14 @@ fn run_jr_delay(vaddr: u64, use_64: bool, jr_target: u64) -> Result<(), String> 
     write_u32(&mut buf, 4108, Assembler::make_nop());
     flush_icache_around(vaddr, use_64);
     let r = if use_64 {
-        let mut scratch = [0u64; 1];
-        scratch[0] = jr_target;
         let entry_pc = vaddr + 4092;
         let mut v0: u32;
         unsafe {
             asm!(
-                "ld $8, 0($12)",
-                "ld $25, 0($5)",
                 "jalr $4, $25",
                 "nop",
-                in("$12") scratch.as_ptr(),
-                in("$5") &entry_pc,
+                in("$8") jr_target,
+                in("$25") entry_pc,
                 lateout("$2") v0,
                 out("$4") _,
             );
