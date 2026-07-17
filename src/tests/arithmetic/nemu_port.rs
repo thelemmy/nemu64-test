@@ -29,10 +29,8 @@ impl Test for LUIOpcodeTest1 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
                 LUI $2, 0x891
-                SD $2, 0($18)
-            ", out("$2") _, in("$18") &mut r2);
+            ", inout("$2") r2);
         }
         soft_assert_eq(r2, 0x8910000, "Register $2")?;
         Ok(())
@@ -60,10 +58,8 @@ impl Test for LUIOpcodeTest2 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
                 LUI $2, 0xf891
-                SD $2, 0($18)
-            ", out("$2") _, in("$18") &mut r2);
+            ", inout("$2") r2);
         }
         soft_assert_eq(r2, 0xfffffffff8910000, "Register $2")?;
         Ok(())
@@ -92,8 +88,8 @@ impl Test for LUIOpcodeTestIntoR0 {
                 .set noat
                 .set noreorder
                 LUI $0, 0xf891
-                SD $0, 0($16)
-            ", in("$16") &mut r0);
+                DADDU {z0}, $0, $0
+            ", z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         Ok(())
@@ -122,11 +118,8 @@ impl Test for DADDIOpcodeTest {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 DADDI $3, $2, 4660
-                SD $3, 0($19)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &mut r3);
+            ", in("$2") r2, inout("$3") r3);
         }
         soft_assert_eq(r3, 0x1234567898761344, "Register $3")?;
         Ok(())
@@ -155,11 +148,8 @@ impl Test for DADDIOpcodeTestWithNegativeImmediate {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 DADDI $3, $2, -3532
-                SD $3, 0($19)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &mut r3);
+            ", in("$2") r2, inout("$3") r3);
         }
         soft_assert_eq(r3, 0x123456789875f344, "Register $3")?;
         Ok(())
@@ -188,10 +178,8 @@ impl Test for DADDIOpcodeTestLargeNegative1 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $3, 0($19)
                 DADDI $4, $3, -10208
-                SD $4, 0($20)
-            ", out("$3") _, in("$19") &r3, out("$4") _, in("$20") &mut r4);
+            ", in("$3") r3, inout("$4") r4);
         }
         soft_assert_eq(r4, 0x4321432143211b41, "Register $4")?;
         Ok(())
@@ -219,10 +207,8 @@ impl Test for DADDIOpcodeTestLargeNegative2 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $3, 0($19)
                 DADDI $3, $3, -10208
-                SD $3, 0($19)
-            ", out("$3") _, in("$19") &mut r3);
+            ", inout("$3") r3);
         }
         soft_assert_eq(r3, 0x4321432143211b41, "Register $3")?;
         Ok(())
@@ -252,13 +238,9 @@ impl Test for DADDIOpcodeTestWithR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 DADDI $3, $0, 4660
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -290,13 +272,9 @@ impl Test for DADDIOpcodeTestWithOffsetZero {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 DADDI $3, $2, 0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -328,13 +306,9 @@ impl Test for DADDIOpcodeTestWithOffsetZeroAndR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 DADDI $3, $0, 0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -366,13 +340,9 @@ impl Test for DADDIOpcodeTestIntoR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 DADDI $0, $2, 4660
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -404,13 +374,9 @@ impl Test for DADDIOpcodeTestIntoR0WithOffset0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 DADDI $0, $2, 0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -441,11 +407,8 @@ impl Test for DADDIUOpcodeTest {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 DADDIU $3, $2, 4660
-                SD $3, 0($19)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &mut r3);
+            ", in("$2") r2, inout("$3") r3);
         }
         soft_assert_eq(r3, 0x1234567898761344, "Register $3")?;
         Ok(())
@@ -474,11 +437,8 @@ impl Test for DADDIUOpcodeTestWithNegativeImmediate {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 DADDIU $3, $2, -3532
-                SD $3, 0($19)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &mut r3);
+            ", in("$2") r2, inout("$3") r3);
         }
         soft_assert_eq(r3, 0x123456789875f344, "Register $3")?;
         Ok(())
@@ -507,10 +467,8 @@ impl Test for DADDIUOpcodeTestLargeNegative1 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $3, 0($19)
                 DADDIU $4, $3, -10208
-                SD $4, 0($20)
-            ", out("$3") _, in("$19") &r3, out("$4") _, in("$20") &mut r4);
+            ", in("$3") r3, inout("$4") r4);
         }
         soft_assert_eq(r4, 0x4321432143211b41, "Register $4")?;
         Ok(())
@@ -538,10 +496,8 @@ impl Test for DADDIUOpcodeTestLargeNegative2 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $3, 0($19)
                 DADDIU $3, $3, -10208
-                SD $3, 0($19)
-            ", out("$3") _, in("$19") &mut r3);
+            ", inout("$3") r3);
         }
         soft_assert_eq(r3, 0x4321432143211b41, "Register $3")?;
         Ok(())
@@ -571,13 +527,9 @@ impl Test for DADDIUOpcodeTestWithR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 DADDIU $3, $0, 4660
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -609,13 +561,9 @@ impl Test for DADDIUOpcodeTestWithOffsetZero {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 DADDIU $3, $2, 0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -647,13 +595,9 @@ impl Test for DADDIUOpcodeTestWithOffsetZeroAndR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 DADDIU $3, $0, 0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -685,13 +629,9 @@ impl Test for DADDIUOpcodeTestIntoR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 DADDIU $0, $2, 4660
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -722,12 +662,8 @@ impl Test for DADDIUOpcodeTestNoOverflowPositive {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 DADDIU $3, $2, 256
-                SD $2, 0($18)
-                SD $3, 0($19)
-            ", out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3);
+            ", inout("$2") r2, inout("$3") r3);
         }
         soft_assert_eq(r2, 0x7fffffffffffff00, "Register $2")?;
         soft_assert_eq(r3, 0x8000000000000000, "Register $3")?;
@@ -757,12 +693,8 @@ impl Test for DADDIUOpcodeTestNoOverflowNegative {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 DADDIU $3, $2, -1
-                SD $2, 0($18)
-                SD $3, 0($19)
-            ", out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3);
+            ", inout("$2") r2, inout("$3") r3);
         }
         soft_assert_eq(r2, 0x8000000000000000, "Register $2")?;
         soft_assert_eq(r3, 0x7fffffffffffffff, "Register $3")?;
@@ -792,11 +724,8 @@ impl Test for ADDIOpcodeTest {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 ADDI $3, $2, 4660
-                SD $3, 0($19)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &mut r3);
+            ", in("$2") r2, inout("$3") r3);
         }
         soft_assert_eq(r3, 0xffffffff98761344, "Register $3")?;
         Ok(())
@@ -825,11 +754,8 @@ impl Test for ADDIOpcodeTestWithNegativeImmediate {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 ADDI $3, $2, -3532
-                SD $3, 0($19)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &mut r3);
+            ", in("$2") r2, inout("$3") r3);
         }
         soft_assert_eq(r3, 0xffffffff9875f344, "Register $3")?;
         Ok(())
@@ -858,11 +784,8 @@ impl Test for ADDIOpcodeTestLower12Bit {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 ADDI $3, $2, 4000
-                SD $3, 0($19)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &mut r3);
+            ", in("$2") r2, inout("$3") r3);
         }
         soft_assert_eq(r3, 0x1004, "Register $3")?;
         Ok(())
@@ -891,11 +814,8 @@ impl Test for ADDIOpcodeTestUpper4Bit {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 ADDI $3, $2, 12288
-                SD $3, 0($19)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &mut r3);
+            ", in("$2") r2, inout("$3") r3);
         }
         soft_assert_eq(r3, 0x3064, "Register $3")?;
         Ok(())
@@ -924,11 +844,8 @@ impl Test for ADDIOpcodeTestLower12BitNegative {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 ADDI $3, $2, -50
-                SD $3, 0($19)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &mut r3);
+            ", in("$2") r2, inout("$3") r3);
         }
         soft_assert_eq(r3, 0x32, "Register $3")?;
         Ok(())
@@ -957,11 +874,8 @@ impl Test for ADDIOpcodeTestUpper4BitNegative {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 ADDI $3, $2, -12288
-                SD $3, 0($19)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &mut r3);
+            ", in("$2") r2, inout("$3") r3);
         }
         soft_assert_eq(r3, 0xffffffffffffd064, "Register $3")?;
         Ok(())
@@ -990,10 +904,8 @@ impl Test for ADDIOpcodeTestLargeNegative1 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $3, 0($19)
                 ADDI $4, $3, -10208
-                SD $4, 0($20)
-            ", out("$3") _, in("$19") &r3, out("$4") _, in("$20") &mut r4);
+            ", in("$3") r3, inout("$4") r4);
         }
         soft_assert_eq(r4, 0x43211b41, "Register $4")?;
         Ok(())
@@ -1021,10 +933,8 @@ impl Test for ADDIOpcodeTestLargeNegative2 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $3, 0($19)
                 ADDI $3, $3, -10208
-                SD $3, 0($19)
-            ", out("$3") _, in("$19") &mut r3);
+            ", inout("$3") r3);
         }
         soft_assert_eq(r3, 0x43211b41, "Register $3")?;
         Ok(())
@@ -1054,13 +964,9 @@ impl Test for ADDIOpcodeTestWithR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 ADDI $3, $0, 4660
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -1092,13 +998,9 @@ impl Test for ADDIOpcodeTestWithOffsetZero {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 ADDI $3, $2, 0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -1130,13 +1032,9 @@ impl Test for ADDIOpcodeTestWithOffsetZeroAndR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 ADDI $3, $0, 0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -1168,13 +1066,9 @@ impl Test for ADDIOpcodeTestIntoR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 ADDI $0, $2, 4660
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -1206,13 +1100,9 @@ impl Test for ADDIOpcodeTestIntoR0WithOffset0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 ADDI $0, $2, 0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -1243,11 +1133,8 @@ impl Test for ADDIUOpcodeTest {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 ADDIU $3, $2, 4660
-                SD $3, 0($19)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &mut r3);
+            ", in("$2") r2, inout("$3") r3);
         }
         soft_assert_eq(r3, 0xffffffff98761344, "Register $3")?;
         Ok(())
@@ -1276,11 +1163,8 @@ impl Test for ADDIUOpcodeTestWithNegativeImmediate {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 ADDIU $3, $2, -3532
-                SD $3, 0($19)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &mut r3);
+            ", in("$2") r2, inout("$3") r3);
         }
         soft_assert_eq(r3, 0xffffffff9875f344, "Register $3")?;
         Ok(())
@@ -1309,11 +1193,8 @@ impl Test for ADDIUOpcodeTestLower12Bit {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 ADDIU $3, $2, 4000
-                SD $3, 0($19)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &mut r3);
+            ", in("$2") r2, inout("$3") r3);
         }
         soft_assert_eq(r3, 0x1004, "Register $3")?;
         Ok(())
@@ -1342,11 +1223,8 @@ impl Test for ADDIUOpcodeTestUpper4Bit {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 ADDIU $3, $2, 12288
-                SD $3, 0($19)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &mut r3);
+            ", in("$2") r2, inout("$3") r3);
         }
         soft_assert_eq(r3, 0x3064, "Register $3")?;
         Ok(())
@@ -1375,11 +1253,8 @@ impl Test for ADDIUOpcodeTestLower12BitNegative {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 ADDIU $3, $2, -50
-                SD $3, 0($19)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &mut r3);
+            ", in("$2") r2, inout("$3") r3);
         }
         soft_assert_eq(r3, 0x32, "Register $3")?;
         Ok(())
@@ -1408,11 +1283,8 @@ impl Test for ADDIUOpcodeTestUpper4BitNegative {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 ADDIU $3, $2, -12288
-                SD $3, 0($19)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &mut r3);
+            ", in("$2") r2, inout("$3") r3);
         }
         soft_assert_eq(r3, 0xffffffffffffd064, "Register $3")?;
         Ok(())
@@ -1441,10 +1313,8 @@ impl Test for ADDIUOpcodeTestLargeNegative1 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $3, 0($19)
                 ADDIU $4, $3, -10208
-                SD $4, 0($20)
-            ", out("$3") _, in("$19") &r3, out("$4") _, in("$20") &mut r4);
+            ", in("$3") r3, inout("$4") r4);
         }
         soft_assert_eq(r4, 0x43211b41, "Register $4")?;
         Ok(())
@@ -1472,10 +1342,8 @@ impl Test for ADDIUOpcodeTestLargeNegative2 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $3, 0($19)
                 ADDIU $3, $3, -10208
-                SD $3, 0($19)
-            ", out("$3") _, in("$19") &mut r3);
+            ", inout("$3") r3);
         }
         soft_assert_eq(r3, 0x43211b41, "Register $3")?;
         Ok(())
@@ -1505,13 +1373,9 @@ impl Test for ADDIUOpcodeTestWithR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 ADDIU $3, $0, 4660
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -1543,13 +1407,9 @@ impl Test for ADDIUOpcodeTestWithOffsetZero {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 ADDIU $3, $2, 0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -1581,13 +1441,9 @@ impl Test for ADDIUOpcodeTestWithOffsetZeroAndR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 ADDIU $3, $0, 0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -1619,13 +1475,9 @@ impl Test for ADDIUOpcodeTestWithOffsetZeroIntoItself {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 ADDIU $3, $3, 0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -1657,13 +1509,9 @@ impl Test for ADDIUOpcodeTestIntoR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 ADDIU $0, $2, 4660
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -1694,11 +1542,8 @@ impl Test for SLTIOpcodeTest1 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 SLTI $3, $2, 5
-                SD $3, 0($19)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &mut r3);
+            ", in("$2") r2, inout("$3") r3);
         }
         soft_assert_eq(r3, 0x0, "Register $3")?;
         Ok(())
@@ -1727,11 +1572,8 @@ impl Test for SLTIOpcodeTest2 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 SLTI $3, $2, 5
-                SD $3, 0($19)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &mut r3);
+            ", in("$2") r2, inout("$3") r3);
         }
         soft_assert_eq(r3, 0x1, "Register $3")?;
         Ok(())
@@ -1760,11 +1602,8 @@ impl Test for SLTIOpcodeTest3 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 SLTI $3, $2, -2
-                SD $3, 0($19)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &mut r3);
+            ", in("$2") r2, inout("$3") r3);
         }
         soft_assert_eq(r3, 0x1, "Register $3")?;
         Ok(())
@@ -1793,11 +1632,8 @@ impl Test for SLTIOpcodeTest4 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 SLTI $3, $2, -5
-                SD $3, 0($19)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &mut r3);
+            ", in("$2") r2, inout("$3") r3);
         }
         soft_assert_eq(r3, 0x0, "Register $3")?;
         Ok(())
@@ -1826,11 +1662,8 @@ impl Test for SLTIOpcodeTest5 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 SLTI $3, $2, 511
-                SD $3, 0($19)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &mut r3);
+            ", in("$2") r2, inout("$3") r3);
         }
         soft_assert_eq(r3, 0x1, "Register $3")?;
         Ok(())
@@ -1859,11 +1692,8 @@ impl Test for SLTIOpcodeTest6 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 SLTI $3, $2, -261
-                SD $3, 0($19)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &mut r3);
+            ", in("$2") r2, inout("$3") r3);
         }
         soft_assert_eq(r3, 0x0, "Register $3")?;
         Ok(())
@@ -1892,11 +1722,8 @@ impl Test for SLTIOpcodeTestEqual {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 SLTI $3, $2, -4
-                SD $3, 0($19)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &mut r3);
+            ", in("$2") r2, inout("$3") r3);
         }
         soft_assert_eq(r3, 0x0, "Register $3")?;
         Ok(())
@@ -1926,13 +1753,9 @@ impl Test for SLTIOpcodeTestWithR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 SLTI $3, $0, 1
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -1964,13 +1787,9 @@ impl Test for SLTIOpcodeTestWithR0_1 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 SLTI $3, $0, -1
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -2002,13 +1821,9 @@ impl Test for SLTIOpcodeTestIntoR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 SLTI $0, $2, 4660
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1233, "Register $2")?;
@@ -2040,13 +1855,9 @@ impl Test for SLTIOpcodeTestPositiveAgainst0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 SLTI $3, $2, 0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1233, "Register $2")?;
@@ -2078,13 +1889,9 @@ impl Test for SLTIOpcodeTestNegativeAgainst0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 SLTI $3, $2, 0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0xfffffffffffff233, "Register $2")?;
@@ -2116,13 +1923,9 @@ impl Test for SLTIOpcodeTestR0Against0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 SLTI $3, $0, 0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1233, "Register $2")?;
@@ -2153,11 +1956,8 @@ impl Test for SLTIUOpcodeTest1 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 SLTIU $3, $2, 5
-                SD $3, 0($19)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &mut r3);
+            ", in("$2") r2, inout("$3") r3);
         }
         soft_assert_eq(r3, 0x0, "Register $3")?;
         Ok(())
@@ -2186,11 +1986,8 @@ impl Test for SLTIUOpcodeTest2 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 SLTIU $3, $2, 5
-                SD $3, 0($19)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &mut r3);
+            ", in("$2") r2, inout("$3") r3);
         }
         soft_assert_eq(r3, 0x1, "Register $3")?;
         Ok(())
@@ -2219,11 +2016,8 @@ impl Test for SLTIUOpcodeTest3 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 SLTIU $3, $2, -2
-                SD $3, 0($19)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &mut r3);
+            ", in("$2") r2, inout("$3") r3);
         }
         soft_assert_eq(r3, 0x1, "Register $3")?;
         Ok(())
@@ -2252,11 +2046,8 @@ impl Test for SLTIUOpcodeTest4 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 SLTIU $3, $2, -5
-                SD $3, 0($19)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &mut r3);
+            ", in("$2") r2, inout("$3") r3);
         }
         soft_assert_eq(r3, 0x0, "Register $3")?;
         Ok(())
@@ -2285,11 +2076,8 @@ impl Test for SLTIUOpcodeTestEqual {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 SLTIU $3, $2, -4
-                SD $3, 0($19)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &mut r3);
+            ", in("$2") r2, inout("$3") r3);
         }
         soft_assert_eq(r3, 0x0, "Register $3")?;
         Ok(())
@@ -2319,13 +2107,9 @@ impl Test for SLTIUOpcodeTestWithR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 SLTIU $3, $0, 1
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -2357,13 +2141,9 @@ impl Test for SLTIUOpcodeTestWithR0_1 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 SLTIU $3, $0, -1
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -2395,13 +2175,9 @@ impl Test for SLTIUOpcodeTestIntoR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 SLTIU $0, $2, 4660
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1233, "Register $2")?;
@@ -2433,13 +2209,9 @@ impl Test for SLTIUOpcodeTestPositiveAgainst0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 SLTIU $3, $2, 0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1233, "Register $2")?;
@@ -2471,13 +2243,9 @@ impl Test for SLTIUOpcodeTestNegativeAgainst0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 SLTIU $3, $2, 0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0xffffffffffff1234, "Register $2")?;
@@ -2509,13 +2277,9 @@ impl Test for SLTIUOpcodeTestR0Against0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 SLTIU $3, $0, 0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1233, "Register $2")?;
@@ -2548,15 +2312,9 @@ impl Test for OROpcodeTest {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 OR $4, $3, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -2590,15 +2348,9 @@ impl Test for OROpcodeTestRTIsR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 OR $4, $3, $0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -2632,15 +2384,9 @@ impl Test for OROpcodeTestRSIsR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 OR $4, $0, $3
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -2674,15 +2420,9 @@ impl Test for OROpcodeTestBothAreR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 OR $4, $0, $0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -2716,15 +2456,9 @@ impl Test for OROpcodeTestIntoR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 OR $0, $2, $3
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -2758,15 +2492,9 @@ impl Test for OROpcodeTestWithItself {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 OR $4, $3, $3
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -2800,15 +2528,9 @@ impl Test for OROpcodeTestInputOutput1 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 OR $4, $3, $4
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -2842,15 +2564,9 @@ impl Test for OROpcodeTestInputOutput2 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 OR $4, $4, $3
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -2884,15 +2600,9 @@ impl Test for OROpcodeTestInputOutput3 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 OR $4, $4, $4
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -2926,15 +2636,9 @@ impl Test for ANDOpcodeTest {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 AND $4, $3, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -2968,15 +2672,9 @@ impl Test for ANDOpcodeTestRTIsR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 AND $4, $3, $0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -3010,15 +2708,9 @@ impl Test for ANDOpcodeTestRSIsR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 AND $4, $0, $3
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -3052,15 +2744,9 @@ impl Test for ANDOpcodeTestBothAreR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 AND $4, $0, $0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -3094,15 +2780,9 @@ impl Test for ANDOpcodeTestIntoR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 AND $0, $2, $3
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -3136,15 +2816,9 @@ impl Test for ANDOpcodeTestWithItself {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 AND $4, $3, $3
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -3178,15 +2852,9 @@ impl Test for ANDOpcodeTestInputOutput1 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 AND $4, $3, $4
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -3220,15 +2888,9 @@ impl Test for ANDOpcodeTestInputOutput2 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 AND $4, $4, $3
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -3262,15 +2924,9 @@ impl Test for ANDOpcodeTestInputOutput3 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 AND $4, $4, $4
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -3304,15 +2960,9 @@ impl Test for XOROpcodeTest {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 XOR $4, $3, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -3346,15 +2996,9 @@ impl Test for XOROpcodeTestRTIsR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 XOR $4, $3, $0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -3388,15 +3032,9 @@ impl Test for XOROpcodeTestRSIsR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 XOR $4, $0, $3
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -3430,15 +3068,9 @@ impl Test for XOROpcodeTestBothAreR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 XOR $4, $0, $0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -3472,15 +3104,9 @@ impl Test for XOROpcodeTestIntoR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 XOR $0, $2, $3
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -3514,15 +3140,9 @@ impl Test for XOROpcodeTestWithItself {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 XOR $4, $3, $3
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -3556,15 +3176,9 @@ impl Test for XOROpcodeTestInputOutput1 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 XOR $4, $3, $4
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -3598,15 +3212,9 @@ impl Test for XOROpcodeTestInputOutput2 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 XOR $4, $4, $3
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -3640,15 +3248,9 @@ impl Test for XOROpcodeTestInputOutput3 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 XOR $4, $4, $4
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -3682,15 +3284,9 @@ impl Test for NOROpcodeTest {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 NOR $4, $3, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -3724,15 +3320,9 @@ impl Test for NOROpcodeTestRTIsR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 NOR $4, $3, $0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -3766,15 +3356,9 @@ impl Test for NOROpcodeTestRSIsR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 NOR $4, $0, $3
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -3808,15 +3392,9 @@ impl Test for NOROpcodeTestBothAreR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 NOR $4, $0, $0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -3850,15 +3428,9 @@ impl Test for NOROpcodeTestIntoR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 NOR $0, $2, $3
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -3892,15 +3464,9 @@ impl Test for NOROpcodeTestWithItself {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 NOR $4, $3, $3
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -3934,15 +3500,9 @@ impl Test for NOROpcodeTestInputOutput1 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 NOR $4, $3, $4
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -3976,15 +3536,9 @@ impl Test for NOROpcodeTestInputOutput2 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 NOR $4, $4, $3
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -4018,15 +3572,9 @@ impl Test for NOROpcodeTestInputOutput3 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 NOR $4, $4, $4
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -4059,12 +3607,8 @@ impl Test for SLTOpcodeTest {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SLT $4, $2, $3
-                SD $4, 0($20)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &r3, out("$4") _, in("$20") &mut r4);
+            ", in("$2") r2, in("$3") r3, inout("$4") r4);
         }
         soft_assert_eq(r4, 0x1, "Register $4")?;
         Ok(())
@@ -4094,12 +3638,8 @@ impl Test for SLTOpcodeTest2 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SLT $4, $2, $3
-                SD $4, 0($20)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &r3, out("$4") _, in("$20") &mut r4);
+            ", in("$2") r2, in("$3") r3, inout("$4") r4);
         }
         soft_assert_eq(r4, 0x0, "Register $4")?;
         Ok(())
@@ -4129,12 +3669,8 @@ impl Test for SLTOpcodeTest3 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SLT $4, $2, $3
-                SD $4, 0($20)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &r3, out("$4") _, in("$20") &mut r4);
+            ", in("$2") r2, in("$3") r3, inout("$4") r4);
         }
         soft_assert_eq(r4, 0x0, "Register $4")?;
         Ok(())
@@ -4164,12 +3700,8 @@ impl Test for SLTOpcodeTest4 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SLT $4, $2, $3
-                SD $4, 0($20)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &r3, out("$4") _, in("$20") &mut r4);
+            ", in("$2") r2, in("$3") r3, inout("$4") r4);
         }
         soft_assert_eq(r4, 0x1, "Register $4")?;
         Ok(())
@@ -4199,12 +3731,8 @@ impl Test for SLTOpcodeTest5 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SLT $4, $2, $3
-                SD $4, 0($20)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &r3, out("$4") _, in("$20") &mut r4);
+            ", in("$2") r2, in("$3") r3, inout("$4") r4);
         }
         soft_assert_eq(r4, 0x0, "Register $4")?;
         Ok(())
@@ -4234,12 +3762,8 @@ impl Test for SLTOpcodeTest6 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SLT $4, $2, $3
-                SD $4, 0($20)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &r3, out("$4") _, in("$20") &mut r4);
+            ", in("$2") r2, in("$3") r3, inout("$4") r4);
         }
         soft_assert_eq(r4, 0x0, "Register $4")?;
         Ok(())
@@ -4269,12 +3793,8 @@ impl Test for SLTOpcodeTest7 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SLT $4, $2, $3
-                SD $4, 0($20)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &r3, out("$4") _, in("$20") &mut r4);
+            ", in("$2") r2, in("$3") r3, inout("$4") r4);
         }
         soft_assert_eq(r4, 0x0, "Register $4")?;
         Ok(())
@@ -4304,12 +3824,8 @@ impl Test for SLTOpcodeTest8 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SLT $4, $2, $3
-                SD $4, 0($20)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &r3, out("$4") _, in("$20") &mut r4);
+            ", in("$2") r2, in("$3") r3, inout("$4") r4);
         }
         soft_assert_eq(r4, 0x0, "Register $4")?;
         Ok(())
@@ -4339,12 +3855,8 @@ impl Test for SLTOpcodeTestWithSelf {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SLT $4, $2, $2
-                SD $4, 0($20)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &r3, out("$4") _, in("$20") &mut r4);
+            ", in("$2") r2, in("$3") r3, inout("$4") r4);
         }
         soft_assert_eq(r4, 0x0, "Register $4")?;
         Ok(())
@@ -4374,12 +3886,8 @@ impl Test for SLTOpcodeTestWithR0Pos {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SLT $4, $2, $0
-                SD $4, 0($20)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &r3, out("$4") _, in("$20") &mut r4);
+            ", in("$2") r2, in("$3") r3, inout("$4") r4);
         }
         soft_assert_eq(r4, 0x0, "Register $4")?;
         Ok(())
@@ -4409,12 +3917,8 @@ impl Test for SLTOpcodeTestWithR0Neg {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SLT $4, $2, $0
-                SD $4, 0($20)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &r3, out("$4") _, in("$20") &mut r4);
+            ", in("$2") r2, in("$3") r3, inout("$4") r4);
         }
         soft_assert_eq(r4, 0x1, "Register $4")?;
         Ok(())
@@ -4445,12 +3949,9 @@ impl Test for SLTOpcodeTestIntoR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SLT $0, $2, $3
-                SD $0, 0($16)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &r2, out("$3") _, in("$19") &r3, out("$4") _, in("$20") &r4);
+                DADDU {z0}, $0, $0
+            ", in("$2") r2, in("$3") r3, in("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         Ok(())
@@ -4480,12 +3981,8 @@ impl Test for SLTUOpcodeTest {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SLTU $4, $2, $3
-                SD $4, 0($20)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &r3, out("$4") _, in("$20") &mut r4);
+            ", in("$2") r2, in("$3") r3, inout("$4") r4);
         }
         soft_assert_eq(r4, 0x1, "Register $4")?;
         Ok(())
@@ -4515,12 +4012,8 @@ impl Test for SLTUOpcodeTest2 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SLTU $4, $2, $3
-                SD $4, 0($20)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &r3, out("$4") _, in("$20") &mut r4);
+            ", in("$2") r2, in("$3") r3, inout("$4") r4);
         }
         soft_assert_eq(r4, 0x0, "Register $4")?;
         Ok(())
@@ -4550,12 +4043,8 @@ impl Test for SLTUOpcodeTest3 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SLTU $4, $2, $3
-                SD $4, 0($20)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &r3, out("$4") _, in("$20") &mut r4);
+            ", in("$2") r2, in("$3") r3, inout("$4") r4);
         }
         soft_assert_eq(r4, 0x0, "Register $4")?;
         Ok(())
@@ -4585,12 +4074,8 @@ impl Test for SLTUOpcodeTest4 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SLTU $4, $2, $3
-                SD $4, 0($20)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &r3, out("$4") _, in("$20") &mut r4);
+            ", in("$2") r2, in("$3") r3, inout("$4") r4);
         }
         soft_assert_eq(r4, 0x1, "Register $4")?;
         Ok(())
@@ -4620,12 +4105,8 @@ impl Test for SLTUOpcodeTest5 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SLTU $4, $2, $3
-                SD $4, 0($20)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &r3, out("$4") _, in("$20") &mut r4);
+            ", in("$2") r2, in("$3") r3, inout("$4") r4);
         }
         soft_assert_eq(r4, 0x0, "Register $4")?;
         Ok(())
@@ -4655,12 +4136,8 @@ impl Test for SLTUOpcodeTest6 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SLTU $4, $2, $3
-                SD $4, 0($20)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &r3, out("$4") _, in("$20") &mut r4);
+            ", in("$2") r2, in("$3") r3, inout("$4") r4);
         }
         soft_assert_eq(r4, 0x0, "Register $4")?;
         Ok(())
@@ -4690,12 +4167,8 @@ impl Test for SLTUOpcodeTest7 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SLTU $4, $2, $3
-                SD $4, 0($20)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &r3, out("$4") _, in("$20") &mut r4);
+            ", in("$2") r2, in("$3") r3, inout("$4") r4);
         }
         soft_assert_eq(r4, 0x1, "Register $4")?;
         Ok(())
@@ -4725,12 +4198,8 @@ impl Test for SLTUOpcodeTest8 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SLTU $4, $2, $3
-                SD $4, 0($20)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &r3, out("$4") _, in("$20") &mut r4);
+            ", in("$2") r2, in("$3") r3, inout("$4") r4);
         }
         soft_assert_eq(r4, 0x1, "Register $4")?;
         Ok(())
@@ -4760,12 +4229,8 @@ impl Test for SLTUOpcodeTestWithSelf {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SLTU $4, $2, $2
-                SD $4, 0($20)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &r3, out("$4") _, in("$20") &mut r4);
+            ", in("$2") r2, in("$3") r3, inout("$4") r4);
         }
         soft_assert_eq(r4, 0x0, "Register $4")?;
         Ok(())
@@ -4795,12 +4260,8 @@ impl Test for SLTUOpcodeTestWithR0Pos {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SLTU $4, $2, $0
-                SD $4, 0($20)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &r3, out("$4") _, in("$20") &mut r4);
+            ", in("$2") r2, in("$3") r3, inout("$4") r4);
         }
         soft_assert_eq(r4, 0x0, "Register $4")?;
         Ok(())
@@ -4830,12 +4291,8 @@ impl Test for SLTUOpcodeTestWithR0Neg {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SLTU $4, $2, $0
-                SD $4, 0($20)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &r3, out("$4") _, in("$20") &mut r4);
+            ", in("$2") r2, in("$3") r3, inout("$4") r4);
         }
         soft_assert_eq(r4, 0x0, "Register $4")?;
         Ok(())
@@ -4866,12 +4323,9 @@ impl Test for SLTUOpcodeTestIntoR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SLTU $0, $2, $3
-                SD $0, 0($16)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &r2, out("$3") _, in("$19") &r3, out("$4") _, in("$20") &r4);
+                DADDU {z0}, $0, $0
+            ", in("$2") r2, in("$3") r3, in("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         Ok(())
@@ -4900,11 +4354,8 @@ impl Test for ORIOpcodeTest1 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 ORI $3, $2, 0xf2ff
-                SD $3, 0($19)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &mut r3);
+            ", in("$2") r2, inout("$3") r3);
         }
         soft_assert_eq(r3, 0x123456789876f3ff, "Register $3")?;
         Ok(())
@@ -4933,11 +4384,8 @@ impl Test for ORIOpcodeTest2 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 ORI $3, $2, 0x1234
-                SD $3, 0($19)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &mut r3);
+            ", in("$2") r2, inout("$3") r3);
         }
         soft_assert_eq(r3, 0x1234567898761334, "Register $3")?;
         Ok(())
@@ -4966,11 +4414,8 @@ impl Test for ORIOpcodeTest3 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 ORI $3, $2, 0xf0
-                SD $3, 0($19)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &mut r3);
+            ", in("$2") r2, inout("$3") r3);
         }
         soft_assert_eq(r3, 0x12345678987601f0, "Register $3")?;
         Ok(())
@@ -4999,11 +4444,8 @@ impl Test for ORIOpcodeTest4 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 ORI $3, $2, 0xc0
-                SD $3, 0($19)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &mut r3);
+            ", in("$2") r2, inout("$3") r3);
         }
         soft_assert_eq(r3, 0x12345678987601d0, "Register $3")?;
         Ok(())
@@ -5033,13 +4475,9 @@ impl Test for ORIOpcodeTestWithR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 ORI $3, $0, 0x1234
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -5071,13 +4509,9 @@ impl Test for ORIOpcodeTestWithOffsetZero {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 ORI $3, $2, 0x0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -5109,13 +4543,9 @@ impl Test for ORIOpcodeTestWithOffsetZeroAndR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 ORI $3, $0, 0x0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -5147,13 +4577,9 @@ impl Test for ORIOpcodeTestIntoR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 ORI $0, $2, 0x1234
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -5184,11 +4610,8 @@ impl Test for ANDIOpcodeTest1 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 ANDI $3, $2, 0x1234
-                SD $3, 0($19)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &mut r3);
+            ", in("$2") r2, inout("$3") r3);
         }
         soft_assert_eq(r3, 0x10, "Register $3")?;
         Ok(())
@@ -5217,11 +4640,8 @@ impl Test for ANDIOpcodeTest2 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 ANDI $3, $2, 0xffff
-                SD $3, 0($19)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &mut r3);
+            ", in("$2") r2, inout("$3") r3);
         }
         soft_assert_eq(r3, 0x110, "Register $3")?;
         Ok(())
@@ -5250,11 +4670,8 @@ impl Test for ANDIOpcodeTest3 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 ANDI $3, $2, 0x1fc0
-                SD $3, 0($19)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &mut r3);
+            ", in("$2") r2, inout("$3") r3);
         }
         soft_assert_eq(r3, 0x1f80, "Register $3")?;
         Ok(())
@@ -5283,11 +4700,8 @@ impl Test for ANDIOpcodeTest4 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 ANDI $3, $2, 0x72
-                SD $3, 0($19)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &mut r3);
+            ", in("$2") r2, inout("$3") r3);
         }
         soft_assert_eq(r3, 0x62, "Register $3")?;
         Ok(())
@@ -5316,11 +4730,8 @@ impl Test for ANDIOpcodeTest5 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 ANDI $3, $2, 0x83
-                SD $3, 0($19)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &mut r3);
+            ", in("$2") r2, inout("$3") r3);
         }
         soft_assert_eq(r3, 0x82, "Register $3")?;
         Ok(())
@@ -5350,13 +4761,9 @@ impl Test for ANDIOpcodeTestWithR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 ANDI $3, $0, 0x1234
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -5388,13 +4795,9 @@ impl Test for ANDIOpcodeTestWithOffsetZero {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 ANDI $3, $2, 0x0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -5426,13 +4829,9 @@ impl Test for ANDIOpcodeTestWithOffsetZeroAndR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 ANDI $3, $0, 0x0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -5464,13 +4863,9 @@ impl Test for ANDIOpcodeTestIntoR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 ANDI $0, $2, 0x1234
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -5501,11 +4896,8 @@ impl Test for XORIOpcodeTest1 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 XORI $3, $2, 0x1234
-                SD $3, 0($19)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &mut r3);
+            ", in("$2") r2, inout("$3") r3);
         }
         soft_assert_eq(r3, 0x1234567898761324, "Register $3")?;
         Ok(())
@@ -5534,11 +4926,8 @@ impl Test for XORIOpcodeTest2 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 XORI $3, $2, 0xffff
-                SD $3, 0($19)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &mut r3);
+            ", in("$2") r2, inout("$3") r3);
         }
         soft_assert_eq(r3, 0x123456789876feef, "Register $3")?;
         Ok(())
@@ -5567,11 +4956,8 @@ impl Test for XORIOpcodeTest3 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 XORI $3, $2, 0x1f0
-                SD $3, 0($19)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &mut r3);
+            ", in("$2") r2, inout("$3") r3);
         }
         soft_assert_eq(r3, 0x12345678987600e0, "Register $3")?;
         Ok(())
@@ -5600,11 +4986,8 @@ impl Test for XORIOpcodeTest4 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 XORI $3, $2, 0x71
-                SD $3, 0($19)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &mut r3);
+            ", in("$2") r2, inout("$3") r3);
         }
         soft_assert_eq(r3, 0x1234567898760161, "Register $3")?;
         Ok(())
@@ -5633,11 +5016,8 @@ impl Test for XORIOpcodeTest5 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 XORI $3, $2, 0x80
-                SD $3, 0($19)
-            ", out("$2") _, in("$18") &r2, out("$3") _, in("$19") &mut r3);
+            ", in("$2") r2, inout("$3") r3);
         }
         soft_assert_eq(r3, 0x1234567898760190, "Register $3")?;
         Ok(())
@@ -5667,13 +5047,9 @@ impl Test for XORIOpcodeTestWithR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 XORI $3, $0, 0x1234
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -5705,13 +5081,9 @@ impl Test for XORIOpcodeTestWithOffsetZero {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 XORI $3, $2, 0x0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -5743,13 +5115,9 @@ impl Test for XORIOpcodeTestWithOffsetZeroAndR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 XORI $3, $0, 0x0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -5781,13 +5149,9 @@ impl Test for XORIOpcodeTestIntoR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
                 XORI $0, $2, 0x1234
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -5820,15 +5184,9 @@ impl Test for ADDOpcodeTest {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 ADD $4, $3, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -5862,15 +5220,9 @@ impl Test for ADDOpcodeTestInputOutput1 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 ADD $4, $4, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -5904,15 +5256,9 @@ impl Test for ADDOpcodeTestInputOutput2 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 ADD $4, $3, $4
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -5946,15 +5292,9 @@ impl Test for ADDOpcodeTestInputOutput3 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 ADD $4, $4, $4
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -5988,15 +5328,9 @@ impl Test for ADDOpcodeTestRTIsR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 ADD $4, $3, $0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -6030,15 +5364,9 @@ impl Test for ADDOpcodeTestRSIsR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 ADD $4, $0, $3
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -6072,15 +5400,9 @@ impl Test for ADDOpcodeTestBothAreR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 ADD $4, $0, $0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -6114,15 +5436,9 @@ impl Test for ADDOpcodeTestIntoR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 ADD $0, $2, $3
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -6156,15 +5472,9 @@ impl Test for ADDOpcodeTestWithItself {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 ADD $4, $3, $3
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -6198,15 +5508,9 @@ impl Test for ADDUOpcodeTest {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 ADDU $4, $3, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -6240,15 +5544,9 @@ impl Test for ADDUOpcodeTestInputOutput1 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 ADDU $4, $4, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -6282,15 +5580,9 @@ impl Test for ADDUOpcodeTestInputOutput2 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 ADDU $4, $3, $4
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -6324,15 +5616,9 @@ impl Test for ADDUOpcodeTestInputOutput3 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 ADDU $4, $4, $4
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -6366,15 +5652,9 @@ impl Test for ADDUOpcodeTestRTIsR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 ADDU $4, $3, $0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -6408,15 +5688,9 @@ impl Test for ADDUOpcodeTestRSIsR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 ADDU $4, $0, $3
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -6450,15 +5724,9 @@ impl Test for ADDUOpcodeTestBothAreR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 ADDU $4, $0, $0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -6492,15 +5760,9 @@ impl Test for ADDUOpcodeTestIntoR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 ADDU $0, $2, $3
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -6534,15 +5796,9 @@ impl Test for ADDUOpcodeTestWithItself {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 ADDU $4, $3, $3
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -6576,15 +5832,9 @@ impl Test for DADDOpcodeTest {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DADD $4, $3, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -6618,15 +5868,9 @@ impl Test for DADDOpcodeTestInputOutput1 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DADD $4, $4, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -6660,15 +5904,9 @@ impl Test for DADDOpcodeTestInputOutput2 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DADD $4, $3, $4
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -6702,15 +5940,9 @@ impl Test for DADDOpcodeTestInputOutput3 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DADD $4, $4, $4
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -6744,15 +5976,9 @@ impl Test for DADDOpcodeTestRTIsR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DADD $4, $3, $0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -6786,15 +6012,9 @@ impl Test for DADDOpcodeTestRSIsR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DADD $4, $0, $3
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -6828,15 +6048,9 @@ impl Test for DADDOpcodeTestBothAreR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DADD $4, $0, $0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -6870,15 +6084,9 @@ impl Test for DADDOpcodeTestIntoR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DADD $0, $2, $3
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -6912,15 +6120,9 @@ impl Test for DADDOpcodeTestWithItself {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DADD $4, $3, $3
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -6954,15 +6156,9 @@ impl Test for DADDUOpcodeTest {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DADDU $4, $3, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -6996,15 +6192,9 @@ impl Test for DADDUOpcodeTestInputOutput1 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DADDU $4, $4, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -7038,15 +6228,9 @@ impl Test for DADDUOpcodeTestInputOutput2 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DADDU $4, $3, $4
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -7080,15 +6264,9 @@ impl Test for DADDUOpcodeTestInputOutput3 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DADDU $4, $4, $4
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -7122,15 +6300,9 @@ impl Test for DADDUOpcodeTestRTIsR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DADDU $4, $3, $0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -7164,15 +6336,9 @@ impl Test for DADDUOpcodeTestRSIsR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DADDU $4, $0, $3
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -7206,15 +6372,9 @@ impl Test for DADDUOpcodeTestBothAreR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DADDU $4, $0, $0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -7248,15 +6408,9 @@ impl Test for DADDUOpcodeTestIntoR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DADDU $0, $2, $3
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -7290,15 +6444,9 @@ impl Test for DADDUOpcodeTestWithItself {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DADDU $4, $3, $3
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -7332,15 +6480,9 @@ impl Test for SUBOpcodeTest {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SUB $4, $3, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567818760110, "Register $2")?;
@@ -7374,15 +6516,9 @@ impl Test for SUBOpcodeTestInputOutput1 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SUB $4, $4, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567818760110, "Register $2")?;
@@ -7416,15 +6552,9 @@ impl Test for SUBOpcodeTestInputOutput2 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SUB $4, $3, $4
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567818760110, "Register $2")?;
@@ -7458,15 +6588,9 @@ impl Test for SUBOpcodeTestInputOutput3 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SUB $4, $4, $4
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567818760110, "Register $2")?;
@@ -7500,15 +6624,9 @@ impl Test for SUBOpcodeTestRTIsR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SUB $4, $3, $0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -7542,15 +6660,9 @@ impl Test for SUBOpcodeTestRSIsR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SUB $4, $0, $3
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -7584,15 +6696,9 @@ impl Test for SUBOpcodeTestBothAreR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SUB $4, $0, $0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -7626,15 +6732,9 @@ impl Test for SUBOpcodeTestIntoR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SUB $0, $2, $3
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567878760110, "Register $2")?;
@@ -7668,15 +6768,9 @@ impl Test for SUBOpcodeTestWithItself {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SUB $4, $3, $3
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -7710,15 +6804,9 @@ impl Test for SUBUOpcodeTest {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SUBU $4, $3, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -7752,15 +6840,9 @@ impl Test for SUBUOpcodeTestInputOutput1 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SUBU $4, $4, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567818760110, "Register $2")?;
@@ -7794,15 +6876,9 @@ impl Test for SUBUOpcodeTestInputOutput2 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SUBU $4, $3, $4
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567818760110, "Register $2")?;
@@ -7836,15 +6912,9 @@ impl Test for SUBUOpcodeTestInputOutput3 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SUBU $4, $4, $4
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567818760110, "Register $2")?;
@@ -7878,15 +6948,9 @@ impl Test for SUBUOpcodeTestRTIsR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SUBU $4, $3, $0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -7920,15 +6984,9 @@ impl Test for SUBUOpcodeTestRSIsR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SUBU $4, $0, $3
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -7962,15 +7020,9 @@ impl Test for SUBUOpcodeTestBothAreR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SUBU $4, $0, $0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -8004,15 +7056,9 @@ impl Test for SUBUOpcodeTestIntoR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SUBU $0, $2, $3
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -8046,15 +7092,9 @@ impl Test for SUBUOpcodeTestWithItself {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SUBU $4, $3, $3
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -8088,15 +7128,9 @@ impl Test for DSUBOpcodeTest {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSUB $4, $3, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -8130,15 +7164,9 @@ impl Test for DSUBOpcodeTestInputOutput1 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSUB $4, $4, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567818760110, "Register $2")?;
@@ -8172,15 +7200,9 @@ impl Test for DSUBOpcodeTestInputOutput2 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSUB $4, $3, $4
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567818760110, "Register $2")?;
@@ -8214,15 +7236,9 @@ impl Test for DSUBOpcodeTestInputOutput3 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSUB $4, $4, $4
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567818760110, "Register $2")?;
@@ -8256,15 +7272,9 @@ impl Test for DSUBOpcodeTestRTIsR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSUB $4, $3, $0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -8298,15 +7308,9 @@ impl Test for DSUBOpcodeTestRSIsR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSUB $4, $0, $3
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -8340,15 +7344,9 @@ impl Test for DSUBOpcodeTestBothAreR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSUB $4, $0, $0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -8382,15 +7380,9 @@ impl Test for DSUBOpcodeTestIntoR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSUB $0, $2, $3
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -8424,15 +7416,9 @@ impl Test for DSUBOpcodeTestWithItself {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSUB $4, $3, $3
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -8466,15 +7452,9 @@ impl Test for DSUBUOpcodeTest {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSUBU $4, $3, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -8508,15 +7488,9 @@ impl Test for DSUBUOpcodeTestInputOutput1 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSUBU $4, $4, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567818760110, "Register $2")?;
@@ -8550,15 +7524,9 @@ impl Test for DSUBUOpcodeTestInputOutput2 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSUBU $4, $3, $4
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567818760110, "Register $2")?;
@@ -8592,15 +7560,9 @@ impl Test for DSUBUOpcodeTestInputOutput3 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSUBU $4, $4, $4
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567818760110, "Register $2")?;
@@ -8634,15 +7596,9 @@ impl Test for DSUBUOpcodeTestRTIsR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSUBU $4, $3, $0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -8676,15 +7632,9 @@ impl Test for DSUBUOpcodeTestRSIsR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSUBU $4, $0, $3
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -8718,15 +7668,9 @@ impl Test for DSUBUOpcodeTestBothAreR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSUBU $4, $0, $0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -8760,15 +7704,9 @@ impl Test for DSUBUOpcodeTestIntoR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSUBU $0, $2, $3
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -8802,15 +7740,9 @@ impl Test for DSUBUOpcodeTestWithItself {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSUBU $4, $3, $3
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -8843,14 +7775,8 @@ impl Test for DSUBUOpcodeTestNoOverflowNegativeMinusPositive {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSUBU $4, $3, $2
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4);
         }
         soft_assert_eq(r2, 0xbffffff000000000, "Register $2")?;
         soft_assert_eq(r3, 0x6f00000000123456, "Register $3")?;
@@ -8883,15 +7809,9 @@ impl Test for SLLOpcodeTest {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SLL $4, $3, 5
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -8925,15 +7845,9 @@ impl Test for SLLOpcodeTestShift0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SLL $4, $3, 0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -8967,15 +7881,9 @@ impl Test for SLLOpcodeTestSignExtension {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SLL $4, $3, 6
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -9009,15 +7917,9 @@ impl Test for SLLOpcodeTestIntoItself {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SLL $3, $3, 6
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -9051,15 +7953,9 @@ impl Test for SLLOpcodeTestIntoItself0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SLL $3, $3, 0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -9093,15 +7989,9 @@ impl Test for SLLOpcodeTestIntoR0Shift0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SLL $0, $3, 0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -9135,15 +8025,9 @@ impl Test for SLLOpcodeTestFromR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SLL $3, $0, 5
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -9177,15 +8061,9 @@ impl Test for SLLOpcodeTestFromR0Shift0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SLL $3, $0, 0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -9219,15 +8097,9 @@ impl Test for SLLVOpcodeTest {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SLLV $4, $3, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x5, "Register $2")?;
@@ -9261,15 +8133,9 @@ impl Test for SLLVOpcodeTestShift0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SLLV $4, $3, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x0, "Register $2")?;
@@ -9303,15 +8169,9 @@ impl Test for SLLVOpcodeTestShiftTargetAndSourceSame1 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SLLV $4, $3, $4
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x0, "Register $2")?;
@@ -9345,15 +8205,9 @@ impl Test for SLLVOpcodeTestShiftTargetAndSourceSame2 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SLLV $4, $4, $3
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x0, "Register $2")?;
@@ -9387,15 +8241,9 @@ impl Test for SLLVOpcodeTestShiftTargetAndSourceSame3 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SLLV $4, $4, $4
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x0, "Register $2")?;
@@ -9429,15 +8277,9 @@ impl Test for SLLVOpcodeTestShiftTooLarge {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SLLV $4, $3, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x24, "Register $2")?;
@@ -9471,15 +8313,9 @@ impl Test for SLLVOpcodeTestSignExtension {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SLLV $4, $3, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x6, "Register $2")?;
@@ -9513,15 +8349,9 @@ impl Test for SLLVOpcodeTestIntoItself {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SLLV $3, $3, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x6, "Register $2")?;
@@ -9555,15 +8385,9 @@ impl Test for SLLVOpcodeTestIntoItself0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SLLV $3, $3, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x0, "Register $2")?;
@@ -9597,15 +8421,9 @@ impl Test for SLLVOpcodeTestIntoR0Shift0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SLLV $0, $3, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x0, "Register $2")?;
@@ -9639,15 +8457,9 @@ impl Test for SLLVOpcodeTestFromR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SLLV $3, $0, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x5, "Register $2")?;
@@ -9681,15 +8493,9 @@ impl Test for SLLVOpcodeTestFromR0Shift0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SLLV $3, $0, $0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -9723,15 +8529,9 @@ impl Test for DSLL32OpcodeTest {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSLL32 $4, $3, 5
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -9765,15 +8565,9 @@ impl Test for DSLL32OpcodeTestShift0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSLL32 $4, $3, 0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -9807,15 +8601,9 @@ impl Test for DSLL32OpcodeTestIntoItself {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSLL32 $3, $3, 6
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -9849,15 +8637,9 @@ impl Test for DSLL32OpcodeTestIntoItself0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSLL32 $3, $3, 0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -9891,15 +8673,9 @@ impl Test for DSLL32OpcodeTestIntoR0Shift0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSLL32 $0, $3, 0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -9933,15 +8709,9 @@ impl Test for DSLL32OpcodeTestFromR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSLL32 $3, $0, 5
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -9975,15 +8745,9 @@ impl Test for DSLL32OpcodeTestFromR0Shift0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSLL32 $3, $0, 0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -10017,15 +8781,9 @@ impl Test for DSLLOpcodeTest {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSLL $4, $3, 5
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -10059,15 +8817,9 @@ impl Test for DSLLOpcodeTestShift0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSLL $4, $3, 0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -10101,15 +8853,9 @@ impl Test for DSLLOpcodeTestIntoItself {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSLL $3, $3, 6
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -10143,15 +8889,9 @@ impl Test for DSLLOpcodeTestIntoItself0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSLL $3, $3, 0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -10185,15 +8925,9 @@ impl Test for DSLLOpcodeTestIntoR0Shift0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSLL $0, $3, 0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -10227,15 +8961,9 @@ impl Test for DSLLOpcodeTestFromR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSLL $3, $0, 5
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -10269,15 +8997,9 @@ impl Test for DSLLOpcodeTestFromR0Shift0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSLL $3, $0, 0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -10311,15 +9033,9 @@ impl Test for DSLLVOpcodeTest {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSLLV $4, $3, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x5, "Register $2")?;
@@ -10353,15 +9069,9 @@ impl Test for DSLLVOpcodeTestShift0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSLLV $4, $3, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x0, "Register $2")?;
@@ -10395,15 +9105,9 @@ impl Test for DSLLVOpcodeTestShift1 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSLLV $4, $3, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x24, "Register $2")?;
@@ -10437,15 +9141,9 @@ impl Test for DSLLVOpcodeTestShiftTargetAndSourceSame1 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSLLV $4, $3, $4
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x0, "Register $2")?;
@@ -10479,15 +9177,9 @@ impl Test for DSLLVOpcodeTestShiftTargetAndSourceSame2 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSLLV $4, $4, $3
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x0, "Register $2")?;
@@ -10521,15 +9213,9 @@ impl Test for DSLLVOpcodeTestShiftTargetAndSourceSame3 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSLLV $4, $4, $4
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x0, "Register $2")?;
@@ -10563,15 +9249,9 @@ impl Test for DSLLVOpcodeTestShiftTooLarge {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSLLV $4, $3, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x44, "Register $2")?;
@@ -10605,15 +9285,9 @@ impl Test for DSLLVOpcodeTestIntoItself {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSLLV $3, $3, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x6, "Register $2")?;
@@ -10647,15 +9321,9 @@ impl Test for DSLLVOpcodeTestIntoItself0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSLLV $3, $3, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x0, "Register $2")?;
@@ -10689,15 +9357,9 @@ impl Test for DSLLVOpcodeTestIntoR0Shift0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSLLV $0, $3, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x0, "Register $2")?;
@@ -10731,15 +9393,9 @@ impl Test for DSLLVOpcodeTestFromR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSLLV $3, $0, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x5, "Register $2")?;
@@ -10773,15 +9429,9 @@ impl Test for DSLLVOpcodeTestFromR0Shift0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSLLV $3, $0, $0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -10815,15 +9465,9 @@ impl Test for SRLOpcodeTest {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SRL $4, $3, 5
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -10857,15 +9501,9 @@ impl Test for SRLOpcodeTestShift0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SRL $4, $3, 0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -10899,15 +9537,9 @@ impl Test for SRLOpcodeTestIntoItself {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SRL $3, $3, 6
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -10941,15 +9573,9 @@ impl Test for SRLOpcodeTestIntoItself0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SRL $3, $3, 0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -10983,15 +9609,9 @@ impl Test for SRLOpcodeTestIntoR0Shift0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SRL $0, $3, 0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -11025,15 +9645,9 @@ impl Test for SRLOpcodeTestFromR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SRL $3, $0, 5
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -11067,15 +9681,9 @@ impl Test for SRLOpcodeTestFromR0Shift0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SRL $3, $0, 0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -11109,15 +9717,9 @@ impl Test for SRLVOpcodeTest {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SRLV $4, $3, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x5, "Register $2")?;
@@ -11151,15 +9753,9 @@ impl Test for SRLVOpcodeTestShift0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SRLV $4, $3, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x0, "Register $2")?;
@@ -11193,15 +9789,9 @@ impl Test for SRLVOpcodeTestShiftTargetAndSourceSame1 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SRLV $4, $3, $4
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x0, "Register $2")?;
@@ -11235,15 +9825,9 @@ impl Test for SRLVOpcodeTestShiftTargetAndSourceSame2 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SRLV $4, $4, $3
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x0, "Register $2")?;
@@ -11277,15 +9861,9 @@ impl Test for SRLVOpcodeTestShiftTargetAndSourceSame3 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SRLV $4, $4, $4
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x0, "Register $2")?;
@@ -11319,15 +9897,9 @@ impl Test for SRLVOpcodeTestShiftTargetAndSourceSame4 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SRLV $4, $4, $4
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x0, "Register $2")?;
@@ -11361,15 +9933,9 @@ impl Test for SRLVOpcodeTestShiftTooLarge {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SRLV $4, $3, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x24, "Register $2")?;
@@ -11403,15 +9969,9 @@ impl Test for SRLVOpcodeTestIntoItself {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SRLV $3, $3, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x6, "Register $2")?;
@@ -11445,15 +10005,9 @@ impl Test for SRLVOpcodeTestIntoItself0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SRLV $3, $3, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x0, "Register $2")?;
@@ -11487,15 +10041,9 @@ impl Test for SRLVOpcodeTestIntoR0Shift0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SRLV $0, $3, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x0, "Register $2")?;
@@ -11529,15 +10077,9 @@ impl Test for SRLVOpcodeTestFromR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SRLV $3, $0, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x5, "Register $2")?;
@@ -11571,15 +10113,9 @@ impl Test for SRLVOpcodeTestFromR0Shift0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SRLV $3, $0, $0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -11613,15 +10149,9 @@ impl Test for DSRL32OpcodeTest {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSRL32 $4, $3, 5
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -11655,15 +10185,9 @@ impl Test for DSRL32OpcodeTestShift0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSRL32 $4, $3, 0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -11697,15 +10221,9 @@ impl Test for DSRL32OpcodeTestIntoItself {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSRL32 $3, $3, 6
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -11739,15 +10257,9 @@ impl Test for DSRL32OpcodeTestIntoItself0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSRL32 $3, $3, 0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -11781,15 +10293,9 @@ impl Test for DSRL32OpcodeTestIntoR0Shift0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSRL32 $0, $3, 0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -11823,15 +10329,9 @@ impl Test for DSRL32OpcodeTestFromR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSRL32 $3, $0, 5
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -11865,15 +10365,9 @@ impl Test for DSRL32OpcodeTestFromR0Shift0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSRL32 $3, $0, 0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -11907,15 +10401,9 @@ impl Test for DSRLOpcodeTest {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSRL $4, $3, 5
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -11949,15 +10437,9 @@ impl Test for DSRLOpcodeTestShift0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSRL $4, $3, 0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -11991,15 +10473,9 @@ impl Test for DSRLOpcodeTestIntoItself {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSRL $3, $3, 6
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -12033,15 +10509,9 @@ impl Test for DSRLOpcodeTestIntoItself0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSRL $3, $3, 0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -12075,15 +10545,9 @@ impl Test for DSRLOpcodeTestIntoR0Shift0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSRL $0, $3, 0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -12117,15 +10581,9 @@ impl Test for DSRLOpcodeTestFromR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSRL $3, $0, 5
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -12159,15 +10617,9 @@ impl Test for DSRLOpcodeTestFromR0Shift0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSRL $3, $0, 0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -12201,15 +10653,9 @@ impl Test for DSRLVOpcodeTest {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSRLV $4, $3, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x5, "Register $2")?;
@@ -12243,15 +10689,9 @@ impl Test for DSRLVOpcodeTestShift0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSRLV $4, $3, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x0, "Register $2")?;
@@ -12285,15 +10725,9 @@ impl Test for DSRLVOpcodeTestShift1 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSRLV $4, $3, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x24, "Register $2")?;
@@ -12327,15 +10761,9 @@ impl Test for DSRLVOpcodeTestShiftTargetAndSourceSame1 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSRLV $4, $3, $4
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x0, "Register $2")?;
@@ -12369,15 +10797,9 @@ impl Test for DSRLVOpcodeTestShiftTargetAndSourceSame2 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSRLV $4, $4, $3
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x0, "Register $2")?;
@@ -12411,15 +10833,9 @@ impl Test for DSRLVOpcodeTestShiftTargetAndSourceSame3 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSRLV $4, $4, $4
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x0, "Register $2")?;
@@ -12453,15 +10869,9 @@ impl Test for DSRLVOpcodeTestShiftTargetAndSourceSame4 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSRLV $4, $4, $4
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x0, "Register $2")?;
@@ -12495,15 +10905,9 @@ impl Test for DSRLVOpcodeTestShiftTooLarge {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSRLV $4, $3, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x44, "Register $2")?;
@@ -12537,15 +10941,9 @@ impl Test for DSRLVOpcodeTestIntoItself {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSRLV $3, $3, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x6, "Register $2")?;
@@ -12579,15 +10977,9 @@ impl Test for DSRLVOpcodeTestIntoItself0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSRLV $3, $3, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x0, "Register $2")?;
@@ -12621,15 +11013,9 @@ impl Test for DSRLVOpcodeTestIntoR0Shift0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSRLV $0, $3, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x0, "Register $2")?;
@@ -12663,15 +11049,9 @@ impl Test for DSRLVOpcodeTestFromR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSRLV $3, $0, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x5, "Register $2")?;
@@ -12705,15 +11085,9 @@ impl Test for DSRLVOpcodeTestFromR0Shift0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSRLV $3, $0, $0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -12747,15 +11121,9 @@ impl Test for SRAOpcodeTest {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SRA $4, $3, 5
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -12789,15 +11157,9 @@ impl Test for SRAOpcodeTest2 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SRA $4, $3, 16
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -12831,15 +11193,9 @@ impl Test for SRAOpcodeTestShift0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SRA $4, $3, 0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -12873,15 +11229,9 @@ impl Test for SRAOpcodeTestIntoItself {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SRA $3, $3, 6
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -12915,15 +11265,9 @@ impl Test for SRAOpcodeTestIntoItself0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SRA $3, $3, 0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -12957,15 +11301,9 @@ impl Test for SRAOpcodeTestIntoR0Shift0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SRA $0, $3, 0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -12999,15 +11337,9 @@ impl Test for SRAOpcodeTestFromR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SRA $3, $0, 5
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -13041,15 +11373,9 @@ impl Test for SRAOpcodeTestFromR0Shift0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SRA $3, $0, 0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -13083,15 +11409,9 @@ impl Test for SRAVOpcodeTest {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SRAV $4, $3, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x5, "Register $2")?;
@@ -13125,15 +11445,9 @@ impl Test for SRAVOpcodeTest2 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SRAV $4, $3, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x10, "Register $2")?;
@@ -13167,15 +11481,9 @@ impl Test for SRAVOpcodeTestShift0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SRAV $4, $3, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x0, "Register $2")?;
@@ -13209,15 +11517,9 @@ impl Test for SRAVOpcodeTestShiftTargetAndSourceSame1 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SRAV $4, $3, $4
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x0, "Register $2")?;
@@ -13251,15 +11553,9 @@ impl Test for SRAVOpcodeTestShiftTargetAndSourceSame2 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SRAV $4, $4, $3
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x0, "Register $2")?;
@@ -13293,15 +11589,9 @@ impl Test for SRAVOpcodeTestShiftTargetAndSourceSame3 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SRAV $4, $4, $4
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x0, "Register $2")?;
@@ -13335,15 +11625,9 @@ impl Test for SRAVOpcodeTestShiftTargetAndSourceSame4 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SRAV $4, $4, $4
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x0, "Register $2")?;
@@ -13377,15 +11661,9 @@ impl Test for SRAVOpcodeTestShiftTooLarge {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SRAV $4, $3, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x24, "Register $2")?;
@@ -13419,15 +11697,9 @@ impl Test for SRAVOpcodeTestIntoItself {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SRAV $3, $3, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x6, "Register $2")?;
@@ -13461,15 +11733,9 @@ impl Test for SRAVOpcodeTestIntoItself0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SRAV $3, $3, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x0, "Register $2")?;
@@ -13503,15 +11769,9 @@ impl Test for SRAVOpcodeTestIntoR0Shift0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SRAV $0, $3, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x0, "Register $2")?;
@@ -13545,15 +11805,9 @@ impl Test for SRAVOpcodeTestFromR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SRAV $3, $0, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x5, "Register $2")?;
@@ -13587,15 +11841,9 @@ impl Test for SRAVOpcodeTestFromR0Shift0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 SRAV $3, $0, $0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -13629,15 +11877,9 @@ impl Test for DSRA32OpcodeTest {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSRA32 $4, $3, 5
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -13671,15 +11913,9 @@ impl Test for DSRA32OpcodeTestShift0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSRA32 $4, $3, 0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -13713,15 +11949,9 @@ impl Test for DSRA32OpcodeTestIntoItself {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSRA32 $3, $3, 6
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -13755,15 +11985,9 @@ impl Test for DSRA32OpcodeTestIntoItself0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSRA32 $3, $3, 0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -13797,15 +12021,9 @@ impl Test for DSRA32OpcodeTestIntoR0Shift0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSRA32 $0, $3, 0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -13839,15 +12057,9 @@ impl Test for DSRA32OpcodeTestFromR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSRA32 $3, $0, 5
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -13881,15 +12093,9 @@ impl Test for DSRA32OpcodeTestFromR0Shift0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSRA32 $3, $0, 0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -13923,15 +12129,9 @@ impl Test for DSRAOpcodeTest {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSRA $4, $3, 5
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -13965,15 +12165,9 @@ impl Test for DSRAOpcodeTestShift0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSRA $4, $3, 0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -14007,15 +12201,9 @@ impl Test for DSRAOpcodeTestIntoItself {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSRA $3, $3, 6
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -14049,15 +12237,9 @@ impl Test for DSRAOpcodeTestIntoItself0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSRA $3, $3, 0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -14091,15 +12273,9 @@ impl Test for DSRAOpcodeTestIntoR0Shift0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSRA $0, $3, 0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -14133,15 +12309,9 @@ impl Test for DSRAOpcodeTestFromR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSRA $3, $0, 5
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -14175,15 +12345,9 @@ impl Test for DSRAOpcodeTestFromR0Shift0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSRA $3, $0, 0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
@@ -14217,15 +12381,9 @@ impl Test for DSRAVOpcodeTest {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSRAV $4, $3, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x5, "Register $2")?;
@@ -14259,15 +12417,9 @@ impl Test for DSRAVOpcodeTestShift0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSRAV $4, $3, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x0, "Register $2")?;
@@ -14301,15 +12453,9 @@ impl Test for DSRAVOpcodeTestShift1 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSRAV $4, $3, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x24, "Register $2")?;
@@ -14343,15 +12489,9 @@ impl Test for DSRAVOpcodeTestShiftTargetAndSourceSame1 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSRAV $4, $3, $4
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x0, "Register $2")?;
@@ -14385,15 +12525,9 @@ impl Test for DSRAVOpcodeTestShiftTargetAndSourceSame2 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSRAV $4, $4, $3
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x0, "Register $2")?;
@@ -14427,15 +12561,9 @@ impl Test for DSRAVOpcodeTestShiftTargetAndSourceSame3 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSRAV $4, $4, $4
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x0, "Register $2")?;
@@ -14469,15 +12597,9 @@ impl Test for DSRAVOpcodeTestShiftTargetAndSourceSame4 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSRAV $4, $4, $4
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x0, "Register $2")?;
@@ -14511,15 +12633,9 @@ impl Test for DSRAVOpcodeTestShiftTooLarge {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSRAV $4, $3, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x44, "Register $2")?;
@@ -14553,15 +12669,9 @@ impl Test for DSRAVOpcodeTestIntoItself {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSRAV $3, $3, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x6, "Register $2")?;
@@ -14595,15 +12705,9 @@ impl Test for DSRAVOpcodeTestIntoItself0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSRAV $3, $3, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x0, "Register $2")?;
@@ -14637,15 +12741,9 @@ impl Test for DSRAVOpcodeTestIntoR0Shift0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSRAV $0, $3, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x0, "Register $2")?;
@@ -14679,15 +12777,9 @@ impl Test for DSRAVOpcodeTestFromR0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSRAV $3, $0, $2
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x5, "Register $2")?;
@@ -14721,15 +12813,9 @@ impl Test for DSRAVOpcodeTestFromR0Shift0 {
             asm!("
                 .set noat
                 .set noreorder
-                LD $2, 0($18)
-                LD $3, 0($19)
-                LD $4, 0($20)
                 DSRAV $3, $0, $0
-                SD $0, 0($16)
-                SD $2, 0($18)
-                SD $3, 0($19)
-                SD $4, 0($20)
-            ", in("$16") &mut r0, out("$2") _, in("$18") &mut r2, out("$3") _, in("$19") &mut r3, out("$4") _, in("$20") &mut r4);
+                DADDU {z0}, $0, $0
+            ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
         soft_assert_eq(r0, 0x0, "Register $0")?;
         soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
