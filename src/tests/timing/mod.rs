@@ -7,7 +7,6 @@ use alloc::vec;
 use alloc::vec::Vec;
 use core::any::Any;
 use core::arch::{asm, naked_asm};
-use core::mem::transmute;
 
 use arbitrary_int::{u26, u5};
 
@@ -19,7 +18,7 @@ use crate::cop1::{fcsr, set_fcsr, FCSRFlags, FConst, FCSR};
 use crate::memory_map::MemoryMap;
 use crate::tests::soft_asserts::{soft_assert_eq, soft_assert_eq_decimal, soft_assert_range};
 use crate::tests::{Level, Test};
-use crate::uncached_memory::{UncachedHeapMemory, UncachedHeapMemoryWriter};
+use crate::uncached_memory::UncachedHeapMemory;
 
 // TODO: Test BC1
 // TODO: This test harness isn't entirely stable:
@@ -240,26 +239,132 @@ pub enum ExceptionTimingMode {
     Roundtrip = 2,
 }
 
-/// Runs the passed in naked function and measures its runtime precisely.
-/// The function is expected to end on JR RA with a NOP in the delay slot, but is otherwise
-/// free to do anything. Registers during the test function:
-///   - Integer registers $2 and $4 are the given input values2. Don't overwrite
+/// Measures the runtime of a dynamically generated test program precisely. The `body` is spliced
+/// into the measurement loop's buffer and called via JALR $25 (a JR RA + NOP is appended
+/// automatically). As the loop and body share one contiguous, precisely-aligned buffer, they can't
+/// evict each other in the icache regardless of layout. Registers during the body:
+///   - Integer registers $2 and $4 are the given input values. Don't overwrite
 ///   - FPU registers F2 and F4 also have those two values. Don't overwrite
-///   - Integer register $3 will hold a cached virtual address which can be read/written
-///   - Integer register $5 will hold a uncached virtual address (to the same location as $3) which can be read/written
-///   - Registers $6-$16 are free to be used in any way. $6-$9 will be initialized to $2-$5 in each loop, so they can overwritten
-/// if use_exception_timing is true, the end timestamp will be determined within the exception handler (so it will exclude the ERET)
+///   - Integer register $3 holds a cached virtual address which can be read/written
+///   - Integer register $5 holds a uncached virtual address (to the same location as $3) which can be read/written
+///   - $25 (T9) holds the body's own runtime address; memory[2] holds body_address + 16
+///   - Registers $6-$16 are free to be used in any way. $6-$9 will be initialized to $2-$5 in each loop
+/// If exception_timing isn't Off, the end timestamp is determined within the exception handler.
 
+/// Data-memory slot (u64 index) used to stash the loop's return address; beyond any offset a body touches.
+const MEASURE_RA_SLOT: usize = 8;
+
+/// Emits the measurement loop into `code`; the body is appended right after (at `code.len()`) with
+/// a JR RA + NOP, and is called via JALR $25 (caller sets $25 to the body address).
+fn emit_measurement_loop(code: &mut Vec<u32>) {
+    use GPR::*;
+    let count = RegisterIndex::Count;
+    let ra_offset = (MEASURE_RA_SLOT * 8) as i16;
+
+    // Offset a branch at index `from` needs to reach target index `to` (in make_b* units).
+    fn branch_offset(from: usize, to: usize) -> i16 {
+        (to as isize - from as isize - 1) as i16
+    }
+
+    // stash RA (no register is free, so use a spare data slot via the cached pointer in $3)
+    code.push(Assembler::make_sw(RA, ra_offset, V1));
+
+    let label_1 = code.len();
+    code.push(Assembler::make_move(K0, S2)); // Configure exception handler
+    code.push(Assembler::make_move(A2, V0));
+    code.push(Assembler::make_move(A3, V1));
+    code.push(Assembler::make_move(T0, A0));
+    code.push(Assembler::make_move(T1, A1));
+
+    // Calibration step
+    code.push(Assembler::make_mfc0(S3, count));
+    code.push(Assembler::make_nop());
+    code.push(Assembler::make_nop());
+    code.push(Assembler::make_mtc0(S3, count));
+    code.push(Assembler::make_nop());
+
+    // If loop counter is 2, skip an instruction. This shifts half of a cycle compared to the last round
+    code.push(Assembler::make_ori(S3, R0, 2));
+    let branch_2f = code.len();
+    code.push(Assembler::make_beq(S6, S3, 0)); // BEQ $22, $19, 2f (offset patched once 2f is known)
+    code.push(Assembler::make_nop()); // delay
+    code.push(Assembler::make_nop()); // an extra instruction that is skipped if $22 == 2
+
+    // label_2:
+    code[branch_2f] = Assembler::make_beq(S6, S3, branch_offset(branch_2f, code.len()));
+    code.push(Assembler::make_mfc0(S3, count));
+    code.push(Assembler::make_jalr(RA, T9)); // call the body ($25)
+    code.push(Assembler::make_nop());
+    code.push(Assembler::make_mfc0(S5, count));
+
+    // If enabled, don't use the timing value we just got but instead use k1, which is what the exception handler stored
+    code.push(Assembler::make_ori(S1, R0, 1));
+    let branch_3f = code.len();
+    code.push(Assembler::make_bne(S1, S2, 0)); // BNE $17, $18, 3f (offset patched once 3f is known)
+    code.push(Assembler::make_nop());
+    code.push(Assembler::make_move(S5, K1));
+
+    // label_3:
+    code[branch_3f] = Assembler::make_bne(S1, S2, branch_offset(branch_3f, code.len()));
+    code.push(Assembler::make_move(S7, T8)); // stash previous iteration's result in 23
+    code.push(Assembler::make_sub(T8, S5, S3));
+    code.push(Assembler::make_addiu(S6, S6, -1));
+
+    // Loop a bit - this clears out the write-buffer if it was used by the test
+    code.push(Assembler::make_ori(S3, R0, 70));
+    // label_4: drains into itself, with the ADDIU in the delay slot
+    let label_4 = code.len();
+    code.push(Assembler::make_bne(S3, R0, branch_offset(label_4, label_4))); // BNE $19, $0, 4b
+    code.push(Assembler::make_addiu(S3, S3, -1)); // delay slot
+
+    code.push(Assembler::make_bne(
+        S6,
+        R0,
+        branch_offset(code.len(), label_1),
+    )); // BNE $22, $0, 1b
+    code.push(Assembler::make_nop()); // delay slot
+
+    // restore RA and return to the outer asm
+    code.push(Assembler::make_lw(RA, ra_offset, V1));
+    code.push(Assembler::make_jr(RA));
+    code.push(Assembler::make_nop());
+}
+
+/// Builds the full measurement program ([loop][body][JR RA][NOP]) and returns it together with
+/// the body's word offset within the program.
+fn build_measurement_program(body: &[u32]) -> (Vec<u32>, usize) {
+    let mut code = Vec::with_capacity(40 + body.len());
+    emit_measurement_loop(&mut code);
+    let body_offset = code.len();
+    code.extend_from_slice(body);
+    code.push(Assembler::make_jr(GPR::RA));
+    code.push(Assembler::make_nop()); // delay slot
+    (code, body_offset)
+}
+
+/// Generates the measurement program for `body`, runs it once and returns the two raw COUNT
+/// measurements (ticks1, ticks2).
 #[inline(never)]
-fn assert_cycles(
-    expected_cycles: u32,
+fn measure_cycles_codegen(
     value2: u64,
     value4: u64,
     test_status: Status,
     exception_timing: ExceptionTimingMode,
-    f: extern "C" fn(),
-) -> Result<(), String> {
-    let mut memory = UncachedHeapMemory::<u64>::new_with_align(8, 64);
+    body: &[u32],
+) -> (u32, u32) {
+    let (program, body_offset) = build_measurement_program(body);
+
+    // Execute from a cached (0x8xxxxxxx) address, otherwise the CPU mostly waits on memory. A fresh
+    // buffer already has its icache invalidated by new_with_align, so writing it via the uncached
+    // view and executing via the cached view is coherent.
+    let mut buffer = UncachedHeapMemory::<u32>::new_with_align(program.len(), 64);
+    for (i, &word) in program.iter().enumerate() {
+        buffer.write(i, word);
+    }
+    let program_addr = MemoryMap::physical_to_cached::<u8>(buffer.start_physical()) as usize;
+    let body_addr = program_addr + body_offset * 4;
+
+    let mut memory = UncachedHeapMemory::<u64>::new_with_align(MEASURE_RA_SLOT + 1, 64);
     // Make this a pointer to itself. That allows reading from the same register again
     let start_physical = memory.start_physical();
     memory.write(
@@ -270,7 +375,7 @@ fn assert_cycles(
         1,
         MemoryMap::physical_to_uncached_mut::<u64>(start_physical + 8) as i32 as u64,
     );
-    memory.write(2, (f as u64 + 16) as i32 as u64);
+    memory.write(2, (body_addr as u64 + 16) as i32 as u64);
     memory.write(3, 0x89ABCDEF01234567u64); // when signed, this is negative
     memory.write(4, 0x456789ABCDEF1234u64); // when signed, this is positive
     memory.write(5, 0x56789ABCDEF12345u64);
@@ -283,12 +388,15 @@ fn assert_cycles(
         let previous_status = status();
 
         // A couple of issues this test harness fixes:
-        // - ICACHE: The first time the test runs, it is freshly loaded from ROM, introducing
+        // - ICACHE: The first time the test runs, it is freshly loaded from memory, introducing
         //   delays. Solve this by running twice
         // - COUNT increments at half-intervals, so when we're measuring cycles, half-cycles
         //   (e.g. 1.5) can be rounded up or down. Solution: Write to COUNT, as that
         //   calibrates.
         // - In order to measure half-cycles we can then add an additional NOP in another run.
+        //
+        // The measurement loop itself is in the generated buffer; this only sets up the input
+        // registers, jumps into it via $10 and reads the results back.
         asm!("
             .set noat
             .set noreorder
@@ -300,54 +408,12 @@ fn assert_cycles(
             NOP; NOP
             MTC0 $16, ${STATUS}
 
-            .align 5 // align so that the loop below fits within the fewest ICACHE cachelines as possible
-1:
-            ORI $26, $18, 0  // Configure exception handler
-            OR $6, $2, $0
-            OR $7, $3, $0
-            OR $8, $4, $0
-            OR $9, $5, $0
-
-            // Calibration step
-            MFC0 $19, ${COUNT}
-            NOP
-            NOP
-            MTC0 $19, ${COUNT}
+            JALR $10  // run the generated measurement loop + body
             NOP
 
-            // If loop counter is 2, skip an instruction. This shifts half of a cycle compared to the last round
-            ORI $19, $0, 2
-            BEQ $22, $19, 2f
-            NOP  // delay
-            NOP  // an extra instruction that is skipped if $22 == 2
-2:
-            MFC0 $19, ${COUNT}
-            JALR $25
-            NOP
-            MFC0 $21, ${COUNT}
-
-            // If enabled, don't use the timing value we just got but instead use k1, which is what the exception handler stored
-            ORI $17, $0, 1
-            BNE $17, $18, 3f
-            NOP
-            ORI $21, $27, 0
-3:
-            ORI $23, $24, 0     // stash previous iteration's result in 23
-            SUB $24, $21, $19
-            ADDIU $22, $22, 0xFFFF
-
-            // Loop a bit - this clears out the write-buffer if it was used by the test
-            ORI $19, $0, 70
-4:
-            BNE $19, $0, 4b
-            ADDIU $19, $19, -1 // delay slot
-
-            BNE $22, $0, 1b
-            NOP // delay slot
             ORI $31, $20, 0  // restore RA
             ORI $26, $0, 0  // restore normal exception handler behavior
         ",
-        COUNT = const RegisterIndex::Count as usize,
         STATUS = const RegisterIndex::Status as usize,
 
         // Pass in values as fpu registers - this allows passing them in as 64 bit (even if illegal float values)
@@ -365,7 +431,7 @@ fn assert_cycles(
         out("$7") _,
         out("$8") _,
         out("$9") _,
-        out("$10") _,
+        inout("$10") program_addr => _, // JALR target, then free for the body to clobber
         out("$11") _,
         out("$12") _,
         out("$13") _,
@@ -382,11 +448,41 @@ fn assert_cycles(
         inout("$22") 3 => _,
         out("$23") ticks2,
         out("$24") ticks1,
-        in("$25") f,
+        in("$25") body_addr,
         options(nostack));
 
         set_status(previous_status);
     }
+
+    (ticks1, ticks2)
+}
+
+/// Converts the two raw measurements into an effective cycle count by subtracting the fixed
+/// harness overhead:
+/// - 1 for the JALR
+/// - 1 for the JALR's NOP
+/// and, unless the end timestamp comes from the exception handler:
+/// - 1 for the return JR RA
+/// - 1 for the delay of the JR RA
+/// - 1 for one of the MFC0 COUNT itself
+fn effective_cycles(ticks1: u32, ticks2: u32, exception_timing: ExceptionTimingMode) -> u32 {
+    if exception_timing == ExceptionTimingMode::JustFire {
+        (ticks1 + ticks2) - 2
+    } else {
+        (ticks1 + ticks2) - 5
+    }
+}
+
+fn assert_cycles_with_codegen(
+    expected_cycles: u32,
+    value2: u64,
+    value4: u64,
+    test_status: Status,
+    exception_timing: ExceptionTimingMode,
+    body: &[u32],
+) -> Result<(), String> {
+    let (ticks1, ticks2) =
+        measure_cycles_codegen(value2, value4, test_status, exception_timing, body);
 
     // ticks2 is either the same or 1 larger than ticks
     soft_assert_range(
@@ -400,56 +496,13 @@ fn assert_cycles(
         },
     )?;
 
-    let effective_ticks = if exception_timing == ExceptionTimingMode::JustFire {
-        // In addition to the code being measured, we need a few extra cycles:
-        // - 1 for the JALR
-        // - 1 for the JALR's NOP
-        (ticks1 + ticks2) - 2
-    } else {
-        // In addition to the code being measured, we need a few extra cycles:
-        // - 1 for the JALR
-        // - 1 for the JALR's NOP
-        // - 1 for the return JR RA
-        // - 1 for the delay of the JR RA
-        // - 1 for one of the MFC0 COUNT itself
-        (ticks1 + ticks2) - 5
-    };
-    soft_assert_eq_decimal(effective_ticks, expected_cycles, "Measured cycles")?;
+    soft_assert_eq_decimal(
+        effective_cycles(ticks1, ticks2, exception_timing),
+        expected_cycles,
+        "Measured cycles",
+    )?;
 
     Ok(())
-}
-
-fn assert_cycles_with_codegen<F: FnOnce(&mut UncachedHeapMemoryWriter<u32>)>(
-    expected_cycles: u32,
-    value2: u64,
-    value4: u64,
-    test_status: Status,
-    exception_timing: ExceptionTimingMode,
-    f: F,
-) -> Result<(), String> {
-    // Dynamically generate code
-    let mut code_memory = UncachedHeapMemory::<u32>::new_with_align(64, 64);
-    let mut writer = UncachedHeapMemoryWriter::new(&mut code_memory);
-
-    f(&mut writer);
-    writer.write(Assembler::make_jr(GPR::RA));
-    writer.write(Assembler::make_nop()); // delay slot
-
-    // To execute, we'll run from a 0x8xxxxxxx address as otherwise the CPU will mostly
-    // spend time reading from memory
-    let cached_ptr = MemoryMap::physical_to_cached::<u8>(code_memory.start_physical());
-
-    // Turn the pointer into a function pointer
-    let function_ptr: extern "C" fn() = unsafe { transmute(cached_ptr) };
-
-    assert_cycles(
-        expected_cycles,
-        value2,
-        value4,
-        test_status,
-        exception_timing,
-        function_ptr,
-    )
 }
 
 fn assert_cycles_with_codegen_one_instruction(
@@ -466,7 +519,7 @@ fn assert_cycles_with_codegen_one_instruction(
         value4,
         test_status,
         exception_timing,
-        |writer| writer.write(instruction),
+        &[instruction],
     )
 }
 
@@ -501,11 +554,7 @@ impl Test for PreciseMeasureJustNOPs {
                 0,
                 Status::DEFAULT,
                 ExceptionTimingMode::Off,
-                |writer| {
-                    for _ in 0..*number_of_nops {
-                        writer.write(Assembler::make_nop());
-                    }
-                },
+                &vec![Assembler::make_nop(); *number_of_nops as usize],
             ),
             _ => Err(format!("Unexpected pattern")),
         }
@@ -8394,11 +8443,7 @@ impl Test for UncachedWriteBufferTest {
                 0,
                 Status::DEFAULT,
                 ExceptionTimingMode::Off,
-                |writer| {
-                    for _ in 0..*number_of_writes as i16 {
-                        writer.write(*instruction);
-                    }
-                },
+                &vec![*instruction; *number_of_writes as usize],
             ),
             _ => Err(format!("Unexpected pattern")),
         }
@@ -8419,10 +8464,7 @@ fn test_register_dependency(
         value4,
         Status::DEFAULT,
         ExceptionTimingMode::Off,
-        |writer| {
-            writer.write(instruction1);
-            writer.write(instruction2);
-        },
+        &[instruction1, instruction2],
     )?;
 
     // Test first instruction in the delay slot of a branch taken
@@ -8432,17 +8474,16 @@ fn test_register_dependency(
         value4,
         Status::DEFAULT,
         ExceptionTimingMode::Off,
-        |writer| {
+        &[
             // Branch (which is taken)
-            writer.write(Assembler::make_beq(GPR::R0, GPR::R0, 4));
+            Assembler::make_beq(GPR::R0, GPR::R0, 4),
             // Delay slot
-            writer.write(instruction1);
-
-            writer.write(Assembler::make_nop());
-            writer.write(Assembler::make_nop());
-            writer.write(Assembler::make_nop());
-            writer.write(instruction2);
-        },
+            instruction1,
+            Assembler::make_nop(),
+            Assembler::make_nop(),
+            Assembler::make_nop(),
+            instruction2,
+        ],
     )?;
 
     // Test first instruction in the delay slot of a likely branch taken
@@ -8452,17 +8493,16 @@ fn test_register_dependency(
         value4,
         Status::DEFAULT,
         ExceptionTimingMode::Off,
-        |writer| {
+        &[
             // Branch (which is taken)
-            writer.write(Assembler::make_beql(GPR::R0, GPR::R0, 4));
+            Assembler::make_beql(GPR::R0, GPR::R0, 4),
             // Delay slot
-            writer.write(instruction1);
-
-            writer.write(Assembler::make_nop());
-            writer.write(Assembler::make_nop());
-            writer.write(Assembler::make_nop());
-            writer.write(instruction2);
-        },
+            instruction1,
+            Assembler::make_nop(),
+            Assembler::make_nop(),
+            Assembler::make_nop(),
+            instruction2,
+        ],
     )?;
 
     // Test first instruction in the delay slot of a branch not taken
@@ -8472,14 +8512,13 @@ fn test_register_dependency(
         value4,
         Status::DEFAULT,
         ExceptionTimingMode::Off,
-        |writer| {
+        &[
             // Branch (which is not taken)
-            writer.write(Assembler::make_beq(GPR::V1, GPR::R0, 1));
+            Assembler::make_beq(GPR::V1, GPR::R0, 1),
             // Delay slot
-            writer.write(instruction1);
-
-            writer.write(instruction2);
-        },
+            instruction1,
+            instruction2,
+        ],
     )?;
 
     // Test first instruction in the delay slot of a JR
@@ -8489,18 +8528,17 @@ fn test_register_dependency(
         value4,
         Status::DEFAULT,
         ExceptionTimingMode::Off,
-        |writer| {
+        &[
             // T9 is the register that was used to call to here. Add to it to branch a few instructions forward
-            writer.write(Assembler::make_addiu(GPR::A2, GPR::T9, 16));
+            Assembler::make_addiu(GPR::A2, GPR::T9, 16),
             // Branch (which is taken)
-            writer.write(Assembler::make_jr(GPR::A2));
+            Assembler::make_jr(GPR::A2),
             // Delay slot
-            writer.write(instruction1);
-            writer.write(Assembler::make_nop());
-
+            instruction1,
+            Assembler::make_nop(),
             // Branch target
-            writer.write(instruction2);
-        },
+            instruction2,
+        ],
     )?;
 
     Ok(())
@@ -11075,11 +11113,7 @@ impl Test for CPURegisterDependency {
                     0x456,
                     Status::DEFAULT,
                     ExceptionTimingMode::Off,
-                    |writer| {
-                        for &instruction in instructions {
-                            writer.write(instruction);
-                        }
-                    },
+                    instructions,
                 );
             }
             _ => {}
@@ -12375,12 +12409,12 @@ impl Test for LikelyBranchCycleCount {
                     0x456,
                     Status::DEFAULT,
                     ExceptionTimingMode::Off,
-                    |writer| {
-                        writer.write(*instruction1);
-                        writer.write(*instruction2);
-                        writer.write(Assembler::make_nop()); // Delay slot (skipped)
-                        writer.write(*instruction3);
-                    },
+                    &[
+                        *instruction1,
+                        *instruction2,
+                        Assembler::make_nop(), // Delay slot (skipped)
+                        *instruction3,
+                    ],
                 )
             }
             _ => Err(format!("Unexpected pattern")),
