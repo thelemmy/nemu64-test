@@ -64,7 +64,6 @@ fn do_all_loads(ptr64: u64) -> AllLoadsResult {
 
     unsafe {
         asm!("
-            LD $3, 0($2)  // get actual pointer
             LUI $6, 0xdead
             ORI $6, 0xbeef
             DSLL32 $6, $6, 0
@@ -196,7 +195,7 @@ fn do_all_loads(ptr64: u64) -> AllLoadsResult {
             LDR $4, 7($3)
             SD $4, 272($5)
 
-        ", in("$2") &ptr64, out("$3") _, out("$4") _, out("$6") _, out("$f4") _, in("$5") &mut result)
+        ", in("$3") ptr64, out("$4") _, out("$6") _, out("$f4") _, in("$5") &mut result)
     }
 
     result
@@ -388,10 +387,9 @@ fn test_limits(
     // Load should be without exception
     unsafe {
         asm!("
-            LD $3, 0($2)  // get actual pointer
             LL $4, 0($3)
             NOP
-        ", in("$2") &largest_valid_address, out("$3") _, out("$4") _);
+        ", in("$3") largest_valid_address, out("$4") _);
     }
 
     soft_assert_eq2(cop0::lladdr(), expected_lladdr, || {
@@ -404,9 +402,8 @@ fn test_limits(
     expect_exception(CauseException::AdEL, 1, || {
         unsafe {
             asm!("
-                 LD $3, 0($2)  // get actual pointer
                  LW $4, 0($3)
-             ", in("$2") &smallest_exception_address, out("$3") _, out("$4") _);
+             ", in("$3") smallest_exception_address, out("$4") _);
         }
         Ok(())
     })?;
@@ -485,12 +482,10 @@ fn test(tlb_address: u64, vpn: u27, r: u2) -> Result<(), String> {
     unsafe {
         asm!("
             .set noat
-            LD $2, 0 ($3)
-
             LW $4, 0 ($2)
             DADDIU $2, $2, {OFFSET}
             LW $5, 0 ($2)
-        ", OFFSET = const END_OF_PAGE_OFFSET, in("$3") &tlb_address, out("$2") _, out("$4") value_begin, out("$5") value_end)
+        ", OFFSET = const END_OF_PAGE_OFFSET, inout("$2") tlb_address => _, out("$4") value_begin, out("$5") value_end)
     }
 
     soft_assert_eq(
@@ -703,14 +698,17 @@ impl Test for TLB64Execute {
             cop0::cache::<1, 0>(virtual_address as usize);
             cop0::cache::<0, 0>(virtual_address as usize);
 
-            let mut result: u32;
+            let result: u64;
             asm!("
-                LD $2, 0 ($3)
                 JALR $4, $2
                 NOP
-            ", in("$3") &virtual_address, out("$2") result, out("$4") _);
+            ", inout("$2") virtual_address => result, out("$4") _);
 
-            soft_assert_eq(result, 64, "Return value of function in TLB mapped space")?;
+            soft_assert_eq(
+                result as u32,
+                64,
+                "Return value of function in TLB mapped space",
+            )?;
         }
 
         Ok(())

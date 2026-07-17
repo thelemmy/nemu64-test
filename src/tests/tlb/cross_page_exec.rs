@@ -94,10 +94,9 @@ fn jalr_u64(entry: u64) -> u32 {
     let mut v0: u32;
     unsafe {
         asm!(
-            "ld $2, 0($5)",
-            "jalr $4, $2",
+            "jalr $4, $3",
             "nop",
-            in("$5") &entry,
+            in("$3") entry,
             out("$2") v0,
             out("$4") _,
         );

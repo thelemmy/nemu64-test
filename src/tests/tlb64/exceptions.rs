@@ -210,12 +210,9 @@ fn test_load_and_catch_exception(address: u64, tlb_miss: bool) -> Result<(), Str
         unsafe {
             asm!("
                 .set noat
-                // Load 64 bit address
-                LD $2, 0 ($3)
-
                 // Actual load that should cause the tlb miss
                 LW $0, 0 ($2)
-            ", in("$3") &address, out("$2") _)
+            ", in("$2") address)
         }
 
         Ok(())
@@ -358,9 +355,8 @@ fn test_tlb_miss(address: u64, vpn: u27, r: u2) -> Result<(), String> {
         unsafe {
             asm!("
                 .set noat
-                LD $2, 0 ($3)
                 LW $4, 0 ($2)
-        ", in("$3") &address, out("$2") _, out("$4") _)
+        ", in("$2") address, out("$4") _)
         }
 
         Ok(())
