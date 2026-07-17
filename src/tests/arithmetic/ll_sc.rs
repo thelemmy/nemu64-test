@@ -34,14 +34,12 @@ impl Test for LL {
         let mut memory: u32 = 0x89AB_CDEF;
         let ptr = (&mut memory as *mut u32) as isize as u64;
 
-        let mut ll_value: u64 = 0;
+        let ll_value: u64;
         unsafe {
             asm!("
                 .set noat
-                LD $3, 0($2)
                 LL $4, 0($3)
-                SD $4, 0($5)
-            ", in("$2") &ptr, out("$3") _, out("$4") _, in("$5") &mut ll_value);
+            ", in("$3") ptr, out("$4") ll_value);
         }
 
         let expected_lladdr = ((ptr as usize & 0x1FFF_FFFF) >> 4) as u64;
@@ -75,19 +73,16 @@ impl Test for SC {
         let mut memory: u32 = 0x89AB_CDEF;
         let ptr = (&mut memory as *mut u32) as isize as u64;
 
-        let mut ll_value: u64 = 0;
-        let mut sc_status: u64 = 0;
+        let ll_value: u64;
+        let sc_status: u64;
         unsafe {
             asm!("
                 .set noat
-                LD $3, 0($2)
                 LL $5, 0($3)
                 LUI $4, 0x1357
                 ORI $4, $4, 0x9BDF
                 SC $4, 0($3)
-                SD $5, 0($6)
-                SD $4, 0($7)
-            ", in("$2") &ptr, out("$3") _, out("$4") _, out("$5") _, in("$6") &mut ll_value, in("$7") &mut sc_status);
+            ", in("$3") ptr, out("$4") sc_status, out("$5") ll_value);
         }
 
         soft_assert_eq(ll_value, 0xFFFF_FFFF_89AB_CDEF, "LL value before SC")?;
@@ -121,14 +116,12 @@ impl Test for LLD {
         let mut memory: u64 = 0x89AB_CDEF_0123_4567;
         let ptr = (&mut memory as *mut u64) as isize as u64;
 
-        let mut lld_value: u64 = 0;
+        let lld_value: u64;
         unsafe {
             asm!("
                 .set noat
-                LD $3, 0($2)
                 LLD $4, 0($3)
-                SD $4, 0($5)
-            ", in("$2") &ptr, out("$3") _, out("$4") _, in("$5") &mut lld_value);
+            ", in("$3") ptr, out("$4") lld_value);
         }
 
         let expected_lladdr = ((ptr as usize & 0x1FFF_FFFF) >> 4) as u64;
@@ -162,19 +155,15 @@ impl Test for SCD {
         let mut memory: u64 = 0x89AB_CDEF_0123_4567;
         let ptr = (&mut memory as *mut u64) as isize as u64;
 
-        let mut lld_value: u64 = 0;
-        let mut scd_status: u64 = 0;
+        let lld_value: u64;
+        let scd_status: u64;
         let write_value: u64 = 0x1020_3040_5060_7080;
         unsafe {
             asm!("
                 .set noat
-                LD $3, 0($2)
                 LLD $5, 0($3)
-                LD $4, 0($8)
                 SCD $4, 0($3)
-                SD $5, 0($6)
-                SD $4, 0($7)
-            ", in("$2") &ptr, out("$3") _, out("$4") _, out("$5") _, in("$6") &mut lld_value, in("$7") &mut scd_status, in("$8") &write_value);
+            ", in("$3") ptr, inout("$4") write_value => scd_status, out("$5") lld_value);
         }
 
         soft_assert_eq(lld_value, 0x89AB_CDEF_0123_4567, "LLD value before SCD")?;
@@ -208,15 +197,13 @@ impl Test for SCAfterERET {
         let mut memory: u32 = 0x89AB_CDEF;
         let ptr = (&mut memory as *mut u32) as isize as u64;
 
-        let mut ll_value: u64 = 0;
-        let mut sc_status: u64 = 0;
+        let ll_value: u64;
+        let sc_status: u64;
         unsafe {
             asm!("
                 .set noat
                 .set noreorder
-                LD $3, 0($2)
-                LL $4, 0($3)
-                SD $4, 0($5)
+                LL $5, 0($3)
                 MFC0 $6, $12
                 ORI $6, $6, 0X2
                 MTC0 $6, $12
@@ -232,9 +219,8 @@ impl Test for SCAfterERET {
                 LUI $4, 0x1357
                 ORI $4, $4, 0x9BDF
                 SC $4, 0($3)
-                SD $4, 0($8)
-            ", in("$2") &ptr, in("$5") &mut ll_value, in("$8") &mut sc_status,
-               out("$3") _, out("$4") _, out("$6") _, out("$7") _);
+            ", in("$3") ptr, out("$4") sc_status, out("$5") ll_value,
+               out("$6") _, out("$7") _);
         }
 
         soft_assert_eq(ll_value, 0xFFFF_FFFF_89AB_CDEF, "LL value before ERET")?;
@@ -273,15 +259,13 @@ impl Test for SCDAfterERET {
         let mut memory: u64 = 0x89AB_CDEF_0123_4567;
         let ptr = (&mut memory as *mut u64) as isize as u64;
 
-        let mut lld_value: u64 = 0;
-        let mut scd_status: u64 = 0;
+        let lld_value: u64;
+        let scd_status: u64;
         unsafe {
             asm!("
                 .set noat
                 .set noreorder
-                LD $3, 0($2)
-                LLD $4, 0($3)
-                SD $4, 0($5)
+                LLD $5, 0($3)
                 MFC0 $6, $12
                 ORI $6, $6, 0x2
                 MTC0 $6, $12
@@ -301,9 +285,8 @@ impl Test for SCDAfterERET {
                 DSLL $4, $4, 16
                 ORI $4, $4, 0x7080
                 SCD $4, 0($3)
-                SD $4, 0($8)
-            ", in("$2") &ptr, in("$5") &mut lld_value, in("$8") &mut scd_status,
-               out("$3") _, out("$4") _, out("$6") _, out("$7") _);
+            ", in("$3") ptr, out("$4") scd_status, out("$5") lld_value,
+               out("$6") _, out("$7") _);
         }
 
         soft_assert_eq(lld_value, 0x89AB_CDEF_0123_4567, "LLD value before ERET")?;
@@ -373,26 +356,20 @@ impl Test for SCAliasOnSamePhysicalViaTLB {
             cop0::set_entry_hi(0);
         }
 
-        let mut ll_value: u32 = 0;
-        let mut sc_status: u32 = 0;
-        let mut readback_value: u32 = 0;
+        let ll_value: u32;
+        let sc_status: u32;
+        let readback_value: u32;
         unsafe {
             asm!("
                 .set noat
-                LW $3, 0($2)
-                LW $4, 0($8)
                 LL $5, 0($3)
                 LUI $6, 0x1357
                 ORI $6, $6, 0x9BDF
                 SC $6, 0($4)
-                SW $5, 0($9)
-                SW $6, 0($10)
                 LW $7, 0($3)
-                SW $7, 0($11)
             ",
-            in("$2") &ll_virtual, in("$8") &sc_virtual,
-            out("$3") _, out("$4") _, out("$5") _, out("$6") _, out("$7") _,
-            in("$9") &mut ll_value, in("$10") &mut sc_status, in("$11") &mut readback_value);
+            in("$3") ll_virtual, in("$4") sc_virtual,
+            out("$5") ll_value, out("$6") sc_status, out("$7") readback_value);
         }
 
         soft_assert_eq(ll_value, 0x89AB_CDEF, "LL value through first alias")?;
