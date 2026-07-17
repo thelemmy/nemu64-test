@@ -62,9 +62,12 @@ fn dma_test<const N: usize>(
     expected: [[u16; 8]; N],
 ) -> Result<(), String> {
     // Create some test data. Use uncached memory to ensure the DMA engine can see it
-    // without us having to flush any caches first
-    let mut source_data: [[u16; 8]; 4] = [[0u16; 8]; 4];
-    let source_data_uncached = MemoryMap::uncached_mut(source_data.as_mut_ptr());
+    // without us having to flush any caches first. The buffer must be 8-byte aligned: the SP DMA
+    // ignores the low 3 bits of the source address, so a misaligned buffer reads shifted data.
+    #[repr(align(8))]
+    struct Aligned([[u16; 8]; 4]);
+    let mut source_data = Aligned([[0u16; 8]; 4]);
+    let source_data_uncached = MemoryMap::uncached_mut(source_data.0.as_mut_ptr());
     unsafe {
         source_data_uncached.add(0).write_volatile([
             0x0123, 0x4567, 0x89AB, 0xCDEF, 0xFEDC, 0x89BA, 0x7654, 0x3210,
@@ -527,11 +530,14 @@ impl Test for SPDMAFromDMEMWithOverflow {
         SPMEM::write(0x1FF8, 0x99AABBCC);
         SPMEM::write(0x1FFC, 0xDDEEFF00);
 
-        let mut source_data: [u32; 4] = [0u32; 4];
-        let source_data_uncached = MemoryMap::uncached_mut(&mut source_data);
+        // 8-byte aligned: the SP DMA ignores the low 3 bits of the target address.
+        #[repr(align(8))]
+        struct Aligned([u32; 4]);
+        let mut source_data = Aligned([0u32; 4]);
+        let source_data_uncached = MemoryMap::uncached_mut(&mut source_data.0);
         let source_ptr = source_data_uncached as *mut u8;
         let source_cached = 0xFFFF_FFFF_8000_0000usize | (source_ptr as usize & 0x1FFF_FFFF);
-        let rdram_sync = core::mem::size_of_val(&source_data);
+        let rdram_sync = core::mem::size_of_val(&source_data.0);
         unsafe {
             cop0::dcache_hit_writeback_invalidate_range(source_cached, rdram_sync);
             RSP::start_dma_sp_to_cpu(0x0FF8, source_ptr, 16);
