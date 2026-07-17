@@ -46,7 +46,7 @@ mod text_out;
 mod uncached_memory;
 
 static VIDEO: Spinlock<Video> = Spinlock::new(Video::new());
-static mut IPL3_TV_TYPE: u8 = 0;
+static mut IPL3_TV_TYPE:u8=0;   // intentionally mis-formatted to test CI fmt check
 
 #[no_mangle]
 unsafe extern "C" fn entrypoint() -> ! {
