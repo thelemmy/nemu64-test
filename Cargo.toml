@@ -33,6 +33,9 @@ cop0hazard = ["quick"]
 # they'd move out of this category. Therefore, it is disabled by default and not even reported as disabled.
 poorly_understood_quirk = ["quick"]
 
+# The filled-triangle RDP tests. Disabled by default because they aren't stable on hardware yet.
+experimental_rdp = []
+
 vmulf_stress_test = []
 vmulu_stress_test = []
 vmulq_stress_test = []

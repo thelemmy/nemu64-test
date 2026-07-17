@@ -54,6 +54,7 @@ fn dmfc1<const REG: usize>() -> u64 {
     let result: u64;
     unsafe {
         asm!("
+            .set noat
             dmfc1 {result}, ${cop1Reg}
         ", result = out(reg) result, cop1Reg = const REG)
     }
@@ -737,6 +738,7 @@ impl Test for UpperBitsOf32BitConversionHalf {
         const FULL_MODE: u32 = Status::DEFAULT.raw_value();
         unsafe {
             asm!("
+                .set noat
                 // Conversions (no matter the size of the input) ignore the lowest bit of the input
                 CVT.S.D $0, $26
                 CVT.S.D $1, $27
@@ -905,6 +907,7 @@ impl Test for HalfMode64BitOperationsWithOddIndex {
         const FULL_MODE: u32 = Status::DEFAULT.raw_value();
         unsafe {
             asm!("
+                .set noat
                 ADD.D $0, $28, $30
                 ADD.D $1, $29, $30
                 ADD.D $2, $28, $31
@@ -1045,6 +1048,7 @@ impl Test for HalfMode64BitConversionsWithOddIndex {
         const FULL_MODE: u32 = Status::DEFAULT.raw_value();
         unsafe {
             asm!("
+                .set noat
                 // Conversions (no matter the size of the input) ignore the lowest bit of the input
                 CVT.D.S $0, $26
                 CVT.D.S $1, $27

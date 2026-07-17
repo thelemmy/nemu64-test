@@ -351,8 +351,8 @@ fn assert_cycles(
         STATUS = const RegisterIndex::Status as usize,
 
         // Pass in values as fpu registers - this allows passing them in as 64 bit (even if illegal float values)
-        in("$f2") transmute::<u64, f64>(value2),
-        in("$f4") transmute::<u64, f64>(value4),
+        in("$f2") f64::from_bits(value2),
+        in("$f4") f64::from_bits(value4),
 
         // $2 and $4 will be copied from the FPU via DMFC1
         out("$2") _,
@@ -5075,8 +5075,8 @@ impl Test for COP1Instructions32 {
                         .with_enable_invalid_operation(false)
                         .with_flush_denorm_to_zero(true),
                 );
-                let value2_u64 = unsafe { transmute::<f32, u32>(*value2) } as u64;
-                let value4_u64 = unsafe { transmute::<f32, u32>(*value4) } as u64;
+                let value2_u64 = f32::to_bits(*value2) as u64;
+                let value4_u64 = f32::to_bits(*value4) as u64;
                 return assert_cycles_with_codegen_one_instruction(
                     *expected_cycles,
                     value2_u64,
@@ -5091,8 +5091,8 @@ impl Test for COP1Instructions32 {
         match (*value).downcast_ref::<(&str, u32, f32, f32, ExceptionTimingMode, u32)>() {
             Some((_context, expected_cycles, value2, value4, exception_mode, instruction)) => {
                 set_fcsr(FCSR::DEFAULT.with_enables(FCSRFlags::ALL));
-                let value2_u64 = unsafe { transmute::<f32, u32>(*value2) } as u64;
-                let value4_u64 = unsafe { transmute::<f32, u32>(*value4) } as u64;
+                let value2_u64 = f32::to_bits(*value2) as u64;
+                let value4_u64 = f32::to_bits(*value4) as u64;
                 return assert_cycles_with_codegen_one_instruction(
                     *expected_cycles,
                     value2_u64,
@@ -8265,8 +8265,8 @@ impl Test for COP1Instructions64 {
         );
         match (*value).downcast_ref::<(&str, u32, f64, f64, u32)>() {
             Some((_context, expected_cycles, value2, value4, instruction)) => {
-                let value2_u64 = unsafe { transmute::<f64, u64>(*value2) };
-                let value4_u64 = unsafe { transmute::<f64, u64>(*value4) };
+                let value2_u64 = f64::to_bits(*value2);
+                let value4_u64 = f64::to_bits(*value4);
                 return assert_cycles_with_codegen_one_instruction(
                     *expected_cycles,
                     value2_u64,
@@ -8281,8 +8281,8 @@ impl Test for COP1Instructions64 {
         match (*value).downcast_ref::<(&str, u32, f64, f64, ExceptionTimingMode, u32)>() {
             Some((_context, expected_cycles, value2, value4, exception_mode, instruction)) => {
                 set_fcsr(FCSR::DEFAULT.with_enables(FCSRFlags::ALL));
-                let value2_u64 = unsafe { transmute::<f64, u64>(*value2) };
-                let value4_u64 = unsafe { transmute::<f64, u64>(*value4) };
+                let value2_u64 = f64::to_bits(*value2);
+                let value4_u64 = f64::to_bits(*value4);
                 return assert_cycles_with_codegen_one_instruction(
                     *expected_cycles,
                     value2_u64,
@@ -12289,8 +12289,8 @@ impl Test for COP1RegisterDependency {
 
         match (*value).downcast_ref::<(&str, u32, f32, f32, u32, u32)>() {
             Some((_context, expected_cycles, value2, value4, instruction1, instruction2)) => {
-                let value2_u64 = unsafe { transmute::<f32, u32>(*value2) } as u64;
-                let value4_u64 = unsafe { transmute::<f32, u32>(*value4) } as u64;
+                let value2_u64 = f32::to_bits(*value2) as u64;
+                let value4_u64 = f32::to_bits(*value4) as u64;
                 return test_register_dependency(
                     *expected_cycles,
                     value2_u64,
@@ -12303,8 +12303,8 @@ impl Test for COP1RegisterDependency {
         }
         match (*value).downcast_ref::<(&str, u32, f64, f64, u32, u32)>() {
             Some((_context, expected_cycles, value2, value4, instruction1, instruction2)) => {
-                let value2_u64 = unsafe { transmute::<f64, u64>(*value2) };
-                let value4_u64 = unsafe { transmute::<f64, u64>(*value4) };
+                let value2_u64 = f64::to_bits(*value2);
+                let value4_u64 = f64::to_bits(*value4);
                 test_register_dependency(
                     *expected_cycles,
                     value2_u64,

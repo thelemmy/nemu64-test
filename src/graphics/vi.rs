@@ -293,7 +293,7 @@ impl Video {
         }
     }
 
-    pub fn disable_video(&self) -> VideoDisabler {
+    pub fn disable_video(&self) -> VideoDisabler<'_> {
         VideoDisabler::new(&self)
     }
 }

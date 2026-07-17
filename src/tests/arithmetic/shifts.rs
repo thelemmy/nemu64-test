@@ -296,6 +296,7 @@ impl Test for ShiftsIntoR0 {
 
         unsafe {
             asm!("
+                .set noat
                 LUI $2, 0x1234
                 SLL $0, $2, 1
                 DADDU {z0}, $0, $0

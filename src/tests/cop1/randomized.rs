@@ -4,7 +4,6 @@ use alloc::string::String;
 use alloc::vec::Vec;
 use core::any::Any;
 use core::arch::asm;
-use core::mem::transmute;
 
 use arbitrary_int::u2;
 use oorandom::{Rand32, Rand64};
@@ -104,7 +103,7 @@ fn randomized_test32<const FINSTRUCTION: u32>(
 
     /// Returns a random float with an equal distribution of its bits (so this includes NAN, subnormal etc)
     fn random_float(random: &mut Rand32) -> f32 {
-        unsafe { transmute(random.rand_u32()) }
+        f32::from_bits(random.rand_u32())
     }
 
     randomized_test::<f32, u32, _>(
@@ -129,7 +128,7 @@ fn randomized_test32<const FINSTRUCTION: u32>(
                 out("$f4") float_result,
                 options(nostack, nomem));
 
-                transmute(float_result)
+                f32::to_bits(float_result)
             }
         },
     )
@@ -145,7 +144,7 @@ fn randomized_test64<const FINSTRUCTION: u32>(
 
     /// Returns a random float with an equal distribution of its bits (so this includes NAN, subnormal etc)
     fn random_float(random: &mut Rand64) -> f64 {
-        unsafe { transmute(random.rand_u64()) }
+        f64::from_bits(random.rand_u64())
     }
 
     randomized_test::<f64, u64, _>(
@@ -170,7 +169,7 @@ fn randomized_test64<const FINSTRUCTION: u32>(
                 out("$f4") float_result,
                 options(nostack, nomem));
 
-                transmute(float_result)
+                f64::to_bits(float_result)
             }
         },
     )

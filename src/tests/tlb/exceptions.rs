@@ -182,7 +182,7 @@ impl Test for ReadMiss4k {
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let f = |address: usize| {
-            unsafe { asm!("lw $zero, 0({a})", a = in(reg) address) };
+            unsafe { asm!(".set noat", "lw $zero, 0({a})", a = in(reg) address) };
             Ok(())
         };
         test_nomiss_exception(Pagemask::M4K, 4092, true, true, f)?;
@@ -218,7 +218,7 @@ impl Test for ReadMiss16k {
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let f = |address: usize| {
-            unsafe { asm!("lw $zero, 0({a})", a = in(reg) address) };
+            unsafe { asm!(".set noat", "lw $zero, 0({a})", a = in(reg) address) };
             Ok(())
         };
         test_nomiss_exception(Pagemask::M16K, 16380, true, true, f)?;
@@ -254,7 +254,7 @@ impl Test for ReadMiss64k {
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let f = |address: usize| {
-            unsafe { asm!("lw $zero, 0({a})", a = in(reg) address) };
+            unsafe { asm!(".set noat", "lw $zero, 0({a})", a = in(reg) address) };
             Ok(())
         };
         test_nomiss_exception(Pagemask::M64K, 65532, true, true, f)?;
@@ -290,7 +290,7 @@ impl Test for ReadMiss256k {
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let f = |address: usize| {
-            unsafe { asm!("lw $zero, 0({a})", a = in(reg) address) };
+            unsafe { asm!(".set noat", "lw $zero, 0({a})", a = in(reg) address) };
             Ok(())
         };
         test_nomiss_exception(Pagemask::M256K, 262140, true, true, f)?;
@@ -326,7 +326,7 @@ impl Test for ReadMiss1M {
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let f = |address: usize| {
-            unsafe { asm!("lw $zero, 0({a})", a = in(reg) address) };
+            unsafe { asm!(".set noat", "lw $zero, 0({a})", a = in(reg) address) };
             Ok(())
         };
         test_nomiss_exception(Pagemask::M1M, 1048572, true, true, f)?;
@@ -362,7 +362,7 @@ impl Test for ReadMiss4M {
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let f = |address: usize| {
-            unsafe { asm!("lw $zero, 0({a})", a = in(reg) address) };
+            unsafe { asm!(".set noat", "lw $zero, 0({a})", a = in(reg) address) };
             Ok(())
         };
         // This will exceed RDRAM (unless there's an expansion pack), but that doesn't cause an error
@@ -399,7 +399,7 @@ impl Test for ReadMiss16M {
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let f = |address: usize| {
-            unsafe { asm!("lw $zero, 0({a})", a = in(reg) address) };
+            unsafe { asm!(".set noat", "lw $zero, 0({a})", a = in(reg) address) };
             Ok(())
         };
         // This will exceed RDRAM, but that doesn't cause an error
@@ -436,7 +436,7 @@ impl Test for StoreMiss4k {
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let f = |address: usize| {
-            unsafe { asm!("sw $zero, 0({a})", a = in(reg) address) };
+            unsafe { asm!(".set noat", "sw $zero, 0({a})", a = in(reg) address) };
             Ok(())
         };
         test_nomiss_exception(Pagemask::M4K, 4092, true, true, f)?;
@@ -913,7 +913,7 @@ impl Test for TlbMissFetchAfterEret {
                     "addiu $2, $0, 0",
                     "jalr $4, $3",
                     "nop",
-                    in("$3") tlb_miss_after_eret_thunk as usize,
+                    in("$3") tlb_miss_after_eret_thunk as *const () as usize,
                     in("$9") fault_address,
                     out("$4") _,
                     out("$8") _,
@@ -984,7 +984,7 @@ impl Test for ReadNonValid4k {
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let f = |address: usize| {
-            unsafe { asm!("lw $zero, 0({a})", a = in(reg) address) };
+            unsafe { asm!(".set noat", "lw $zero, 0({a})", a = in(reg) address) };
             Ok(())
         };
         test_miss_exception(
@@ -1072,7 +1072,7 @@ impl Test for StoreNonValid4k {
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let f = |address: usize| {
-            unsafe { asm!("sw $zero, 0({a})", a = in(reg) address) };
+            unsafe { asm!(".set noat", "sw $zero, 0({a})", a = in(reg) address) };
             Ok(())
         };
         test_miss_exception(
@@ -1107,7 +1107,7 @@ impl Test for StoreNonDirty4k {
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let f = |address: usize| {
-            unsafe { asm!("sw $zero, 0({a})", a = in(reg) address) };
+            unsafe { asm!(".set noat", "sw $zero, 0({a})", a = in(reg) address) };
             Ok(())
         };
         test_miss_exception(
@@ -1142,7 +1142,7 @@ impl Test for StoreNonDirtyAndNonValid4k {
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         let f = |address: usize| {
-            unsafe { asm!("sw $zero, 0({a})", a = in(reg) address) };
+            unsafe { asm!(".set noat", "sw $zero, 0({a})", a = in(reg) address) };
             Ok(())
         };
         test_miss_exception(

@@ -36,7 +36,7 @@ pub struct SoftF32(F32Bits);
 
 impl SoftF32 {
     pub fn new(f: f32) -> Self {
-        Self(F32Bits::new_with_raw_value(unsafe { transmute(f) }))
+        Self(F32Bits::new_with_raw_value(f32::to_bits(f)))
     }
 
     pub fn value(&self) -> f32 {
@@ -89,7 +89,7 @@ pub struct SoftF64(F64Bits);
 
 impl SoftF64 {
     pub fn new(f: f64) -> Self {
-        Self(F64Bits::new_with_raw_value(unsafe { transmute(f) }))
+        Self(F64Bits::new_with_raw_value(f64::to_bits(f)))
     }
 
     pub fn value(&self) -> f64 {

@@ -24,7 +24,7 @@ static mut DCACHE_LINE_SLOT: DcacheLineSlot = DcacheLineSlot { words: [0; 4] };
 
 fn dcache_line_ptrs() -> (usize, *mut u32) {
     unsafe {
-        let p = DCACHE_LINE_SLOT.words.as_mut_ptr();
+        let p = (&raw mut DCACHE_LINE_SLOT.words).cast::<u32>();
         (p as usize, MemoryMap::uncached_mut(p))
     }
 }
@@ -63,7 +63,7 @@ impl Test for DcacheLoadWordMatchesUncachedInit {
             }
             let w: u32;
             unsafe {
-                asm!("lw {out}, 0({addr})", out = out(reg) w, addr = in(reg) cached);
+                asm!(".set noat", "lw {out}, 0({addr})", out = out(reg) w, addr = in(reg) cached);
             }
             soft_assert_eq(w, 0xABCDEF01u32, "LW after line fill")?;
             Ok(())
@@ -95,7 +95,7 @@ impl Test for DcacheStaleAfterUncachedStore {
             }
             let w1: u32;
             unsafe {
-                asm!("lw {out}, 0({addr})", out = out(reg) w1, addr = in(reg) cached);
+                asm!(".set noat", "lw {out}, 0({addr})", out = out(reg) w1, addr = in(reg) cached);
             }
             soft_assert_eq(w1, 0x01020304u32, "fill")?;
             unsafe {
@@ -103,7 +103,7 @@ impl Test for DcacheStaleAfterUncachedStore {
             }
             let w2: u32;
             unsafe {
-                asm!("lw {out}, 0({addr})", out = out(reg) w2, addr = in(reg) cached);
+                asm!(".set noat", "lw {out}, 0({addr})", out = out(reg) w2, addr = in(reg) cached);
             }
             soft_assert_eq(w2, 0x01020304u32, "cached still stale")?;
             soft_assert_eq(
@@ -116,7 +116,7 @@ impl Test for DcacheStaleAfterUncachedStore {
             }
             let w3: u32;
             unsafe {
-                asm!("lw {out}, 0({addr})", out = out(reg) w3, addr = in(reg) cached);
+                asm!(".set noat", "lw {out}, 0({addr})", out = out(reg) w3, addr = in(reg) cached);
             }
             soft_assert_eq(w3, 0xAABBCCDDu32, "after hit invalidate refill")?;
             Ok(())
@@ -148,11 +148,12 @@ impl Test for DcacheHitWritebackWritesDirtyToRam {
             }
             let fill: u32;
             unsafe {
-                asm!("lw {out}, 0({addr})", out = out(reg) fill, addr = in(reg) cached);
+                asm!(".set noat", "lw {out}, 0({addr})", out = out(reg) fill, addr = in(reg) cached);
             }
             soft_assert_eq(fill, 0xAAAAAAAAu32, "line fill")?;
             unsafe {
                 asm!(
+                    ".set noat",
                     "sw {val}, 0({addr})",
                     val = in(reg) 0xBBBBBBBBu32,
                     addr = in(reg) cached,
@@ -295,6 +296,7 @@ impl Test for DcacheCreateDirtyExclusiveThenStore {
             )?;
             unsafe {
                 asm!(
+                    ".set noat",
                     "sw {val}, 0({addr})",
                     val = in(reg) 0xC0FFEEu32,
                     addr = in(reg) cached,
@@ -336,11 +338,12 @@ impl Test for DcacheHitWritebackInvalidate {
             }
             let fill: u32;
             unsafe {
-                asm!("lw {out}, 0({addr})", out = out(reg) fill, addr = in(reg) cached);
+                asm!(".set noat", "lw {out}, 0({addr})", out = out(reg) fill, addr = in(reg) cached);
             }
             soft_assert_eq(fill, 0xAAAABBBBu32, "line fill")?;
             unsafe {
                 asm!(
+                    ".set noat",
                     "sw {val}, 0({addr})",
                     val = in(reg) 0xCCCCDDDDu32,
                     addr = in(reg) cached,

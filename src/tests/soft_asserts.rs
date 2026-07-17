@@ -1,7 +1,6 @@
 use alloc::format;
 use alloc::string::String;
 use core::fmt::{Debug, Display, LowerHex};
-use core::mem::transmute;
 use core::ops::{Add, RangeInclusive, Sub};
 
 use crate::math::vector::Vector;
@@ -134,8 +133,8 @@ pub fn soft_assert_eq_2d_array<
 
 /// Tests if `v1 == v2`, looking at the exact bit representation
 pub fn soft_assert_f32_bits(v1: f32, v2: f32, help: &str) -> Result<(), String> {
-    let u1: u32 = unsafe { transmute(v1) };
-    let u2: u32 = unsafe { transmute(v2) };
+    let u1: u32 = f32::to_bits(v1);
+    let u2: u32 = f32::to_bits(v2);
     if u1 == u2 {
         Ok(())
     } else {
@@ -148,8 +147,8 @@ pub fn soft_assert_f32_bits(v1: f32, v2: f32, help: &str) -> Result<(), String> 
 
 /// Tests if `v1 == v2`, looking at the exact bit representation
 pub fn soft_assert_f64_bits(v1: f64, v2: f64, help: &str) -> Result<(), String> {
-    let u1: u64 = unsafe { transmute(v1) };
-    let u2: u64 = unsafe { transmute(v2) };
+    let u1: u64 = f64::to_bits(v1);
+    let u2: u64 = f64::to_bits(v2);
     if u1 == u2 {
         Ok(())
     } else {

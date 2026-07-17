@@ -2,7 +2,6 @@ use alloc::format;
 use alloc::string::String;
 use core::arch::asm;
 use core::fmt::{Debug, Formatter};
-use core::mem::transmute;
 use core::ops::BitOr;
 
 use bitbybit::{bitenum, bitfield};
@@ -13,41 +12,37 @@ pub struct FConst {}
 
 impl FConst {
     // Signalling NAN range (taken from https://www.doc.ic.ac.uk/~eedwards/compsys/float/nan.html).
-    pub const SIGNALLING_NAN_START_32: f32 = unsafe { transmute(0x7F800001u32) };
-    pub const SIGNALLING_NAN_END_32: f32 = unsafe { transmute(0x7FBFFFFFu32) };
-    pub const SIGNALLING_NAN_NEGATIVE_START_32: f32 = unsafe { transmute(0xFF800001u32) };
-    pub const SIGNALLING_NAN_NEGATIVE_END_32: f32 = unsafe { transmute(0xFFBFFFFFu32) };
+    pub const SIGNALLING_NAN_START_32: f32 = f32::from_bits(0x7F800001u32);
+    pub const SIGNALLING_NAN_END_32: f32 = f32::from_bits(0x7FBFFFFFu32);
+    pub const SIGNALLING_NAN_NEGATIVE_START_32: f32 = f32::from_bits(0xFF800001u32);
+    pub const SIGNALLING_NAN_NEGATIVE_END_32: f32 = f32::from_bits(0xFFBFFFFFu32);
 
-    pub const SIGNALLING_NAN_START_64: f64 = unsafe { transmute(0x7FF0000000000001u64) };
-    pub const SIGNALLING_NAN_END_64: f64 = unsafe { transmute(0x7FF7FFFFFFFFFFFFu64) };
-    pub const SIGNALLING_NAN_NEGATIVE_START_64: f64 = unsafe { transmute(0xFFF0000000000001u64) };
-    pub const SIGNALLING_NAN_NEGATIVE_END_64: f64 = unsafe { transmute(0xFFF7FFFFFFFFFFFFu64) };
+    pub const SIGNALLING_NAN_START_64: f64 = f64::from_bits(0x7FF0000000000001u64);
+    pub const SIGNALLING_NAN_END_64: f64 = f64::from_bits(0x7FF7FFFFFFFFFFFFu64);
+    pub const SIGNALLING_NAN_NEGATIVE_START_64: f64 = f64::from_bits(0xFFF0000000000001u64);
+    pub const SIGNALLING_NAN_NEGATIVE_END_64: f64 = f64::from_bits(0xFFF7FFFFFFFFFFFFu64);
 
     // Quiet NAN range
-    pub const QUIET_NAN_START_32: f32 = unsafe { transmute(0x7FC00000u32) };
-    pub const QUIET_NAN_END_32: f32 = unsafe { transmute(0x7FFFFFFFu32) };
-    pub const QUIET_NAN_NEGATIVE_START_32: f32 = unsafe { transmute(0xFFC00000u32) };
-    pub const QUIET_NAN_NEGATIVE_END_32: f32 = unsafe { transmute(0xFFFFFFFFu32) };
+    pub const QUIET_NAN_START_32: f32 = f32::from_bits(0x7FC00000u32);
+    pub const QUIET_NAN_END_32: f32 = f32::from_bits(0x7FFFFFFFu32);
+    pub const QUIET_NAN_NEGATIVE_START_32: f32 = f32::from_bits(0xFFC00000u32);
+    pub const QUIET_NAN_NEGATIVE_END_32: f32 = f32::from_bits(0xFFFFFFFFu32);
 
-    pub const QUIET_NAN_START_64: f64 = unsafe { transmute(0x7FF8000000000000u64) };
-    pub const QUIET_NAN_END_64: f64 = unsafe { transmute(0x7FFFFFFFFFFFFFFFu64) };
-    pub const QUIET_NAN_NEGATIVE_START_64: f64 = unsafe { transmute(0xFFF8000000000000u64) };
-    pub const QUIET_NAN_NEGATIVE_END_64: f64 = unsafe { transmute(0xFFFFFFFFFFFFFFFFu64) };
+    pub const QUIET_NAN_START_64: f64 = f64::from_bits(0x7FF8000000000000u64);
+    pub const QUIET_NAN_END_64: f64 = f64::from_bits(0x7FFFFFFFFFFFFFFFu64);
+    pub const QUIET_NAN_NEGATIVE_START_64: f64 = f64::from_bits(0xFFF8000000000000u64);
+    pub const QUIET_NAN_NEGATIVE_END_64: f64 = f64::from_bits(0xFFFFFFFFFFFFFFFFu64);
 
     // Subnormal range
-    pub const SUBNORMAL_MIN_POSITIVE_32: f32 = unsafe { transmute::<u32, f32>(0x00000001) };
-    pub const SUBNORMAL_MAX_POSITIVE_32: f32 = unsafe { transmute::<u32, f32>(0x007fffff) };
-    pub const SUBNORMAL_MIN_NEGATIVE_32: f32 = unsafe { transmute::<u32, f32>(0x80000001) };
-    pub const SUBNORMAL_MAX_NEGATIVE_32: f32 = unsafe { transmute::<u32, f32>(0x807fffff) };
+    pub const SUBNORMAL_MIN_POSITIVE_32: f32 = f32::from_bits(0x00000001);
+    pub const SUBNORMAL_MAX_POSITIVE_32: f32 = f32::from_bits(0x007fffff);
+    pub const SUBNORMAL_MIN_NEGATIVE_32: f32 = f32::from_bits(0x80000001);
+    pub const SUBNORMAL_MAX_NEGATIVE_32: f32 = f32::from_bits(0x807fffff);
 
-    pub const SUBNORMAL_MIN_POSITIVE_64: f64 =
-        unsafe { transmute::<u64, f64>(0x00000000_00000001) };
-    pub const SUBNORMAL_MAX_POSITIVE_64: f64 =
-        unsafe { transmute::<u64, f64>(0x000fffff_ffffffff) };
-    pub const SUBNORMAL_MIN_NEGATIVE_64: f64 =
-        unsafe { transmute::<u64, f64>(0x80000000_00000001) };
-    pub const SUBNORMAL_MAX_NEGATIVE_64: f64 =
-        unsafe { transmute::<u64, f64>(0x800fffff_ffffffff) };
+    pub const SUBNORMAL_MIN_POSITIVE_64: f64 = f64::from_bits(0x00000000_00000001);
+    pub const SUBNORMAL_MAX_POSITIVE_64: f64 = f64::from_bits(0x000fffff_ffffffff);
+    pub const SUBNORMAL_MIN_NEGATIVE_64: f64 = f64::from_bits(0x80000000_00000001);
+    pub const SUBNORMAL_MAX_NEGATIVE_64: f64 = f64::from_bits(0x800fffff_ffffffff);
 }
 
 #[bitenum(u2, exhaustive: true)]

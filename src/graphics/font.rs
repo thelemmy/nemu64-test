@@ -16,7 +16,7 @@ const FIRST_CHAR_IN_FONT: u8 = 32;
 impl Font<'_> {
     // Decode and sanify-check font. If we return Some(), then the font is okay
     // and we guarantee that drawing won't panic.
-    pub fn from_data(data: &[u8]) -> Option<Font> {
+    pub fn from_data(data: &[u8]) -> Option<Font<'_>> {
         let baseline = data[0] as u16;
         let bytes_per_row = data[1] as u16 | (data[2] as u16) << 8;
         let height = data[3] as u16;

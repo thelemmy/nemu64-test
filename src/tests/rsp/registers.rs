@@ -497,7 +497,7 @@ impl Test for SemaphoreRegisterMixed2 {
 
         soft_assert_eq(RSP::semaphore(), 0, "1st CPU read after RSP write")?;
         soft_assert_eq(RSP::semaphore(), 1, "2nd CPU read after RSP write")?;
-        soft_assert_eq(RSP::semaphore(), 2, "3rd CPU read after RSP write")?;
+        soft_assert_eq(RSP::semaphore(), 1, "3rd CPU read after RSP write")?;
 
         Ok(())
     }

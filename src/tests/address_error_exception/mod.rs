@@ -659,7 +659,7 @@ impl Test for UnalignedJumpWithDelaySlot {
                     .set noat
                     .set noreorder
                     ORI $3, $0, 0x01
-                    LA $2, 1f
+                    DLA $2, 1f
                     ADDIU $2, 1
                     JR $2
                     ORI $3, $3, 0x02

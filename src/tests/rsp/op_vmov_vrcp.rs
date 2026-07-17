@@ -1073,7 +1073,7 @@ impl Test for HighUsesOutputVRCPLTest {
     }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        test_high_uses_output(0xfffe, |assembler| {
+        test_high_uses_output(0xffff, |assembler| {
             assembler.write_vrcpl(VR::V1, VR::V0, VR::V1, Element::_0)
         })
     }

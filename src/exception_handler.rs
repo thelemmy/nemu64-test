@@ -1,5 +1,5 @@
 use alloc::format;
-use core::arch::{asm, naked_asm};
+use core::arch::naked_asm;
 use core::ops::{Deref, DerefMut};
 
 use spinning_top::Spinlock;

@@ -75,7 +75,7 @@ fn copy_to_dbg(off: usize, chunk: &[u8]) {
     let n = chunk.len();
     let d = (n + DMA_ALIGN - 1) & !(DMA_ALIGN - 1);
     unsafe {
-        let dst = DMA_BUF.bytes.as_mut_ptr();
+        let dst = (&raw mut DMA_BUF.bytes).cast::<u8>();
         for i in 0..n {
             dst.add(i).write_volatile(chunk[i]);
         }

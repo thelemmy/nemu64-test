@@ -29,7 +29,7 @@ static mut ICACHE_EXEC_SLOT: IcacheExecSlot = IcacheExecSlot { insns: [0; 8] };
 
 fn icache_exec_stub_ptrs() -> (usize, *mut u32) {
     unsafe {
-        let p = ICACHE_EXEC_SLOT.insns.as_mut_ptr();
+        let p = (&raw mut ICACHE_EXEC_SLOT.insns).cast::<u32>();
         (p as usize, MemoryMap::uncached_mut(p))
     }
 }

@@ -4,53 +4,68 @@ use alloc::vec::Vec;
 
 use crate::tests::Test;
 
-fn append_stress_tests(_target: &mut Vec<Box<dyn Test>>) {
-    #[cfg(feature = "vmulf_stress_test")]
-    _target.push(Box::new(super::rsp::stresstests::VMULF {}));
-    #[cfg(feature = "vmulu_stress_test")]
-    _target.push(Box::new(super::rsp::stresstests::VMULU {}));
-    #[cfg(feature = "vmulq_stress_test")]
-    _target.push(Box::new(super::rsp::stresstests::VMULQ {}));
-    #[cfg(feature = "vmudl_stress_test")]
-    _target.push(Box::new(super::rsp::stresstests::VMUDL {}));
-    #[cfg(feature = "vmudh_stress_test")]
-    _target.push(Box::new(super::rsp::stresstests::VMUDH {}));
-    #[cfg(feature = "vmudm_stress_test")]
-    _target.push(Box::new(super::rsp::stresstests::VMUDM {}));
-    #[cfg(feature = "vmudn_stress_test")]
-    _target.push(Box::new(super::rsp::stresstests::VMUDN {}));
-    #[cfg(feature = "vmacf_stress_test")]
-    _target.push(Box::new(super::rsp::stresstests::VMACF {}));
-    #[cfg(feature = "vmacu_stress_test")]
-    _target.push(Box::new(super::rsp::stresstests::VMACU {}));
-    #[cfg(feature = "vmadl_stress_test")]
-    _target.push(Box::new(super::rsp::stresstests::VMADL {}));
-    #[cfg(feature = "vmadh_stress_test")]
-    _target.push(Box::new(super::rsp::stresstests::VMADH {}));
-    #[cfg(feature = "vmadm_stress_test")]
-    _target.push(Box::new(super::rsp::stresstests::VMADM {}));
-    #[cfg(feature = "vmadn_stress_test")]
-    _target.push(Box::new(super::rsp::stresstests::VMADN {}));
-    #[cfg(feature = "vrcp32_stress_test")]
-    _target.push(Box::new(super::rsp::stresstests_div::VRCP32 {}));
-    #[cfg(feature = "vrsq32_stress_test")]
-    _target.push(Box::new(super::rsp::stresstests_div::VRSQ32 {}));
-    #[cfg(feature = "rcp_rsq_dump")]
-    _target.push(Box::new(super::rsp::op_vmov_vrcp::GenerateDump {}));
-    #[cfg(feature = "cop1_stress_test")]
-    {
-        _target.push(Box::new(super::cop1::randomized::StresstestAddS {}));
-        _target.push(Box::new(super::cop1::randomized::StresstestAddD {}));
-        _target.push(Box::new(super::cop1::randomized::StresstestSubS {}));
-        _target.push(Box::new(super::cop1::randomized::StresstestSubD {}));
-        _target.push(Box::new(super::cop1::randomized::StresstestMulS {}));
-        _target.push(Box::new(super::cop1::randomized::StresstestMulD {}));
-        _target.push(Box::new(super::cop1::randomized::StresstestDivS {}));
-        _target.push(Box::new(super::cop1::randomized::StresstestDivD {}));
-        _target.push(Box::new(super::cop1::randomized::StresstestSqrtS {}));
-        _target.push(Box::new(super::cop1::randomized::StresstestSqrtD {}));
-        _target.push(Box::new(super::cop1::randomized::StresstestCvtSFromW {}));
-        _target.push(Box::new(super::cop1::randomized::StresstestCvtWFromS {}));
+fn append_stress_tests(target: &mut Vec<Box<dyn Test>>) {
+    if cfg!(feature = "vmulf_stress_test") {
+        target.push(Box::new(super::rsp::stresstests::VMULF {}));
+    }
+    if cfg!(feature = "vmulu_stress_test") {
+        target.push(Box::new(super::rsp::stresstests::VMULU {}));
+    }
+    if cfg!(feature = "vmulq_stress_test") {
+        target.push(Box::new(super::rsp::stresstests::VMULQ {}));
+    }
+    if cfg!(feature = "vmudl_stress_test") {
+        target.push(Box::new(super::rsp::stresstests::VMUDL {}));
+    }
+    if cfg!(feature = "vmudh_stress_test") {
+        target.push(Box::new(super::rsp::stresstests::VMUDH {}));
+    }
+    if cfg!(feature = "vmudm_stress_test") {
+        target.push(Box::new(super::rsp::stresstests::VMUDM {}));
+    }
+    if cfg!(feature = "vmudn_stress_test") {
+        target.push(Box::new(super::rsp::stresstests::VMUDN {}));
+    }
+    if cfg!(feature = "vmacf_stress_test") {
+        target.push(Box::new(super::rsp::stresstests::VMACF {}));
+    }
+    if cfg!(feature = "vmacu_stress_test") {
+        target.push(Box::new(super::rsp::stresstests::VMACU {}));
+    }
+    if cfg!(feature = "vmadl_stress_test") {
+        target.push(Box::new(super::rsp::stresstests::VMADL {}));
+    }
+    if cfg!(feature = "vmadh_stress_test") {
+        target.push(Box::new(super::rsp::stresstests::VMADH {}));
+    }
+    if cfg!(feature = "vmadm_stress_test") {
+        target.push(Box::new(super::rsp::stresstests::VMADM {}));
+    }
+    if cfg!(feature = "vmadn_stress_test") {
+        target.push(Box::new(super::rsp::stresstests::VMADN {}));
+    }
+    if cfg!(feature = "vrcp32_stress_test") {
+        target.push(Box::new(super::rsp::stresstests_div::VRCP32 {}));
+    }
+    if cfg!(feature = "vrsq32_stress_test") {
+        target.push(Box::new(super::rsp::stresstests_div::VRSQ32 {}));
+    }
+    if cfg!(feature = "rcp_rsq_dump") {
+        target.push(Box::new(super::rsp::op_vmov_vrcp::GenerateDump {}));
+    }
+    if cfg!(feature = "cop1_stress_test") {
+        target.push(Box::new(super::cop1::randomized::StresstestAddS {}));
+        target.push(Box::new(super::cop1::randomized::StresstestAddD {}));
+        target.push(Box::new(super::cop1::randomized::StresstestSubS {}));
+        target.push(Box::new(super::cop1::randomized::StresstestSubD {}));
+        target.push(Box::new(super::cop1::randomized::StresstestMulS {}));
+        target.push(Box::new(super::cop1::randomized::StresstestMulD {}));
+        target.push(Box::new(super::cop1::randomized::StresstestDivS {}));
+        target.push(Box::new(super::cop1::randomized::StresstestDivD {}));
+        target.push(Box::new(super::cop1::randomized::StresstestSqrtS {}));
+        target.push(Box::new(super::cop1::randomized::StresstestSqrtD {}));
+        target.push(Box::new(super::cop1::randomized::StresstestCvtSFromW {}));
+        target.push(Box::new(super::cop1::randomized::StresstestCvtWFromS {}));
     }
 }
 
@@ -794,19 +809,6 @@ fn default_tests() -> Vec<Box<dyn Test>> {
         Box::new(super::rdp::RunFromDMEM {}),
         Box::new(super::rdp::RunFromDMEMEnd {}),
         Box::new(super::rdp::RunFromDMEMOverflow {}),
-        // The following are disabled for the time being as they are not stable on hardware yet
-        // Box::new(super::rdp::filled_triangle::FilledTriangle1CycleDegenerateRect {}),
-        // Box::new(super::rdp::filled_triangle::FilledTriangle1CycleRightMajorFlatTop {}),
-        // Box::new(super::rdp::filled_triangle::FilledTriangle1CycleRightMajor {}),
-        // Box::new(super::rdp::filled_triangle::FilledTriangle1CycleScissorLeft {}),
-        // Box::new(super::rdp::filled_triangle::FilledTriangle1CycleScissorTop {}),
-        // Box::new(super::rdp::filled_triangle::FilledTriangle1CycleScissorRight {}),
-        // Box::new(super::rdp::filled_triangle::FilledTriangle1CycleScissorRightSubPixelPrecision {}),
-        // Box::new(super::rdp::filled_triangle::FilledTriangle1CycleScissorBottom {}),
-        // Box::new(super::rdp::filled_triangle::FilledTriangle1CycleScissorBottomSubPixelPrecision {}),
-        // Box::new(super::rdp::filled_triangle::FilledTriangle1CycleNegativeYH {}),
-        // Box::new(super::rdp::filled_triangle::FilledTriangle1CycleNegativeXL {}),
-        // Box::new(super::rdp::filled_triangle::FilledTriangle1CycleRandomized {}),
         Box::new(super::rdram::LWL {}),
         Box::new(super::rdram::LWR {}),
         Box::new(super::rdram::LDL {}),
@@ -1018,15 +1020,18 @@ fn default_tests() -> Vec<Box<dyn Test>> {
         Box::new(super::rsp::op_vmov_vrcp::VRCPLRegisterCombinations {}),
         Box::new(super::rsp::op_vmov_vrcp::VRSQRegisterCombinations {}),
         Box::new(super::rsp::op_vmov_vrcp::VRSQLRegisterCombinations {}),
+        Box::new(super::rsp::op_vmov_vrcp::VRSQHRegisterCombinations {}),
         Box::new(super::rsp::op_vmov_vrcp::VRCPValues {}),
         Box::new(super::rsp::op_vmov_vrcp::VRSQValues {}),
         Box::new(super::rsp::op_vmov_vrcp::VRCP32Bit {}),
         Box::new(super::rsp::op_vmov_vrcp::VRSQ32Bit {}),
         Box::new(super::rsp::op_vmov_vrcp::HighUsesOutputVRCPTest {}),
+        Box::new(super::rsp::op_vmov_vrcp::HighUsesOutputVRCPLTest {}),
         Box::new(super::rsp::op_vmov_vrcp::HighUsesOutputVRSQLTest {}),
         Box::new(super::rsp::op_vmov_vrcp::HighUsesOutputVRSQTest {}),
         Box::new(super::rsp::op_vmov_vrcp::HighUsesOutputVRSQLTest {}),
         Box::new(super::rsp::op_vmov_vrcp::VRCPHSetsInputForVRCPL {}),
+        Box::new(super::rsp::op_vmov_vrcp::VRCPHSetsInputForVRSQL {}),
         Box::new(super::rsp::op_vmov_vrcp::VRCPLHiddenRegisterFlagExists {}),
         Box::new(super::rsp::op_vrndp::VRNDPWithEvenVS {}),
         Box::new(super::rsp::op_vrndp::VRNDPWithOddVS {}),
@@ -1046,6 +1051,7 @@ fn default_tests() -> Vec<Box<dyn Test>> {
         Box::new(super::rsp::registers::SemaphoreRegisterCPUOnly {}),
         Box::new(super::rsp::registers::SemaphoreRegisterRSPOnly {}),
         Box::new(super::rsp::registers::SemaphoreRegisterMixed {}),
+        Box::new(super::rsp::registers::SemaphoreRegisterMixed2 {}),
         Box::new(super::rsp::registers::RSPHaltItselfWithoutBreak {}),
         Box::new(super::rsp_timing::ClockCPUvsRSP {}),
         Box::new(super::rsp_timing::ClockFoolishlyAttemptToWrite {}),
@@ -1156,8 +1162,31 @@ fn default_tests() -> Vec<Box<dyn Test>> {
 }
 
 /// Returns a list of tests to be performed.
+fn append_experimental_rdp_tests(target: &mut Vec<Box<dyn Test>>) {
+    if cfg!(feature = "experimental_rdp") {
+        use super::rdp::filled_triangle::*;
+        target.push(Box::new(FilledTriangle1CycleDegenerateRect {}));
+        target.push(Box::new(FilledTriangle1CycleRightMajorFlatTop {}));
+        target.push(Box::new(FilledTriangle1CycleRightMajor {}));
+        target.push(Box::new(FilledTriangle1CycleScissorLeft {}));
+        target.push(Box::new(FilledTriangle1CycleScissorTop {}));
+        target.push(Box::new(FilledTriangle1CycleScissorRight {}));
+        target.push(Box::new(
+            FilledTriangle1CycleScissorRightSubPixelPrecision {},
+        ));
+        target.push(Box::new(FilledTriangle1CycleScissorBottom {}));
+        target.push(Box::new(
+            FilledTriangle1CycleScissorBottomSubPixelPrecision {},
+        ));
+        target.push(Box::new(FilledTriangle1CycleNegativeYH {}));
+        target.push(Box::new(FilledTriangle1CycleNegativeXL {}));
+        target.push(Box::new(FilledTriangle1CycleRandomized {}));
+    }
+}
+
 pub fn tests() -> Vec<Box<dyn Test>> {
     let mut result = default_tests();
     append_stress_tests(&mut result);
+    append_experimental_rdp_tests(&mut result);
     result
 }

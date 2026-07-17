@@ -209,7 +209,7 @@ impl Test for SCAfterERET {
                 MTC0 $6, $12
                 NOP
                 NOP
-                LA $7, 1f
+                DLA $7, 1f
                 DMTC0 $7, $14
                 NOP
                 NOP
@@ -271,7 +271,7 @@ impl Test for SCDAfterERET {
                 MTC0 $6, $12
                 NOP
                 NOP
-                LA $7, 1f
+                DLA $7, 1f
                 DMTC0 $7, $14
                 NOP
                 NOP

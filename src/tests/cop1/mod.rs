@@ -8,7 +8,6 @@ use alloc::vec::Vec;
 use alloc::{format, vec};
 use core::any::Any;
 use core::arch::asm;
-use core::mem::transmute;
 
 use arbitrary_int::{u2, u5};
 
@@ -552,7 +551,7 @@ fn asm_block_f32toi32<const BRANCH_INSTRUCTION: u32, const INSTRUCTION: u32>(
     value1: f32,
     value2: f32,
 ) -> i32 {
-    let mut result: f32 = unsafe { transmute(TARGET_REG_DEFAULT_I32) };
+    let mut result: f32 = f32::from_bits(i32::cast_unsigned(TARGET_REG_DEFAULT_I32));
     unsafe {
         asm!("
             .set noat
@@ -569,14 +568,14 @@ fn asm_block_f32toi32<const BRANCH_INSTRUCTION: u32, const INSTRUCTION: u32>(
         options(nostack, nomem))
     }
 
-    unsafe { transmute(result) }
+    f32::to_bits(result).cast_signed()
 }
 
 fn asm_block_f32toi64<const BRANCH_INSTRUCTION: u32, const INSTRUCTION: u32>(
     value1: f32,
     value2: f32,
 ) -> i64 {
-    let mut result: f64 = unsafe { transmute(TARGET_REG_DEFAULT_I64) };
+    let mut result: f64 = f64::from_bits(i64::cast_unsigned(TARGET_REG_DEFAULT_I64));
     unsafe {
         asm!("
             .set noat
@@ -593,7 +592,7 @@ fn asm_block_f32toi64<const BRANCH_INSTRUCTION: u32, const INSTRUCTION: u32>(
         options(nostack, nomem))
     }
 
-    unsafe { transmute(result) }
+    f64::to_bits(result).cast_signed()
 }
 
 fn asm_block_f64<const BRANCH_INSTRUCTION: u32, const INSTRUCTION: u32>(
@@ -648,7 +647,7 @@ fn asm_block_f64toi32<const BRANCH_INSTRUCTION: u32, const INSTRUCTION: u32>(
     value1: f64,
     value2: f64,
 ) -> i32 {
-    let mut result: f32 = unsafe { transmute(TARGET_REG_DEFAULT_I32) };
+    let mut result: f32 = f32::from_bits(i32::cast_unsigned(TARGET_REG_DEFAULT_I32));
     unsafe {
         asm!("
             .set noat
@@ -665,14 +664,14 @@ fn asm_block_f64toi32<const BRANCH_INSTRUCTION: u32, const INSTRUCTION: u32>(
         options(nostack, nomem))
     }
 
-    unsafe { transmute(result) }
+    f32::to_bits(result).cast_signed()
 }
 
 fn asm_block_f64toi64<const BRANCH_INSTRUCTION: u32, const INSTRUCTION: u32>(
     value1: f64,
     value2: f64,
 ) -> i64 {
-    let mut result: f64 = unsafe { transmute(TARGET_REG_DEFAULT_I64) };
+    let mut result: f64 = f64::from_bits(i64::cast_unsigned(TARGET_REG_DEFAULT_I64));
     unsafe {
         asm!("
             .set noat
@@ -689,7 +688,7 @@ fn asm_block_f64toi64<const BRANCH_INSTRUCTION: u32, const INSTRUCTION: u32>(
         options(nostack, nomem))
     }
 
-    unsafe { transmute(result) }
+    f64::to_bits(result).cast_signed()
 }
 
 fn asm_block_i32tof32<const BRANCH_INSTRUCTION: u32, const INSTRUCTION: u32>(
@@ -697,8 +696,8 @@ fn asm_block_i32tof32<const BRANCH_INSTRUCTION: u32, const INSTRUCTION: u32>(
     value2: i32,
 ) -> f32 {
     let result: f32;
-    let f1: f32 = unsafe { transmute(value1) };
-    let f2: f32 = unsafe { transmute(value2) };
+    let f1: f32 = f32::from_bits(i32::cast_unsigned(value1));
+    let f2: f32 = f32::from_bits(i32::cast_unsigned(value2));
     unsafe {
         asm!("
             .set noat
@@ -722,9 +721,9 @@ fn asm_block_i32toi32<const BRANCH_INSTRUCTION: u32, const INSTRUCTION: u32>(
     value1: i32,
     value2: i32,
 ) -> i32 {
-    let mut result: f32 = unsafe { transmute(TARGET_REG_DEFAULT_I32) };
-    let f1: f32 = unsafe { transmute(value1) };
-    let f2: f32 = unsafe { transmute(value2) };
+    let mut result: f32 = f32::from_bits(i32::cast_unsigned(TARGET_REG_DEFAULT_I32));
+    let f1: f32 = f32::from_bits(i32::cast_unsigned(value1));
+    let f2: f32 = f32::from_bits(i32::cast_unsigned(value2));
     unsafe {
         asm!("
             .set noat
@@ -741,16 +740,16 @@ fn asm_block_i32toi32<const BRANCH_INSTRUCTION: u32, const INSTRUCTION: u32>(
         options(nostack, nomem))
     }
 
-    unsafe { transmute(result) }
+    f32::to_bits(result).cast_signed()
 }
 
 fn asm_block_i32toi64<const BRANCH_INSTRUCTION: u32, const INSTRUCTION: u32>(
     value1: i32,
     value2: i32,
 ) -> i64 {
-    let mut result: f64 = unsafe { transmute(TARGET_REG_DEFAULT_I64) };
-    let f1: f32 = unsafe { transmute(value1) };
-    let f2: f32 = unsafe { transmute(value2) };
+    let mut result: f64 = f64::from_bits(i64::cast_unsigned(TARGET_REG_DEFAULT_I64));
+    let f1: f32 = f32::from_bits(i32::cast_unsigned(value1));
+    let f2: f32 = f32::from_bits(i32::cast_unsigned(value2));
     unsafe {
         asm!("
             .set noat
@@ -767,7 +766,7 @@ fn asm_block_i32toi64<const BRANCH_INSTRUCTION: u32, const INSTRUCTION: u32>(
         options(nostack, nomem))
     }
 
-    unsafe { transmute(result) }
+    f64::to_bits(result).cast_signed()
 }
 
 fn asm_block_i32tof64<const BRANCH_INSTRUCTION: u32, const INSTRUCTION: u32>(
@@ -775,8 +774,8 @@ fn asm_block_i32tof64<const BRANCH_INSTRUCTION: u32, const INSTRUCTION: u32>(
     value2: i32,
 ) -> f64 {
     let result: f64;
-    let f1: f32 = unsafe { transmute(value1) };
-    let f2: f32 = unsafe { transmute(value2) };
+    let f1: f32 = f32::from_bits(i32::cast_unsigned(value1));
+    let f2: f32 = f32::from_bits(i32::cast_unsigned(value2));
     unsafe {
         asm!("
             .set noat
@@ -801,8 +800,8 @@ fn asm_block_i64tof32<const BRANCH_INSTRUCTION: u32, const INSTRUCTION: u32>(
     value2: i64,
 ) -> f32 {
     let result: f32;
-    let f1: f64 = unsafe { transmute(value1) };
-    let f2: f64 = unsafe { transmute(value2) };
+    let f1: f64 = f64::from_bits(i64::cast_unsigned(value1));
+    let f2: f64 = f64::from_bits(i64::cast_unsigned(value2));
     unsafe {
         asm!("
             .set noat
@@ -827,8 +826,8 @@ fn asm_block_i64tof64<const BRANCH_INSTRUCTION: u32, const INSTRUCTION: u32>(
     value2: i64,
 ) -> f64 {
     let result: f64;
-    let f1: f64 = unsafe { transmute(value1) };
-    let f2: f64 = unsafe { transmute(value2) };
+    let f1: f64 = f64::from_bits(i64::cast_unsigned(value1));
+    let f2: f64 = f64::from_bits(i64::cast_unsigned(value2));
     unsafe {
         asm!("
             .set noat
@@ -852,9 +851,9 @@ fn asm_block_i64toi32<const BRANCH_INSTRUCTION: u32, const INSTRUCTION: u32>(
     value1: i64,
     value2: i64,
 ) -> i32 {
-    let mut result: f32 = unsafe { transmute(TARGET_REG_DEFAULT_I32) };
-    let f1: f64 = unsafe { transmute(value1) };
-    let f2: f64 = unsafe { transmute(value2) };
+    let mut result: f32 = f32::from_bits(i32::cast_unsigned(TARGET_REG_DEFAULT_I32));
+    let f1: f64 = f64::from_bits(i64::cast_unsigned(value1));
+    let f2: f64 = f64::from_bits(i64::cast_unsigned(value2));
     unsafe {
         asm!("
             .set noat
@@ -871,16 +870,16 @@ fn asm_block_i64toi32<const BRANCH_INSTRUCTION: u32, const INSTRUCTION: u32>(
         options(nostack, nomem))
     }
 
-    unsafe { transmute(result) }
+    f32::to_bits(result).cast_signed()
 }
 
 fn asm_block_i64toi64<const BRANCH_INSTRUCTION: u32, const INSTRUCTION: u32>(
     value1: i64,
     value2: i64,
 ) -> i64 {
-    let mut result: f64 = unsafe { transmute(TARGET_REG_DEFAULT_I64) };
-    let f1: f64 = unsafe { transmute(value1) };
-    let f2: f64 = unsafe { transmute(value2) };
+    let mut result: f64 = f64::from_bits(i64::cast_unsigned(TARGET_REG_DEFAULT_I64));
+    let f1: f64 = f64::from_bits(i64::cast_unsigned(value1));
+    let f2: f64 = f64::from_bits(i64::cast_unsigned(value2));
     unsafe {
         asm!("
             .set noat
@@ -897,7 +896,7 @@ fn asm_block_i64toi64<const BRANCH_INSTRUCTION: u32, const INSTRUCTION: u32>(
         options(nostack, nomem))
     }
 
-    unsafe { transmute(result) }
+    f64::to_bits(result).cast_signed()
 }
 
 /// Tests the given FP instruction in both regular and delay position and ensures that the result was seen and the right set of exceptions is being fired

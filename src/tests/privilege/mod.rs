@@ -25,12 +25,7 @@ const PAGE_WORDS: usize = 4096 / 4;
 
 #[unsafe(naked)]
 extern "C" fn return_via_s0_stub() {
-    naked_asm!(
-        ".set noat",
-        ".set noreorder",
-        "jr $16",
-        "nop",
-    );
+    naked_asm!(".set noat", ".set noreorder", "jr $16", "nop",);
 }
 
 fn load_u64_sequence(target: GPR, temp: GPR, value: u64) -> [u32; 6] {
@@ -131,7 +126,7 @@ pub(crate) fn run_mode_program_with_cop0(
         user_status = user_status.with_cop0usable(true);
     }
     let kernel_status = Status::DEFAULT.with_exl(true).raw_value();
-    let kernel_return_address = return_via_s0_stub as u32 as i32 as i64 as u64;
+    let kernel_return_address = return_via_s0_stub as *const () as u32 as i32 as i64 as u64;
     let result = expect_exception(expected_exception, skip_instructions, || {
         set_exception_return_override(kernel_return_address, kernel_status);
         unsafe {
