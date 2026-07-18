@@ -83,4 +83,6 @@ While running all tests is nice once a majority passes, it can be a pain for bri
 
 ## Acknowledgment
 This project was inspired by Peter Lemon's excellent N64 Bare Metal tests: https://github.com/PeterLemon/N64/
-Furthermore, it wouldn't have been possible without the excellent cargo-n64, which brought Rust to the N64: https://github.com/rust-console/cargo-n64
+Furthermore, it wouldn't have been possible without cargo-n64, which first brought Rust to the N64 (https://github.com/rust-console/cargo-n64), and nust64, which the project now uses to build its ROMs (https://github.com/rust-n64/nust64).
+
+This project also wouldn't be what it is without its contributors. Thank you to everyone who has added tests, fixes, and insight over the years: Giovanni Bajo, bigbass1997, Jay Prewitt, Paul Holden, Robert Peip, hacktarux, Chuck, Dillon Beliveau, Simon Eriksson, and invertego.
