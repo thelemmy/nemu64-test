@@ -1584,43 +1584,49 @@ impl Test for DivS {
     }
 
     fn values(&self) -> Vec<Box<dyn Any>> {
-        vec![
-            Box::new((
+        const VALUES_0: &[(
+            bool,
+            FCSRRoundingMode,
+            f32,
+            f32,
+            Result<(FCSRFlags, f32), ()>,
+        )] = &[
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 0f32,
                 2f32,
                 expected_result(FCSRFlags::DEFAULT, 0f32),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::MIN,
                 -1f32,
                 expected_result(FCSRFlags::DEFAULT, f32::MAX),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::MIN_POSITIVE,
                 -1f32,
                 expected_result(FCSRFlags::DEFAULT, -f32::MIN_POSITIVE),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::MAX,
                 -1f32,
                 expected_result(FCSRFlags::DEFAULT, f32::MIN),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 1f32,
                 10f32,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 0.1f32),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Zero,
                 1f32,
@@ -1629,8 +1635,8 @@ impl Test for DivS {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     0.099999994f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::NegativeInfinity,
                 1f32,
@@ -1639,22 +1645,22 @@ impl Test for DivS {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     0.099999994f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::PositiveInfinity,
                 1f32,
                 10f32,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 0.1f32),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 -1f32,
                 10f32,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), -0.1f32),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Zero,
                 -1f32,
@@ -1663,15 +1669,15 @@ impl Test for DivS {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     -0.099999994f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::NegativeInfinity,
                 -1f32,
                 10f32,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), -0.1f32),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::PositiveInfinity,
                 -1f32,
@@ -1680,38 +1686,38 @@ impl Test for DivS {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     -0.099999994f32,
                 ),
-            )),
+            ),
             // f32::MIN / 2 will cause unimplemented
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::MIN_POSITIVE,
                 2f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Zero,
                 f32::MIN_POSITIVE,
                 2f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::NegativeInfinity,
                 f32::MIN_POSITIVE,
                 2f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::PositiveInfinity,
                 f32::MIN_POSITIVE,
                 2f32,
                 expected_unimplemented_f32(),
-            )),
+            ),
             // f32::MIN / 2 with flush-denorm causes underflow/inexact
-            Box::new((
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 f32::MIN_POSITIVE,
@@ -1722,8 +1728,8 @@ impl Test for DivS {
                         .with_inexact_operation(true),
                     0f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Zero,
                 f32::MIN_POSITIVE,
@@ -1734,8 +1740,8 @@ impl Test for DivS {
                         .with_inexact_operation(true),
                     0f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::NegativeInfinity,
                 f32::MIN_POSITIVE,
@@ -1746,8 +1752,8 @@ impl Test for DivS {
                         .with_inexact_operation(true),
                     0f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::PositiveInfinity,
                 f32::MIN_POSITIVE,
@@ -1758,8 +1764,8 @@ impl Test for DivS {
                         .with_inexact_operation(true),
                     f32::MIN_POSITIVE,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 -f32::MIN_POSITIVE,
@@ -1770,8 +1776,8 @@ impl Test for DivS {
                         .with_inexact_operation(true),
                     -0f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Zero,
                 -f32::MIN_POSITIVE,
@@ -1782,8 +1788,8 @@ impl Test for DivS {
                         .with_inexact_operation(true),
                     -0f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::NegativeInfinity,
                 -f32::MIN_POSITIVE,
@@ -1794,8 +1800,8 @@ impl Test for DivS {
                         .with_inexact_operation(true),
                     -f32::MIN_POSITIVE,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::PositiveInfinity,
                 -f32::MIN_POSITIVE,
@@ -1806,9 +1812,9 @@ impl Test for DivS {
                         .with_inexact_operation(true),
                     -0f32,
                 ),
-            )),
+            ),
             // f32::MIN / 1.0000001 with flush-denorm causes underflow/inexact
-            Box::new((
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 f32::MIN_POSITIVE,
@@ -1819,8 +1825,8 @@ impl Test for DivS {
                         .with_inexact_operation(true),
                     0f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Zero,
                 f32::MIN_POSITIVE,
@@ -1831,8 +1837,8 @@ impl Test for DivS {
                         .with_inexact_operation(true),
                     0f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::NegativeInfinity,
                 f32::MIN_POSITIVE,
@@ -1843,8 +1849,8 @@ impl Test for DivS {
                         .with_inexact_operation(true),
                     0f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::PositiveInfinity,
                 f32::MIN_POSITIVE,
@@ -1855,8 +1861,8 @@ impl Test for DivS {
                         .with_inexact_operation(true),
                     f32::MIN_POSITIVE,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 -f32::MIN_POSITIVE,
@@ -1867,8 +1873,8 @@ impl Test for DivS {
                         .with_inexact_operation(true),
                     -0f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Zero,
                 -f32::MIN_POSITIVE,
@@ -1879,8 +1885,8 @@ impl Test for DivS {
                         .with_inexact_operation(true),
                     -0f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::NegativeInfinity,
                 -f32::MIN_POSITIVE,
@@ -1891,8 +1897,8 @@ impl Test for DivS {
                         .with_inexact_operation(true),
                     -f32::MIN_POSITIVE,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::PositiveInfinity,
                 -f32::MIN_POSITIVE,
@@ -1903,73 +1909,73 @@ impl Test for DivS {
                         .with_inexact_operation(true),
                     -0f32,
                 ),
-            )),
+            ),
             // Any subnormal input causes unimplemented
-            Box::new((
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 1f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MAX_POSITIVE_32,
                 1f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_NEGATIVE_32,
                 1f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MAX_NEGATIVE_32,
                 1f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 0f32,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 0f32,
                 FConst::SUBNORMAL_MAX_POSITIVE_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 0f32,
                 FConst::SUBNORMAL_MIN_NEGATIVE_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 0f32,
                 FConst::SUBNORMAL_MAX_NEGATIVE_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_NEGATIVE_32,
                 FConst::SUBNORMAL_MIN_NEGATIVE_32,
                 expected_unimplemented_f32(),
-            )),
+            ),
             // 0/0 gives an invalid operation and produces a specific nan result
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 0f32,
@@ -1978,8 +1984,8 @@ impl Test for DivS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 -0f32,
@@ -1988,9 +1994,9 @@ impl Test for DivS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
+            ),
             // 2/0 fires division by zero or produces an infinite result
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f32,
@@ -1999,8 +2005,8 @@ impl Test for DivS {
                     FCSRFlags::DEFAULT.with_division_by_zero(true),
                     f32::INFINITY,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 -2f32,
@@ -2009,8 +2015,8 @@ impl Test for DivS {
                     FCSRFlags::DEFAULT.with_division_by_zero(true),
                     f32::NEG_INFINITY,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f32,
@@ -2019,8 +2025,8 @@ impl Test for DivS {
                     FCSRFlags::DEFAULT.with_division_by_zero(true),
                     f32::NEG_INFINITY,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 -2f32,
@@ -2029,9 +2035,9 @@ impl Test for DivS {
                     FCSRFlags::DEFAULT.with_division_by_zero(true),
                     f32::INFINITY,
                 ),
-            )),
+            ),
             // MAX / 0.5 is overflow (and inexact for some reason). Same for negative
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::MAX,
@@ -2042,8 +2048,8 @@ impl Test for DivS {
                         .with_inexact_operation(true),
                     f32::INFINITY,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::MIN,
@@ -2054,44 +2060,44 @@ impl Test for DivS {
                         .with_inexact_operation(true),
                     f32::NEG_INFINITY,
                 ),
-            )),
+            ),
             // Various calculations involving infinity
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::INFINITY,
                 0.5f32,
                 expected_result(FCSRFlags::DEFAULT, f32::INFINITY),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::INFINITY,
                 -0.5f32,
                 expected_result(FCSRFlags::DEFAULT, f32::NEG_INFINITY),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::NEG_INFINITY,
                 -2f32,
                 expected_result(FCSRFlags::DEFAULT, f32::INFINITY),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 1f32,
                 f32::INFINITY,
                 expected_result(FCSRFlags::DEFAULT, 0f32),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::MIN,
                 f32::INFINITY,
                 expected_result(FCSRFlags::DEFAULT, -0f32),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::INFINITY,
@@ -2100,8 +2106,8 @@ impl Test for DivS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::INFINITY,
@@ -2110,8 +2116,8 @@ impl Test for DivS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::NEG_INFINITY,
@@ -2120,8 +2126,8 @@ impl Test for DivS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::NEG_INFINITY,
@@ -2130,8 +2136,8 @@ impl Test for DivS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::INFINITY,
@@ -2140,9 +2146,9 @@ impl Test for DivS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
+            ),
             // 2/NAN produces another NAN and invalid operation (which is the opposite of what their name implies)
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f32,
@@ -2151,8 +2157,8 @@ impl Test for DivS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f32,
@@ -2161,8 +2167,8 @@ impl Test for DivS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f32,
@@ -2171,8 +2177,8 @@ impl Test for DivS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f32,
@@ -2181,38 +2187,38 @@ impl Test for DivS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
+            ),
             // Signalling NANs aren't supported and cause unimplemented operation
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f32,
                 FConst::SIGNALLING_NAN_START_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f32,
                 FConst::SIGNALLING_NAN_END_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f32,
                 FConst::SIGNALLING_NAN_NEGATIVE_START_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f32,
                 FConst::SIGNALLING_NAN_NEGATIVE_END_32,
                 expected_unimplemented_f32(),
-            )),
+            ),
             // NAN/2 produces another NAN and invalid operation (which is the opposite of what their name implies)
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_START_32,
@@ -2221,8 +2227,8 @@ impl Test for DivS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_END_32,
@@ -2231,8 +2237,8 @@ impl Test for DivS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_NEGATIVE_START_32,
@@ -2241,8 +2247,8 @@ impl Test for DivS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_NEGATIVE_END_32,
@@ -2251,95 +2257,96 @@ impl Test for DivS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
+            ),
             // Signalling NANs aren't supported and cause unimplemented operation
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_START_32,
                 2f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_END_32,
                 2f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_START_32,
                 2f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_END_32,
                 2f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_START_32,
                 2f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_END_32,
                 2f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_START_32,
                 2f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_END_32,
                 2f32,
                 expected_unimplemented_f32(),
-            )),
+            ),
             // Mixing both types of NAN cause unimplemented
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_START_32,
                 FConst::QUIET_NAN_START_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_START_32,
                 FConst::SIGNALLING_NAN_START_32,
                 expected_unimplemented_f32(),
-            )),
+            ),
             // Mixing NAN with subnormal cause unimplemented
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_START_32,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 FConst::QUIET_NAN_START_32,
                 expected_unimplemented_f32(),
-            )),
-        ]
+            ),
+        ];
+        crate::tests::boxed_values(VALUES_0)
     }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
@@ -2379,43 +2386,49 @@ impl Test for DivD {
     }
 
     fn values(&self) -> Vec<Box<dyn Any>> {
-        vec![
-            Box::new((
+        const VALUES_0: &[(
+            bool,
+            FCSRRoundingMode,
+            f64,
+            f64,
+            Result<(FCSRFlags, f64), ()>,
+        )] = &[
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 0f64,
                 2f64,
                 expected_result(FCSRFlags::DEFAULT, 0f64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f64::MIN,
                 -1f64,
                 expected_result(FCSRFlags::DEFAULT, f64::MAX),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f64::MIN_POSITIVE,
                 -1f64,
                 expected_result(FCSRFlags::DEFAULT, -f64::MIN_POSITIVE),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f64::MAX,
                 -1f64,
                 expected_result(FCSRFlags::DEFAULT, f64::MIN),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 1f64,
                 10f64,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 0.1f64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Zero,
                 1f64,
@@ -2424,8 +2437,8 @@ impl Test for DivD {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     0.09999999999999999f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::NegativeInfinity,
                 1f64,
@@ -2434,22 +2447,22 @@ impl Test for DivD {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     0.09999999999999999f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::PositiveInfinity,
                 1f64,
                 10f64,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 0.1f64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 -1f64,
                 10f64,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), -0.1f64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Zero,
                 -1f64,
@@ -2458,15 +2471,15 @@ impl Test for DivD {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     -0.09999999999999999f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::NegativeInfinity,
                 -1f64,
                 10f64,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), -0.1f64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::PositiveInfinity,
                 -1f64,
@@ -2475,38 +2488,38 @@ impl Test for DivD {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     -0.09999999999999999f64,
                 ),
-            )),
+            ),
             // f64::MIN / 2 will cause unimplemented
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f64::MIN_POSITIVE,
                 2f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Zero,
                 f64::MIN_POSITIVE,
                 2f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::NegativeInfinity,
                 f64::MIN_POSITIVE,
                 2f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::PositiveInfinity,
                 f64::MIN_POSITIVE,
                 2f64,
                 expected_unimplemented_f64(),
-            )),
+            ),
             // f64::MIN / 2 with flush-denorm causes underflow/inexact
-            Box::new((
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 f64::MIN_POSITIVE,
@@ -2517,8 +2530,8 @@ impl Test for DivD {
                         .with_inexact_operation(true),
                     0f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Zero,
                 f64::MIN_POSITIVE,
@@ -2529,8 +2542,8 @@ impl Test for DivD {
                         .with_inexact_operation(true),
                     0f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::NegativeInfinity,
                 f64::MIN_POSITIVE,
@@ -2541,8 +2554,8 @@ impl Test for DivD {
                         .with_inexact_operation(true),
                     0f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::PositiveInfinity,
                 f64::MIN_POSITIVE,
@@ -2553,8 +2566,8 @@ impl Test for DivD {
                         .with_inexact_operation(true),
                     f64::MIN_POSITIVE,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 -f64::MIN_POSITIVE,
@@ -2565,8 +2578,8 @@ impl Test for DivD {
                         .with_inexact_operation(true),
                     -0f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Zero,
                 -f64::MIN_POSITIVE,
@@ -2577,8 +2590,8 @@ impl Test for DivD {
                         .with_inexact_operation(true),
                     -0f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::NegativeInfinity,
                 -f64::MIN_POSITIVE,
@@ -2589,8 +2602,8 @@ impl Test for DivD {
                         .with_inexact_operation(true),
                     -f64::MIN_POSITIVE,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::PositiveInfinity,
                 -f64::MIN_POSITIVE,
@@ -2601,9 +2614,9 @@ impl Test for DivD {
                         .with_inexact_operation(true),
                     -0f64,
                 ),
-            )),
+            ),
             // f64::MIN / 1.0000001 with flush-denorm causes underflow/inexact
-            Box::new((
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 f64::MIN_POSITIVE,
@@ -2614,8 +2627,8 @@ impl Test for DivD {
                         .with_inexact_operation(true),
                     0f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Zero,
                 f64::MIN_POSITIVE,
@@ -2626,8 +2639,8 @@ impl Test for DivD {
                         .with_inexact_operation(true),
                     0f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::NegativeInfinity,
                 f64::MIN_POSITIVE,
@@ -2638,8 +2651,8 @@ impl Test for DivD {
                         .with_inexact_operation(true),
                     0f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::PositiveInfinity,
                 f64::MIN_POSITIVE,
@@ -2650,8 +2663,8 @@ impl Test for DivD {
                         .with_inexact_operation(true),
                     f64::MIN_POSITIVE,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 -f64::MIN_POSITIVE,
@@ -2662,8 +2675,8 @@ impl Test for DivD {
                         .with_inexact_operation(true),
                     -0f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Zero,
                 -f64::MIN_POSITIVE,
@@ -2674,8 +2687,8 @@ impl Test for DivD {
                         .with_inexact_operation(true),
                     -0f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::NegativeInfinity,
                 -f64::MIN_POSITIVE,
@@ -2686,8 +2699,8 @@ impl Test for DivD {
                         .with_inexact_operation(true),
                     -f64::MIN_POSITIVE,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::PositiveInfinity,
                 -f64::MIN_POSITIVE,
@@ -2698,73 +2711,73 @@ impl Test for DivD {
                         .with_inexact_operation(true),
                     -0f64,
                 ),
-            )),
+            ),
             // Any subnormal input causes unimplemented
-            Box::new((
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 1f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MAX_POSITIVE_64,
                 1f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_NEGATIVE_64,
                 1f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MAX_NEGATIVE_64,
                 1f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 0f64,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 0f64,
                 FConst::SUBNORMAL_MAX_POSITIVE_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 0f64,
                 FConst::SUBNORMAL_MIN_NEGATIVE_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 0f64,
                 FConst::SUBNORMAL_MAX_NEGATIVE_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 FConst::SUBNORMAL_MAX_NEGATIVE_64,
                 expected_unimplemented_f64(),
-            )),
+            ),
             // 0/0 gives an invalid operation and produces a specific nan result
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 0f64,
@@ -2773,8 +2786,8 @@ impl Test for DivD {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 -0f64,
@@ -2783,9 +2796,9 @@ impl Test for DivD {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
-            )),
+            ),
             // 2/0 fires division by zero or produces an infinite result
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f64,
@@ -2794,8 +2807,8 @@ impl Test for DivD {
                     FCSRFlags::DEFAULT.with_division_by_zero(true),
                     f64::INFINITY,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 -2f64,
@@ -2804,8 +2817,8 @@ impl Test for DivD {
                     FCSRFlags::DEFAULT.with_division_by_zero(true),
                     f64::NEG_INFINITY,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f64,
@@ -2814,8 +2827,8 @@ impl Test for DivD {
                     FCSRFlags::DEFAULT.with_division_by_zero(true),
                     f64::NEG_INFINITY,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 -2f64,
@@ -2824,9 +2837,9 @@ impl Test for DivD {
                     FCSRFlags::DEFAULT.with_division_by_zero(true),
                     f64::INFINITY,
                 ),
-            )),
+            ),
             // MAX / 0.5 is overflow (and inexact for some reason). Same for negative
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f64::MAX,
@@ -2837,8 +2850,8 @@ impl Test for DivD {
                         .with_inexact_operation(true),
                     f64::INFINITY,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f64::MIN,
@@ -2849,44 +2862,44 @@ impl Test for DivD {
                         .with_inexact_operation(true),
                     f64::NEG_INFINITY,
                 ),
-            )),
+            ),
             // Various calculations involving infinity
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f64::INFINITY,
                 0.5f64,
                 expected_result(FCSRFlags::DEFAULT, f64::INFINITY),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f64::INFINITY,
                 -0.5f64,
                 expected_result(FCSRFlags::DEFAULT, f64::NEG_INFINITY),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f64::NEG_INFINITY,
                 -2f64,
                 expected_result(FCSRFlags::DEFAULT, f64::INFINITY),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 1f64,
                 f64::INFINITY,
                 expected_result(FCSRFlags::DEFAULT, 0f64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f64::MIN,
                 f64::INFINITY,
                 expected_result(FCSRFlags::DEFAULT, -0f64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f64::INFINITY,
@@ -2895,8 +2908,8 @@ impl Test for DivD {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f64::INFINITY,
@@ -2905,8 +2918,8 @@ impl Test for DivD {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f64::NEG_INFINITY,
@@ -2915,8 +2928,8 @@ impl Test for DivD {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f64::NEG_INFINITY,
@@ -2925,8 +2938,8 @@ impl Test for DivD {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f64::INFINITY,
@@ -2935,9 +2948,9 @@ impl Test for DivD {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
-            )),
+            ),
             // 2/NAN produces another NAN and invalid operation (which is the opposite of what their name implies)
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f64,
@@ -2946,8 +2959,8 @@ impl Test for DivD {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f64,
@@ -2956,8 +2969,8 @@ impl Test for DivD {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f64,
@@ -2966,8 +2979,8 @@ impl Test for DivD {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f64,
@@ -2976,38 +2989,38 @@ impl Test for DivD {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
-            )),
+            ),
             // Signalling NANs aren't supported and cause unimplemented operation
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f64,
                 FConst::SIGNALLING_NAN_START_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f64,
                 FConst::SIGNALLING_NAN_END_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f64,
                 FConst::SIGNALLING_NAN_NEGATIVE_START_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f64,
                 FConst::SIGNALLING_NAN_NEGATIVE_END_64,
                 expected_unimplemented_f64(),
-            )),
+            ),
             // NAN/2 produces another NAN and invalid operation (which is the opposite of what their name implies)
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_START_64,
@@ -3016,8 +3029,8 @@ impl Test for DivD {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_END_64,
@@ -3026,8 +3039,8 @@ impl Test for DivD {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_NEGATIVE_START_64,
@@ -3036,8 +3049,8 @@ impl Test for DivD {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_NEGATIVE_END_64,
@@ -3046,95 +3059,96 @@ impl Test for DivD {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
-            )),
+            ),
             // Signalling NANs aren't supported and cause unimplemented operation
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_START_64,
                 2f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_END_64,
                 2f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_START_64,
                 2f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_END_64,
                 2f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_START_64,
                 2f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_END_64,
                 2f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_START_64,
                 2f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_END_64,
                 2f64,
                 expected_unimplemented_f64(),
-            )),
+            ),
             // Mixing both types of NAN cause unimplemented
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_START_64,
                 FConst::QUIET_NAN_START_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_START_64,
                 FConst::SIGNALLING_NAN_START_64,
                 expected_unimplemented_f64(),
-            )),
+            ),
             // Mixing NAN with subnormal cause unimplemented
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_START_64,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 FConst::QUIET_NAN_START_64,
                 expected_unimplemented_f64(),
-            )),
-        ]
+            ),
+        ];
+        crate::tests::boxed_values(VALUES_0)
     }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
@@ -3174,73 +3188,79 @@ impl Test for MulS {
     }
 
     fn values(&self) -> Vec<Box<dyn Any>> {
-        vec![
+        const VALUES_0: &[(
+            bool,
+            FCSRRoundingMode,
+            f32,
+            f32,
+            Result<(FCSRFlags, f32), ()>,
+        )] = &[
             // Elements: (flush_denorm_to_zero, rounding mode, first number, second number, expected-cause-bits, expected result
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 0f32,
                 2f32,
                 expected_result(FCSRFlags::DEFAULT, 0f32),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 0f32,
                 0f32,
                 expected_result(FCSRFlags::DEFAULT, 0f32),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 -0f32,
                 0f32,
                 expected_result(FCSRFlags::DEFAULT, -0f32),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 -2f32,
                 0f32,
                 expected_result(FCSRFlags::DEFAULT, -0f32),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 0f32,
                 f32::MAX,
                 expected_result(FCSRFlags::DEFAULT, 0f32),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 -0f32,
                 f32::MAX,
                 expected_result(FCSRFlags::DEFAULT, -0f32),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::MIN,
                 -1f32,
                 expected_result(FCSRFlags::DEFAULT, f32::MAX),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::MIN_POSITIVE,
                 -1f32,
                 expected_result(FCSRFlags::DEFAULT, -f32::MIN_POSITIVE),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::MAX,
                 -1f32,
                 expected_result(FCSRFlags::DEFAULT, f32::MIN),
-            )),
+            ),
             // Inexact
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 0.123456789f32,
@@ -3249,8 +3269,8 @@ impl Test for MulS {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     1.2498095f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::NegativeInfinity,
                 0.123456789f32,
@@ -3259,8 +3279,8 @@ impl Test for MulS {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     1.2498095f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::PositiveInfinity,
                 0.123456789f32,
@@ -3269,8 +3289,8 @@ impl Test for MulS {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     1.2498096f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Zero,
                 0.123456789f32,
@@ -3279,8 +3299,8 @@ impl Test for MulS {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     1.2498095f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 0.123456789f32,
@@ -3289,8 +3309,8 @@ impl Test for MulS {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     -1.2498095f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::NegativeInfinity,
                 0.123456789f32,
@@ -3299,8 +3319,8 @@ impl Test for MulS {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     -1.2498096f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::PositiveInfinity,
                 0.123456789f32,
@@ -3309,8 +3329,8 @@ impl Test for MulS {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     -1.2498095f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Zero,
                 0.123456789f32,
@@ -3319,15 +3339,15 @@ impl Test for MulS {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     -1.2498095f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 0.456789123f32,
                 10.123457095f32,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 4.624285f32),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::NegativeInfinity,
                 0.456789123f32,
@@ -3336,15 +3356,15 @@ impl Test for MulS {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     4.6242847f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::PositiveInfinity,
                 0.456789123f32,
                 10.123457095f32,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 4.624285f32),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Zero,
                 0.456789123f32,
@@ -3353,9 +3373,9 @@ impl Test for MulS {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     4.6242847f32,
                 ),
-            )),
+            ),
             // Inexact with overflow
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::MAX,
@@ -3366,8 +3386,8 @@ impl Test for MulS {
                         .with_overflow(true),
                     f32::INFINITY,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::MIN,
@@ -3378,8 +3398,8 @@ impl Test for MulS {
                         .with_overflow(true),
                     f32::NEG_INFINITY,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::MIN,
@@ -3390,23 +3410,23 @@ impl Test for MulS {
                         .with_overflow(true),
                     f32::INFINITY,
                 ),
-            )),
+            ),
             // Infinity * 0 is NAN. Infinity times anything else is Infinity (while preserving the sign)
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::INFINITY,
                 1f32,
                 expected_result(FCSRFlags::DEFAULT, f32::INFINITY),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::INFINITY,
                 2f32,
                 expected_result(FCSRFlags::DEFAULT, f32::INFINITY),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::INFINITY,
@@ -3415,22 +3435,22 @@ impl Test for MulS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::INFINITY,
                 -1f32,
                 expected_result(FCSRFlags::DEFAULT, f32::NEG_INFINITY),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::INFINITY,
                 -2f32,
                 expected_result(FCSRFlags::DEFAULT, f32::NEG_INFINITY),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::INFINITY,
@@ -3439,22 +3459,22 @@ impl Test for MulS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::NEG_INFINITY,
                 1f32,
                 expected_result(FCSRFlags::DEFAULT, f32::NEG_INFINITY),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::NEG_INFINITY,
                 2f32,
                 expected_result(FCSRFlags::DEFAULT, f32::NEG_INFINITY),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::NEG_INFINITY,
@@ -3463,22 +3483,22 @@ impl Test for MulS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::NEG_INFINITY,
                 -1f32,
                 expected_result(FCSRFlags::DEFAULT, f32::INFINITY),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::NEG_INFINITY,
                 -2f32,
                 expected_result(FCSRFlags::DEFAULT, f32::INFINITY),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::NEG_INFINITY,
@@ -3487,52 +3507,52 @@ impl Test for MulS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::NEG_INFINITY,
                 f32::INFINITY,
                 expected_result(FCSRFlags::DEFAULT, f32::NEG_INFINITY),
-            )),
+            ),
             // Underflow with flush-denorm off causes unimplemented
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::MIN_POSITIVE,
                 0.5f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::PositiveInfinity,
                 f32::MIN_POSITIVE,
                 0.5f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::NegativeInfinity,
                 f32::MIN_POSITIVE,
                 0.5f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Zero,
                 f32::MIN_POSITIVE,
                 0.5f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Zero,
                 f32::MIN_POSITIVE,
                 f32::MIN_POSITIVE,
                 expected_unimplemented_f32(),
-            )),
+            ),
             // Underflow with flush-denorm on causes underflow
-            Box::new((
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 f32::MIN_POSITIVE,
@@ -3543,8 +3563,8 @@ impl Test for MulS {
                         .with_underflow(true),
                     0f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::PositiveInfinity,
                 f32::MIN_POSITIVE,
@@ -3555,8 +3575,8 @@ impl Test for MulS {
                         .with_underflow(true),
                     f32::MIN_POSITIVE,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::NegativeInfinity,
                 f32::MIN_POSITIVE,
@@ -3567,8 +3587,8 @@ impl Test for MulS {
                         .with_underflow(true),
                     0f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Zero,
                 f32::MIN_POSITIVE,
@@ -3579,8 +3599,8 @@ impl Test for MulS {
                         .with_underflow(true),
                     0f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 -f32::MIN_POSITIVE,
@@ -3591,8 +3611,8 @@ impl Test for MulS {
                         .with_underflow(true),
                     -0f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::PositiveInfinity,
                 -f32::MIN_POSITIVE,
@@ -3603,8 +3623,8 @@ impl Test for MulS {
                         .with_underflow(true),
                     -0f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::NegativeInfinity,
                 -f32::MIN_POSITIVE,
@@ -3615,8 +3635,8 @@ impl Test for MulS {
                         .with_underflow(true),
                     -f32::MIN_POSITIVE,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Zero,
                 -f32::MIN_POSITIVE,
@@ -3627,8 +3647,8 @@ impl Test for MulS {
                         .with_underflow(true),
                     -0f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 f32::MIN_POSITIVE,
@@ -3639,8 +3659,8 @@ impl Test for MulS {
                         .with_underflow(true),
                     0f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::PositiveInfinity,
                 f32::MIN_POSITIVE,
@@ -3651,8 +3671,8 @@ impl Test for MulS {
                         .with_underflow(true),
                     f32::MIN_POSITIVE,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::NegativeInfinity,
                 f32::MIN_POSITIVE,
@@ -3663,8 +3683,8 @@ impl Test for MulS {
                         .with_underflow(true),
                     0f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Zero,
                 f32::MIN_POSITIVE,
@@ -3675,193 +3695,193 @@ impl Test for MulS {
                         .with_underflow(true),
                     0f32,
                 ),
-            )),
+            ),
             // Any subnormal input causes unimplemented
-            Box::new((
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 0f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MAX_POSITIVE_32,
                 0f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_NEGATIVE_32,
                 0f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MAX_NEGATIVE_32,
                 0f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 0f32,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 0f32,
                 FConst::SUBNORMAL_MAX_POSITIVE_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 0f32,
                 FConst::SUBNORMAL_MIN_NEGATIVE_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 0f32,
                 FConst::SUBNORMAL_MAX_NEGATIVE_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 1f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 f32::MAX,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 f32::INFINITY,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 0f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Zero,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 0f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Zero,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 0f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::NegativeInfinity,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 0f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::NegativeInfinity,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 0f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::PositiveInfinity,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 0f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::PositiveInfinity,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 0f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::PositiveInfinity,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 f32::INFINITY,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::PositiveInfinity,
                 f32::INFINITY,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 expected_unimplemented_f32(),
-            )),
+            ),
             // Experiments with extreme values
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::MAX,
                 f32::MIN_POSITIVE,
                 expected_result(FCSRFlags::DEFAULT, 3.9999998f32),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::PositiveInfinity,
                 f32::MAX,
                 f32::MIN_POSITIVE,
                 expected_result(FCSRFlags::DEFAULT, 3.9999998f32),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::NegativeInfinity,
                 f32::MAX,
                 f32::MIN_POSITIVE,
                 expected_result(FCSRFlags::DEFAULT, 3.9999998f32),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Zero,
                 f32::MAX,
                 f32::MIN_POSITIVE,
                 expected_result(FCSRFlags::DEFAULT, 3.9999998f32),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 -0f32,
                 0f32,
                 expected_result(FCSRFlags::DEFAULT, -0f32),
-            )),
+            ),
             // 2*NAN produces another NAN and invalid operation (which is the opposite of what their name implies)
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f32,
@@ -3870,8 +3890,8 @@ impl Test for MulS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f32,
@@ -3880,8 +3900,8 @@ impl Test for MulS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f32,
@@ -3890,8 +3910,8 @@ impl Test for MulS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f32,
@@ -3900,45 +3920,45 @@ impl Test for MulS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
+            ),
             // Signalling NANs aren't supported and cause unimplemented operation
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f32,
                 FConst::SIGNALLING_NAN_START_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f32,
                 FConst::SIGNALLING_NAN_END_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f32,
                 FConst::SIGNALLING_NAN_NEGATIVE_START_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f32,
                 FConst::SIGNALLING_NAN_NEGATIVE_END_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::INFINITY,
                 FConst::SIGNALLING_NAN_NEGATIVE_END_32,
                 expected_unimplemented_f32(),
-            )),
+            ),
             // NAN*2 produces another NAN and invalid operation (which is the opposite of what their name implies)
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_START_32,
@@ -3947,8 +3967,8 @@ impl Test for MulS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_END_32,
@@ -3957,8 +3977,8 @@ impl Test for MulS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_NEGATIVE_START_32,
@@ -3967,8 +3987,8 @@ impl Test for MulS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_NEGATIVE_END_32,
@@ -3977,8 +3997,8 @@ impl Test for MulS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_NEGATIVE_END_32,
@@ -3987,95 +4007,96 @@ impl Test for MulS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
+            ),
             // Signalling NANs aren't supported and cause unimplemented operation
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_START_32,
                 2f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_END_32,
                 2f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_START_32,
                 2f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_END_32,
                 2f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_START_32,
                 2f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_END_32,
                 2f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_START_32,
                 2f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_END_32,
                 2f32,
                 expected_unimplemented_f32(),
-            )),
+            ),
             // Mixing both types of NAN cause unimplemented
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_START_32,
                 FConst::QUIET_NAN_START_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_START_32,
                 FConst::SIGNALLING_NAN_START_32,
                 expected_unimplemented_f32(),
-            )),
+            ),
             // Mixing NAN with subnormal cause unimplemented
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_START_32,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 FConst::QUIET_NAN_START_32,
                 expected_unimplemented_f32(),
-            )),
-        ]
+            ),
+        ];
+        crate::tests::boxed_values(VALUES_0)
     }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
@@ -4115,36 +4136,42 @@ impl Test for MulD {
     }
 
     fn values(&self) -> Vec<Box<dyn Any>> {
-        vec![
-            Box::new((
+        const VALUES_0: &[(
+            bool,
+            FCSRRoundingMode,
+            f64,
+            f64,
+            Result<(FCSRFlags, f64), ()>,
+        )] = &[
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 0f64,
                 2f64,
                 expected_result(FCSRFlags::DEFAULT, 0f64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f64::MIN,
                 -1f64,
                 expected_result(FCSRFlags::DEFAULT, f64::MAX),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f64::MIN_POSITIVE,
                 -1f64,
                 expected_result(FCSRFlags::DEFAULT, -f64::MIN_POSITIVE),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f64::MAX,
                 -1f64,
                 expected_result(FCSRFlags::DEFAULT, f64::MIN),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f64::MAX,
@@ -4155,8 +4182,8 @@ impl Test for MulD {
                         .with_overflow(true),
                     f64::INFINITY,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f64::MIN,
@@ -4167,8 +4194,8 @@ impl Test for MulD {
                         .with_overflow(true),
                     f64::NEG_INFINITY,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f64::MIN,
@@ -4179,38 +4206,38 @@ impl Test for MulD {
                         .with_overflow(true),
                     f64::INFINITY,
                 ),
-            )),
+            ),
             // Underflow with flush-denorm off causes unimplemented
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f64::MIN_POSITIVE,
                 0.5f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::PositiveInfinity,
                 f64::MIN_POSITIVE,
                 0.5f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::NegativeInfinity,
                 f64::MIN_POSITIVE,
                 0.5f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Zero,
                 f64::MIN_POSITIVE,
                 0.5f64,
                 expected_unimplemented_f64(),
-            )),
+            ),
             // Underflow with flush-denorm on causes underflow
-            Box::new((
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 f64::MIN_POSITIVE,
@@ -4221,8 +4248,8 @@ impl Test for MulD {
                         .with_underflow(true),
                     0f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::PositiveInfinity,
                 f64::MIN_POSITIVE,
@@ -4233,8 +4260,8 @@ impl Test for MulD {
                         .with_underflow(true),
                     f64::MIN_POSITIVE,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::NegativeInfinity,
                 f64::MIN_POSITIVE,
@@ -4245,8 +4272,8 @@ impl Test for MulD {
                         .with_underflow(true),
                     0f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Zero,
                 f64::MIN_POSITIVE,
@@ -4257,8 +4284,8 @@ impl Test for MulD {
                         .with_underflow(true),
                     0f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 -f64::MIN_POSITIVE,
@@ -4269,8 +4296,8 @@ impl Test for MulD {
                         .with_underflow(true),
                     -0f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::PositiveInfinity,
                 -f64::MIN_POSITIVE,
@@ -4281,8 +4308,8 @@ impl Test for MulD {
                         .with_underflow(true),
                     -0f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::NegativeInfinity,
                 -f64::MIN_POSITIVE,
@@ -4293,8 +4320,8 @@ impl Test for MulD {
                         .with_underflow(true),
                     -f64::MIN_POSITIVE,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Zero,
                 -f64::MIN_POSITIVE,
@@ -4305,8 +4332,8 @@ impl Test for MulD {
                         .with_underflow(true),
                     -0f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 -f64::MIN_POSITIVE,
@@ -4317,8 +4344,8 @@ impl Test for MulD {
                         .with_underflow(true),
                     -0f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::PositiveInfinity,
                 -f64::MIN_POSITIVE,
@@ -4329,8 +4356,8 @@ impl Test for MulD {
                         .with_underflow(true),
                     -0f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::NegativeInfinity,
                 -f64::MIN_POSITIVE,
@@ -4341,8 +4368,8 @@ impl Test for MulD {
                         .with_underflow(true),
                     -f64::MIN_POSITIVE,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Zero,
                 -f64::MIN_POSITIVE,
@@ -4353,8 +4380,8 @@ impl Test for MulD {
                         .with_underflow(true),
                     -0f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 f64::MIN_POSITIVE,
@@ -4365,8 +4392,8 @@ impl Test for MulD {
                         .with_underflow(true),
                     0f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::PositiveInfinity,
                 f64::MIN_POSITIVE,
@@ -4377,8 +4404,8 @@ impl Test for MulD {
                         .with_underflow(true),
                     f64::MIN_POSITIVE,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::NegativeInfinity,
                 f64::MIN_POSITIVE,
@@ -4389,8 +4416,8 @@ impl Test for MulD {
                         .with_underflow(true),
                     0f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Zero,
                 f64::MIN_POSITIVE,
@@ -4401,179 +4428,179 @@ impl Test for MulD {
                         .with_underflow(true),
                     0f64,
                 ),
-            )),
+            ),
             // Any subnormal input causes unimplemented
-            Box::new((
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 0f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MAX_POSITIVE_64,
                 0f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_NEGATIVE_64,
                 0f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MAX_NEGATIVE_64,
                 0f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 0f64,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 0f64,
                 FConst::SUBNORMAL_MAX_POSITIVE_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 0f64,
                 FConst::SUBNORMAL_MIN_NEGATIVE_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 0f64,
                 FConst::SUBNORMAL_MAX_NEGATIVE_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 1f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 f64::MAX,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 f64::INFINITY,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 0f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Zero,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 0f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Zero,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 0f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::NegativeInfinity,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 0f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::NegativeInfinity,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 0f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::PositiveInfinity,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 0f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::PositiveInfinity,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 0f64,
                 expected_unimplemented_f64(),
-            )),
+            ),
             // Experiments with extreme values
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f64::MAX,
                 f64::MIN_POSITIVE,
                 expected_result(FCSRFlags::DEFAULT, 3.9999999999999996f64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::PositiveInfinity,
                 f64::MAX,
                 f64::MIN_POSITIVE,
                 expected_result(FCSRFlags::DEFAULT, 3.9999999999999996f64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::NegativeInfinity,
                 f64::MAX,
                 f64::MIN_POSITIVE,
                 expected_result(FCSRFlags::DEFAULT, 3.9999999999999996f64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Zero,
                 f64::MAX,
                 f64::MIN_POSITIVE,
                 expected_result(FCSRFlags::DEFAULT, 3.9999999999999996f64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 -0f64,
                 0f64,
                 expected_result(FCSRFlags::DEFAULT, -0f64),
-            )),
+            ),
             // 2*NAN produces another NAN and invalid operation (which is the opposite of what their name implies)
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f64,
@@ -4582,8 +4609,8 @@ impl Test for MulD {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f64,
@@ -4592,8 +4619,8 @@ impl Test for MulD {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f64,
@@ -4602,8 +4629,8 @@ impl Test for MulD {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f64,
@@ -4612,38 +4639,38 @@ impl Test for MulD {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
-            )),
+            ),
             // Signalling NANs aren't supported and cause unimplemented operation
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f64,
                 FConst::SIGNALLING_NAN_START_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f64,
                 FConst::SIGNALLING_NAN_END_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f64,
                 FConst::SIGNALLING_NAN_NEGATIVE_START_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f64,
                 FConst::SIGNALLING_NAN_NEGATIVE_END_64,
                 expected_unimplemented_f64(),
-            )),
+            ),
             // NAN*2 produces another NAN and invalid operation (which is the opposite of what their name implies)
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_START_64,
@@ -4652,8 +4679,8 @@ impl Test for MulD {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_END_64,
@@ -4662,8 +4689,8 @@ impl Test for MulD {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_NEGATIVE_START_64,
@@ -4672,8 +4699,8 @@ impl Test for MulD {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_NEGATIVE_END_64,
@@ -4682,95 +4709,96 @@ impl Test for MulD {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
-            )),
+            ),
             // Signalling NANs aren't supported and cause unimplemented operation
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_START_64,
                 2f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_END_64,
                 2f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_START_64,
                 2f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_END_64,
                 2f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_START_64,
                 2f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_END_64,
                 2f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_START_64,
                 2f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_END_64,
                 2f64,
                 expected_unimplemented_f64(),
-            )),
+            ),
             // Mixing both types of NAN cause unimplemented
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_START_64,
                 FConst::QUIET_NAN_START_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_START_64,
                 FConst::SIGNALLING_NAN_START_64,
                 expected_unimplemented_f64(),
-            )),
+            ),
             // Mixing NAN with subnormal cause unimplemented
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_START_64,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 FConst::QUIET_NAN_START_64,
                 expected_unimplemented_f64(),
-            )),
-        ]
+            ),
+        ];
+        crate::tests::boxed_values(VALUES_0)
     }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
@@ -4810,57 +4838,63 @@ impl Test for AddS {
     }
 
     fn values(&self) -> Vec<Box<dyn Any>> {
-        vec![
-            Box::new((
+        const VALUES_0: &[(
+            bool,
+            FCSRRoundingMode,
+            f32,
+            f32,
+            Result<(FCSRFlags, f32), ()>,
+        )] = &[
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 0f32,
                 2f32,
                 expected_result(FCSRFlags::DEFAULT, 2f32),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 1f32,
                 5f32,
                 expected_result(FCSRFlags::DEFAULT, 6f32),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::MIN,
                 -1f32,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), f32::MIN),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::MAX,
                 -1f32,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), f32::MAX),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::MAX,
                 1f32,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), f32::MAX),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::MIN,
                 f32::MAX,
                 expected_result(FCSRFlags::DEFAULT, 0f32),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::MAX,
                 f32::MIN_POSITIVE,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), f32::MAX),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::INFINITY,
@@ -4869,8 +4903,8 @@ impl Test for AddS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::NEG_INFINITY,
@@ -4879,9 +4913,9 @@ impl Test for AddS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
+            ),
             // Tests for rounding mode
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 1000000000000000f32,
@@ -4890,8 +4924,8 @@ impl Test for AddS {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     1000000000000000f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Zero,
                 1000000000000000f32,
@@ -4900,8 +4934,8 @@ impl Test for AddS {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     1000000000000000f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::PositiveInfinity,
                 1000000000000000f32,
@@ -4910,8 +4944,8 @@ impl Test for AddS {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     1000000050000000f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::NegativeInfinity,
                 1000000000000000f32,
@@ -4920,8 +4954,8 @@ impl Test for AddS {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     1000000000000000f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 -1000000000000000f32,
@@ -4930,8 +4964,8 @@ impl Test for AddS {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     -1000000000000000f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Zero,
                 -1000000000000000f32,
@@ -4940,8 +4974,8 @@ impl Test for AddS {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     -1000000000000000f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::PositiveInfinity,
                 -1000000000000000f32,
@@ -4950,8 +4984,8 @@ impl Test for AddS {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     -1000000000000000f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::NegativeInfinity,
                 -1000000000000000f32,
@@ -4960,8 +4994,8 @@ impl Test for AddS {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     -1000000050000000f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 1000000000000000f32,
@@ -4970,8 +5004,8 @@ impl Test for AddS {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     1000000000000000f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 1000000000000000f32,
@@ -4980,8 +5014,8 @@ impl Test for AddS {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     1000000050000000f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Zero,
                 1000000000000000f32,
@@ -4990,8 +5024,8 @@ impl Test for AddS {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     1000000000000000f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Zero,
                 1000000000000000f32,
@@ -5000,9 +5034,9 @@ impl Test for AddS {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     1000000000000000f32,
                 ),
-            )),
+            ),
             // Overflow
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 3e38f32,
@@ -5013,8 +5047,8 @@ impl Test for AddS {
                         .with_inexact_operation(true),
                     f32::INFINITY,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 -3e38f32,
@@ -5025,17 +5059,17 @@ impl Test for AddS {
                         .with_inexact_operation(true),
                     f32::NEG_INFINITY,
                 ),
-            )),
+            ),
             // Underflow: If denorm is false => unimplemented
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 1.5285104e-37f32,
                 -1.5391543e-37f32,
                 expected_unimplemented_f32(),
-            )),
+            ),
             // Underflow: If denorm is true => works if exceptions are off, but unimplemented if they are enabled (wow). Also, the rounding mode matters on underflow
-            Box::new((
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 1.5285104e-37f32,
@@ -5046,8 +5080,8 @@ impl Test for AddS {
                         .with_inexact_operation(true),
                     -0f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Zero,
                 1.5285104e-37f32,
@@ -5058,8 +5092,8 @@ impl Test for AddS {
                         .with_inexact_operation(true),
                     -0f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::PositiveInfinity,
                 1.5285104e-37f32,
@@ -5070,8 +5104,8 @@ impl Test for AddS {
                         .with_inexact_operation(true),
                     -0f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::NegativeInfinity,
                 1.5285104e-37f32,
@@ -5082,8 +5116,8 @@ impl Test for AddS {
                         .with_inexact_operation(true),
                     -1.1754944e-38f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 -1.5285104e-37f32,
@@ -5094,8 +5128,8 @@ impl Test for AddS {
                         .with_inexact_operation(true),
                     0f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Zero,
                 -1.5285104e-37f32,
@@ -5106,8 +5140,8 @@ impl Test for AddS {
                         .with_inexact_operation(true),
                     0f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::PositiveInfinity,
                 -1.5285104e-37f32,
@@ -5118,8 +5152,8 @@ impl Test for AddS {
                         .with_inexact_operation(true),
                     1.1754944e-38f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::NegativeInfinity,
                 -1.5285104e-37f32,
@@ -5130,136 +5164,136 @@ impl Test for AddS {
                         .with_inexact_operation(true),
                     0f32,
                 ),
-            )),
+            ),
             // Any subnormal input causes unimplemented
-            Box::new((
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 0f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MAX_POSITIVE_32,
                 0f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_NEGATIVE_32,
                 0f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MAX_NEGATIVE_32,
                 0f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 0f32,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 0f32,
                 FConst::SUBNORMAL_MAX_POSITIVE_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 0f32,
                 FConst::SUBNORMAL_MIN_NEGATIVE_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 0f32,
                 FConst::SUBNORMAL_MAX_NEGATIVE_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 1f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 f32::MAX,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 f32::INFINITY,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Zero,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 0f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Zero,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 0f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::NegativeInfinity,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 0f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::NegativeInfinity,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 0f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::PositiveInfinity,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 0f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::PositiveInfinity,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 0f32,
                 expected_unimplemented_f32(),
-            )),
+            ),
             // 2+qNAN produces another NAN and invalid operation (which is the opposite of what their name implies)
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f32,
@@ -5268,8 +5302,8 @@ impl Test for AddS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f32,
@@ -5278,8 +5312,8 @@ impl Test for AddS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f32,
@@ -5288,8 +5322,8 @@ impl Test for AddS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f32,
@@ -5298,38 +5332,38 @@ impl Test for AddS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
+            ),
             // Signalling NANs aren't supported and cause unimplemented operation
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f32,
                 FConst::SIGNALLING_NAN_START_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f32,
                 FConst::SIGNALLING_NAN_END_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f32,
                 FConst::SIGNALLING_NAN_NEGATIVE_START_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f32,
                 FConst::SIGNALLING_NAN_NEGATIVE_END_32,
                 expected_unimplemented_f32(),
-            )),
+            ),
             // NAN+2 produces another NAN and invalid operation (which is the opposite of what their name implies)
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_START_32,
@@ -5338,8 +5372,8 @@ impl Test for AddS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_END_32,
@@ -5348,8 +5382,8 @@ impl Test for AddS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_NEGATIVE_START_32,
@@ -5358,8 +5392,8 @@ impl Test for AddS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_NEGATIVE_END_32,
@@ -5368,74 +5402,75 @@ impl Test for AddS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
+            ),
             // Signalling NANs aren't supported and cause unimplemented operation
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_START_32,
                 2f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_END_32,
                 2f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_START_32,
                 2f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_END_32,
                 2f32,
                 expected_unimplemented_f32(),
-            )),
+            ),
             // Mixing both types of NAN cause unimplemented
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_START_32,
                 FConst::QUIET_NAN_START_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_START_32,
                 FConst::QUIET_NAN_START_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_START_32,
                 FConst::SIGNALLING_NAN_START_32,
                 expected_unimplemented_f32(),
-            )),
+            ),
             // Mixing NAN with subnormal cause unimplemented
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_START_32,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 FConst::QUIET_NAN_START_32,
                 expected_unimplemented_f32(),
-            )),
-        ]
+            ),
+        ];
+        crate::tests::boxed_values(VALUES_0)
     }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
@@ -5475,57 +5510,63 @@ impl Test for AddD {
     }
 
     fn values(&self) -> Vec<Box<dyn Any>> {
-        vec![
-            Box::new((
+        const VALUES_0: &[(
+            bool,
+            FCSRRoundingMode,
+            f64,
+            f64,
+            Result<(FCSRFlags, f64), ()>,
+        )] = &[
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 0f64,
                 2f64,
                 expected_result(FCSRFlags::DEFAULT, 2f64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 1f64,
                 5f64,
                 expected_result(FCSRFlags::DEFAULT, 6f64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f64::MIN,
                 -1f64,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), f64::MIN),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f64::MAX,
                 -1f64,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), f64::MAX),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f64::MAX,
                 1f64,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), f64::MAX),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f64::MIN,
                 f64::MAX,
                 expected_result(FCSRFlags::DEFAULT, 0f64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f64::MAX,
                 f64::MIN_POSITIVE,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), f64::MAX),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f64::INFINITY,
@@ -5534,8 +5575,8 @@ impl Test for AddD {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f64::NEG_INFINITY,
@@ -5544,9 +5585,9 @@ impl Test for AddD {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
-            )),
+            ),
             // Tests for rounding mode
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 1000000000000000f64,
@@ -5555,8 +5596,8 @@ impl Test for AddD {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     1000000000000000f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Zero,
                 1000000000000000f64,
@@ -5565,8 +5606,8 @@ impl Test for AddD {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     1000000000000000f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::PositiveInfinity,
                 1000000000000000f64,
@@ -5575,8 +5616,8 @@ impl Test for AddD {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     1000000000000000.1f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::NegativeInfinity,
                 1000000000000000f64,
@@ -5585,8 +5626,8 @@ impl Test for AddD {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     1000000000000000f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 -1000000000000000f64,
@@ -5595,8 +5636,8 @@ impl Test for AddD {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     -1000000000000000f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Zero,
                 -1000000000000000f64,
@@ -5605,8 +5646,8 @@ impl Test for AddD {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     -1000000000000000f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::PositiveInfinity,
                 -1000000000000000f64,
@@ -5615,8 +5656,8 @@ impl Test for AddD {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     -1000000000000000f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::NegativeInfinity,
                 -1000000000000000f64,
@@ -5625,8 +5666,8 @@ impl Test for AddD {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     -1000000000000000.1f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 1000000000000000f64,
@@ -5635,8 +5676,8 @@ impl Test for AddD {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     1000000000000000f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 1000000000000000f64,
@@ -5645,8 +5686,8 @@ impl Test for AddD {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     1000000000000000.1f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Zero,
                 1000000000000000f64,
@@ -5655,8 +5696,8 @@ impl Test for AddD {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     1000000000000000f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Zero,
                 1000000000000000f64,
@@ -5665,9 +5706,9 @@ impl Test for AddD {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     1000000000000000f64,
                 ),
-            )),
+            ),
             // Overflow
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 1.6e308f64,
@@ -5678,8 +5719,8 @@ impl Test for AddD {
                         .with_inexact_operation(true),
                     f64::INFINITY,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 -1.6e308f64,
@@ -5690,17 +5731,17 @@ impl Test for AddD {
                         .with_inexact_operation(true),
                     f64::NEG_INFINITY,
                 ),
-            )),
+            ),
             // Underflow: If denorm is false => unimplemented
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 3.18021e-307f64,
                 -3.1622e-307f64,
                 expected_unimplemented_f64(),
-            )),
+            ),
             // Underflow: If denorm is true => works if exceptions are off, but unimplemented if they are enabled (wow). This special case is handled inside of the
-            Box::new((
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 3.18021e-307f64,
@@ -5711,8 +5752,8 @@ impl Test for AddD {
                         .with_inexact_operation(true),
                     0f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Zero,
                 3.18021e-307f64,
@@ -5723,8 +5764,8 @@ impl Test for AddD {
                         .with_inexact_operation(true),
                     0f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::NegativeInfinity,
                 3.18021e-307f64,
@@ -5735,8 +5776,8 @@ impl Test for AddD {
                         .with_inexact_operation(true),
                     0f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::PositiveInfinity,
                 3.18021e-307f64,
@@ -5747,8 +5788,8 @@ impl Test for AddD {
                         .with_inexact_operation(true),
                     f64::MIN_POSITIVE,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 -3.18021e-307f64,
@@ -5759,8 +5800,8 @@ impl Test for AddD {
                         .with_inexact_operation(true),
                     -0f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Zero,
                 -3.18021e-307f64,
@@ -5771,8 +5812,8 @@ impl Test for AddD {
                         .with_inexact_operation(true),
                     -0f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::NegativeInfinity,
                 -3.18021e-307f64,
@@ -5783,8 +5824,8 @@ impl Test for AddD {
                         .with_inexact_operation(true),
                     -f64::MIN_POSITIVE,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::PositiveInfinity,
                 -3.18021e-307f64,
@@ -5795,136 +5836,136 @@ impl Test for AddD {
                         .with_inexact_operation(true),
                     -0f64,
                 ),
-            )),
+            ),
             // Any subnormal input causes unimplemented
-            Box::new((
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 0f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MAX_POSITIVE_64,
                 0f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_NEGATIVE_64,
                 0f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MAX_NEGATIVE_64,
                 0f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 0f64,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 0f64,
                 FConst::SUBNORMAL_MAX_POSITIVE_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 0f64,
                 FConst::SUBNORMAL_MIN_NEGATIVE_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 0f64,
                 FConst::SUBNORMAL_MAX_NEGATIVE_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 1f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 f64::MAX,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 f64::INFINITY,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Zero,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 0f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Zero,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 0f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::NegativeInfinity,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 0f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::NegativeInfinity,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 0f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::PositiveInfinity,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 0f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::PositiveInfinity,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 0f64,
                 expected_unimplemented_f64(),
-            )),
+            ),
             // 2+NAN produces another NAN and invalid operation (which is the opposite of what their name implies)
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f64,
@@ -5933,8 +5974,8 @@ impl Test for AddD {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f64,
@@ -5943,8 +5984,8 @@ impl Test for AddD {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f64,
@@ -5953,8 +5994,8 @@ impl Test for AddD {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f64,
@@ -5963,38 +6004,38 @@ impl Test for AddD {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
-            )),
+            ),
             // Signalling NANs aren't supported and cause unimplemented operation
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f64,
                 FConst::SIGNALLING_NAN_START_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f64,
                 FConst::SIGNALLING_NAN_END_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f64,
                 FConst::SIGNALLING_NAN_NEGATIVE_START_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f64,
                 FConst::SIGNALLING_NAN_NEGATIVE_END_64,
                 expected_unimplemented_f64(),
-            )),
+            ),
             // NAN+2 produces another NAN and invalid operation (which is the opposite of what their name implies)
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_START_64,
@@ -6003,8 +6044,8 @@ impl Test for AddD {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_END_64,
@@ -6013,8 +6054,8 @@ impl Test for AddD {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_NEGATIVE_START_64,
@@ -6023,8 +6064,8 @@ impl Test for AddD {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_NEGATIVE_END_64,
@@ -6033,95 +6074,96 @@ impl Test for AddD {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
-            )),
+            ),
             // Signalling NANs aren't supported and cause unimplemented operation
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_START_64,
                 2f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_END_64,
                 2f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_START_64,
                 2f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_END_64,
                 2f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_START_64,
                 2f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_END_64,
                 2f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_START_64,
                 2f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_END_64,
                 2f64,
                 expected_unimplemented_f64(),
-            )),
+            ),
             // Mixing both types of NAN cause unimplemented
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_START_64,
                 FConst::QUIET_NAN_START_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_START_64,
                 FConst::SIGNALLING_NAN_START_64,
                 expected_unimplemented_f64(),
-            )),
+            ),
             // Mixing NAN with subnormal cause unimplemented
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_START_64,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 FConst::QUIET_NAN_START_64,
                 expected_unimplemented_f64(),
-            )),
-        ]
+            ),
+        ];
+        crate::tests::boxed_values(VALUES_0)
     }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
@@ -6161,58 +6203,64 @@ impl Test for SubS {
     }
 
     fn values(&self) -> Vec<Box<dyn Any>> {
-        vec![
-            Box::new((
+        const VALUES_0: &[(
+            bool,
+            FCSRRoundingMode,
+            f32,
+            f32,
+            Result<(FCSRFlags, f32), ()>,
+        )] = &[
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 0f32,
                 -2f32,
                 expected_result(FCSRFlags::DEFAULT, 2f32),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 1f32,
                 -5f32,
                 expected_result(FCSRFlags::DEFAULT, 6f32),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::MIN,
                 1f32,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), f32::MIN),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::MAX,
                 1f32,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), f32::MAX),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::MAX,
                 -1f32,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), f32::MAX),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::MIN,
                 -f32::MAX,
                 expected_result(FCSRFlags::DEFAULT, 0f32),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::MAX,
                 -f32::MIN_POSITIVE,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), f32::MAX),
-            )),
+            ),
             // Tests for rounding mode
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 1000000000000000f32,
@@ -6221,8 +6269,8 @@ impl Test for SubS {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     1000000000000000f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Zero,
                 1000000000000000f32,
@@ -6231,8 +6279,8 @@ impl Test for SubS {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     1000000000000000f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::PositiveInfinity,
                 1000000000000000f32,
@@ -6241,8 +6289,8 @@ impl Test for SubS {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     1000000050000000f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::NegativeInfinity,
                 1000000000000000f32,
@@ -6251,8 +6299,8 @@ impl Test for SubS {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     1000000000000000f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 -1000000000000000f32,
@@ -6261,8 +6309,8 @@ impl Test for SubS {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     -1000000000000000f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Zero,
                 -1000000000000000f32,
@@ -6271,8 +6319,8 @@ impl Test for SubS {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     -1000000000000000f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::PositiveInfinity,
                 -1000000000000000f32,
@@ -6281,8 +6329,8 @@ impl Test for SubS {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     -1000000000000000f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::NegativeInfinity,
                 -1000000000000000f32,
@@ -6291,8 +6339,8 @@ impl Test for SubS {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     -1000000050000000f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 1000000000000000f32,
@@ -6301,8 +6349,8 @@ impl Test for SubS {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     1000000000000000f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 1000000000000000f32,
@@ -6311,8 +6359,8 @@ impl Test for SubS {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     1000000050000000f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Zero,
                 1000000000000000f32,
@@ -6321,8 +6369,8 @@ impl Test for SubS {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     1000000000000000f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Zero,
                 1000000000000000f32,
@@ -6331,9 +6379,9 @@ impl Test for SubS {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     1000000000000000f32,
                 ),
-            )),
+            ),
             // Overflow
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 3e38f32,
@@ -6344,8 +6392,8 @@ impl Test for SubS {
                         .with_inexact_operation(true),
                     f32::INFINITY,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 -3e38f32,
@@ -6356,17 +6404,17 @@ impl Test for SubS {
                         .with_inexact_operation(true),
                     f32::NEG_INFINITY,
                 ),
-            )),
+            ),
             // Underflow: If denorm is false => unimplemented
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 1.5285104e-37f32,
                 1.5391543e-37f32,
                 expected_unimplemented_f32(),
-            )),
+            ),
             // Underflow: If denorm is true => works if exceptions are off, but unimplemented if they are enabled (wow). This special case is handled inside of the
-            Box::new((
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 1.5285104e-37f32,
@@ -6377,8 +6425,8 @@ impl Test for SubS {
                         .with_inexact_operation(true),
                     -0f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::NegativeInfinity,
                 1.5285104e-37f32,
@@ -6389,136 +6437,136 @@ impl Test for SubS {
                         .with_inexact_operation(true),
                     -1.1754944e-38f32,
                 ),
-            )),
+            ),
             // Any subnormal input causes unimplemented
-            Box::new((
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 0f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MAX_POSITIVE_32,
                 0f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_NEGATIVE_32,
                 0f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MAX_NEGATIVE_32,
                 0f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 0f32,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 0f32,
                 FConst::SUBNORMAL_MAX_POSITIVE_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 0f32,
                 FConst::SUBNORMAL_MIN_NEGATIVE_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 0f32,
                 FConst::SUBNORMAL_MAX_NEGATIVE_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 1f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 f32::MAX,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 f32::INFINITY,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Zero,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Zero,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::NegativeInfinity,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::NegativeInfinity,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::PositiveInfinity,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::PositiveInfinity,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 expected_unimplemented_f32(),
-            )),
+            ),
             // 2+NAN produces another NAN and invalid operation (which is the opposite of what their name implies)
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f32,
@@ -6527,8 +6575,8 @@ impl Test for SubS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f32,
@@ -6537,8 +6585,8 @@ impl Test for SubS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f32,
@@ -6547,8 +6595,8 @@ impl Test for SubS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f32,
@@ -6557,38 +6605,38 @@ impl Test for SubS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
+            ),
             // Signalling NANs aren't supported and cause unimplemented operation
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f32,
                 FConst::SIGNALLING_NAN_START_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f32,
                 FConst::SIGNALLING_NAN_END_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f32,
                 FConst::SIGNALLING_NAN_NEGATIVE_START_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f32,
                 FConst::SIGNALLING_NAN_NEGATIVE_END_32,
                 expected_unimplemented_f32(),
-            )),
+            ),
             // NAN+2 produces another NAN and invalid operation (which is the opposite of what their name implies)
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_START_32,
@@ -6597,8 +6645,8 @@ impl Test for SubS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_END_32,
@@ -6607,8 +6655,8 @@ impl Test for SubS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_NEGATIVE_START_32,
@@ -6617,8 +6665,8 @@ impl Test for SubS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_NEGATIVE_END_32,
@@ -6627,95 +6675,96 @@ impl Test for SubS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
+            ),
             // Signalling NANs aren't supported and cause unimplemented operation
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_START_32,
                 2f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_END_32,
                 2f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_START_32,
                 2f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_END_32,
                 2f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_START_32,
                 2f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_END_32,
                 2f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_START_32,
                 2f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_END_32,
                 2f32,
                 expected_unimplemented_f32(),
-            )),
+            ),
             // Mixing both types of NAN cause unimplemented
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_START_32,
                 FConst::QUIET_NAN_START_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_START_32,
                 FConst::SIGNALLING_NAN_START_32,
                 expected_unimplemented_f32(),
-            )),
+            ),
             // Mixing NAN with subnormal cause unimplemented
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_START_32,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 FConst::QUIET_NAN_START_32,
                 expected_unimplemented_f32(),
-            )),
-        ]
+            ),
+        ];
+        crate::tests::boxed_values(VALUES_0)
     }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
@@ -6755,58 +6804,64 @@ impl Test for SubD {
     }
 
     fn values(&self) -> Vec<Box<dyn Any>> {
-        vec![
-            Box::new((
+        const VALUES_0: &[(
+            bool,
+            FCSRRoundingMode,
+            f64,
+            f64,
+            Result<(FCSRFlags, f64), ()>,
+        )] = &[
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 0f64,
                 -2f64,
                 expected_result(FCSRFlags::DEFAULT, 2f64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 1f64,
                 -5f64,
                 expected_result(FCSRFlags::DEFAULT, 6f64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f64::MIN,
                 1f64,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), f64::MIN),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f64::MAX,
                 1f64,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), f64::MAX),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f64::MAX,
                 -1f64,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), f64::MAX),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f64::MIN,
                 f64::MIN,
                 expected_result(FCSRFlags::DEFAULT, 0f64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f64::MAX,
                 -f64::MIN_POSITIVE,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), f64::MAX),
-            )),
+            ),
             // Tests for rounding mode
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 1000000000000000f64,
@@ -6815,8 +6870,8 @@ impl Test for SubD {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     1000000000000000f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Zero,
                 1000000000000000f64,
@@ -6825,8 +6880,8 @@ impl Test for SubD {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     1000000000000000f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::PositiveInfinity,
                 1000000000000000f64,
@@ -6835,8 +6890,8 @@ impl Test for SubD {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     1000000000000000.1f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::NegativeInfinity,
                 1000000000000000f64,
@@ -6845,8 +6900,8 @@ impl Test for SubD {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     1000000000000000f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 -1000000000000000f64,
@@ -6855,8 +6910,8 @@ impl Test for SubD {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     -1000000000000000f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Zero,
                 -1000000000000000f64,
@@ -6865,8 +6920,8 @@ impl Test for SubD {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     -1000000000000000f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::PositiveInfinity,
                 -1000000000000000f64,
@@ -6875,8 +6930,8 @@ impl Test for SubD {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     -1000000000000000f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::NegativeInfinity,
                 -1000000000000000f64,
@@ -6885,8 +6940,8 @@ impl Test for SubD {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     -1000000000000000.1f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 1000000000000000f64,
@@ -6895,8 +6950,8 @@ impl Test for SubD {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     1000000000000000f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 1000000000000000f64,
@@ -6905,8 +6960,8 @@ impl Test for SubD {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     1000000000000000.1f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Zero,
                 1000000000000000f64,
@@ -6915,8 +6970,8 @@ impl Test for SubD {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     1000000000000000f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Zero,
                 1000000000000000f64,
@@ -6925,9 +6980,9 @@ impl Test for SubD {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     1000000000000000f64,
                 ),
-            )),
+            ),
             // Overflow
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 1.6e308f64,
@@ -6938,8 +6993,8 @@ impl Test for SubD {
                         .with_inexact_operation(true),
                     f64::INFINITY,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 -1.6e308f64,
@@ -6950,17 +7005,17 @@ impl Test for SubD {
                         .with_inexact_operation(true),
                     f64::NEG_INFINITY,
                 ),
-            )),
+            ),
             // Underflow: If denorm is false => unimplemented
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 3.18021e-307f64,
                 3.1622e-307f64,
                 expected_unimplemented_f64(),
-            )),
+            ),
             // Underflow: If denorm is true => works if exceptions are off, but unimplemented if they are enabled (wow). This special case is handled inside of the
-            Box::new((
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 3.18021e-307f64,
@@ -6971,8 +7026,8 @@ impl Test for SubD {
                         .with_inexact_operation(true),
                     0f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::PositiveInfinity,
                 3.18021e-307f64,
@@ -6983,136 +7038,136 @@ impl Test for SubD {
                         .with_inexact_operation(true),
                     f64::MIN_POSITIVE,
                 ),
-            )),
+            ),
             // Any subnormal input causes unimplemented
-            Box::new((
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 0f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MAX_POSITIVE_64,
                 0f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_NEGATIVE_64,
                 0f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MAX_NEGATIVE_64,
                 0f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 0f64,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 0f64,
                 FConst::SUBNORMAL_MAX_POSITIVE_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 0f64,
                 FConst::SUBNORMAL_MIN_NEGATIVE_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 0f64,
                 FConst::SUBNORMAL_MAX_NEGATIVE_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 1f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 f64::MAX,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 f64::INFINITY,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Zero,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Zero,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::NegativeInfinity,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::NegativeInfinity,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::PositiveInfinity,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::PositiveInfinity,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 expected_unimplemented_f64(),
-            )),
+            ),
             // 2+NAN produces another NAN and invalid operation (which is the opposite of what their name implies)
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f64,
@@ -7121,8 +7176,8 @@ impl Test for SubD {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f64,
@@ -7131,8 +7186,8 @@ impl Test for SubD {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f64,
@@ -7141,8 +7196,8 @@ impl Test for SubD {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f64,
@@ -7151,38 +7206,38 @@ impl Test for SubD {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
-            )),
+            ),
             // Signalling NANs aren't supported and cause unimplemented operation
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f64,
                 FConst::SIGNALLING_NAN_START_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f64,
                 FConst::SIGNALLING_NAN_END_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f64,
                 FConst::SIGNALLING_NAN_NEGATIVE_START_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f64,
                 FConst::SIGNALLING_NAN_NEGATIVE_END_64,
                 expected_unimplemented_f64(),
-            )),
+            ),
             // NAN+2 produces another NAN and invalid operation (which is the opposite of what their name implies)
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_START_64,
@@ -7191,8 +7246,8 @@ impl Test for SubD {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_END_64,
@@ -7201,8 +7256,8 @@ impl Test for SubD {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_NEGATIVE_START_64,
@@ -7211,8 +7266,8 @@ impl Test for SubD {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_NEGATIVE_END_64,
@@ -7221,95 +7276,96 @@ impl Test for SubD {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
-            )),
+            ),
             // Signalling NANs aren't supported and cause unimplemented operation
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_START_64,
                 2f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_END_64,
                 2f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_START_64,
                 2f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_END_64,
                 2f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_START_64,
                 2f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_END_64,
                 2f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_START_64,
                 2f64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_END_64,
                 2f64,
                 expected_unimplemented_f64(),
-            )),
+            ),
             // Mixing both types of NAN cause unimplemented
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_START_64,
                 FConst::QUIET_NAN_START_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_START_64,
                 FConst::SIGNALLING_NAN_START_64,
                 expected_unimplemented_f64(),
-            )),
+            ),
             // Mixing NAN with subnormal cause unimplemented
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_START_64,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 FConst::QUIET_NAN_START_64,
                 expected_unimplemented_f64(),
-            )),
-        ]
+            ),
+        ];
+        crate::tests::boxed_values(VALUES_0)
     }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
@@ -7349,69 +7405,69 @@ impl Test for AbsS {
     }
 
     fn values(&self) -> Vec<Box<dyn Any>> {
-        vec![
-            Box::new((
+        const VALUES_0: &[(bool, FCSRRoundingMode, f32, Result<(FCSRFlags, f32), ()>)] = &[
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 0f32,
                 expected_result(FCSRFlags::DEFAULT, 0f32),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 -0f32,
                 expected_result(FCSRFlags::DEFAULT, 0f32),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 1f32,
                 expected_result(FCSRFlags::DEFAULT, 1f32),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 -1f32,
                 expected_result(FCSRFlags::DEFAULT, 1f32),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::MIN,
                 expected_result(FCSRFlags::DEFAULT, f32::MAX),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::MAX,
                 expected_result(FCSRFlags::DEFAULT, f32::MAX),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::MIN_POSITIVE,
                 expected_result(FCSRFlags::DEFAULT, f32::MIN_POSITIVE),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 -f32::MIN_POSITIVE,
                 expected_result(FCSRFlags::DEFAULT, f32::MIN_POSITIVE),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::INFINITY,
                 expected_result(FCSRFlags::DEFAULT, f32::INFINITY),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::NEG_INFINITY,
                 expected_result(FCSRFlags::DEFAULT, f32::INFINITY),
-            )),
+            ),
             // ABS(NAN) produces another NAN and invalid operation (which is the opposite of what their name implies)
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_START_32,
@@ -7419,8 +7475,8 @@ impl Test for AbsS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_END_32,
@@ -7428,8 +7484,8 @@ impl Test for AbsS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_NEGATIVE_START_32,
@@ -7437,8 +7493,8 @@ impl Test for AbsS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_NEGATIVE_END_32,
@@ -7446,82 +7502,83 @@ impl Test for AbsS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
+            ),
             // Signalling NANs aren't supported and cause unimplemented operation
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_START_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_END_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_START_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_END_32,
                 expected_unimplemented_f32(),
-            )),
+            ),
             // Subnormal also causes unimplemented
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MAX_POSITIVE_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_NEGATIVE_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MAX_NEGATIVE_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MAX_POSITIVE_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_NEGATIVE_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MAX_NEGATIVE_32,
                 expected_unimplemented_f32(),
-            )),
-        ]
+            ),
+        ];
+        crate::tests::boxed_values(VALUES_0)
     }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
@@ -7556,69 +7613,69 @@ impl Test for AbsD {
     }
 
     fn values(&self) -> Vec<Box<dyn Any>> {
-        vec![
-            Box::new((
+        const VALUES_0: &[(bool, FCSRRoundingMode, f64, Result<(FCSRFlags, f64), ()>)] = &[
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 0f64,
                 expected_result(FCSRFlags::DEFAULT, 0f64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 -0f64,
                 expected_result(FCSRFlags::DEFAULT, 0f64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 1f64,
                 expected_result(FCSRFlags::DEFAULT, 1f64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 -1f64,
                 expected_result(FCSRFlags::DEFAULT, 1f64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f64::MIN,
                 expected_result(FCSRFlags::DEFAULT, f64::MAX),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f64::MAX,
                 expected_result(FCSRFlags::DEFAULT, f64::MAX),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f64::MIN_POSITIVE,
                 expected_result(FCSRFlags::DEFAULT, f64::MIN_POSITIVE),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 -f64::MIN_POSITIVE,
                 expected_result(FCSRFlags::DEFAULT, f64::MIN_POSITIVE),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f64::INFINITY,
                 expected_result(FCSRFlags::DEFAULT, f64::INFINITY),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f64::NEG_INFINITY,
                 expected_result(FCSRFlags::DEFAULT, f64::INFINITY),
-            )),
+            ),
             // ABS(NAN) produces another NAN and invalid operation (which is the opposite of what their name implies)
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_START_64,
@@ -7626,8 +7683,8 @@ impl Test for AbsD {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_END_64,
@@ -7635,8 +7692,8 @@ impl Test for AbsD {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_NEGATIVE_START_64,
@@ -7644,8 +7701,8 @@ impl Test for AbsD {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_NEGATIVE_END_64,
@@ -7653,82 +7710,83 @@ impl Test for AbsD {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
-            )),
+            ),
             // Signalling NANs aren't supported and cause unimplemented operation
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_START_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_END_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_START_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_END_64,
                 expected_unimplemented_f64(),
-            )),
+            ),
             // Subnormal also causes unimplemented
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MAX_POSITIVE_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_NEGATIVE_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MAX_NEGATIVE_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MAX_POSITIVE_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_NEGATIVE_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MAX_NEGATIVE_64,
                 expected_unimplemented_f64(),
-            )),
-        ]
+            ),
+        ];
+        crate::tests::boxed_values(VALUES_0)
     }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
@@ -7763,69 +7821,69 @@ impl Test for NegS {
     }
 
     fn values(&self) -> Vec<Box<dyn Any>> {
-        vec![
-            Box::new((
+        const VALUES_0: &[(bool, FCSRRoundingMode, f32, Result<(FCSRFlags, f32), ()>)] = &[
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 0f32,
                 expected_result(FCSRFlags::DEFAULT, -0f32),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 -0f32,
                 expected_result(FCSRFlags::DEFAULT, 0f32),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 1f32,
                 expected_result(FCSRFlags::DEFAULT, -1f32),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 -1f32,
                 expected_result(FCSRFlags::DEFAULT, 1f32),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::MIN,
                 expected_result(FCSRFlags::DEFAULT, f32::MAX),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::MAX,
                 expected_result(FCSRFlags::DEFAULT, f32::MIN),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::MIN_POSITIVE,
                 expected_result(FCSRFlags::DEFAULT, -f32::MIN_POSITIVE),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 -f32::MIN_POSITIVE,
                 expected_result(FCSRFlags::DEFAULT, f32::MIN_POSITIVE),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::INFINITY,
                 expected_result(FCSRFlags::DEFAULT, f32::NEG_INFINITY),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::NEG_INFINITY,
                 expected_result(FCSRFlags::DEFAULT, f32::INFINITY),
-            )),
+            ),
             // ABS(NAN) produces another NAN and invalid operation (which is the opposite of what their name implies)
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_START_32,
@@ -7833,8 +7891,8 @@ impl Test for NegS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_END_32,
@@ -7842,8 +7900,8 @@ impl Test for NegS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_NEGATIVE_START_32,
@@ -7851,8 +7909,8 @@ impl Test for NegS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_NEGATIVE_END_32,
@@ -7860,82 +7918,83 @@ impl Test for NegS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
+            ),
             // Signalling NANs aren't supported and cause unimplemented operation
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_START_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_END_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_START_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_END_32,
                 expected_unimplemented_f32(),
-            )),
+            ),
             // Subnormal also causes unimplemented
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MAX_POSITIVE_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_NEGATIVE_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MAX_NEGATIVE_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MAX_POSITIVE_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_NEGATIVE_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MAX_NEGATIVE_32,
                 expected_unimplemented_f32(),
-            )),
-        ]
+            ),
+        ];
+        crate::tests::boxed_values(VALUES_0)
     }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
@@ -7970,69 +8029,69 @@ impl Test for NegD {
     }
 
     fn values(&self) -> Vec<Box<dyn Any>> {
-        vec![
-            Box::new((
+        const VALUES_0: &[(bool, FCSRRoundingMode, f64, Result<(FCSRFlags, f64), ()>)] = &[
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 0f64,
                 expected_result(FCSRFlags::DEFAULT, -0f64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 -0f64,
                 expected_result(FCSRFlags::DEFAULT, 0f64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 1f64,
                 expected_result(FCSRFlags::DEFAULT, -1f64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 -1f64,
                 expected_result(FCSRFlags::DEFAULT, 1f64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f64::MIN,
                 expected_result(FCSRFlags::DEFAULT, f64::MAX),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f64::MAX,
                 expected_result(FCSRFlags::DEFAULT, f64::MIN),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f64::MIN_POSITIVE,
                 expected_result(FCSRFlags::DEFAULT, -f64::MIN_POSITIVE),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 -f64::MIN_POSITIVE,
                 expected_result(FCSRFlags::DEFAULT, f64::MIN_POSITIVE),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f64::INFINITY,
                 expected_result(FCSRFlags::DEFAULT, f64::NEG_INFINITY),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f64::NEG_INFINITY,
                 expected_result(FCSRFlags::DEFAULT, f64::INFINITY),
-            )),
+            ),
             // ABS(NAN) produces another NAN and invalid operation (which is the opposite of what their name implies)
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_START_64,
@@ -8040,8 +8099,8 @@ impl Test for NegD {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_END_64,
@@ -8049,8 +8108,8 @@ impl Test for NegD {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_NEGATIVE_START_64,
@@ -8058,8 +8117,8 @@ impl Test for NegD {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_NEGATIVE_END_64,
@@ -8067,82 +8126,83 @@ impl Test for NegD {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
-            )),
+            ),
             // Signalling NANs aren't supported and cause unimplemented operation
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_START_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_END_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_START_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_END_64,
                 expected_unimplemented_f64(),
-            )),
+            ),
             // Subnormal also causes unimplemented
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MAX_POSITIVE_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_NEGATIVE_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MAX_NEGATIVE_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MAX_POSITIVE_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_NEGATIVE_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MAX_NEGATIVE_64,
                 expected_unimplemented_f64(),
-            )),
-        ]
+            ),
+        ];
+        crate::tests::boxed_values(VALUES_0)
     }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
@@ -8333,20 +8393,20 @@ impl Test for SqrtS {
     }
 
     fn values(&self) -> Vec<Box<dyn Any>> {
-        vec![
-            Box::new((
+        const VALUES_0: &[(bool, FCSRRoundingMode, f32, Result<(FCSRFlags, f32), ()>)] = &[
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 0f32,
                 expected_result(FCSRFlags::DEFAULT, 0f32),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 -0f32,
                 expected_result(FCSRFlags::DEFAULT, -0f32),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f32,
@@ -8354,14 +8414,14 @@ impl Test for SqrtS {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     core::f32::consts::SQRT_2,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 4f32,
                 expected_result(FCSRFlags::DEFAULT, 2f32),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 -4f32,
@@ -8369,8 +8429,8 @@ impl Test for SqrtS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::MIN,
@@ -8378,8 +8438,8 @@ impl Test for SqrtS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::MAX,
@@ -8387,8 +8447,8 @@ impl Test for SqrtS {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     1.8446743e19f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::PositiveInfinity,
                 f32::MAX,
@@ -8396,8 +8456,8 @@ impl Test for SqrtS {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     1.8446744e19f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::NegativeInfinity,
                 f32::MAX,
@@ -8405,14 +8465,14 @@ impl Test for SqrtS {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     1.8446743e19f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::MIN_POSITIVE,
                 expected_result(FCSRFlags::DEFAULT, 1.0842022e-19f32),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 -f32::MIN_POSITIVE,
@@ -8420,15 +8480,15 @@ impl Test for SqrtS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::INFINITY,
                 expected_result(FCSRFlags::DEFAULT, f32::INFINITY),
-            )),
+            ),
             // This value shows that inexact can happen even if sqrt*sqrt==original
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 0.0000000000000000000000106731965f32,
@@ -8436,9 +8496,9 @@ impl Test for SqrtS {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     3.2669859e-12f32,
                 ),
-            )),
+            ),
             // Sqrt(NAN) produces another NAN and invalid operation (which is the opposite of what their name implies)
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_START_32,
@@ -8446,8 +8506,8 @@ impl Test for SqrtS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_END_32,
@@ -8455,8 +8515,8 @@ impl Test for SqrtS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_NEGATIVE_START_32,
@@ -8464,8 +8524,8 @@ impl Test for SqrtS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_NEGATIVE_END_32,
@@ -8473,82 +8533,83 @@ impl Test for SqrtS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
+            ),
             // Signalling NANs aren't supported and cause unimplemented operation
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_START_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_END_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_START_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_END_32,
                 expected_unimplemented_f32(),
-            )),
+            ),
             // Subnormal also causes unimplemented
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MAX_POSITIVE_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_NEGATIVE_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MAX_NEGATIVE_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MAX_POSITIVE_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_NEGATIVE_32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MAX_NEGATIVE_32,
                 expected_unimplemented_f32(),
-            )),
-        ]
+            ),
+        ];
+        crate::tests::boxed_values(VALUES_0)
     }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
@@ -8583,20 +8644,20 @@ impl Test for SqrtD {
     }
 
     fn values(&self) -> Vec<Box<dyn Any>> {
-        vec![
-            Box::new((
+        const VALUES_0: &[(bool, FCSRRoundingMode, f64, Result<(FCSRFlags, f64), ()>)] = &[
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 0f64,
                 expected_result(FCSRFlags::DEFAULT, 0f64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 -0f64,
                 expected_result(FCSRFlags::DEFAULT, -0f64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f64,
@@ -8604,14 +8665,14 @@ impl Test for SqrtD {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     core::f64::consts::SQRT_2,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 4f64,
                 expected_result(FCSRFlags::DEFAULT, 2f64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 -4f64,
@@ -8619,8 +8680,8 @@ impl Test for SqrtD {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f64::MIN,
@@ -8628,8 +8689,8 @@ impl Test for SqrtD {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f64::MAX,
@@ -8637,8 +8698,8 @@ impl Test for SqrtD {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     1.3407807929942596e154f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::PositiveInfinity,
                 f64::MAX,
@@ -8646,8 +8707,8 @@ impl Test for SqrtD {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     1.3407807929942597e154f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::NegativeInfinity,
                 f64::MAX,
@@ -8655,14 +8716,14 @@ impl Test for SqrtD {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     1.3407807929942596e154f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f64::MIN_POSITIVE,
                 expected_result(FCSRFlags::DEFAULT, 1.4916681462400413e-154f64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 -f64::MIN_POSITIVE,
@@ -8670,15 +8731,15 @@ impl Test for SqrtD {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f64::INFINITY,
                 expected_result(FCSRFlags::DEFAULT, f64::INFINITY),
-            )),
+            ),
             // This value shows that inexact can happen even if sqrt*sqrt==original
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 3.890549325378585e109f64,
@@ -8686,9 +8747,9 @@ impl Test for SqrtD {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     6.23742681350137e54f64,
                 ),
-            )),
+            ),
             // Sqrt(NAN) produces another NAN and invalid operation (which is the opposite of what their name implies)
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_START_64,
@@ -8696,8 +8757,8 @@ impl Test for SqrtD {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_END_64,
@@ -8705,8 +8766,8 @@ impl Test for SqrtD {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_NEGATIVE_START_64,
@@ -8714,8 +8775,8 @@ impl Test for SqrtD {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_NEGATIVE_END_64,
@@ -8723,82 +8784,83 @@ impl Test for SqrtD {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
-            )),
+            ),
             // Signalling NANs aren't supported and cause unimplemented operation
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_START_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_END_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_START_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_END_64,
                 expected_unimplemented_f64(),
-            )),
+            ),
             // Subnormal also causes unimplemented
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MAX_POSITIVE_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_NEGATIVE_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MAX_NEGATIVE_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MAX_POSITIVE_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_NEGATIVE_64,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MAX_NEGATIVE_64,
                 expected_unimplemented_f64(),
-            )),
-        ]
+            ),
+        ];
+        crate::tests::boxed_values(VALUES_0)
     }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
@@ -8833,34 +8895,228 @@ impl Test for CvtS {
     }
 
     fn values(&self) -> Vec<Box<dyn Any>> {
-        vec![
-            // S ==> S (which doesn't exist)
-            Box::new((
+        const VALUES_0: &[(bool, FCSRRoundingMode, i32, Result<(FCSRFlags, f32), ()>)] = &[
+            // W => S
+            (
                 false,
                 FCSRRoundingMode::Nearest,
-                4f32,
+                9i32,
+                expected_result(FCSRFlags::DEFAULT, 9f32),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Zero,
+                1234567891i32,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_inexact_operation(true),
+                    1234567800f32,
+                ),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                1234567891i32,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_inexact_operation(true),
+                    1234568000f32,
+                ),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                -1234567891i32,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_inexact_operation(true),
+                    -1234568000f32,
+                ),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                0x7FFFFFFDi32,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_inexact_operation(true),
+                    2147483600f32,
+                ),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                0x7FFFFFFEi32,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_inexact_operation(true),
+                    2147483600f32,
+                ),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                0x7FFFFFFFi32,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_inexact_operation(true),
+                    2147483600f32,
+                ),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                0x80000002u32 as i32,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_inexact_operation(true),
+                    -2147483600f32,
+                ),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                0x80000001u32 as i32,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_inexact_operation(true),
+                    -2147483600f32,
+                ),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                0x80000000u32 as i32,
+                expected_result(FCSRFlags::DEFAULT, -2147483600f32),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                0xFFFFFFFDu32 as i32,
+                expected_result(FCSRFlags::DEFAULT, -3f32),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                0xFFFFFFFEu32 as i32,
+                expected_result(FCSRFlags::DEFAULT, -2f32),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                0xFFFFFFFFu32 as i32,
+                expected_result(FCSRFlags::DEFAULT, -1f32),
+            ),
+        ];
+        const VALUES_1: &[(bool, FCSRRoundingMode, i64, Result<(FCSRFlags, f32), ()>)] = &[
+            // L => S
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                9i64,
+                expected_result(FCSRFlags::DEFAULT, 9f32),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Zero,
+                1234567891i64,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_inexact_operation(true),
+                    1234567800f32,
+                ),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                1234567891i64,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_inexact_operation(true),
+                    1234568000f32,
+                ),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                -1234567891i64,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_inexact_operation(true),
+                    -1234568000f32,
+                ),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                1i64 << 53,
+                expected_result(FCSRFlags::DEFAULT, 9007199000000000f32),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                1i64 << 54,
+                expected_result(FCSRFlags::DEFAULT, 1.8014399e16f32),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                1i64 << 55,
                 expected_unimplemented_f32(),
-            )),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                1i64 << 56,
+                expected_unimplemented_f32(),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                1i64 << 61,
+                expected_unimplemented_f32(),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                1i64 << 62,
+                expected_unimplemented_f32(),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                1i64 << 63,
+                expected_unimplemented_f32(),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                -(1i64 << 55),
+                expected_result(FCSRFlags::DEFAULT, -3.6028797e16f32),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                -(1i64 << 55) - 1,
+                expected_unimplemented_f32(),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                i64::MAX,
+                expected_unimplemented_f32(),
+            ),
+        ];
+        const VALUES_2: &[(bool, FCSRRoundingMode, f64, Result<(FCSRFlags, f32), ()>)] = &[
             // D => S
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 4f64,
                 expected_result(FCSRFlags::DEFAULT, 4f32),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 -0f64,
                 expected_result(FCSRFlags::DEFAULT, -0f32),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 4.123456789123456f64,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 4.123457f32),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Zero,
                 4.123456789123456f64,
@@ -8868,8 +9124,8 @@ impl Test for CvtS {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     4.1234565f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::NegativeInfinity,
                 4.123456789123456f64,
@@ -8877,14 +9133,14 @@ impl Test for CvtS {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     4.1234565f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::PositiveInfinity,
                 4.123456789123456f64,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 4.123457f32),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 -4.123456789123456f64,
@@ -8892,8 +9148,8 @@ impl Test for CvtS {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     -4.123457f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Zero,
                 -4.123456789123456f64,
@@ -8901,8 +9157,8 @@ impl Test for CvtS {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     -4.1234565f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::NegativeInfinity,
                 -4.123456789123456f64,
@@ -8910,8 +9166,8 @@ impl Test for CvtS {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     -4.123457f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::PositiveInfinity,
                 -4.123456789123456f64,
@@ -8919,21 +9175,21 @@ impl Test for CvtS {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     -4.1234565f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f64::INFINITY,
                 expected_result(FCSRFlags::DEFAULT, f32::INFINITY),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f64::NEG_INFINITY,
                 expected_result(FCSRFlags::DEFAULT, f32::NEG_INFINITY),
-            )),
+            ),
             // Overflow
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f64::MAX,
@@ -8943,9 +9199,9 @@ impl Test for CvtS {
                         .with_inexact_operation(true),
                     f32::INFINITY,
                 ),
-            )),
+            ),
             // If we're juuuust above the f32 limit, the rounding mode determines overflow or not
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 3.40282348e+38_f64,
@@ -8953,8 +9209,8 @@ impl Test for CvtS {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     3.4028235e+38_f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Zero,
                 3.40282348e+38_f64,
@@ -8962,8 +9218,8 @@ impl Test for CvtS {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     3.4028235e+38_f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::PositiveInfinity,
                 3.40282348e+38_f64,
@@ -8973,8 +9229,8 @@ impl Test for CvtS {
                         .with_inexact_operation(true),
                     f32::INFINITY,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::NegativeInfinity,
                 3.40282348e+38_f64,
@@ -8982,15 +9238,15 @@ impl Test for CvtS {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     3.4028235e+38_f32,
                 ),
-            )),
+            ),
             // Underflow
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f64::MIN_POSITIVE,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 f64::MIN_POSITIVE,
@@ -9000,8 +9256,8 @@ impl Test for CvtS {
                         .with_inexact_operation(true),
                     0f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Zero,
                 f64::MIN_POSITIVE,
@@ -9011,8 +9267,8 @@ impl Test for CvtS {
                         .with_inexact_operation(true),
                     0f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::PositiveInfinity,
                 f64::MIN_POSITIVE,
@@ -9022,8 +9278,8 @@ impl Test for CvtS {
                         .with_inexact_operation(true),
                     f32::MIN_POSITIVE,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::NegativeInfinity,
                 f64::MIN_POSITIVE,
@@ -9033,14 +9289,14 @@ impl Test for CvtS {
                         .with_inexact_operation(true),
                     0f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 -f64::MIN_POSITIVE,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 -f64::MIN_POSITIVE,
@@ -9050,8 +9306,8 @@ impl Test for CvtS {
                         .with_inexact_operation(true),
                     -0f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Zero,
                 -f64::MIN_POSITIVE,
@@ -9061,8 +9317,8 @@ impl Test for CvtS {
                         .with_inexact_operation(true),
                     -0f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::PositiveInfinity,
                 -f64::MIN_POSITIVE,
@@ -9072,8 +9328,8 @@ impl Test for CvtS {
                         .with_inexact_operation(true),
                     -0f32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::NegativeInfinity,
                 -f64::MIN_POSITIVE,
@@ -9083,9 +9339,9 @@ impl Test for CvtS {
                         .with_inexact_operation(true),
                     -f32::MIN_POSITIVE,
                 ),
-            )),
+            ),
             // CVT(NAN) produces another NAN and invalid operation (which is the opposite of what their name implies)
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_START_64,
@@ -9093,8 +9349,8 @@ impl Test for CvtS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_END_64,
@@ -9102,8 +9358,8 @@ impl Test for CvtS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_NEGATIVE_START_64,
@@ -9111,8 +9367,8 @@ impl Test for CvtS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_NEGATIVE_END_64,
@@ -9120,279 +9376,96 @@ impl Test for CvtS {
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
-            )),
+            ),
             // Signalling NANs aren't supported and cause unimplemented operation
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_START_64,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_END_64,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_START_64,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_END_64,
                 expected_unimplemented_f32(),
-            )),
+            ),
             // Subnormal also causes unimplemented
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MAX_POSITIVE_64,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_NEGATIVE_64,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MAX_NEGATIVE_64,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MAX_POSITIVE_64,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_NEGATIVE_64,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
+            ),
+            (
                 true,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MAX_NEGATIVE_64,
                 expected_unimplemented_f32(),
-            )),
-            // W => S
-            Box::new((
+            ),
+        ];
+        const VALUES_3: &[(bool, FCSRRoundingMode, f32, Result<(FCSRFlags, f32), ()>)] = &[
+            // S ==> S (which doesn't exist)
+            (
                 false,
                 FCSRRoundingMode::Nearest,
-                9i32,
-                expected_result(FCSRFlags::DEFAULT, 9f32),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Zero,
-                1234567891i32,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_inexact_operation(true),
-                    1234567800f32,
-                ),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                1234567891i32,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_inexact_operation(true),
-                    1234568000f32,
-                ),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                -1234567891i32,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_inexact_operation(true),
-                    -1234568000f32,
-                ),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                0x7FFFFFFDi32,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_inexact_operation(true),
-                    2147483600f32,
-                ),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                0x7FFFFFFEi32,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_inexact_operation(true),
-                    2147483600f32,
-                ),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                0x7FFFFFFFi32,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_inexact_operation(true),
-                    2147483600f32,
-                ),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                0x80000002u32 as i32,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_inexact_operation(true),
-                    -2147483600f32,
-                ),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                0x80000001u32 as i32,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_inexact_operation(true),
-                    -2147483600f32,
-                ),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                0x80000000u32 as i32,
-                expected_result(FCSRFlags::DEFAULT, -2147483600f32),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                0xFFFFFFFDu32 as i32,
-                expected_result(FCSRFlags::DEFAULT, -3f32),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                0xFFFFFFFEu32 as i32,
-                expected_result(FCSRFlags::DEFAULT, -2f32),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                0xFFFFFFFFu32 as i32,
-                expected_result(FCSRFlags::DEFAULT, -1f32),
-            )),
-            // L => S
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                9i64,
-                expected_result(FCSRFlags::DEFAULT, 9f32),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Zero,
-                1234567891i64,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_inexact_operation(true),
-                    1234567800f32,
-                ),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                1234567891i64,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_inexact_operation(true),
-                    1234568000f32,
-                ),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                -1234567891i64,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_inexact_operation(true),
-                    -1234568000f32,
-                ),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                1i64 << 53,
-                expected_result(FCSRFlags::DEFAULT, 9007199000000000f32),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                1i64 << 54,
-                expected_result(FCSRFlags::DEFAULT, 1.8014399e16f32),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                1i64 << 55,
+                4f32,
                 expected_unimplemented_f32(),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                1i64 << 56,
-                expected_unimplemented_f32(),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                1i64 << 61,
-                expected_unimplemented_f32(),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                1i64 << 62,
-                expected_unimplemented_f32(),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                1i64 << 63,
-                expected_unimplemented_f32(),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                -(1i64 << 55),
-                expected_result(FCSRFlags::DEFAULT, -3.6028797e16f32),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                -(1i64 << 55) - 1,
-                expected_unimplemented_f32(),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                i64::MAX,
-                expected_unimplemented_f32(),
-            )),
-        ]
+            ),
+        ];
+        let mut result = crate::tests::boxed_values(VALUES_0);
+        result.extend(crate::tests::boxed_values(VALUES_1));
+        result.extend(crate::tests::boxed_values(VALUES_2));
+        result.extend(crate::tests::boxed_values(VALUES_3));
+        result
     }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
@@ -9476,232 +9549,85 @@ impl Test for CvtD {
     }
 
     fn values(&self) -> Vec<Box<dyn Any>> {
-        vec![
-            // S ==> D
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                4f32,
-                expected_result(FCSRFlags::DEFAULT, 4f64),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                -0f32,
-                expected_result(FCSRFlags::DEFAULT, -0f64),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                f32::MIN_POSITIVE,
-                expected_result(FCSRFlags::DEFAULT, 1.1754943508222875e-38),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                f32::INFINITY,
-                expected_result(FCSRFlags::DEFAULT, f64::INFINITY),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                f32::NEG_INFINITY,
-                expected_result(FCSRFlags::DEFAULT, f64::NEG_INFINITY),
-            )),
-            // CVT(NAN) produces another NAN and invalid operation (which is the opposite of what their name implies)
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::QUIET_NAN_START_32,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_64,
-                ),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::QUIET_NAN_END_32,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_64,
-                ),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::QUIET_NAN_NEGATIVE_START_32,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_64,
-                ),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::QUIET_NAN_NEGATIVE_END_32,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_64,
-                ),
-            )),
-            // Signalling NANs aren't supported and cause unimplemented operation
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_START_32,
-                expected_unimplemented_f64(),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_END_32,
-                expected_unimplemented_f64(),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_NEGATIVE_START_32,
-                expected_unimplemented_f64(),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_NEGATIVE_END_32,
-                expected_unimplemented_f64(),
-            )),
-            // Subnormal also causes unimplemented
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::SUBNORMAL_MIN_POSITIVE_32,
-                expected_unimplemented_f64(),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::SUBNORMAL_MAX_POSITIVE_32,
-                expected_unimplemented_f64(),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::SUBNORMAL_MIN_NEGATIVE_32,
-                expected_unimplemented_f64(),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::SUBNORMAL_MAX_NEGATIVE_32,
-                expected_unimplemented_f64(),
-            )),
-            Box::new((
-                true,
-                FCSRRoundingMode::Nearest,
-                FConst::SUBNORMAL_MIN_POSITIVE_32,
-                expected_unimplemented_f64(),
-            )),
-            Box::new((
-                true,
-                FCSRRoundingMode::Nearest,
-                FConst::SUBNORMAL_MAX_POSITIVE_32,
-                expected_unimplemented_f64(),
-            )),
-            Box::new((
-                true,
-                FCSRRoundingMode::Nearest,
-                FConst::SUBNORMAL_MIN_NEGATIVE_32,
-                expected_unimplemented_f64(),
-            )),
-            Box::new((
-                true,
-                FCSRRoundingMode::Nearest,
-                FConst::SUBNORMAL_MAX_NEGATIVE_32,
-                expected_unimplemented_f64(),
-            )),
-            // D => D (which doesn't exist)
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                4f64,
-                expected_unimplemented_f64(),
-            )),
+        const VALUES_0: &[(bool, FCSRRoundingMode, i32, Result<(FCSRFlags, f64), ()>)] = &[
             // W => D
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 9i32,
                 expected_result(FCSRFlags::DEFAULT, 9f64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Zero,
                 1234567891i32,
                 expected_result(FCSRFlags::DEFAULT, 1234567891f64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Zero,
                 -1234567891i32,
                 expected_result(FCSRFlags::DEFAULT, -1234567891f64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::PositiveInfinity,
                 -1234567891i32,
                 expected_result(FCSRFlags::DEFAULT, -1234567891f64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::NegativeInfinity,
                 -1234567891i32,
                 expected_result(FCSRFlags::DEFAULT, -1234567891f64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::NegativeInfinity,
                 i32::MAX,
                 expected_result(FCSRFlags::DEFAULT, 2147483647f64),
-            )),
-            // L => D
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                9i64,
-                expected_result(FCSRFlags::DEFAULT, 9f64),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                1234567891i64,
-                expected_result(FCSRFlags::DEFAULT, 1234567891f64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 -1234567891i32,
                 expected_result(FCSRFlags::DEFAULT, -1234567891f64),
-            )),
-            Box::new((
+            ),
+        ];
+        const VALUES_1: &[(bool, FCSRRoundingMode, i64, Result<(FCSRFlags, f64), ()>)] = &[
+            // L => D
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                9i64,
+                expected_result(FCSRFlags::DEFAULT, 9f64),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                1234567891i64,
+                expected_result(FCSRFlags::DEFAULT, 1234567891f64),
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 1i64 << 53,
                 expected_result(FCSRFlags::DEFAULT, 9007199254740992f64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 1i64 << 54,
                 expected_result(FCSRFlags::DEFAULT, 1.8014398509481984e16f64),
-            )),
+            ),
             // Large numbers start being weird: We can see inexact here. Too large numbers aren't supported at all
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 (1i64 << 55) - 4,
                 expected_result(FCSRFlags::DEFAULT, 3.6028797018963964e16f64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 (1i64 << 55) - 3,
@@ -9709,8 +9635,8 @@ impl Test for CvtD {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     3.6028797018963964e16f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 (1i64 << 55) - 2,
@@ -9718,8 +9644,8 @@ impl Test for CvtD {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     3.602879701896397e16f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Zero,
                 (1i64 << 55) - 2,
@@ -9727,8 +9653,8 @@ impl Test for CvtD {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     3.6028797018963964e16f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::PositiveInfinity,
                 (1i64 << 55) - 2,
@@ -9736,8 +9662,8 @@ impl Test for CvtD {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     3.602879701896397e16f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::NegativeInfinity,
                 (1i64 << 55) - 2,
@@ -9745,8 +9671,8 @@ impl Test for CvtD {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     3.6028797018963964e16f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 (1i64 << 55) - 1,
@@ -9754,33 +9680,33 @@ impl Test for CvtD {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     3.602879701896397e16f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 1i64 << 55,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 1i64 << 56,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 1i64 << 61,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 1i64 << 62,
                 expected_unimplemented_f64(),
-            )),
+            ),
             // Same with negative numbers
-            Box::new((
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 -(1i64 << 55) + 2,
@@ -9788,8 +9714,8 @@ impl Test for CvtD {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     -3.602879701896397e16f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 -(1i64 << 55) + 1,
@@ -9797,50 +9723,208 @@ impl Test for CvtD {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     -3.602879701896397e16f64,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 -(1i64 << 55),
                 expected_result(FCSRFlags::DEFAULT, -3.602879701896397e16f64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 -(1i64 << 55) - 1,
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 -(1i64 << 56),
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 -(1i64 << 57),
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 -(1i64 << 61),
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 -(1i64 << 62),
                 expected_unimplemented_f64(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 i64::MAX,
                 expected_unimplemented_f64(),
-            )),
-        ]
+            ),
+        ];
+        const VALUES_2: &[(bool, FCSRRoundingMode, f64, Result<(FCSRFlags, f64), ()>)] = &[
+            // D => D (which doesn't exist)
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                4f64,
+                expected_unimplemented_f64(),
+            ),
+        ];
+        const VALUES_3: &[(bool, FCSRRoundingMode, f32, Result<(FCSRFlags, f64), ()>)] = &[
+            // S ==> D
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                4f32,
+                expected_result(FCSRFlags::DEFAULT, 4f64),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                -0f32,
+                expected_result(FCSRFlags::DEFAULT, -0f64),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                f32::MIN_POSITIVE,
+                expected_result(FCSRFlags::DEFAULT, 1.1754943508222875e-38),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                f32::INFINITY,
+                expected_result(FCSRFlags::DEFAULT, f64::INFINITY),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                f32::NEG_INFINITY,
+                expected_result(FCSRFlags::DEFAULT, f64::NEG_INFINITY),
+            ),
+            // CVT(NAN) produces another NAN and invalid operation (which is the opposite of what their name implies)
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::QUIET_NAN_START_32,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_64,
+                ),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::QUIET_NAN_END_32,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_64,
+                ),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::QUIET_NAN_NEGATIVE_START_32,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_64,
+                ),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::QUIET_NAN_NEGATIVE_END_32,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_64,
+                ),
+            ),
+            // Signalling NANs aren't supported and cause unimplemented operation
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::SIGNALLING_NAN_START_32,
+                expected_unimplemented_f64(),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::SIGNALLING_NAN_END_32,
+                expected_unimplemented_f64(),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::SIGNALLING_NAN_NEGATIVE_START_32,
+                expected_unimplemented_f64(),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::SIGNALLING_NAN_NEGATIVE_END_32,
+                expected_unimplemented_f64(),
+            ),
+            // Subnormal also causes unimplemented
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::SUBNORMAL_MIN_POSITIVE_32,
+                expected_unimplemented_f64(),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::SUBNORMAL_MAX_POSITIVE_32,
+                expected_unimplemented_f64(),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::SUBNORMAL_MIN_NEGATIVE_32,
+                expected_unimplemented_f64(),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::SUBNORMAL_MAX_NEGATIVE_32,
+                expected_unimplemented_f64(),
+            ),
+            (
+                true,
+                FCSRRoundingMode::Nearest,
+                FConst::SUBNORMAL_MIN_POSITIVE_32,
+                expected_unimplemented_f64(),
+            ),
+            (
+                true,
+                FCSRRoundingMode::Nearest,
+                FConst::SUBNORMAL_MAX_POSITIVE_32,
+                expected_unimplemented_f64(),
+            ),
+            (
+                true,
+                FCSRRoundingMode::Nearest,
+                FConst::SUBNORMAL_MIN_NEGATIVE_32,
+                expected_unimplemented_f64(),
+            ),
+            (
+                true,
+                FCSRRoundingMode::Nearest,
+                FConst::SUBNORMAL_MAX_NEGATIVE_32,
+                expected_unimplemented_f64(),
+            ),
+        ];
+        let mut result = crate::tests::boxed_values(VALUES_0);
+        result.extend(crate::tests::boxed_values(VALUES_1));
+        result.extend(crate::tests::boxed_values(VALUES_2));
+        result.extend(crate::tests::boxed_values(VALUES_3));
+        result
     }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
@@ -9924,307 +10008,110 @@ impl Test for ConvertToW {
     }
 
     fn values(&self) -> Vec<Box<dyn Any>> {
-        vec![
-            // S ==> W
-            Box::new((4f32, expected_result(FCSRFlags::DEFAULT, 4i32))),
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                4.5f32,
-                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 4i32),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                5.5f32,
-                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 6i32),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                6.5f32,
-                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 6i32),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                7.5f32,
-                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 8i32),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                8.5f32,
-                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 8i32),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                4.4f32,
-                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 4i32),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Zero,
-                4.4f32,
-                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 4i32),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::PositiveInfinity,
-                4.4f32,
-                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 5i32),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::NegativeInfinity,
-                4.4f32,
-                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 4i32),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                -4.4f32,
-                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), -4i32),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Zero,
-                -4.4f32,
-                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), -4i32),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::PositiveInfinity,
-                -4.4f32,
-                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), -4i32),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::NegativeInfinity,
-                -4.4f32,
-                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), -5i32),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                f32::MIN_POSITIVE,
-                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 0i32),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Zero,
-                f32::MIN_POSITIVE,
-                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 0i32),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::PositiveInfinity,
-                f32::MIN_POSITIVE,
-                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 1i32),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::NegativeInfinity,
-                f32::MIN_POSITIVE,
-                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 0i32),
-            )),
-            Box::new((
-                2140000000f32,
-                expected_result(FCSRFlags::DEFAULT, 2140000000i32),
-            )),
-            Box::new((
-                2147483520f32,
-                expected_result(FCSRFlags::DEFAULT, 2147483520i32),
-            )),
-            Box::new((2147483600f32, expected_unimplemented_i32())),
-            Box::new((2150000000f32, expected_unimplemented_i32())),
-            Box::new((
-                -2140000000f32,
-                expected_result(FCSRFlags::DEFAULT, -2140000000i32),
-            )),
-            Box::new((
-                -2147483520f32,
-                expected_result(FCSRFlags::DEFAULT, -2147483520i32),
-            )),
-            Box::new((
-                -2147483600f32,
-                expected_result(FCSRFlags::DEFAULT, -2147483648i32),
-            )),
-            Box::new((-2147483904f32, expected_unimplemented_i32())),
-            Box::new((-2150000000f32, expected_unimplemented_i32())),
-            Box::new((f32::INFINITY, expected_unimplemented_i32())),
-            Box::new((f32::NEG_INFINITY, expected_unimplemented_i32())),
-            // Quiet NANs aren't supported and cause unimplemented operation
-            Box::new((FConst::QUIET_NAN_START_32, expected_unimplemented_i32())),
-            Box::new((FConst::QUIET_NAN_END_32, expected_unimplemented_i32())),
-            Box::new((
-                FConst::QUIET_NAN_NEGATIVE_START_32,
-                expected_unimplemented_i32(),
-            )),
-            Box::new((
-                FConst::QUIET_NAN_NEGATIVE_END_32,
-                expected_unimplemented_i32(),
-            )),
-            // Signalling NANs aren't supported and cause unimplemented operation
-            Box::new((
-                FConst::SIGNALLING_NAN_START_32,
-                expected_unimplemented_i32(),
-            )),
-            Box::new((FConst::SIGNALLING_NAN_END_32, expected_unimplemented_i32())),
-            Box::new((
-                FConst::SIGNALLING_NAN_NEGATIVE_START_32,
-                expected_unimplemented_i32(),
-            )),
-            Box::new((
-                FConst::SIGNALLING_NAN_NEGATIVE_END_32,
-                expected_unimplemented_i32(),
-            )),
-            // Subnormal also causes unimplemented
-            Box::new((
-                FConst::SUBNORMAL_MIN_POSITIVE_32,
-                expected_unimplemented_i32(),
-            )),
-            Box::new((
-                FConst::SUBNORMAL_MAX_POSITIVE_32,
-                expected_unimplemented_i32(),
-            )),
-            Box::new((
-                FConst::SUBNORMAL_MIN_NEGATIVE_32,
-                expected_unimplemented_i32(),
-            )),
-            Box::new((
-                FConst::SUBNORMAL_MAX_NEGATIVE_32,
-                expected_unimplemented_i32(),
-            )),
-            // D => W
-            Box::new((4f64, expected_result(FCSRFlags::DEFAULT, 4i32))),
-            Box::new((
+        const VALUES_0: &[(bool, FCSRRoundingMode, f64, Result<(FCSRFlags, i32), ()>)] = &[
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 4.5f64,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 4i32),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 5.5f64,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 6i32),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 6.5f64,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 6i32),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 7.5f64,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 8i32),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 8.5f64,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 8i32),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 4.4f64,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 4i32),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Zero,
                 4.4f64,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 4i32),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::PositiveInfinity,
                 4.4f64,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 5i32),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::NegativeInfinity,
                 4.4f64,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 4i32),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 -4.4f64,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), -4i32),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Zero,
                 -4.4f64,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), -4i32),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::PositiveInfinity,
                 -4.4f64,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), -4i32),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::NegativeInfinity,
                 -4.4f64,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), -5i32),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f64::MIN_POSITIVE,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 0i32),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Zero,
                 f64::MIN_POSITIVE,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 0i32),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::PositiveInfinity,
                 f64::MIN_POSITIVE,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 1i32),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::NegativeInfinity,
                 f64::MIN_POSITIVE,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 0i32),
-            )),
-            Box::new((
-                2147483500f64,
-                expected_result(FCSRFlags::DEFAULT, 2147483500i32),
-            )),
-            Box::new((
-                2147483647f64,
-                expected_result(FCSRFlags::DEFAULT, 2147483647i32),
-            )),
-            Box::new((2147483648f64, expected_unimplemented_i32())),
-            Box::new((2147483649f64, expected_unimplemented_i32())),
-            Box::new((
-                -2147483500f64,
-                expected_result(FCSRFlags::DEFAULT, -2147483500i32),
-            )),
-            Box::new((
-                -2147483647f64,
-                expected_result(FCSRFlags::DEFAULT, -2147483647i32),
-            )),
-            Box::new((
-                -2147483648f64,
-                expected_result(FCSRFlags::DEFAULT, -2147483648i32),
-            )),
-            Box::new((-2147483649f64, expected_unimplemented_i32())),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2147483647.4f64,
@@ -10232,14 +10119,14 @@ impl Test for ConvertToW {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     2147483647i32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::PositiveInfinity,
                 2147483647.4f64,
                 expected_unimplemented_i32(),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::NegativeInfinity,
                 2147483647.6f64,
@@ -10247,62 +10134,276 @@ impl Test for ConvertToW {
                     FCSRFlags::DEFAULT.with_inexact_operation(true),
                     2147483647i32,
                 ),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 2147483647.6f64,
                 expected_unimplemented_i32(),
-            )),
-            Box::new((f64::INFINITY, expected_unimplemented_i32())),
-            Box::new((f64::NEG_INFINITY, expected_unimplemented_i32())),
+            ),
+        ];
+        const VALUES_1: &[(bool, FCSRRoundingMode, f32, Result<(FCSRFlags, i32), ()>)] = &[
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                4.5f32,
+                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 4i32),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                5.5f32,
+                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 6i32),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                6.5f32,
+                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 6i32),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                7.5f32,
+                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 8i32),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                8.5f32,
+                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 8i32),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                4.4f32,
+                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 4i32),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Zero,
+                4.4f32,
+                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 4i32),
+            ),
+            (
+                false,
+                FCSRRoundingMode::PositiveInfinity,
+                4.4f32,
+                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 5i32),
+            ),
+            (
+                false,
+                FCSRRoundingMode::NegativeInfinity,
+                4.4f32,
+                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 4i32),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                -4.4f32,
+                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), -4i32),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Zero,
+                -4.4f32,
+                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), -4i32),
+            ),
+            (
+                false,
+                FCSRRoundingMode::PositiveInfinity,
+                -4.4f32,
+                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), -4i32),
+            ),
+            (
+                false,
+                FCSRRoundingMode::NegativeInfinity,
+                -4.4f32,
+                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), -5i32),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                f32::MIN_POSITIVE,
+                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 0i32),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Zero,
+                f32::MIN_POSITIVE,
+                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 0i32),
+            ),
+            (
+                false,
+                FCSRRoundingMode::PositiveInfinity,
+                f32::MIN_POSITIVE,
+                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 1i32),
+            ),
+            (
+                false,
+                FCSRRoundingMode::NegativeInfinity,
+                f32::MIN_POSITIVE,
+                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 0i32),
+            ),
+        ];
+        const VALUES_2: &[(i32, Result<(FCSRFlags, i32), ()>)] = &[
+            // W => W (which doesn't exist)
+            (4i32, expected_unimplemented_i32()),
+        ];
+        const VALUES_3: &[(i64, Result<(FCSRFlags, i32), ()>)] = &[
+            // L => W (which doesn't exist)
+            (4i64, expected_unimplemented_i32()),
+        ];
+        const VALUES_4: &[(f64, Result<(FCSRFlags, i32), ()>)] = &[
+            // D => W
+            (4f64, expected_result(FCSRFlags::DEFAULT, 4i32)),
+            (
+                2147483500f64,
+                expected_result(FCSRFlags::DEFAULT, 2147483500i32),
+            ),
+            (
+                2147483647f64,
+                expected_result(FCSRFlags::DEFAULT, 2147483647i32),
+            ),
+            (2147483648f64, expected_unimplemented_i32()),
+            (2147483649f64, expected_unimplemented_i32()),
+            (
+                -2147483500f64,
+                expected_result(FCSRFlags::DEFAULT, -2147483500i32),
+            ),
+            (
+                -2147483647f64,
+                expected_result(FCSRFlags::DEFAULT, -2147483647i32),
+            ),
+            (
+                -2147483648f64,
+                expected_result(FCSRFlags::DEFAULT, -2147483648i32),
+            ),
+            (-2147483649f64, expected_unimplemented_i32()),
+            (f64::INFINITY, expected_unimplemented_i32()),
+            (f64::NEG_INFINITY, expected_unimplemented_i32()),
             // CVT(NAN) produces another NAN and invalid operation (which is the opposite of what their name implies)
-            Box::new((FConst::QUIET_NAN_START_64, expected_unimplemented_i32())),
-            Box::new((FConst::QUIET_NAN_END_64, expected_unimplemented_i32())),
-            Box::new((
+            (FConst::QUIET_NAN_START_64, expected_unimplemented_i32()),
+            (FConst::QUIET_NAN_END_64, expected_unimplemented_i32()),
+            (
                 FConst::QUIET_NAN_NEGATIVE_START_64,
                 expected_unimplemented_i32(),
-            )),
-            Box::new((
+            ),
+            (
                 FConst::QUIET_NAN_NEGATIVE_END_64,
                 expected_unimplemented_i32(),
-            )),
+            ),
             // Signalling NANs aren't supported and cause unimplemented operation
-            Box::new((
+            (
                 FConst::SIGNALLING_NAN_START_64,
                 expected_unimplemented_i32(),
-            )),
-            Box::new((FConst::SIGNALLING_NAN_END_64, expected_unimplemented_i32())),
-            Box::new((
+            ),
+            (FConst::SIGNALLING_NAN_END_64, expected_unimplemented_i32()),
+            (
                 FConst::SIGNALLING_NAN_NEGATIVE_START_64,
                 expected_unimplemented_i32(),
-            )),
-            Box::new((
+            ),
+            (
                 FConst::SIGNALLING_NAN_NEGATIVE_END_64,
                 expected_unimplemented_i32(),
-            )),
+            ),
             // Subnormal also causes unimplemented
-            Box::new((
+            (
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 expected_unimplemented_i32(),
-            )),
-            Box::new((
+            ),
+            (
                 FConst::SUBNORMAL_MAX_POSITIVE_64,
                 expected_unimplemented_i32(),
-            )),
-            Box::new((
+            ),
+            (
                 FConst::SUBNORMAL_MIN_NEGATIVE_64,
                 expected_unimplemented_i32(),
-            )),
-            Box::new((
+            ),
+            (
                 FConst::SUBNORMAL_MAX_NEGATIVE_64,
                 expected_unimplemented_i32(),
-            )),
-            // W => W (which doesn't exist)
-            Box::new((4i32, expected_unimplemented_i32())),
-            // L => W (which doesn't exist)
-            Box::new((4i64, expected_unimplemented_i32())),
-        ]
+            ),
+        ];
+        const VALUES_5: &[(f32, Result<(FCSRFlags, i32), ()>)] = &[
+            // S ==> W
+            (4f32, expected_result(FCSRFlags::DEFAULT, 4i32)),
+            (
+                2140000000f32,
+                expected_result(FCSRFlags::DEFAULT, 2140000000i32),
+            ),
+            (
+                2147483520f32,
+                expected_result(FCSRFlags::DEFAULT, 2147483520i32),
+            ),
+            (2147483600f32, expected_unimplemented_i32()),
+            (2150000000f32, expected_unimplemented_i32()),
+            (
+                -2140000000f32,
+                expected_result(FCSRFlags::DEFAULT, -2140000000i32),
+            ),
+            (
+                -2147483520f32,
+                expected_result(FCSRFlags::DEFAULT, -2147483520i32),
+            ),
+            (
+                -2147483600f32,
+                expected_result(FCSRFlags::DEFAULT, -2147483648i32),
+            ),
+            (-2147483904f32, expected_unimplemented_i32()),
+            (-2150000000f32, expected_unimplemented_i32()),
+            (f32::INFINITY, expected_unimplemented_i32()),
+            (f32::NEG_INFINITY, expected_unimplemented_i32()),
+            // Quiet NANs aren't supported and cause unimplemented operation
+            (FConst::QUIET_NAN_START_32, expected_unimplemented_i32()),
+            (FConst::QUIET_NAN_END_32, expected_unimplemented_i32()),
+            (
+                FConst::QUIET_NAN_NEGATIVE_START_32,
+                expected_unimplemented_i32(),
+            ),
+            (
+                FConst::QUIET_NAN_NEGATIVE_END_32,
+                expected_unimplemented_i32(),
+            ),
+            // Signalling NANs aren't supported and cause unimplemented operation
+            (
+                FConst::SIGNALLING_NAN_START_32,
+                expected_unimplemented_i32(),
+            ),
+            (FConst::SIGNALLING_NAN_END_32, expected_unimplemented_i32()),
+            (
+                FConst::SIGNALLING_NAN_NEGATIVE_START_32,
+                expected_unimplemented_i32(),
+            ),
+            (
+                FConst::SIGNALLING_NAN_NEGATIVE_END_32,
+                expected_unimplemented_i32(),
+            ),
+            // Subnormal also causes unimplemented
+            (
+                FConst::SUBNORMAL_MIN_POSITIVE_32,
+                expected_unimplemented_i32(),
+            ),
+            (
+                FConst::SUBNORMAL_MAX_POSITIVE_32,
+                expected_unimplemented_i32(),
+            ),
+            (
+                FConst::SUBNORMAL_MIN_NEGATIVE_32,
+                expected_unimplemented_i32(),
+            ),
+            (
+                FConst::SUBNORMAL_MAX_NEGATIVE_32,
+                expected_unimplemented_i32(),
+            ),
+        ];
+        let mut result = crate::tests::boxed_values(VALUES_0);
+        result.extend(crate::tests::boxed_values(VALUES_1));
+        result.extend(crate::tests::boxed_values(VALUES_2));
+        result.extend(crate::tests::boxed_values(VALUES_3));
+        result.extend(crate::tests::boxed_values(VALUES_4));
+        result.extend(crate::tests::boxed_values(VALUES_5));
+        result
     }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
@@ -10594,384 +10695,401 @@ impl Test for ConvertToL {
     }
 
     fn values(&self) -> Vec<Box<dyn Any>> {
-        vec![
-            // S ==> L
-            Box::new((4f32, expected_result(FCSRFlags::DEFAULT, 4i64))),
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                4.5f32,
-                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 4i64),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                5.5f32,
-                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 6i64),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                6.5f32,
-                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 6i64),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                7.5f32,
-                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 8i64),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                8.5f32,
-                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 8i64),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                4.4f32,
-                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 4i64),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Zero,
-                4.4f32,
-                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 4i64),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::PositiveInfinity,
-                4.4f32,
-                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 5i64),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::NegativeInfinity,
-                4.4f32,
-                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 4i64),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                -4.4f32,
-                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), -4i64),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Zero,
-                -4.4f32,
-                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), -4i64),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::PositiveInfinity,
-                -4.4f32,
-                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), -4i64),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::NegativeInfinity,
-                -4.4f32,
-                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), -5i64),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Nearest,
-                f32::MIN_POSITIVE,
-                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 0i64),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::Zero,
-                f32::MIN_POSITIVE,
-                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 0i64),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::PositiveInfinity,
-                f32::MIN_POSITIVE,
-                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 1i64),
-            )),
-            Box::new((
-                false,
-                FCSRRoundingMode::NegativeInfinity,
-                f32::MIN_POSITIVE,
-                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 0i64),
-            )),
-            Box::new((
-                9.007198e15f32,
-                expected_result(FCSRFlags::DEFAULT, 9007198180999168i64),
-            )),
-            Box::new((
-                9.00719871787e15f32,
-                expected_result(FCSRFlags::DEFAULT, 9007198717870080i64),
-            )),
-            Box::new((9.00719925474e15f32, expected_unimplemented_i64())),
-            Box::new((9.00720032848e15f32, expected_unimplemented_i64())),
-            Box::new((i64::MAX as f32 * 1024f32, expected_unimplemented_i64())),
-            Box::new((f32::MAX, expected_unimplemented_i64())),
-            Box::new((
-                -9.007198e15f32,
-                expected_result(FCSRFlags::DEFAULT, -9007198180999168i64),
-            )),
-            Box::new((
-                -9.00719871787e15f32,
-                expected_result(FCSRFlags::DEFAULT, -9007198717870080i64),
-            )),
-            Box::new((-9.00719925474e15f32, expected_unimplemented_i64())),
-            Box::new((-9.00720032848e15f32, expected_unimplemented_i64())),
-            Box::new((f32::MIN, expected_unimplemented_i64())),
-            Box::new((f32::INFINITY, expected_unimplemented_i64())),
-            Box::new((f32::NEG_INFINITY, expected_unimplemented_i64())),
-            // CVT(NAN) produces another NAN and invalid operation (which is the opposite of what their name implies)
-            Box::new((FConst::QUIET_NAN_START_32, expected_unimplemented_i64())),
-            Box::new((FConst::QUIET_NAN_END_32, expected_unimplemented_i64())),
-            Box::new((
-                FConst::QUIET_NAN_NEGATIVE_START_32,
-                expected_unimplemented_i64(),
-            )),
-            Box::new((
-                FConst::QUIET_NAN_NEGATIVE_END_32,
-                expected_unimplemented_i64(),
-            )),
-            // Signalling NANs aren't supported and cause unimplemented operation
-            Box::new((
-                FConst::SIGNALLING_NAN_START_32,
-                expected_unimplemented_i64(),
-            )),
-            Box::new((FConst::SIGNALLING_NAN_END_32, expected_unimplemented_i64())),
-            Box::new((
-                FConst::SIGNALLING_NAN_NEGATIVE_START_32,
-                expected_unimplemented_i64(),
-            )),
-            Box::new((
-                FConst::SIGNALLING_NAN_NEGATIVE_END_32,
-                expected_unimplemented_i64(),
-            )),
-            // Subnormal also causes unimplemented
-            Box::new((
-                FConst::SUBNORMAL_MIN_POSITIVE_32,
-                expected_unimplemented_i64(),
-            )),
-            Box::new((
-                FConst::SUBNORMAL_MAX_POSITIVE_32,
-                expected_unimplemented_i64(),
-            )),
-            Box::new((
-                FConst::SUBNORMAL_MIN_NEGATIVE_32,
-                expected_unimplemented_i64(),
-            )),
-            Box::new((
-                FConst::SUBNORMAL_MAX_NEGATIVE_32,
-                expected_unimplemented_i64(),
-            )),
-            // D => L
-            Box::new((4f64, expected_result(FCSRFlags::DEFAULT, 4i64))),
-            Box::new((
+        const VALUES_0: &[(bool, FCSRRoundingMode, f64, Result<(FCSRFlags, i64), ()>)] = &[
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 4.5f64,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 4i64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 5.5f64,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 6i64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 6.5f64,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 6i64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 7.5f64,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 8i64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 8.5f64,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 8i64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 4.4f64,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 4i64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Zero,
                 4.4f64,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 4i64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::PositiveInfinity,
                 4.4f64,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 5i64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::NegativeInfinity,
                 4.4f64,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 4i64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 -4.4f64,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), -4i64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Zero,
                 -4.4f64,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), -4i64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::PositiveInfinity,
                 -4.4f64,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), -4i64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::NegativeInfinity,
                 -4.4f64,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), -5i64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 f64::MIN_POSITIVE,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 0i64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Zero,
                 f64::MIN_POSITIVE,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 0i64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::PositiveInfinity,
                 f64::MIN_POSITIVE,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 1i64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::NegativeInfinity,
                 f64::MIN_POSITIVE,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 0i64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Nearest,
                 -f64::MIN_POSITIVE,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 0i64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::Zero,
                 -f64::MIN_POSITIVE,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 0i64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::PositiveInfinity,
                 -f64::MIN_POSITIVE,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 0i64),
-            )),
-            Box::new((
+            ),
+            (
                 false,
                 FCSRRoundingMode::NegativeInfinity,
                 -f64::MIN_POSITIVE,
                 expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), -1i64),
-            )),
-            Box::new((
+            ),
+        ];
+        const VALUES_1: &[(bool, FCSRRoundingMode, f32, Result<(FCSRFlags, i64), ()>)] = &[
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                4.5f32,
+                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 4i64),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                5.5f32,
+                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 6i64),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                6.5f32,
+                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 6i64),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                7.5f32,
+                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 8i64),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                8.5f32,
+                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 8i64),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                4.4f32,
+                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 4i64),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Zero,
+                4.4f32,
+                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 4i64),
+            ),
+            (
+                false,
+                FCSRRoundingMode::PositiveInfinity,
+                4.4f32,
+                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 5i64),
+            ),
+            (
+                false,
+                FCSRRoundingMode::NegativeInfinity,
+                4.4f32,
+                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 4i64),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                -4.4f32,
+                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), -4i64),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Zero,
+                -4.4f32,
+                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), -4i64),
+            ),
+            (
+                false,
+                FCSRRoundingMode::PositiveInfinity,
+                -4.4f32,
+                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), -4i64),
+            ),
+            (
+                false,
+                FCSRRoundingMode::NegativeInfinity,
+                -4.4f32,
+                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), -5i64),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                f32::MIN_POSITIVE,
+                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 0i64),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Zero,
+                f32::MIN_POSITIVE,
+                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 0i64),
+            ),
+            (
+                false,
+                FCSRRoundingMode::PositiveInfinity,
+                f32::MIN_POSITIVE,
+                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 1i64),
+            ),
+            (
+                false,
+                FCSRRoundingMode::NegativeInfinity,
+                f32::MIN_POSITIVE,
+                expected_result(FCSRFlags::DEFAULT.with_inexact_operation(true), 0i64),
+            ),
+        ];
+        const VALUES_2: &[(i32, Result<(FCSRFlags, i64), ()>)] = &[
+            // W => L (which doesn't exist)
+            (4i32, expected_unimplemented_i64()),
+        ];
+        const VALUES_3: &[(i64, Result<(FCSRFlags, i64), ()>)] = &[
+            // L => L (which doesn't exist)
+            (4i64, expected_unimplemented_i64()),
+        ];
+        const VALUES_4: &[(f64, Result<(FCSRFlags, i64), ()>)] = &[
+            // D => L
+            (4f64, expected_result(FCSRFlags::DEFAULT, 4i64)),
+            (
                 4e15f64,
                 expected_result(FCSRFlags::DEFAULT, 4000000000000000i64),
-            )),
-            Box::new((
+            ),
+            (
                 8e15f64,
                 expected_result(FCSRFlags::DEFAULT, 8000000000000000i64),
-            )),
-            Box::new((
+            ),
+            (
                 9e15f64,
                 expected_result(FCSRFlags::DEFAULT, 9000000000000000i64),
-            )),
-            Box::new((
+            ),
+            (
                 9007199254740991f64,
                 expected_result(FCSRFlags::DEFAULT, 9007199254740991i64),
-            )),
-            Box::new((9007199254740992f64, expected_unimplemented_i64())),
-            Box::new((
+            ),
+            (9007199254740992f64, expected_unimplemented_i64()),
+            (
                 -9007199254740990f64,
                 expected_result(FCSRFlags::DEFAULT, -9007199254740990i64),
-            )),
-            Box::new((
+            ),
+            (
                 -9007199254740991f64,
                 expected_result(FCSRFlags::DEFAULT, -9007199254740991i64),
-            )),
-            Box::new((-9007199254740992f64, expected_unimplemented_i64())),
-            Box::new((-9007199254740993f64, expected_unimplemented_i64())),
-            Box::new((f64::MAX, expected_unimplemented_i64())),
-            Box::new((f64::MIN, expected_unimplemented_i64())),
-            Box::new((f64::INFINITY, expected_unimplemented_i64())),
-            Box::new((f64::NEG_INFINITY, expected_unimplemented_i64())),
+            ),
+            (-9007199254740992f64, expected_unimplemented_i64()),
+            (-9007199254740993f64, expected_unimplemented_i64()),
+            (f64::MAX, expected_unimplemented_i64()),
+            (f64::MIN, expected_unimplemented_i64()),
+            (f64::INFINITY, expected_unimplemented_i64()),
+            (f64::NEG_INFINITY, expected_unimplemented_i64()),
             // CVT(NAN) produces another NAN and invalid operation (which is the opposite of what their name implies)
-            Box::new((FConst::QUIET_NAN_START_64, expected_unimplemented_i64())),
-            Box::new((FConst::QUIET_NAN_END_64, expected_unimplemented_i64())),
-            Box::new((
+            (FConst::QUIET_NAN_START_64, expected_unimplemented_i64()),
+            (FConst::QUIET_NAN_END_64, expected_unimplemented_i64()),
+            (
                 FConst::QUIET_NAN_NEGATIVE_START_64,
                 expected_unimplemented_i64(),
-            )),
-            Box::new((
+            ),
+            (
                 FConst::QUIET_NAN_NEGATIVE_END_64,
                 expected_unimplemented_i64(),
-            )),
+            ),
             // Signalling NANs aren't supported and cause unimplemented operation
-            Box::new((
+            (
                 FConst::SIGNALLING_NAN_START_64,
                 expected_unimplemented_i64(),
-            )),
-            Box::new((FConst::SIGNALLING_NAN_END_64, expected_unimplemented_i64())),
-            Box::new((
+            ),
+            (FConst::SIGNALLING_NAN_END_64, expected_unimplemented_i64()),
+            (
                 FConst::SIGNALLING_NAN_NEGATIVE_START_64,
                 expected_unimplemented_i64(),
-            )),
-            Box::new((
+            ),
+            (
                 FConst::SIGNALLING_NAN_NEGATIVE_END_64,
                 expected_unimplemented_i64(),
-            )),
+            ),
             // Subnormal also causes unimplemented
-            Box::new((
+            (
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 expected_unimplemented_i64(),
-            )),
-            Box::new((
+            ),
+            (
                 FConst::SUBNORMAL_MAX_POSITIVE_64,
                 expected_unimplemented_i64(),
-            )),
-            Box::new((
+            ),
+            (
                 FConst::SUBNORMAL_MIN_NEGATIVE_64,
                 expected_unimplemented_i64(),
-            )),
-            Box::new((
+            ),
+            (
                 FConst::SUBNORMAL_MAX_NEGATIVE_64,
                 expected_unimplemented_i64(),
-            )),
-            // W => L (which doesn't exist)
-            Box::new((4i32, expected_unimplemented_i64())),
-            // L => L (which doesn't exist)
-            Box::new((4i64, expected_unimplemented_i64())),
-        ]
+            ),
+        ];
+        const VALUES_5: &[(f32, Result<(FCSRFlags, i64), ()>)] = &[
+            (i64::MAX as f32 * 1024f32, expected_unimplemented_i64()),
+            // S ==> L
+            (4f32, expected_result(FCSRFlags::DEFAULT, 4i64)),
+            (
+                9.007198e15f32,
+                expected_result(FCSRFlags::DEFAULT, 9007198180999168i64),
+            ),
+            (
+                9.00719871787e15f32,
+                expected_result(FCSRFlags::DEFAULT, 9007198717870080i64),
+            ),
+            (9.00719925474e15f32, expected_unimplemented_i64()),
+            (9.00720032848e15f32, expected_unimplemented_i64()),
+            (f32::MAX, expected_unimplemented_i64()),
+            (
+                -9.007198e15f32,
+                expected_result(FCSRFlags::DEFAULT, -9007198180999168i64),
+            ),
+            (
+                -9.00719871787e15f32,
+                expected_result(FCSRFlags::DEFAULT, -9007198717870080i64),
+            ),
+            (-9.00719925474e15f32, expected_unimplemented_i64()),
+            (-9.00720032848e15f32, expected_unimplemented_i64()),
+            (f32::MIN, expected_unimplemented_i64()),
+            (f32::INFINITY, expected_unimplemented_i64()),
+            (f32::NEG_INFINITY, expected_unimplemented_i64()),
+            // CVT(NAN) produces another NAN and invalid operation (which is the opposite of what their name implies)
+            (FConst::QUIET_NAN_START_32, expected_unimplemented_i64()),
+            (FConst::QUIET_NAN_END_32, expected_unimplemented_i64()),
+            (
+                FConst::QUIET_NAN_NEGATIVE_START_32,
+                expected_unimplemented_i64(),
+            ),
+            (
+                FConst::QUIET_NAN_NEGATIVE_END_32,
+                expected_unimplemented_i64(),
+            ),
+            // Signalling NANs aren't supported and cause unimplemented operation
+            (
+                FConst::SIGNALLING_NAN_START_32,
+                expected_unimplemented_i64(),
+            ),
+            (FConst::SIGNALLING_NAN_END_32, expected_unimplemented_i64()),
+            (
+                FConst::SIGNALLING_NAN_NEGATIVE_START_32,
+                expected_unimplemented_i64(),
+            ),
+            (
+                FConst::SIGNALLING_NAN_NEGATIVE_END_32,
+                expected_unimplemented_i64(),
+            ),
+            // Subnormal also causes unimplemented
+            (
+                FConst::SUBNORMAL_MIN_POSITIVE_32,
+                expected_unimplemented_i64(),
+            ),
+            (
+                FConst::SUBNORMAL_MAX_POSITIVE_32,
+                expected_unimplemented_i64(),
+            ),
+            (
+                FConst::SUBNORMAL_MIN_NEGATIVE_32,
+                expected_unimplemented_i64(),
+            ),
+            (
+                FConst::SUBNORMAL_MAX_NEGATIVE_32,
+                expected_unimplemented_i64(),
+            ),
+        ];
+        let mut result = crate::tests::boxed_values(VALUES_0);
+        result.extend(crate::tests::boxed_values(VALUES_1));
+        result.extend(crate::tests::boxed_values(VALUES_2));
+        result.extend(crate::tests::boxed_values(VALUES_3));
+        result.extend(crate::tests::boxed_values(VALUES_4));
+        result.extend(crate::tests::boxed_values(VALUES_5));
+        result
     }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
