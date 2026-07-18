@@ -1,4 +1,4 @@
-use arbitrary_int::u24;
+use arbitrary_int::prelude::*;
 
 use crate::memory_map::MemoryMap;
 use crate::rdp::rdp_assembler::RDPAssembler;

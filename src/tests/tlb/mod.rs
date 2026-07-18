@@ -6,7 +6,7 @@ use core::any::Any;
 use core::arch::asm;
 use core::cmp::min;
 
-use arbitrary_int::{u2, u27};
+use arbitrary_int::prelude::*;
 
 use crate::cop0;
 use crate::cop0::{make_entry_hi, make_entry_lo, Coherency, Pagemask};

@@ -4,7 +4,7 @@ use alloc::vec::Vec;
 use core::any::Any;
 use core::arch::asm;
 
-use arbitrary_int::{u2, u27};
+use arbitrary_int::prelude::*;
 
 use crate::cop0::{self, make_entry_hi, make_entry_lo, Coherency, Pagemask, Status};
 use crate::tests::soft_asserts::{soft_assert_eq, soft_assert_neq};

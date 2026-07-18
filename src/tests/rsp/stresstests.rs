@@ -4,7 +4,7 @@ use alloc::string::String;
 use alloc::vec::Vec;
 use core::any::Any;
 
-use arbitrary_int::u5;
+use arbitrary_int::prelude::*;
 
 use crate::graphics::color::Color;
 use crate::graphics::color::RGBA5551;

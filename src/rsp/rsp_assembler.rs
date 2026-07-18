@@ -2,7 +2,7 @@ use core::iter::Step;
 use core::mem::transmute;
 use core::ops::RangeInclusive;
 
-use arbitrary_int::u5;
+use arbitrary_int::prelude::*;
 use bitbybit::bitenum;
 
 use crate::rsp::dmem_writer::DMEMWriter;

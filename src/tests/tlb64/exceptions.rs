@@ -5,7 +5,7 @@ use alloc::vec::Vec;
 use core::any::Any;
 use core::arch::asm;
 
-use arbitrary_int::{u19, u2, u27};
+use arbitrary_int::prelude::*;
 
 use crate::cop0;
 use crate::cop0::{

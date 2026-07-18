@@ -1,6 +1,6 @@
 use core::fmt::{Debug, Formatter};
 
-use arbitrary_int::u12;
+use arbitrary_int::prelude::*;
 
 use crate::graphics::color::{ARGB8888, RGBA5551};
 use crate::math::bits::{Bitmasks32, Bitmasks64};

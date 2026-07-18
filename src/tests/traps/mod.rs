@@ -7,7 +7,7 @@ use alloc::vec::Vec;
 use core::any::Any;
 use core::arch::asm;
 
-use arbitrary_int::u5;
+use arbitrary_int::prelude::*;
 
 use crate::assembler::{Assembler, RegimmOpcode, SpecialOpcode};
 use crate::cop0::{preset_cause_to_copindex2, CauseException};

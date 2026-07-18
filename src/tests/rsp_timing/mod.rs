@@ -4,8 +4,7 @@ use alloc::string::String;
 use alloc::vec::Vec;
 use core::any::Any;
 
-use arbitrary_int::{u24, u5};
-use num_traits::ops::wrapping::WrappingSub;
+use arbitrary_int::prelude::*;
 
 use crate::cop0::count;
 use crate::rdp::rdp::{DP_SET_STATUS_CLEAR_FREEZE, DP_SET_STATUS_SET_FREEZE, RDP};
@@ -73,7 +72,7 @@ impl Test for ClockCPUvsRSP {
 
         soft_assert_eq_with_epsilon(
             RDP_CYCLE_EPSILON,
-            rdp_clock_after.wrapping_sub(&rdp_clock_before),
+            rdp_clock_after.wrapping_sub(rdp_clock_before),
             EXPECTED_RDP_CYCLES,
             format!(
                 "Expected RDP cycles that pass during {} cpu cycles",
@@ -190,7 +189,7 @@ fn measure(f: &dyn Fn(&mut RSPAssembler)) -> u32 {
 
     RSP::run_and_wait(0);
 
-    let reported_delta = u24::new(SPMEM::read(0xFFC)).wrapping_sub(&u24::new(SPMEM::read(0xFF8)));
+    let reported_delta = u24::new(SPMEM::read(0xFFC)).wrapping_sub(u24::new(SPMEM::read(0xFF8)));
 
     // We put in 8 nops. 1 extra instruction (one of the two mfc0).
     reported_delta.value() - 9

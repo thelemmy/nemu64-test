@@ -9,7 +9,7 @@ use alloc::{format, vec};
 use core::any::Any;
 use core::arch::asm;
 
-use arbitrary_int::{u2, u5};
+use arbitrary_int::prelude::*;
 
 use crate::assembler::{Assembler, FR, GPR};
 use crate::cop0::{preset_cause_to_copindex2, set_status, Cause, CauseException, Status};

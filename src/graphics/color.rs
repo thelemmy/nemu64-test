@@ -1,6 +1,6 @@
 use core::fmt::{Debug, Formatter};
 
-use arbitrary_int::u5;
+use arbitrary_int::prelude::*;
 use bitbybit::bitfield;
 
 pub trait Color {

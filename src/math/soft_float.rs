@@ -2,7 +2,7 @@ use alloc::format;
 use core::fmt::{Debug, Formatter};
 use core::mem::transmute;
 
-use arbitrary_int::{u11, u23, u52, Number};
+use arbitrary_int::prelude::*;
 use bitbybit::bitfield;
 
 #[bitfield(u32)]

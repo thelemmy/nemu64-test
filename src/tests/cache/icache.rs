@@ -5,7 +5,7 @@ use alloc::vec::Vec;
 use core::any::Any;
 use core::arch::asm;
 
-use arbitrary_int::{u20, u5};
+use arbitrary_int::prelude::*;
 
 use crate::assembler::{Assembler, GPR};
 use crate::cop0::{CacheOp, RegisterIndex, TagLo, TagLoPState};

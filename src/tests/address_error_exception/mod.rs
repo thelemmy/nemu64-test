@@ -4,7 +4,7 @@ use alloc::vec::Vec;
 use core::any::Any;
 use core::arch::asm;
 
-use arbitrary_int::{u31, u41, u5, Number};
+use arbitrary_int::prelude::*;
 
 use crate::assembler::{Assembler, FR, GPR};
 use crate::cop0;

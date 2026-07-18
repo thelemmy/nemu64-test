@@ -490,7 +490,7 @@ fn show_bluescreen_of_death(context: &ExceptionContext) -> ! {
             }
             Err(code) => {
                 cursor.draw_text(backbuffer, "0x");
-                cursor.draw_hex_u32(backbuffer, code as u32);
+                cursor.draw_hex_u32(backbuffer, u32::from(code));
             }
         }
         cursor.draw_text(backbuffer, "), Status: ");

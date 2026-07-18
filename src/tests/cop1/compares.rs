@@ -6,7 +6,7 @@ use core::any::Any;
 use core::arch::asm;
 use core::cmp::Ordering;
 
-use arbitrary_int::u2;
+use arbitrary_int::prelude::*;
 
 use crate::assembler::{Assembler, Cop1Condition, FPUFloatInstruction, FR};
 use crate::cop0::{preset_cause_to_copindex2, Cause, CauseException};

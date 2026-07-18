@@ -1,4 +1,4 @@
-use arbitrary_int::{u10, u12, u24, u4};
+use arbitrary_int::prelude::*;
 use bitbybit::{bitenum, bitfield};
 
 use crate::graphics::framebuffer_images::FramebufferImages;

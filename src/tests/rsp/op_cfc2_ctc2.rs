@@ -5,7 +5,7 @@ use alloc::vec::Vec;
 use core::any::Any;
 use core::cmp::min;
 
-use arbitrary_int::u5;
+use arbitrary_int::prelude::*;
 
 use crate::rsp::rsp::RSP;
 use crate::rsp::rsp_assembler::{CP2FlagsRegister, RSPAssembler, GPR};
