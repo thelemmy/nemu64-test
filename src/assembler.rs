@@ -754,6 +754,11 @@ impl Assembler {
         )
     }
 
+    /// The `move rd, rs` pseudo-instruction (what MIPS assemblers emit as `or rd, rs, $zero`).
+    pub const fn make_move(rd: GPR, rs: GPR) -> u32 {
+        Self::make_or(rd, rs, GPR::R0)
+    }
+
     pub const fn make_xor(rd: GPR, rs: GPR, rt: GPR) -> u32 {
         Self::make_special(
             SpecialOpcode::XOR,
