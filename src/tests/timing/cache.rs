@@ -7,18 +7,16 @@ use alloc::vec::Vec;
 use core::any::Any;
 use core::arch::asm;
 use core::cmp::{max, min};
-use core::mem::transmute;
 use core::ops::RangeInclusive;
 
 use crate::assembler::{Assembler, GPR};
-use crate::cop0::RegisterIndex;
+use crate::cop0::{RegisterIndex, Status};
 use crate::memory_map::MemoryMap;
 use crate::tests::soft_asserts::{
     soft_assert_eq, soft_assert_eq_with_epsilon, soft_assert_range_contained_within_expected,
 };
-use crate::tests::timing::ExceptionTimingMode;
+use crate::tests::timing::{effective_cycles, ExceptionTimingMode, MeasurementProgram};
 use crate::tests::{Level, Test};
-use crate::uncached_memory::{UncachedHeapMemory, UncachedHeapMemoryWriter};
 
 // TODO: Time CACHE instruction
 // TODO: Time writes, in particular once the write buffer has been filled
@@ -119,124 +117,6 @@ impl Test for CacheSizeTest {
     }
 }
 
-#[inline(never)]
-fn get_cycles(
-    memory: &mut UncachedHeapMemory<u64>,
-    configure_preconditions: extern "C" fn(),
-    execute: extern "C" fn(),
-) -> u32 {
-    let ticks1: u32;
-    let ticks2: u32;
-    unsafe {
-        // A couple of issues this test harness fixes:
-        // - ICACHE: The first time the test runs, it is freshly loaded from ROM, introducing
-        //   delays. Solve this by running twice
-        // - COUNT increments at half-intervals, so when we're measuring cycles, half-cycles
-        //   (e.g. 1.5) can be rounded up or down. Solution: Write to COUNT, as that
-        //   calibrates.
-        // - In order to measure half-cycles we can then add an additional NOP in another run.
-        asm!("
-            .set noat
-            .set noreorder
-            // stash RA
-            ORI $20, $31, 0
-
-            NOP; NOP
-
-            .align 5 // align so that the loop below fits within the fewest ICACHE cachelines as possible
-1:
-            ORI $26, $18, 0  // Configure exception handler
-            OR $6, $2, $0
-            OR $7, $3, $0
-            OR $8, $4, $0
-            OR $9, $5, $0
-
-            JALR $16
-            NOP
-
-            // Calibration step
-            MFC0 $19, ${COUNT}
-            NOP
-            NOP
-            MTC0 $19, ${COUNT}
-            NOP
-
-            // If loop counter is 2, skip an instruction. This shifts half of a cycle compared to the last round
-            ORI $19, $0, 2
-            BEQ $22, $19, 2f
-            NOP  // delay
-            NOP  // an extra instruction that is skipped if $22 == 2
-2:
-
-            MFC0 $19, ${COUNT}
-            JALR $25
-            NOP
-            MFC0 $21, ${COUNT}
-
-            // If enabled, don't use the timing value we just got but instead use k1, which is what the exception handler stored
-            ORI $17, $0, 1
-            BNE $17, $18, 3f
-            NOP
-            ORI $21, $27, 0
-3:
-            ORI $23, $24, 0     // stash previous iteration's result in 23
-            SUB $24, $21, $19
-            ADDIU $22, $22, 0xFFFF
-
-            // Loop a bit - this clears out the write-buffer if it was used by the test
-            ORI $19, $0, 70
-4:
-            BNE $19, $0, 4b
-            ADDIU $19, $19, -1 // delay slot
-
-            BNE $22, $0, 1b
-            NOP // delay slot
-            ORI $31, $20, 0  // restore RA
-            ORI $26, $0, 0  // restore normal exception handler behavior
-        ",
-        COUNT = const RegisterIndex::Count as usize,
-
-        in("$3") MemoryMap::physical_to_cached_mut::<u64>(memory.start_physical()),
-        in("$5") MemoryMap::physical_to_uncached_mut::<u64>(memory.start_physical()),
-
-        // These are freely to be used to by test
-        out("$6") _,
-        out("$7") _,
-        out("$8") _,
-        out("$9") _,
-        out("$10") _,
-        out("$11") _,
-        out("$12") _,
-        out("$13") _,
-        out("$14") _,
-        out("$15") _,
-
-        // These are for the test infra itself
-        in("$16") configure_preconditions,
-        out("$17") _,
-        in("$18") ExceptionTimingMode::Off as u32,
-        out("$19") _,
-        out("$20") _,
-        out("$21") _,
-        inout("$22") 3 => _,
-        out("$23") ticks2,
-        out("$24") ticks1,
-        in("$25") execute,
-        options(nostack));
-    }
-
-    let effective_ticks =
-        // In addition to the code being measured, we need a few extra cycles:
-        // - 1 for the JALR
-        // - 1 for the JALR's NOP
-        // - 1 for the return JR RA
-        // - 1 for the delay of the JR RA
-        // - 1 for one of the MFC0 COUNT itself
-        (ticks1 + ticks2) - 5;
-
-    effective_ticks
-}
-
 #[derive(Debug)]
 struct AveragedCycles {
     range: RangeInclusive<u32>,
@@ -244,47 +124,22 @@ struct AveragedCycles {
     average: f32,
 }
 
-fn get_averaged_cycles_with_codegen<
-    F: FnOnce(&mut UncachedHeapMemoryWriter<u32>),
-    F2: FnOnce(&mut UncachedHeapMemoryWriter<u32>),
->(
+fn get_averaged_cycles_with_codegen(
     iterations: usize,
-    configure_preconditions: F,
-    execute: F2,
+    configure_preconditions: &[u32],
+    execute: &[u32],
 ) -> AveragedCycles {
-    // Dynamically generate both functions
-    let mut code_memory = UncachedHeapMemory::<u32>::new_with_align(64, 64);
-    let mut writer = UncachedHeapMemoryWriter::new(&mut code_memory);
+    // Generate the measurement loop, preconditions and execute into a single buffer so their
+    // icache placement is fixed relative to each other (see MeasurementProgram)
+    let mut program = MeasurementProgram::new(Some(configure_preconditions), execute);
 
-    configure_preconditions(&mut writer);
-    writer.write(Assembler::make_jr(GPR::RA));
-    writer.write(Assembler::make_nop()); // delay slot
-
-    let execute_offset = writer.index() << 2;
-
-    execute(&mut writer);
-    writer.write(Assembler::make_jr(GPR::RA));
-    writer.write(Assembler::make_nop()); // delay slot
-
-    // Turn the pointer into a function pointer
-    let preconditions_ptr: extern "C" fn() = unsafe {
-        transmute(MemoryMap::physical_to_cached::<u8>(
-            code_memory.start_physical(),
-        ))
-    };
-    let execute_ptr: extern "C" fn() = unsafe {
-        transmute(MemoryMap::physical_to_cached::<u8>(
-            code_memory.start_physical() + execute_offset,
-        ))
-    };
-
-    let mut memory = UncachedHeapMemory::<u64>::new_with_align(16 * 1024, 64);
     let mut sum = 0u64;
     let mut min_value = u32::MAX;
     let mut max_value = 0;
     let mut all_cycles = Vec::new();
     for i in 0..iterations {
-        let cycles = get_cycles(&mut memory, preconditions_ptr, execute_ptr);
+        let (ticks1, ticks2) = program.run(0, 0, Status::DEFAULT, ExceptionTimingMode::Off);
+        let cycles = effective_cycles(ticks1, ticks2, ExceptionTimingMode::Off);
         // If too many cycles, stop pushing. This avoids running out of memory
         if i < 100_000 {
             all_cycles.push(cycles);
@@ -302,16 +157,13 @@ fn get_averaged_cycles_with_codegen<
     }
 }
 
-fn assert_averaged_cycles_with_codegen<
-    F: FnOnce(&mut UncachedHeapMemoryWriter<u32>),
-    F2: FnOnce(&mut UncachedHeapMemoryWriter<u32>),
->(
+fn assert_averaged_cycles_with_codegen(
     expected_range: RangeInclusive<u32>,
     expected_median: u32,
     expected_average: f32,
     average_epsilon: f32,
-    configure_preconditions: F,
-    execute: F2,
+    configure_preconditions: &[u32],
+    execute: &[u32],
 ) -> Result<(), String> {
     let averaged_cycles = get_averaged_cycles_with_codegen(1_000, configure_preconditions, execute);
 
@@ -371,15 +223,13 @@ impl Test for LoadMissVIEnabled {
                     42,
                     43.25f32,
                     1.0f32,
-                    |writer| {
-                        writer.write(Assembler::make_lui(GPR::T2, (base_address >> 16) as i16));
-                        writer.write(Assembler::make_ori(GPR::T2, GPR::T2, base_address as u16));
+                    &[
+                        Assembler::make_lui(GPR::T2, (base_address >> 16) as i16),
+                        Assembler::make_ori(GPR::T2, GPR::T2, base_address as u16),
                         // Load the same cache line in the next 8k block. This guarantees that below we'll have a cache miss
-                        writer.write(Assembler::make_lw(GPR::R0, 8 * 1024, GPR::T2));
-                    },
-                    |writer| {
-                        writer.write(Assembler::make_lw(GPR::R0, 0, GPR::T2));
-                    },
+                        Assembler::make_lw(GPR::R0, 8 * 1024, GPR::T2),
+                    ],
+                    &[Assembler::make_lw(GPR::R0, 0, GPR::T2)],
                 )
             }
             _ => Err(format!("Unhandled pattern")),
@@ -421,15 +271,13 @@ impl Test for LoadMissVIDisabled {
                     41,
                     42.5f32,
                     0.5f32,
-                    |writer| {
-                        writer.write(Assembler::make_lui(GPR::T2, (*base_address >> 16) as i16));
-                        writer.write(Assembler::make_ori(GPR::T2, GPR::T2, *base_address as u16));
+                    &[
+                        Assembler::make_lui(GPR::T2, (*base_address >> 16) as i16),
+                        Assembler::make_ori(GPR::T2, GPR::T2, *base_address as u16),
                         // Load the same cache line in the next 8k block. This guarantees that below we'll have a cache miss
-                        writer.write(Assembler::make_lw(GPR::R0, 8 * 1024, GPR::T2));
-                    },
-                    |writer| {
-                        writer.write(Assembler::make_lw(GPR::R0, 0, GPR::T2));
-                    },
+                        Assembler::make_lw(GPR::R0, 8 * 1024, GPR::T2),
+                    ],
+                    &[Assembler::make_lw(GPR::R0, 0, GPR::T2)],
                 )
             }
             _ => Err(format!("Unhandled pattern")),
@@ -450,8 +298,10 @@ impl Test for LoadFromUncachedVIEnabled {
 
     fn values(&self) -> Vec<Box<dyn Any>> {
         vec![
-            // These measurements are all pretty unstable - will need to revise as things are better understood
-            Box::new((true, 36u32, 40.7f32)),
+            // These measurements are all pretty unstable - will need to revise as things are better understood.
+            // The in-same-bank average was re-measured (very stably) at ~36.3 after the measurement
+            // loop moved into the generated buffer; the wide epsilon stays to capture the uncertainty.
+            Box::new((true, 36u32, 36.3f32)),
             Box::new((false, 32u32, 32.5f32)),
         ]
     }
@@ -474,13 +324,11 @@ impl Test for LoadFromUncachedVIEnabled {
                     *expected_median,
                     *expected_average,
                     4.0f32,
-                    |writer| {
-                        writer.write(Assembler::make_lui(GPR::T2, (base_address >> 16) as i16));
-                        writer.write(Assembler::make_ori(GPR::T2, GPR::T2, base_address as u16));
-                    },
-                    |writer| {
-                        writer.write(Assembler::make_lw(GPR::R0, 0, GPR::T2));
-                    },
+                    &[
+                        Assembler::make_lui(GPR::T2, (base_address >> 16) as i16),
+                        Assembler::make_ori(GPR::T2, GPR::T2, base_address as u16),
+                    ],
+                    &[Assembler::make_lw(GPR::R0, 0, GPR::T2)],
                 )
             }
             _ => Err(format!("Unhandled pattern")),
@@ -522,13 +370,11 @@ impl Test for LoadFromUncachedVIDisabled {
                 32,
                 32.54f32,
                 1.0f32,
-                |writer| {
-                    writer.write(Assembler::make_lui(GPR::T2, (*base_address >> 16) as i16));
-                    writer.write(Assembler::make_ori(GPR::T2, GPR::T2, *base_address as u16));
-                },
-                |writer| {
-                    writer.write(Assembler::make_lw(GPR::R0, 0, GPR::T2));
-                },
+                &[
+                    Assembler::make_lui(GPR::T2, (*base_address >> 16) as i16),
+                    Assembler::make_ori(GPR::T2, GPR::T2, *base_address as u16),
+                ],
+                &[Assembler::make_lw(GPR::R0, 0, GPR::T2)],
             ),
             _ => Err(format!("Unhandled pattern")),
         }

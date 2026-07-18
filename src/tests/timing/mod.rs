@@ -253,10 +253,14 @@ pub enum ExceptionTimingMode {
 
 /// Data-memory slot (u64 index) used to stash the loop's return address; beyond any offset a body touches.
 const MEASURE_RA_SLOT: usize = 8;
+/// Data-memory slot (u64 index) holding the address of the preconditions function, if there is one.
+const MEASURE_PRECONDITIONS_SLOT: usize = 9;
 
 /// Emits the measurement loop into `code`; the body is appended right after (at `code.len()`) with
-/// a JR RA + NOP, and is called via JALR $25 (caller sets $25 to the body address).
-fn emit_measurement_loop(code: &mut Vec<u32>) {
+/// a JR RA + NOP, and is called via JALR $25 (caller sets $25 to the body address). If
+/// `call_preconditions` is set, each iteration first calls the function whose address is in
+/// memory\[MEASURE_PRECONDITIONS_SLOT\] (e.g. to prime the data cache), outside the measured window.
+fn emit_measurement_loop(code: &mut Vec<u32>, call_preconditions: bool) {
     use GPR::*;
     let count = RegisterIndex::Count;
     let ra_offset = (MEASURE_RA_SLOT * 8) as i16;
@@ -275,6 +279,17 @@ fn emit_measurement_loop(code: &mut Vec<u32>) {
     code.push(Assembler::make_move(A3, V1));
     code.push(Assembler::make_move(T0, A0));
     code.push(Assembler::make_move(T1, A1));
+
+    if call_preconditions {
+        code.push(Assembler::make_ld(
+            S3,
+            (MEASURE_PRECONDITIONS_SLOT * 8) as i16,
+            V1,
+        ));
+        code.push(Assembler::make_jalr(RA, S3));
+        code.push(Assembler::make_nop()); // delay slot
+        code.push(Assembler::make_nop()); // keep the inserted block even so the clock parity at the measured instruction is unchanged
+    }
 
     // Calibration step
     code.push(Assembler::make_mfc0(S3, count));
@@ -330,58 +345,106 @@ fn emit_measurement_loop(code: &mut Vec<u32>) {
     code.push(Assembler::make_nop());
 }
 
-/// Builds the full measurement program ([loop][body][JR RA][NOP]) and returns it together with
-/// the body's word offset within the program.
-fn build_measurement_program(body: &[u32]) -> (Vec<u32>, usize) {
-    let mut code = Vec::with_capacity(40 + body.len());
-    emit_measurement_loop(&mut code);
-    let body_offset = code.len();
-    code.extend_from_slice(body);
-    code.push(Assembler::make_jr(GPR::RA));
-    code.push(Assembler::make_nop()); // delay slot
-    (code, body_offset)
+/// A fully generated measurement program ([loop][body][JR RA][NOP][preconditions][JR RA][NOP]),
+/// living in one contiguous, precisely-aligned buffer. Build once, run any number of times.
+struct MeasurementProgram {
+    buffer: UncachedHeapMemory<u32>,
+    memory: UncachedHeapMemory<u64>,
+    body_offset: usize,
 }
 
-/// Generates the measurement program for `body`, runs it once and returns the two raw COUNT
-/// measurements (ticks1, ticks2).
+impl MeasurementProgram {
+    fn new(preconditions: Option<&[u32]>, body: &[u32]) -> Self {
+        let mut code = Vec::with_capacity(50 + body.len() + preconditions.map_or(0, |p| p.len()));
+        emit_measurement_loop(&mut code, preconditions.is_some());
+        let body_offset = code.len();
+        code.extend_from_slice(body);
+        code.push(Assembler::make_jr(GPR::RA));
+        code.push(Assembler::make_nop()); // delay slot
+        let preconditions_offset = preconditions.map(|p| {
+            let offset = code.len();
+            code.extend_from_slice(p);
+            code.push(Assembler::make_jr(GPR::RA));
+            code.push(Assembler::make_nop()); // delay slot
+            offset
+        });
+
+        // The buffer is written through the uncached view and executed through the cached view;
+        // new_with_align already invalidated the icache for it, so that is coherent.
+        let mut buffer = UncachedHeapMemory::<u32>::new_with_align(code.len(), 64);
+        for (i, &word) in code.iter().enumerate() {
+            buffer.write(i, word);
+        }
+        let program_addr = MemoryMap::physical_to_cached::<u8>(buffer.start_physical()) as usize;
+        let body_addr = program_addr + body_offset * 4;
+
+        let mut memory =
+            UncachedHeapMemory::<u64>::new_with_align(MEASURE_PRECONDITIONS_SLOT + 1, 64);
+        // Make this a pointer to itself. That allows reading from the same register again
+        let start_physical = memory.start_physical();
+        memory.write(
+            0,
+            MemoryMap::physical_to_cached_mut::<u64>(start_physical) as i32 as u64,
+        );
+        memory.write(
+            1,
+            MemoryMap::physical_to_uncached_mut::<u64>(start_physical + 8) as i32 as u64,
+        );
+        memory.write(2, (body_addr as u64 + 16) as i32 as u64);
+        memory.write(3, 0x89ABCDEF01234567u64); // when signed, this is negative
+        memory.write(4, 0x456789ABCDEF1234u64); // when signed, this is positive
+        memory.write(5, 0x56789ABCDEF12345u64);
+        memory.write(6, 0x6789ABCDEF123456u64);
+        memory.write(7, 0x789ABCDEF1234567u64);
+        if let Some(preconditions_offset) = preconditions_offset {
+            memory.write(
+                MEASURE_PRECONDITIONS_SLOT,
+                (program_addr + preconditions_offset * 4) as i32 as u64,
+            );
+        }
+
+        Self {
+            buffer,
+            memory,
+            body_offset,
+        }
+    }
+
+    /// Runs the program once and returns the two raw COUNT measurements (ticks1, ticks2).
+    fn run(
+        &mut self,
+        value2: u64,
+        value4: u64,
+        test_status: Status,
+        exception_timing: ExceptionTimingMode,
+    ) -> (u32, u32) {
+        // Execute from a cached (0x8xxxxxxx) address, otherwise the CPU mostly waits on memory
+        let program_addr =
+            MemoryMap::physical_to_cached::<u8>(self.buffer.start_physical()) as usize;
+        let body_addr = program_addr + self.body_offset * 4;
+
+        run_measurement(
+            &mut self.memory,
+            program_addr,
+            body_addr,
+            value2,
+            value4,
+            test_status,
+            exception_timing,
+        )
+    }
+}
+
 #[inline(never)]
-fn measure_cycles_codegen(
+fn run_measurement(
+    memory: &mut UncachedHeapMemory<u64>,
+    program_addr: usize,
+    body_addr: usize,
     value2: u64,
     value4: u64,
     test_status: Status,
     exception_timing: ExceptionTimingMode,
-    body: &[u32],
 ) -> (u32, u32) {
-    let (program, body_offset) = build_measurement_program(body);
-
-    // Execute from a cached (0x8xxxxxxx) address, otherwise the CPU mostly waits on memory. A fresh
-    // buffer already has its icache invalidated by new_with_align, so writing it via the uncached
-    // view and executing via the cached view is coherent.
-    let mut buffer = UncachedHeapMemory::<u32>::new_with_align(program.len(), 64);
-    for (i, &word) in program.iter().enumerate() {
-        buffer.write(i, word);
-    }
-    let program_addr = MemoryMap::physical_to_cached::<u8>(buffer.start_physical()) as usize;
-    let body_addr = program_addr + body_offset * 4;
-
-    let mut memory = UncachedHeapMemory::<u64>::new_with_align(MEASURE_RA_SLOT + 1, 64);
-    // Make this a pointer to itself. That allows reading from the same register again
-    let start_physical = memory.start_physical();
-    memory.write(
-        0,
-        MemoryMap::physical_to_cached_mut::<u64>(start_physical) as i32 as u64,
-    );
-    memory.write(
-        1,
-        MemoryMap::physical_to_uncached_mut::<u64>(start_physical + 8) as i32 as u64,
-    );
-    memory.write(2, (body_addr as u64 + 16) as i32 as u64);
-    memory.write(3, 0x89ABCDEF01234567u64); // when signed, this is negative
-    memory.write(4, 0x456789ABCDEF1234u64); // when signed, this is positive
-    memory.write(5, 0x56789ABCDEF12345u64);
-    memory.write(6, 0x6789ABCDEF123456u64);
-    memory.write(7, 0x789ABCDEF1234567u64);
-
     let ticks1: u32;
     let ticks2: u32;
     unsafe {
@@ -455,6 +518,18 @@ fn measure_cycles_codegen(
     }
 
     (ticks1, ticks2)
+}
+
+/// Generates the measurement program for `body`, runs it once and returns the two raw COUNT
+/// measurements (ticks1, ticks2).
+fn measure_cycles_codegen(
+    value2: u64,
+    value4: u64,
+    test_status: Status,
+    exception_timing: ExceptionTimingMode,
+    body: &[u32],
+) -> (u32, u32) {
+    MeasurementProgram::new(None, body).run(value2, value4, test_status, exception_timing)
 }
 
 /// Converts the two raw measurements into an effective cycle count by subtracting the fixed
