@@ -117,6 +117,13 @@ pub trait Test {
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String>;
 }
 
+/// Boxes every element of a static table for use in [Test::values]. Compared to a vec! of
+/// Box::new literals, this keeps the elements in rodata instead of expanding each one into
+/// construction code.
+fn boxed_values<T: Copy + 'static>(table: &'static [T]) -> Vec<Box<dyn Any>> {
+    table.iter().map(|v| Box::new(*v) as Box<dyn Any>).collect()
+}
+
 fn cycles_to_seconds(value: u32) -> f32 {
     value as f32 / (93_750_000f32 / 2f32)
 }
