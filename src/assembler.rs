@@ -1,6 +1,6 @@
 use core::iter::Step;
 
-use arbitrary_int::{u26, u5, u6};
+use arbitrary_int::prelude::*;
 use bitbybit::bitenum;
 
 use crate::cop0::{CacheOp, RegisterIndex};

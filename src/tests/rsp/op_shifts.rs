@@ -4,7 +4,7 @@ use alloc::vec;
 use alloc::vec::Vec;
 use core::any::Any;
 
-use arbitrary_int::u5;
+use arbitrary_int::prelude::*;
 
 use crate::rsp::rsp::RSP;
 use crate::rsp::rsp_assembler::{RSPAssembler, GPR};

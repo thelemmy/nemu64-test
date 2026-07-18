@@ -5,7 +5,7 @@ use alloc::{format, vec};
 use core::any::Any;
 use core::arch::asm;
 
-use arbitrary_int::{u2, u27};
+use arbitrary_int::prelude::*;
 
 use crate::cop0::{make_entry_hi, make_entry_lo, CauseException, Coherency, Pagemask, Status};
 use crate::exception_handler::expect_exception;

@@ -4,7 +4,7 @@ use alloc::vec::Vec;
 use core::any::Any;
 use core::arch::asm;
 
-use arbitrary_int::{u2, u27};
+use arbitrary_int::prelude::*;
 
 use crate::assembler::{Assembler, GPR};
 use crate::cop0::{make_entry_hi, make_entry_lo, Cause, CauseException, Coherency, Pagemask};

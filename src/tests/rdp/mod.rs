@@ -4,7 +4,7 @@ use alloc::vec::Vec;
 use alloc::{format, vec};
 use core::any::Any;
 
-use arbitrary_int::u12;
+use arbitrary_int::prelude::*;
 
 use crate::graphics::color::{Color, RGBA5551};
 use crate::rdp::fixedpoint::U10_2;

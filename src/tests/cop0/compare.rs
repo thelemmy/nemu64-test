@@ -5,7 +5,7 @@ use alloc::vec::Vec;
 use core::any::Any;
 use core::arch::asm;
 
-use arbitrary_int::u2;
+use arbitrary_int::prelude::*;
 
 use crate::assembler::{Assembler, GPR};
 use crate::cop0::{cause, compare, count, preset_cause_to_copindex2, set_compare, RegisterIndex};

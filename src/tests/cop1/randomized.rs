@@ -5,7 +5,7 @@ use alloc::vec::Vec;
 use core::any::Any;
 use core::arch::asm;
 
-use arbitrary_int::u2;
+use arbitrary_int::prelude::*;
 use oorandom::{Rand32, Rand64};
 
 use crate::assembler::{Assembler, FR};

@@ -5,7 +5,7 @@ use alloc::vec::Vec;
 use core::any::Any;
 use core::mem::size_of;
 
-use arbitrary_int::u12;
+use arbitrary_int::prelude::*;
 use oorandom::Rand32;
 
 use crate::graphics::color::{Color, ARGB8888};

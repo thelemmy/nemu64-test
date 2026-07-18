@@ -5,7 +5,7 @@ use alloc::vec::Vec;
 use core::any::Any;
 use core::cmp::{min, Ordering};
 
-use arbitrary_int::{u2, u27, u5};
+use arbitrary_int::prelude::*;
 
 use crate::assembler::GPR;
 use crate::cop0::{count, set_status, Status};

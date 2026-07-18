@@ -8,7 +8,7 @@ use alloc::vec::Vec;
 use core::any::Any;
 use core::arch::{asm, naked_asm};
 
-use arbitrary_int::{u26, u5};
+use arbitrary_int::prelude::*;
 
 use crate::assembler::{
     Assembler, Cop1Condition, Cop1FloatInstruction, Opcode, RegimmOpcode, FR, GPR,

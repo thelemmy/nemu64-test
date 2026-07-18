@@ -176,7 +176,6 @@ pub struct FCSR {
 }
 
 impl FCSR {
-    pub const ZERO: Self = Self::new_with_raw_value(0);
     pub const DEFAULT: Self = Self::ZERO
         .with_enable_invalid_operation(true)
         .with_flush_denorm_to_zero(true);

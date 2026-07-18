@@ -2,7 +2,7 @@ use alloc::format;
 use alloc::string::{String, ToString};
 use core::arch::asm;
 
-use arbitrary_int::{u19, u2, u20, u27, u31, u41};
+use arbitrary_int::prelude::*;
 use bitbybit::{bitenum, bitfield};
 
 use crate::exception_handler::expect_exception;
@@ -175,7 +175,6 @@ pub struct Status {
 
 impl Status {
     // Make sure to enable fpu64 by default as the compiled Rust is allowed to use all registers
-    pub const ZERO: Status = Status::new_with_raw_value(0);
     pub const DEFAULT: Status = Self::ZERO.with_cop1usable(true).with_fpu64(true);
     pub const ADDRESSING_MODE_64_BIT: Status =
         Self::DEFAULT.with_kx(true).with_sx(true).with_ux(true);

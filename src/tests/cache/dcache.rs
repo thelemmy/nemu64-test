@@ -6,7 +6,7 @@ use alloc::vec::Vec;
 use core::any::Any;
 use core::arch::asm;
 
-use arbitrary_int::{u2, u20, u27, u29, Number};
+use arbitrary_int::prelude::*;
 
 use crate::assembler::{Assembler, GPR};
 use crate::cop0;
