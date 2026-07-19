@@ -36,6 +36,11 @@ poorly_understood_quirk = ["quick"]
 # The filled-triangle RDP tests. Disabled by default because they aren't stable on hardware yet.
 experimental_rdp = []
 
+# Renders the currently running test to the screen before it runs, so a hang or panic during
+# emulator bringup shows the culprit instead of a black screen. Disabled by default: the per-test
+# rendering roughly triples the suite's runtime and has been seen to wedge real hardware mid-run.
+live_progress = []
+
 vmulf_stress_test = []
 vmulu_stress_test = []
 vmulq_stress_test = []

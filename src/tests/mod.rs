@@ -714,14 +714,18 @@ pub fn run() {
             text_out("...\n");
 
             // Show the currently running test on screen before we run it, so a hang or panic
-            // leaves its name visible instead of a black screen.
-            FramebufferConsole::instance().lock().set_header(&format!(
-                "Running [{}/{}]: {}",
-                index + 1,
-                tests.len(),
-                test.name()
-            ));
-            crate::render_console();
+            // leaves its name visible instead of a black screen. Off by default: rendering
+            // between every test triples the suite's runtime and the per-test framebuffer
+            // traffic has been seen to wedge real hardware mid-run.
+            if cfg!(feature = "live_progress") {
+                FramebufferConsole::instance().lock().set_header(&format!(
+                    "Running [{}/{}]: {}",
+                    index + 1,
+                    tests.len(),
+                    test.name()
+                ));
+                crate::render_console();
+            }
 
             let mut time = 0u32;
             if values.len() == 0 {
