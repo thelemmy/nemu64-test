@@ -350,6 +350,7 @@ fn emit_measurement_loop(code: &mut Vec<u32>, call_preconditions: bool) {
 struct MeasurementProgram {
     buffer: UncachedHeapMemory<u32>,
     memory: UncachedHeapMemory<u64>,
+    word_offset: usize,
     body_offset: usize,
 }
 
@@ -371,11 +372,28 @@ impl MeasurementProgram {
 
         // The buffer is written through the uncached view and executed through the cached view;
         // new_with_align already invalidated the icache for it, so that is coherent.
-        let mut buffer = UncachedHeapMemory::<u32>::new_with_align(code.len(), 64);
+        //
+        // Keep the program's icache lines clear of the exception vectors' lines (0x80000000 to
+        // 0x80000200, indexes 0..16 of the direct-mapped icache): if they overlapped, running the
+        // program would evict a vector line and exception-timing tests would measure its reload
+        // (~43 extra cycles). Over-allocate and shift the program within the buffer if needed.
+        let lines = code.len() * 4 / 32 + 1;
+        let mut buffer =
+            UncachedHeapMemory::<u32>::new_with_align(code.len() + (16 + lines) * 8, 64);
+        let base_addr = MemoryMap::physical_to_cached::<u8>(buffer.start_physical()) as usize;
+        let base_line = (base_addr >> 5) & 0x1FF;
+        let shift_lines = if base_line < 16 {
+            16 - base_line
+        } else if base_line + lines > 512 {
+            (512 - base_line) + 16
+        } else {
+            0
+        };
+        let word_offset = shift_lines * 8;
         for (i, &word) in code.iter().enumerate() {
-            buffer.write(i, word);
+            buffer.write(word_offset + i, word);
         }
-        let program_addr = MemoryMap::physical_to_cached::<u8>(buffer.start_physical()) as usize;
+        let program_addr = base_addr + word_offset * 4;
         let body_addr = program_addr + body_offset * 4;
 
         let mut memory =
@@ -406,6 +424,7 @@ impl MeasurementProgram {
         Self {
             buffer,
             memory,
+            word_offset,
             body_offset,
         }
     }
@@ -419,8 +438,8 @@ impl MeasurementProgram {
         exception_timing: ExceptionTimingMode,
     ) -> (u32, u32) {
         // Execute from a cached (0x8xxxxxxx) address, otherwise the CPU mostly waits on memory
-        let program_addr =
-            MemoryMap::physical_to_cached::<u8>(self.buffer.start_physical()) as usize;
+        let program_addr = self.word_offset * 4
+            + MemoryMap::physical_to_cached::<u8>(self.buffer.start_physical()) as usize;
         let body_addr = program_addr + self.body_offset * 4;
 
         run_measurement(
