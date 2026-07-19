@@ -655,6 +655,83 @@ impl Test for PreciseMeasureJustNOPs {
     }
 }
 
+/// Times MULT/DIV (and friends) followed by MFLO after a varying number of NOPs. If MFLO
+/// interlocks until the operation completes, the total stays flat at the operation's latency
+/// until the NOPs alone exceed it.
+pub struct HiLoInterlockTiming {}
+
+impl Test for HiLoInterlockTiming {
+    fn name(&self) -> &str {
+        "Timing: MULT/DIV to MFLO interlock"
+    }
+
+    fn level(&self) -> Level {
+        Level::Timing
+    }
+
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        // (name, op, nops between op and MFLO, expected cycles)
+        // Measured behavior: the multiply/divide stalls the pipeline for its full duration
+        // (MULT(U)=5, DMULT(U)=8, DIV(U)=37, DDIV(U)=69) - nothing executes in its shadow, so
+        // the total is always latency + nops + 1. MFLO never has to wait, which is also why it
+        // returns correct results with no gap at all.
+        const OP_MULT: u32 = Assembler::make_mult(GPR::A0, GPR::V0);
+        const OP_MULTU: u32 = Assembler::make_multu(GPR::A0, GPR::V0);
+        const OP_DMULT: u32 = Assembler::make_dmult(GPR::A0, GPR::V0);
+        const OP_DMULTU: u32 = Assembler::make_dmultu(GPR::A0, GPR::V0);
+        const OP_DIV: u32 = Assembler::make_div(GPR::A0, GPR::V0);
+        const OP_DIVU: u32 = Assembler::make_divu(GPR::A0, GPR::V0);
+        const OP_DDIV: u32 = Assembler::make_ddiv(GPR::A0, GPR::V0);
+        const OP_DDIVU: u32 = Assembler::make_ddivu(GPR::A0, GPR::V0);
+        const VALUES: &[(&str, u32, u32, u32)] = &[
+            ("MULT; MFLO", OP_MULT, 0, 6),
+            ("MULT; 1 NOP; MFLO", OP_MULT, 1, 7),
+            ("MULT; 4 NOPs; MFLO", OP_MULT, 4, 10),
+            ("MULT; 8 NOPs; MFLO", OP_MULT, 8, 14),
+            ("MULTU; MFLO", OP_MULTU, 0, 6),
+            ("MULTU; 4 NOPs; MFLO", OP_MULTU, 4, 10),
+            ("DMULT; MFLO", OP_DMULT, 0, 9),
+            ("DMULT; 1 NOP; MFLO", OP_DMULT, 1, 10),
+            ("DMULT; 7 NOPs; MFLO", OP_DMULT, 7, 16),
+            ("DMULT; 11 NOPs; MFLO", OP_DMULT, 11, 20),
+            ("DMULTU; MFLO", OP_DMULTU, 0, 9),
+            ("DIV; MFLO", OP_DIV, 0, 38),
+            ("DIV; 1 NOP; MFLO", OP_DIV, 1, 39),
+            ("DIV; 36 NOPs; MFLO", OP_DIV, 36, 74),
+            ("DIV; 40 NOPs; MFLO", OP_DIV, 40, 78),
+            ("DIVU; MFLO", OP_DIVU, 0, 38),
+            ("DDIV; MFLO", OP_DDIV, 0, 70),
+            ("DDIV; 1 NOP; MFLO", OP_DDIV, 1, 71),
+            ("DDIV; 68 NOPs; MFLO", OP_DDIV, 68, 138),
+            ("DDIV; 72 NOPs; MFLO", OP_DDIV, 72, 142),
+            ("DDIVU; MFLO", OP_DDIVU, 0, 70),
+        ];
+        crate::tests::boxed_values(VALUES)
+    }
+
+    fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
+        match (*value).downcast_ref::<(&str, u32, u32, u32)>() {
+            Some((_name, op, nops, expected_cycles)) => {
+                let mut body = Vec::new();
+                body.push(*op);
+                for _ in 0..*nops {
+                    body.push(Assembler::make_nop());
+                }
+                body.push(Assembler::make_mflo(GPR::A2));
+                assert_cycles_with_codegen(
+                    *expected_cycles,
+                    0x1234_5678_9ABC_DEF0,
+                    0x0000_0000_7654_3210,
+                    Status::DEFAULT,
+                    ExceptionTimingMode::Off,
+                    &body,
+                )
+            }
+            _ => Err(format!("Unexpected pattern")),
+        }
+    }
+}
+
 pub struct SingleInstructionCPUTiming {}
 
 impl Test for SingleInstructionCPUTiming {
