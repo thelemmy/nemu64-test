@@ -11,6 +11,8 @@ use crate::exception_handler::expect_exception;
 use crate::tests::soft_asserts::{soft_assert_eq, soft_assert_range};
 use crate::tests::{Level, Test};
 
+pub mod reserved;
+
 pub struct Break {}
 
 impl Test for Break {
