@@ -27,7 +27,7 @@ cd nemu64-test
 ```
 3. Install prerequisites:
 ```
-cargo +stable install nust64
+cargo +stable install nust64 --version 0.4.1 --locked --force
 ```
 4. Run `cargo run --release` to build the test rom.
 
