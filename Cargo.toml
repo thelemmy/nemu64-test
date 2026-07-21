@@ -64,6 +64,14 @@ cop1_stress_test = []
 # This probably occurs because the current architecture target is set as a 32-bit system (attempting to use 64-bit will cause other compiler problems).
 opt-level = 1
 
+[profile.release]
+# Fat LTO across all crates. This replaces the old -Clinker-plugin-lto (cross-language LTO,
+# which bought us nothing: there is no C in the build) and lets rustc emit the final machine
+# code itself. That honours the target's +noabicalls feature, so the objects are static/non-PIC
+# and rust-lld no longer warns about mixing abicalls with non-abicalls code - and the ROM comes
+# out ~1 MB smaller as a bonus.
+lto = "fat"
+
 [dependencies]
 linked_list_allocator = "0.10.5"
 spinning_top = "0.2.5" # 0.3 exists, but linked_list_allocator pins 0.2 - staying on one shared copy

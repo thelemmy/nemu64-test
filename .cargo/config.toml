@@ -7,7 +7,9 @@ build-std = ["core", "alloc"]
 json-target-spec = true
 
 [target.mips-nintendo64-none]
-rustflags = ["-Clinker-plugin-lto"]
+# LTO now lives in [profile.release] (lto = "fat") instead of -Clinker-plugin-lto. The static,
+# non-PIC codegen is driven by "features": "+noabicalls" in mips-nintendo64-none.json.
+rustflags = []
 
 # runner specifies a program that cargo automatically executes after compiling (using the 'cargo run' command).
 # Cargo will append this command with the path to the ELF file, so make sure the command ends with '--elf'.
