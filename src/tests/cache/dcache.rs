@@ -1517,6 +1517,10 @@ impl Test for UnusedBitsInCacheReadWrite {
             CACHE {LOAD_CACHE_OP}, 0({cached})
             NOP; NOP
             MFC0 {result0}, ${TAGLO_REG}
+
+            // Invalidate to ensure that no dirty invalid cache line sticks around that might affect other tests
+            NOP; NOP
+            CACHE {INVALIDATE_CACHE_OP}, 0({cached})
             ",
             cached = in(reg) data,
 
