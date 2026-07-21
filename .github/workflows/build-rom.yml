@@ -41,7 +41,8 @@ jobs:
         run: rustup toolchain install stable --profile minimal
 
       - name: Install nust64
-        run: cargo +stable install nust64 --locked
+        # Pinned: nust64 bundles the IPL3; an unpinned bump can break booting.
+        run: cargo +stable install nust64 --version 0.4.1 --locked
 
       - name: Build ROM (${{ matrix.name }})
         run: cargo run --release ${{ matrix.args }}
