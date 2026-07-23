@@ -1546,6 +1546,106 @@ impl Test for UnusedBitsInCacheReadWrite {
     }
 }
 
+/// A cache line marked dirty only via Cache(IndexStoreTag) - as opposed to being written by a
+/// store - is not treated as dirty for write-back: Cache(IndexWriteBackInvalidate) drops it
+/// without writing its (stale) contents back to memory. A genuinely store-dirtied line is
+/// written back, for contrast. Both tags point at the real backing memory, so a spurious
+/// write-back would be observable.
+pub struct IndexStoreTagDirtyIsNotWrittenBack {}
+
+impl Test for IndexStoreTagDirtyIsNotWrittenBack {
+    fn name(&self) -> &str {
+        "cache: IndexStoreTag-dirty line is not written back"
+    }
+
+    fn level(&self) -> Level {
+        Level::Weird
+    }
+
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
+
+    fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
+        let layout = Layout::from_size_align(16 * 1024, 8 * 1024).unwrap();
+        let data = unsafe { alloc(layout) } as *mut u8;
+
+        let taglo_dirty = TagLo::DEFAULT
+            .with_p_state(TagLoPState::Dirty)
+            .with_p_tag_lo(u20::extract_u32(
+                MemoryMap::cached_to_physical_mut(data) as u32,
+                12,
+            ));
+
+        let store_dirty_result: u32;
+        let store_tag_dirty_result: u32;
+        unsafe {
+            const STORE_CACHE_OP: u8 = CacheOp::DataIndexStoreTag.raw_value().value();
+            const WRITE_BACK_INVALIDATE_OP: u8 =
+                CacheOp::DataIndexWriteBackInvalidate.raw_value().value();
+            asm!("
+            .set noat
+            .set noreorder
+
+            // Reference: a line dirtied by an actual store IS written back.
+            CACHE {WRITE_BACK_INVALIDATE_OP}, 0({cached})
+            SW {baseline}, 0({uncached})
+            LW $0, 0({cached})
+            SW {store_dirty}, 0({cached})
+            CACHE {WRITE_BACK_INVALIDATE_OP}, 0({cached})
+            LW {store_dirty_result}, 0({uncached})
+
+            // Subject: a line marked dirty only via IndexStoreTag is NOT written back. The cache
+            // holds {cache_data}; memory is then set to {memory_data} behind its back, so a
+            // write-back would revert memory to {cache_data}.
+            CACHE {WRITE_BACK_INVALIDATE_OP}, 16({cached})
+            SW {cache_data}, 16({uncached})
+            LW $0, 16({cached})
+            SW {memory_data}, 16({uncached})
+            MTC0 {taglo_dirty}, ${TAGLO_REG}
+            NOP; NOP
+            CACHE {STORE_CACHE_OP}, 16({cached})
+            CACHE {WRITE_BACK_INVALIDATE_OP}, 16({cached})
+            LW {store_tag_dirty_result}, 16({uncached})
+            ",
+            cached = in(reg) data,
+            uncached = in(reg) MemoryMap::uncached_mut(data),
+
+            baseline = in(reg) 0xAAAA_AAAAu32,
+            store_dirty = in(reg) 0x1111_2222u32,
+            cache_data = in(reg) 0xBBBB_BBBBu32,
+            memory_data = in(reg) 0x3333_4444u32,
+
+            store_dirty_result = out(reg) store_dirty_result,
+            store_tag_dirty_result = out(reg) store_tag_dirty_result,
+
+            taglo_dirty = in(reg) taglo_dirty.raw_value(),
+
+            TAGLO_REG = const RegisterIndex::TagLo.raw_value().value(),
+            STORE_CACHE_OP = const STORE_CACHE_OP,
+            WRITE_BACK_INVALIDATE_OP = const WRITE_BACK_INVALIDATE_OP,
+            )
+        }
+
+        unsafe {
+            dealloc(data, layout);
+        }
+
+        soft_assert_eq(
+            store_dirty_result,
+            0x1111_2222,
+            "A store-dirtied cache line is written back by IndexWriteBackInvalidate",
+        )?;
+        soft_assert_eq(
+            store_tag_dirty_result,
+            0x3333_4444,
+            "A line marked dirty via IndexStoreTag is not written back",
+        )?;
+
+        Ok(())
+    }
+}
+
 fn test_invalidate_keeps_dirty_flag<const INVALIDATE_CACHE_OP: u8>() -> Result<(), String> {
     let layout = Layout::from_size_align(16 * 1024, 8 * 1024).unwrap();
     let data = unsafe { alloc(layout) } as *mut u8;
