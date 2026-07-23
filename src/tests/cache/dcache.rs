@@ -1517,6 +1517,11 @@ impl Test for UnusedBitsInCacheReadWrite {
             CACHE {LOAD_CACHE_OP}, 0({cached})
             NOP; NOP
             MFC0 {result0}, ${TAGLO_REG}
+
+            // Invalidate the line without writing back the deliberately malformed tag.
+            MTC0 $0, ${TAGLO_REG}
+            NOP; NOP
+            CACHE {STORE_CACHE_OP}, 0({cached})
             ",
             cached = in(reg) data,
 
