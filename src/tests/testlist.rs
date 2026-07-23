@@ -508,6 +508,7 @@ fn default_tests() -> Vec<Box<dyn Test>> {
         Box::new(super::cache::dcache::WriteCacheLineManually01 {}),
         Box::new(super::cache::dcache::MoveCacheLine {}),
         Box::new(super::cache::dcache::UnusedBitsInCacheReadWrite {}),
+        Box::new(super::cache::dcache::IndexStoreTagDirtyIsNotWrittenBack {}),
         Box::new(super::cache::dcache::HitInvalidateKeepsDirtyFlag {}),
         Box::new(super::cache::dcache::HitWriteBackInvalidateKeepsDirtyFlag {}),
         Box::new(super::cache::dcache::IndexWriteBackInvalidateKeepsDirtyFlag {}),
