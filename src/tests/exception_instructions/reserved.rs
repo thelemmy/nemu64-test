@@ -5,6 +5,8 @@ use alloc::vec::Vec;
 use core::any::Any;
 use core::arch::asm;
 
+use arbitrary_int::prelude::*;
+
 use crate::cop0;
 use crate::cop1::{set_fcsr, FCSR};
 use crate::exception_handler::{drain_seen_exception, ExceptionContext};
@@ -463,5 +465,352 @@ impl Test for COP1UnusableTakesPrecedence {
                 Ok(())
             }
         }
+    }
+}
+
+// -------------------------------------------------------------------------------------------------
+// Are the CO-space operand bits don't-care?
+//
+// The sweeps above only exercise CO-space words with all operand bits zero. These probe whether
+// the remaining bits - rs-low (24..=21) and the rt/rd/imm field (20..=6) - are ignored by the
+// decoder. Classic MIPS decode dispatches on the funct field alone, so every pattern below should
+// behave like the canonical (all-zero) encoding: defined functs execute, funct 0x10 raises RI, and
+// reserved functs stay no-ops.
+// -------------------------------------------------------------------------------------------------
+
+/// Operand-bit patterns OR'd into a CO-space word (bits 24..=6). If only the funct field is
+/// decoded, every one behaves like 0x00000000.
+const CO_GARBAGE: [u32; 5] = [
+    0x0000_0000, // control: canonical encoding
+    0x01E0_0000, // rs-low (bits 24..=21) all set
+    0x001F_FFC0, // rt/rd/imm (bits 20..=6) all set
+    0x01FF_FFC0, // every don't-care bit (24..=6) set
+    0x0020_0000, // a single low rs bit (bit 21)
+];
+
+/// A spare, high TLB index used to prime a distinctive entry for the TLBR/TLBP probes.
+const CO_TLB_INDEX: u32 = 30;
+const CO_TLB_ASID: u8 = 0xAB;
+
+fn co_tlb_entry_hi() -> u64 {
+    cop0::make_entry_hi(CO_TLB_ASID, u27::new(0x12345), u2::new(0))
+}
+
+/// Writes a distinctive entry to [CO_TLB_INDEX] so TLBR/TLBP have something recognisable to find.
+fn prime_co_tlb_entry() {
+    unsafe {
+        cop0::write_tlb_untyped(
+            CO_TLB_INDEX,
+            0, // 4K page
+            cop0::make_entry_lo(false, true, false, cop0::Coherency::Cached, 0x111),
+            cop0::make_entry_lo(false, true, false, cop0::Coherency::Cached, 0x222),
+            co_tlb_entry_hi(),
+        );
+    }
+}
+
+/// Invalidates [CO_TLB_INDEX] and restores EntryHi so neighbouring tests aren't disturbed.
+fn restore_co_tlb_entry(saved_entry_hi: u64) {
+    unsafe {
+        cop0::write_tlb_untyped(
+            CO_TLB_INDEX,
+            0,
+            0,
+            0,
+            cop0::make_entry_hi(1, u27::new(0), u2::new(0)),
+        );
+        cop0::set_entry_hi(saved_entry_hi);
+    }
+}
+
+/// Loads recognisable non-matching values into the registers TLBR overwrites, so a no-op leaves
+/// them detectably unchanged. PageMask differs from the primed 4K entry.
+fn set_tlb_sentinels() {
+    unsafe {
+        cop0::set_entry_hi(0);
+        cop0::set_entry_lo0(0);
+        cop0::set_entry_lo1(0);
+        cop0::set_pagemask(0x6000); // 16K
+        cop0::set_index(CO_TLB_INDEX);
+    }
+}
+
+fn read_tlb_regs() -> (u64, u32, u32, u32) {
+    (
+        cop0::entry_hi(),
+        cop0::entry_lo0(),
+        cop0::entry_lo1(),
+        cop0::pagemask(),
+    )
+}
+
+/// TLBR (funct 1) executes for any value of the don't-care operand bits: reading the primed entry
+/// back through each garbage encoding yields the same registers as the canonical TLBR.
+pub struct COOperandBitsTLBRExecutes {}
+
+impl Test for COOperandBitsTLBRExecutes {
+    fn name(&self) -> &str {
+        "CO operand bits: TLBR executes regardless"
+    }
+
+    fn level(&self) -> Level {
+        Level::Weird
+    }
+
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        CO_GARBAGE
+            .iter()
+            .map(|g| Box::new(*g) as Box<dyn Any>)
+            .collect()
+    }
+
+    fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
+        let garbage = *value.downcast_ref::<u32>().unwrap();
+        let saved_hi = cop0::entry_hi();
+        prime_co_tlb_entry();
+
+        // Reference: what a canonical TLBR of the primed index yields.
+        set_tlb_sentinels();
+        unsafe { cop0::tlbr() };
+        let reference = read_tlb_regs();
+
+        // The garbage-encoded TLBR.
+        set_tlb_sentinels();
+        let word = (COP0_CO | 1) | garbage;
+        let exc = run_isolated(word);
+        let got = read_tlb_regs();
+
+        restore_co_tlb_entry(saved_hi);
+
+        if let Some((context, count)) = exc {
+            return Err(format!(
+                "TLBR {word:#010x} raised {count} exception(s); CauseRaw={:#010x}",
+                context.cause.raw_value()
+            ));
+        }
+        soft_assert_eq(
+            got.0,
+            reference.0,
+            &format!("TLBR {word:#010x}: EntryHi (sentinel value means it decoded as a no-op)"),
+        )?;
+        soft_assert_eq(got.1, reference.1, &format!("TLBR {word:#010x}: EntryLo0"))?;
+        soft_assert_eq(got.2, reference.2, &format!("TLBR {word:#010x}: EntryLo1"))?;
+        soft_assert_eq(got.3, reference.3, &format!("TLBR {word:#010x}: PageMask"))?;
+        Ok(())
+    }
+}
+
+/// TLBP (funct 8) executes for any value of the don't-care operand bits: it finds the primed entry
+/// and writes its index, rather than leaving the sentinel index untouched.
+pub struct COOperandBitsTLBPExecutes {}
+
+impl Test for COOperandBitsTLBPExecutes {
+    fn name(&self) -> &str {
+        "CO operand bits: TLBP executes regardless"
+    }
+
+    fn level(&self) -> Level {
+        Level::Weird
+    }
+
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        CO_GARBAGE
+            .iter()
+            .map(|g| Box::new(*g) as Box<dyn Any>)
+            .collect()
+    }
+
+    fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
+        let garbage = *value.downcast_ref::<u32>().unwrap();
+        let saved_hi = cop0::entry_hi();
+        prime_co_tlb_entry();
+
+        unsafe {
+            cop0::set_entry_hi(co_tlb_entry_hi()); // match the primed entry
+            cop0::set_index(0x1F); // sentinel (differs from the primed index, P-bit clear)
+        }
+        let word = (COP0_CO | 8) | garbage;
+        let exc = run_isolated(word);
+        let got_index = cop0::index();
+
+        restore_co_tlb_entry(saved_hi);
+
+        if let Some((context, count)) = exc {
+            return Err(format!(
+                "TLBP {word:#010x} raised {count} exception(s); CauseRaw={:#010x}",
+                context.cause.raw_value()
+            ));
+        }
+        soft_assert_eq(
+            got_index,
+            CO_TLB_INDEX,
+            &format!(
+                "TLBP {word:#010x}: Index (sentinel 0x1F means no-op; bit 31 set means no match)"
+            ),
+        )?;
+        Ok(())
+    }
+}
+
+/// ERET (funct 24) executes for any value of the don't-care operand bits: with Status.EXL set
+/// beforehand, executing it clears EXL. A no-op would leave EXL set.
+pub struct COOperandBitsERETExecutes {}
+
+impl Test for COOperandBitsERETExecutes {
+    fn name(&self) -> &str {
+        "CO operand bits: ERET executes regardless"
+    }
+
+    fn level(&self) -> Level {
+        Level::Weird
+    }
+
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        CO_GARBAGE
+            .iter()
+            .map(|g| Box::new(*g) as Box<dyn Any>)
+            .collect()
+    }
+
+    fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
+        let garbage = *value.downcast_ref::<u32>().unwrap();
+        let saved_status = cop0::status();
+
+        unsafe { cop0::set_status(saved_status.with_exl(true)) };
+        let word = (COP0_CO | 24) | garbage;
+        // run_isolated pre-arms EPC to its landing pad, so ERET returns cleanly.
+        let exc = run_isolated(word);
+        let exl_after = cop0::status().exl();
+        unsafe { cop0::set_status(saved_status) };
+
+        if let Some((context, count)) = exc {
+            return Err(format!(
+                "ERET {word:#010x} raised {count} exception(s); CauseRaw={:#010x}",
+                context.cause.raw_value()
+            ));
+        }
+        soft_assert_eq(
+            exl_after,
+            false,
+            &format!("ERET {word:#010x}: Status.EXL still set means it decoded as a no-op"),
+        )?;
+        Ok(())
+    }
+}
+
+/// funct 0x10 (RFE) raises RI for any value of the don't-care operand bits.
+pub struct COOperandBitsRFETraps {}
+
+impl Test for COOperandBitsRFETraps {
+    fn name(&self) -> &str {
+        "CO operand bits: funct 0x10 raises RI regardless"
+    }
+
+    fn level(&self) -> Level {
+        Level::Weird
+    }
+
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        CO_GARBAGE
+            .iter()
+            .map(|g| Box::new((COP0_CO | RFE_FUNCT) | g) as Box<dyn Any>)
+            .collect()
+    }
+
+    fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
+        let word = *value.downcast_ref::<u32>().unwrap();
+        match run_isolated(word) {
+            None => Err(format!(
+                "Expected RI but {word:#010x} was ignored (no exception)"
+            )),
+            Some((context, count)) => {
+                soft_assert_eq(
+                    count,
+                    1,
+                    &format!("{word:#010x}: expected exactly one exception"),
+                )?;
+                let code = (context.cause.raw_value() >> 2) & 0x1F;
+                soft_assert_eq(
+                    code,
+                    RI_CODE,
+                    &format!("{word:#010x}: exception code (want RI=10)"),
+                )?;
+                soft_assert_eq(
+                    unsafe { *(context.exceptpc as *const u32) },
+                    word,
+                    &format!("{word:#010x}: ExceptPC points to wrong instruction"),
+                )?;
+                Ok(())
+            }
+        }
+    }
+}
+
+/// A few reserved functs (not used by emux) stay no-ops even with operand bits set.
+const CO_RESERVED_PROBE_FUNCTS: [u32; 4] = [0x03, 0x09, 0x1F, 0x3F];
+
+pub struct COOperandBitsReservedStayNops {}
+
+impl Test for COOperandBitsReservedStayNops {
+    fn name(&self) -> &str {
+        "CO operand bits: reserved functs stay no-ops"
+    }
+
+    fn level(&self) -> Level {
+        Level::Weird
+    }
+
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        let mut words = Vec::new();
+        for funct in CO_RESERVED_PROBE_FUNCTS.iter() {
+            for garbage in CO_GARBAGE.iter() {
+                words.push(Box::new((COP0_CO | funct) | garbage) as Box<dyn Any>);
+            }
+        }
+        words
+    }
+
+    fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
+        let word = *value.downcast_ref::<u32>().unwrap();
+
+        let index = cop0::index();
+        let entry_hi = cop0::entry_hi();
+        let entry_lo0 = cop0::entry_lo0_64();
+        let entry_lo1 = cop0::entry_lo1_64();
+        let pagemask = cop0::pagemask();
+
+        if let Some((context, count)) = run_isolated(word) {
+            return Err(format!(
+                "Expected no-op but {word:#010x} raised {count} exception(s); CauseRaw={:#010x}",
+                context.cause.raw_value()
+            ));
+        }
+
+        soft_assert_eq(
+            cop0::index(),
+            index,
+            &format!("{word:#010x}: Index changed"),
+        )?;
+        soft_assert_eq(
+            cop0::entry_hi(),
+            entry_hi,
+            &format!("{word:#010x}: EntryHi changed"),
+        )?;
+        soft_assert_eq(
+            cop0::entry_lo0_64(),
+            entry_lo0,
+            &format!("{word:#010x}: EntryLo0 changed"),
+        )?;
+        soft_assert_eq(
+            cop0::entry_lo1_64(),
+            entry_lo1,
+            &format!("{word:#010x}: EntryLo1 changed"),
+        )?;
+        soft_assert_eq(
+            cop0::pagemask(),
+            pagemask,
+            &format!("{word:#010x}: PageMask changed"),
+        )?;
+        Ok(())
     }
 }
