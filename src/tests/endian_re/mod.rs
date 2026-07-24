@@ -691,6 +691,144 @@ impl Test for ReStoreMatrix {
     }
 }
 
+/// The linked load/store variants (LL/LLD/SC/SCD) obey Reverse Endian exactly like the plain
+/// loads/stores. LL reads the distinct fixture and SC writes a *different* address (the store
+/// area); on the VR4300 that still succeeds because SC gates on the LLBit alone and ignores
+/// LLAddr - which also stops the load and store checks from sharing a location.
+pub struct ReLinkedLoadStore;
+
+impl Test for ReLinkedLoadStore {
+    fn name(&self) -> &str {
+        "RE user mode LL/LLD/SC/SCD: swap + link (LLAddr ignored)"
+    }
+
+    fn level(&self) -> Level {
+        Level::BasicFunctionality
+    }
+
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        Vec::new()
+    }
+
+    fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
+        struct LinkedCase {
+            name: &'static str,
+            emit_load: fn(GPR, i16, GPR) -> u32,
+            emit_store: fn(GPR, i16, GPR) -> u32,
+            bytes: usize,
+            signed: bool,
+            value: u64,
+            mode64_only: bool,
+        }
+        let cases = [
+            LinkedCase {
+                name: "LL/SC",
+                emit_load: Assembler::make_ll,
+                emit_store: Assembler::make_sc,
+                bytes: 4,
+                signed: true,
+                value: 0xb4c5d6e7,
+                mode64_only: false,
+            },
+            LinkedCase {
+                name: "LLD/SCD",
+                emit_load: Assembler::make_lld,
+                emit_store: Assembler::make_scd,
+                bytes: 8,
+                signed: false,
+                value: 0x1122334455667788,
+                mode64_only: true,
+            },
+        ];
+
+        for mode_64bit in [false, true] {
+            for memory_kind in [MemoryKind::Cached, MemoryKind::Uncached] {
+                for case in cases.iter() {
+                    if case.mode64_only && !mode_64bit {
+                        continue;
+                    }
+                    let mut harness = EndianHarness::new();
+                    harness.setup_mappings();
+                    harness.fill_fixture();
+                    harness.clear_store_area();
+
+                    // LL reads the distinct fixture; SC writes a different address (the store
+                    // area). That still succeeds because SC gates on the LLBit only, not on a match
+                    // with LLAddr - and it keeps the load and store checks on separate locations.
+                    let load_address = memory_kind.data_base() + DATA_OFFSET as u32;
+                    let store_address = memory_kind.data_base() + STORE_OFFSET as u32;
+                    let mut program = vec![
+                        Assembler::make_lui(GPR::T0, (load_address >> 16) as i16),
+                        Assembler::make_ori(GPR::T0, GPR::T0, load_address as u16),
+                        (case.emit_load)(GPR::T1, 0, GPR::T0),
+                        Assembler::make_move(GPR::T3, GPR::T1), // save loaded value before SC
+                        Assembler::make_lui(GPR::T0, (store_address >> 16) as i16),
+                        Assembler::make_ori(GPR::T0, GPR::T0, store_address as u16),
+                    ];
+                    if case.bytes == 8 {
+                        program.extend_from_slice(&load_u64_sequence(GPR::T1, GPR::T2, case.value));
+                    } else {
+                        let seq = load_u32_sequence(GPR::T1, case.value as u32);
+                        program.push(seq[0]);
+                        program.push(seq[1]);
+                    }
+                    program.push((case.emit_store)(GPR::T1, 0, GPR::T0));
+                    program.push(Assembler::make_syscall() | (0x2e3 << 6));
+                    let encoded = re_fetch_encode(&program);
+                    let entry = harness.write_program(true, &encoded);
+                    let label = format!(
+                        "{} {} load={:#010x} store={:#010x} value={:#018x}",
+                        case.name,
+                        memory_kind.name(),
+                        load_address,
+                        store_address,
+                        case.value
+                    );
+                    let context = run_re_entry_labeled(&label, entry, mode_64bit)?;
+                    if matches!(memory_kind, MemoryKind::Cached) {
+                        harness.writeback_dcache(store_address, 64);
+                    }
+
+                    // 1. The linked load byte-swaps exactly like the plain load.
+                    let load_off = (reverse_endian_effective_address(load_address, case.bytes)
+                        - load_address) as usize;
+                    let raw = read_be(&RE_FIXTURE, load_off, case.bytes);
+                    let expected_load = if case.signed {
+                        sign_extend(raw, (case.bytes * 8) as u8)
+                    } else {
+                        raw
+                    };
+                    soft_assert_eq2(context.t3, expected_load, || {
+                        format!("{} loaded value on {}", case.name, memory_kind.name())
+                    })?;
+
+                    // 2. The store-conditional succeeded on the LLBit alone, despite LL and SC
+                    //    addressing different locations.
+                    soft_assert_eq2(context.t1, 1u64, || {
+                        format!(
+                            "{} store-conditional result on {} (1 == succeeded to a different address)",
+                            case.name,
+                            memory_kind.name()
+                        )
+                    })?;
+
+                    // 3. The conditional store byte-swaps exactly like the plain store.
+                    let store_eff = reverse_endian_effective_address(store_address, case.bytes);
+                    let offset = (store_eff - memory_kind.data_base()) as usize;
+                    let bytes = harness.read_page_bytes(memory_kind, offset, case.bytes);
+                    let expected_store = case.value.to_be_bytes();
+                    for i in 0..case.bytes {
+                        soft_assert_eq2(bytes[i], expected_store[8 - case.bytes + i], || {
+                            format!("{} stored byte {} on {}", case.name, i, memory_kind.name())
+                        })?;
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
+}
+
 pub struct ReDcacheLineToggle;
 
 impl Test for ReDcacheLineToggle {
