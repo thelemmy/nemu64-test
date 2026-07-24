@@ -478,7 +478,7 @@ fn default_tests() -> Vec<Box<dyn Test>> {
         Box::new(super::arithmetic::ll_sc::SC {}),
         Box::new(super::arithmetic::ll_sc::LLD {}),
         Box::new(super::arithmetic::ll_sc::SCD {}),
-        Box::new(super::arithmetic::ll_sc::SCAliasOnSamePhysicalViaTLB {}),
+        Box::new(super::arithmetic::ll_sc::SCIgnoresLLAddr {}),
         Box::new(super::arithmetic::ll_sc::SCAfterERET {}),
         Box::new(super::arithmetic::ll_sc::SCDAfterERET {}),
         Box::new(super::cache::dcache::ReadCachedVsUncached {}),
