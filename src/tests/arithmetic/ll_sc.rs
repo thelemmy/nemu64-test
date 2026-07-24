@@ -306,11 +306,11 @@ impl Test for SCDAfterERET {
     }
 }
 
-pub struct SCAliasOnSamePhysicalViaTLB {}
+pub struct SCIgnoresLLAddr {}
 
-impl Test for SCAliasOnSamePhysicalViaTLB {
+impl Test for SCIgnoresLLAddr {
     fn name(&self) -> &str {
-        "LL/SC aliases via TLB use physical LLAddr"
+        "LL/SC: LLAddr is observational; SC gates on LLBit only"
     }
 
     fn level(&self) -> Level {
@@ -327,12 +327,16 @@ impl Test for SCAliasOnSamePhysicalViaTLB {
         }
 
         let mut data = UncachedHeapMemory::<u32>::new_with_align(1024, 4096);
-        data.write(0, 0x89AB_CDEF);
+        data.write(0, 0x89AB_CDEF); // LL target (offset 0)
+        data.write(0x10, 0xFFFF_FFFF); // SC target (offset 0x40 - a different cache line)
         let physical = data.start_physical() as u64;
         let pfn = (physical >> 12) as u32;
 
+        // Two virtual aliases of the same physical page. LL goes through one, SC through the other
+        // but at a different line, so they resolve to different physical addresses.
         let ll_virtual: u32 = 0x0DEA_0000;
         let sc_virtual: u32 = 0x0BEE_0000;
+        // LLAddr is the LL's physical address (offset 0), cache-line granular.
         let expected_lladdr = (physical >> 4) & 0x1FF_FFFF;
 
         unsafe {
@@ -358,27 +362,33 @@ impl Test for SCAliasOnSamePhysicalViaTLB {
 
         let ll_value: u32;
         let sc_status: u32;
-        let readback_value: u32;
+        let sc_readback: u32;
+        let ll_readback: u32;
         unsafe {
             asm!("
                 .set noat
                 LL $5, 0($3)
                 LUI $6, 0x1357
                 ORI $6, $6, 0x9BDF
-                SC $6, 0($4)
-                LW $7, 0($3)
+                SC $6, 0x40($4)
+                LW $7, 0x40($4)
+                LW $8, 0($3)
             ",
             in("$3") ll_virtual, in("$4") sc_virtual,
-            out("$5") ll_value, out("$6") sc_status, out("$7") readback_value);
+            out("$5") ll_value, out("$6") sc_status,
+            out("$7") sc_readback, out("$8") ll_readback);
         }
 
-        soft_assert_eq(ll_value, 0x89AB_CDEF, "LL value through first alias")?;
-        soft_assert_eq(sc_status, 1, "SC status through second alias")?;
-        soft_assert_eq(readback_value, 0x1357_9BDF, "Memory after SC through alias")?;
+        soft_assert_eq(ll_value, 0x89AB_CDEF, "LL value")?;
+        // SC succeeds even though its address is a different physical line than the LL: SC gates on
+        // the LLBit alone and never compares against LLAddr.
+        soft_assert_eq(sc_status, 1, "SC succeeds to a different line than the LL")?;
+        soft_assert_eq(sc_readback, 0x1357_9BDF, "SC stored to its own address")?;
+        soft_assert_eq(ll_readback, 0x89AB_CDEF, "SC left the LL line untouched")?;
         soft_assert_eq(
             cop0::lladdr(),
             expected_lladdr,
-            "LLAddr must track physical address",
+            "LLAddr tracks the LL physical line (observational only)",
         )?;
 
         unsafe {
