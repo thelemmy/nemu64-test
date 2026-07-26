@@ -55,6 +55,8 @@ impl Test for SoftFillRectangle16 {
             Box::new((3u32 * 4, 2u32 * 4 + 3, 13u32 * 4, 9u32 * 4 + 1)), // fractional top/bottom
             Box::new((3u32 * 4 + 3, 2u32 * 4 + 1, 13u32 * 4 + 3, 9u32 * 4 + 3)), // all fractional
             Box::new((5u32 * 4, 3u32 * 4, 31u32 * 4 + 3, 14u32 * 4)), // right just inside the scissor
+            Box::new((13u32 * 4, 2u32 * 4, 3u32 * 4, 9u32 * 4)), // inverted horizontally (xh > xl)
+            Box::new((3u32 * 4, 9u32 * 4, 13u32 * 4, 2u32 * 4)), // inverted vertically (yh > yl)
         ]
     }
 
@@ -197,7 +199,27 @@ fn fill_rect_differential(
     ));
     assembler.sync_full();
 
-    RDP::run_and_wait(&mut assembler);
+    // Bounded wait instead of RDP::run_and_wait: if a hostile input hangs the DP, report it
+    // instead of wedging the whole suite
+    let end = assembler.end();
+    unsafe {
+        RDP::start_running(assembler.start(), end);
+    }
+    let mut done = false;
+    for _ in 0..10_000_000 {
+        if RDP::current() == end as u32 {
+            done = true;
+            break;
+        }
+    }
+    if !done {
+        return Err(format!(
+            "RDP did not finish (hang?). CURRENT=0x{:x} END=0x{:x} STATUS=0x{:x}",
+            RDP::current(),
+            end,
+            RDP::status()
+        ));
+    }
 
     // Run the identical command words through the soft-RDP
     let stream: Vec<u64> = (0..assembler.len()).map(|i| assembler.word(i)).collect();

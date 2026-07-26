@@ -210,12 +210,13 @@ Behavior in fill cycle type, 16bpp **[verified: "SoftRDP: FillRectangle (fill mo
 - **Fractional scissor left/top** truncate: `x0 = max(xh, sc_left applied as >> 2)`, i.e. a
   scissor left of 2.25 still paints pixel 2. This is NOT the triangle-style `(edge + 3) >> 2`
   partial-pixel exclusion. **[verified: "SoftRDP: FillRectangle vs fractional scissor"]**
+- **Inverted rectangles** (xh > xl or yh > yl) paint nothing and do not hang the DP.
+  **[verified: "SoftRDP: FillRectangle (fill mode, 16bpp)"]**
 
 Still **[open]** for Fill_Rectangle:
 - 4bpp/8bpp framebuffers.
 - What fill mode writes into the hidden bits (coverage).
 - Fill_Rectangle in 1-cycle/2-cycle/copy cycle types.
-- xh > xl / yh > yl (inverted rectangles).
 
 ## 5. Triangles
 
