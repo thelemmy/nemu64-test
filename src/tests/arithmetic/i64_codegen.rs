@@ -1,13 +1,13 @@
 //! Pure-Rust self-checks that must hold regardless of how the compiler lowers them.
 //!
-//! These exist because i64 values were observed to come back corrupted on console (low word
-//! correct, high word holding a stray value) while the identical code was correct on a host - see
-//! docs/i64-value-corruption.md. Whether the cause is the toolchain or the CPU is still open.
-//! Nothing here touches hardware: every test computes a value two ways and compares.
+//! These exist because a `u64 as u32 as i32 as i64` truncation was silently dropped on console:
+//! LLVM marks the MIPS `SLL64_64` instruction that performs it as `isMoveReg`, so the register
+//! allocator deletes it as a redundant copy. See docs/i64-value-corruption.md.
 //!
-//! These reductions currently PASS: they are below the register-pressure threshold that triggers
-//! the corruption. They are kept as regression tests and as a record of what was already tried,
-//! so nobody re-reduces along the same dead end.
+//! Nothing here touches hardware: every test computes a value two ways and compares. These
+//! reductions PASS - they do not reach the conditions that trigger the deletion (the truncation
+//! gets folded into an `lw` instead). They are kept as regression tests and as a record of what
+//! was already tried, so nobody re-reduces along the same dead end.
 
 use alloc::boxed::Box;
 use alloc::format;
