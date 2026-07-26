@@ -149,9 +149,9 @@ pub(crate) fn one_cycle_fill_triangle(state: &State, mem: &mut impl Rdram, cmd: 
 
     // All edge math is i32: x accumulators live in a <<2-shifted 16.16 domain (2 fraction bits
     // more so the per-subpixel-line step keeps full precision), which still fits i32 for the
-    // whole 10.2 coordinate space. i64 must not be used here: the current MIPS backend
-    // miscompiles 64-bit pair arithmetic in this function (see REFERENCE.md), and the hardware's
-    // own edge registers aren't wider either.
+    // whole 10.2 coordinate space - the hardware's own edge registers aren't wider either.
+    // Spelling these as i64 also breaks on console: the values come back with a corrupted high
+    // word once this function is inlined into the command loop. See docs/mips-i64-codegen-bug.md.
     let right_major = (cmd[0] >> 55) & 1 != 0;
     let yl = sign_extend_14(((cmd[0] >> 32) & 0x3FFF) as u32);
     let ym = sign_extend_14(((cmd[0] >> 16) & 0x3FFF) as u32);

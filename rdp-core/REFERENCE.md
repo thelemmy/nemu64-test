@@ -263,9 +263,11 @@ Everything else about triangles (shade, texture, z), and all of TMEM, combiner, 
 general: **[open]**.
 
 > Toolchain note: the pre-differential triangle tests' hardware instability (which got them
-> feature-gated) is likely NOT an RDP phenomenon: the differential work exposed that the MIPS
-> backend miscompiles i64 pair arithmetic in exactly this kind of edge-walker code,
-> build-layout-dependently. rdp-core's walker uses i32 on purpose.
+> feature-gated) may well NOT be an RDP phenomenon. The differential work exposed that i64 values
+> in this edge-walker code come back corrupted on console once the function is inlined into the
+> command loop (low word right, high word garbage), while the same code is correct on a host.
+> rdp-core's walker uses i32 on purpose; details and the reproduction recipe are in
+> docs/mips-i64-codegen-bug.md.
 
 ## 6. RDRAM hidden bits
 
