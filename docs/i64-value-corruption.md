@@ -142,7 +142,6 @@ RUSTFLAGS="-Cllvm-args=-print-after-all -Cllvm-args=-filter-print-funcs=<mangled
 
 ## Upstream report
 
-Not filed yet. A report wants: the `isMoveReg` observation above, a `.ll` with an
-`sext_inreg`-from-i32 of a value that is also used whole, and the before/after-greedy MIR. Note
-that `SLL64_32` should keep the flag; only `SLL64_64` needs it removed (or the allocator has to
-stop treating it as a copy).
+Drafted in `docs/llvm-issue-draft.md`, with a self-contained reproducer in
+`docs/repro/mips-sll64_64.ll` (~650 lines, verified to reproduce under plain `llc`). Not filed
+yet.
