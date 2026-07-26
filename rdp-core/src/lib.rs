@@ -11,7 +11,8 @@
 //!
 //! Everything here is derived from our own reverse engineering on real hardware. Existing software
 //! implementations are deliberately not used as a reference. Behavior that is implemented but not
-//! yet pinned down by a hardware test is marked with "provisional" in the comments.
+//! yet pinned down by a hardware test is marked with "provisional" in the comments. The findings
+//! are collected in REFERENCE.md next to this crate.
 //!
 //! # Design rules
 //!
