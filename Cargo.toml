@@ -70,6 +70,10 @@ opt-level = 1
 # code itself. That honours the target's +noabicalls feature, so the objects are static/non-PIC
 # and rust-lld no longer warns about mixing abicalls with non-abicalls code - and the ROM comes
 # out ~1 MB smaller as a bonus.
+#
+# WARNING: the MIPS backend has been caught MISCOMPILING i64 pair arithmetic (with and without
+# LTO, layout-dependent - see the note in rdp-core/src/raster.rs). Avoid i64 in hot new code and
+# hardware-verify anything that must use it.
 lto = "fat"
 
 [dependencies]

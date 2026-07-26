@@ -16,9 +16,10 @@ use rdp_core::{SliceRdram, SoftRdp};
 
 use crate::graphics::color::{ARGB8888, RGBA5551};
 use crate::rdp::fixedpoint::U10_2;
+use crate::rdp::fixedpoint::{I12_2, I16_16};
 use crate::rdp::modes::{Blender, CoverageMode, CycleType, Format, Othermode, PixelSize, A, B, PM};
 use crate::rdp::rdp::RDP;
-use crate::rdp::rdp_assembler::{RDPAssembler, RDPRectangle};
+use crate::rdp::rdp_assembler::{RDPAssembler, RDPRectangle, TriangleBase};
 use crate::tests::soft_asserts::{soft_assert_eq, soft_assert_eq2};
 use crate::tests::{Level, Test};
 use crate::uncached_memory::UncachedHeapMemory;
@@ -222,11 +223,209 @@ impl Test for SoftOneCycleRectangle32 {
     }
 }
 
+/// Fill_Triangle in 1-cycle mode (zap coverage, so geometry only), hardware vs soft-RDP.
+/// Values are (right_major, yl, ym, yh, xl, dl, xh, dh, xm, dm) with y as raw 12.2 and x/d as raw
+/// 16.16 (matching the command word layout).
+pub struct SoftFillTriangle {}
+
+const TRIANGLE_CASES: &[(bool, i32, i32, i32, i32, i32, i32, i32, i32, i32)] = &[
+    // Degenerate as rectangle: verticals at x=1 and x=3..5
+    (true, 20, 12, 4, 3 << 16, 0, 1 << 16, 0, 5 << 16, 0),
+    // Left major with slope: apex top-left, minor edge sloping right
+    (
+        false,
+        56,
+        28,
+        4,
+        2 << 16,
+        1 << 16,
+        2 << 16,
+        0,
+        2 << 16,
+        2 << 16,
+    ),
+    // Right major with negative slope and fractional y bounds
+    (
+        true,
+        45,
+        19,
+        5,
+        20 << 16,
+        -(1 << 16),
+        24 << 16,
+        -(1 << 15),
+        24 << 16,
+        -(2 << 16),
+    ),
+    // Starts left of the framebuffer (negative x)
+    (
+        false,
+        48,
+        24,
+        8,
+        -(2 << 16),
+        1 << 16,
+        -(2 << 16),
+        0,
+        -(2 << 16),
+        2 << 16,
+    ),
+    // Extends past the scissor right
+    (
+        false,
+        40,
+        20,
+        8,
+        20 << 16,
+        3 << 16,
+        20 << 16,
+        0,
+        20 << 16,
+        6 << 16,
+    ),
+    // Fractional x coordinates
+    (
+        true,
+        36,
+        20,
+        6,
+        (7 << 16) + 0x8000,
+        (1 << 14),
+        (3 << 16) + 0x4000,
+        0x2000,
+        (9 << 16) + 0xC000,
+        0,
+    ),
+];
+
+impl Test for SoftFillTriangle {
+    fn name(&self) -> &str {
+        "SoftRDP: FillTriangle (1-cycle)"
+    }
+
+    fn level(&self) -> Level {
+        Level::RDPBasic
+    }
+
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        let mut result: Vec<Box<dyn Any>> = Vec::new();
+        for pixel_size_16 in [true, false] {
+            for i in 0..TRIANGLE_CASES.len() {
+                result.push(Box::new((pixel_size_16, i as u32)));
+            }
+        }
+        result
+    }
+
+    fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
+        let (pixel_size_16, index) = *value
+            .downcast_ref::<(bool, u32)>()
+            .ok_or("Value is not a (bool, u32)")?;
+        let (right_major, yl, ym, yh, xl, dl, xh, dh, xm, dm) = TRIANGLE_CASES[index as usize];
+
+        let pixel_size = if pixel_size_16 {
+            PixelSize::Bits16
+        } else {
+            PixelSize::Bits32
+        };
+        let triangle = TriangleBase::new(
+            right_major,
+            0,
+            0,
+            I12_2::new_with_masked_value((yl as u32) & 0x3FFF),
+            I12_2::new_with_masked_value((ym as u32) & 0x3FFF),
+            I12_2::new_with_masked_value((yh as u32) & 0x3FFF),
+            I16_16::new_with_masked_value(xl as u32),
+            I16_16::new_with_masked_value(xm as u32),
+            I16_16::new_with_masked_value(xh as u32),
+            I16_16::new_with_masked_value(dl as u32),
+            I16_16::new_with_masked_value(dm as u32),
+            I16_16::new_with_masked_value(dh as u32),
+        );
+
+        run_differential(
+            pixel_size,
+            (0, 0, (WIDTH * 4) as u32, (HEIGHT * 4) as u32),
+            format!("Triangle case {}", index),
+            |assembler| {
+                assembler.set_othermode(
+                    Othermode::DEFAULT
+                        .with_cycle_type(CycleType::SingleCycle)
+                        .with_coverage_mode(CoverageMode::Zap)
+                        .with_blender_0(Blender::new(
+                            A::CombineAlpha,
+                            PM::BlendColor,
+                            B::Zero,
+                            PM::MemoryColor,
+                        )),
+                );
+                assembler.set_blendcolor(ARGB8888::new_with_raw_value(0xF848_0800));
+                assembler.filled_triangle(&triangle);
+            },
+        )
+    }
+}
+
 fn fill_rect_differential(
     cycle_type: CycleType,
     pixel_size: PixelSize,
     (left, top, right, bottom): (u32, u32, u32, u32),
+    scissor: (u32, u32, u32, u32),
+) -> Result<(), String> {
+    run_differential(
+        pixel_size,
+        scissor,
+        format!("Rect raw ({}, {})..=({}, {})", left, top, right, bottom),
+        |assembler| {
+            match cycle_type {
+                CycleType::SingleCycle => {
+                    // The blender/coverage configuration the triangle tests established: output =
+                    // blend color, coverage zapped to full
+                    assembler.set_othermode(
+                        Othermode::DEFAULT
+                            .with_cycle_type(CycleType::SingleCycle)
+                            .with_coverage_mode(CoverageMode::Zap)
+                            .with_blender_0(Blender::new(
+                                A::CombineAlpha,
+                                PM::BlendColor,
+                                B::Zero,
+                                PM::MemoryColor,
+                            )),
+                    );
+                    // Distinct r/g/b bytes
+                    assembler.set_blendcolor(ARGB8888::new_with_raw_value(0xF848_0800));
+                }
+                _ => {
+                    assembler.set_othermode(Othermode::DEFAULT.with_cycle_type(CycleType::Fill));
+                    match pixel_size {
+                        // Two different colors so the differential also checks which fill color
+                        // half lands on even/odd pixels.
+                        PixelSize::Bits16 => assembler.set_fillcolor16(
+                            RGBA5551::new(u5::new(31), u5::new(0), u5::new(0), true),
+                            RGBA5551::new(u5::new(0), u5::new(0), u5::new(31), false),
+                        ),
+                        // Four distinct bytes to catch any partial write
+                        _ => assembler.set_fillcolor32(ARGB8888::new_with_raw_value(0x1234_5678)),
+                    }
+                }
+            }
+            assembler.filled_rectangle(&RDPRectangle::new(
+                U10_2::new_with_masked_value(left),
+                U10_2::new_with_masked_value(top),
+                U10_2::new_with_masked_value(right),
+                U10_2::new_with_masked_value(bottom),
+            ));
+        },
+    )
+}
+
+/// Runs `configure`'s commands (state + primitive) through both the real DP and the soft-RDP and
+/// compares the resulting framebuffers word-exact, including the guard rows.
+fn run_differential(
+    pixel_size: PixelSize,
     (sc_left, sc_top, sc_right, sc_bottom): (u32, u32, u32, u32),
+    desc: String,
+    configure: impl FnOnce(&mut RDPAssembler),
 ) -> Result<(), String> {
     let bytes_per_pixel = match pixel_size {
         PixelSize::Bits16 => 2,
@@ -258,45 +457,23 @@ fn fill_rect_differential(
         U10_2::new_with_masked_value(sc_right),
         U10_2::new_with_masked_value(sc_bottom),
     ));
-    match cycle_type {
-        CycleType::SingleCycle => {
-            // The blender/coverage configuration the triangle tests established: output = blend
-            // color, coverage zapped to full
-            assembler.set_othermode(
-                Othermode::DEFAULT
-                    .with_cycle_type(CycleType::SingleCycle)
-                    .with_coverage_mode(CoverageMode::Zap)
-                    .with_blender_0(Blender::new(
-                        A::CombineAlpha,
-                        PM::BlendColor,
-                        B::Zero,
-                        PM::MemoryColor,
-                    )),
-            );
-            // Distinct r/g/b bytes
-            assembler.set_blendcolor(ARGB8888::new_with_raw_value(0xF848_0800));
-        }
-        _ => {
-            assembler.set_othermode(Othermode::DEFAULT.with_cycle_type(CycleType::Fill));
-            match pixel_size {
-                // Two different colors so the differential also checks which fill color half lands
-                // on even/odd pixels.
-                PixelSize::Bits16 => assembler.set_fillcolor16(
-                    RGBA5551::new(u5::new(31), u5::new(0), u5::new(0), true),
-                    RGBA5551::new(u5::new(0), u5::new(0), u5::new(31), false),
-                ),
-                // Four distinct bytes to catch any partial write
-                _ => assembler.set_fillcolor32(ARGB8888::new_with_raw_value(0x1234_5678)),
-            }
-        }
-    }
-    assembler.filled_rectangle(&RDPRectangle::new(
-        U10_2::new_with_masked_value(left),
-        U10_2::new_with_masked_value(top),
-        U10_2::new_with_masked_value(right),
-        U10_2::new_with_masked_value(bottom),
-    ));
+    configure(&mut assembler);
     assembler.sync_full();
+
+    // Run the identical command words through the soft-RDP first - if the real RDP strays outside
+    // the framebuffer it must not be able to corrupt the soft result
+    let stream: Vec<u64> = (0..assembler.len()).map(|i| assembler.word(i)).collect();
+    let mut soft = SoftRdp::new();
+    {
+        let mut hidden = vec![0u8; total_bytes / 2];
+        let mut rdram = SliceRdram::new(
+            framebuffer.start_physical() as u32,
+            &mut soft_bytes,
+            &mut hidden,
+        );
+        soft.run(&stream, &mut rdram);
+    }
+    soft_assert_eq(soft.unhandled, 0, "SoftRdp hit unhandled commands")?;
 
     // Bounded wait instead of RDP::run_and_wait: if a hostile input hangs the DP, report it
     // instead of wedging the whole suite
@@ -320,20 +497,6 @@ fn fill_rect_differential(
         ));
     }
 
-    // Run the identical command words through the soft-RDP
-    let stream: Vec<u64> = (0..assembler.len()).map(|i| assembler.word(i)).collect();
-    let mut soft = SoftRdp::new();
-    {
-        let mut hidden = vec![0u8; total_bytes / 2];
-        let mut rdram = SliceRdram::new(
-            framebuffer.start_physical() as u32,
-            &mut soft_bytes,
-            &mut hidden,
-        );
-        soft.run(&stream, &mut rdram);
-    }
-    soft_assert_eq(soft.unhandled, 0, "SoftRdp hit unhandled commands")?;
-
     let words_per_row = WIDTH * bytes_per_pixel / 4;
     for word in 0..total_bytes / 4 {
         let hardware = framebuffer.read(word);
@@ -341,15 +504,26 @@ fn fill_rect_differential(
         if soft_value != hardware {
             let x = (word % words_per_row) * 4 / bytes_per_pixel;
             let y = word / words_per_row;
-            // Dump the whole hardware row to make the mismatch pattern visible on screen
+            // Dump the row from both sides to make the mismatch pattern visible on screen
             let mut row = String::new();
             for word2 in y * words_per_row..(y + 1) * words_per_row {
                 row.push_str(&format!("{:08x} ", framebuffer.read(word2)));
             }
+            let mut soft_row = String::new();
+            for word2 in y * words_per_row..(y + 1) * words_per_row {
+                soft_row.push_str(&format!(
+                    "{:08x} ",
+                    u32::from_be_bytes(soft_bytes[word2 * 4..word2 * 4 + 4].try_into().unwrap())
+                ));
+            }
+            let mut stream_dump = String::new();
+            for w in &stream {
+                stream_dump.push_str(&format!("{:016x} ", w));
+            }
             soft_assert_eq2(soft_value, hardware, || {
                 format!(
-                    "Rect raw ({}, {})..=({}, {}), scissor ({}, {}, {}, {}): pixel ({}, {}) soft-RDP vs hardware. HW row: {}",
-                    left, top, right, bottom, sc_left, sc_top, sc_right, sc_bottom, x, y, row
+                    "{}, scissor ({}, {}, {}, {}): pixel ({}, {}) soft-RDP vs hardware. HW row: {} SOFT row: {}",
+                    desc, sc_left, sc_top, sc_right, sc_bottom, x, y, row, soft_row
                 )
             })?;
         }

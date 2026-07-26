@@ -50,6 +50,14 @@ impl SoftRdp {
             op::SET_FILL_COLOR => self.state.fill_color = word as u32,
             op::SET_BLEND_COLOR => self.state.blend_color = word as u32,
             op::SET_COLOR_IMAGE => self.state.color_image = word,
+            op::FILL_TRIANGLE => match self.state.cycle_type() {
+                CycleType::OneCycle => {
+                    if !raster::one_cycle_fill_triangle(&self.state, mem, command) {
+                        self.unhandled += 1;
+                    }
+                }
+                _ => self.unhandled += 1,
+            },
             op::FILL_RECTANGLE => match self.state.cycle_type() {
                 CycleType::Fill => raster::fill_rectangle(&self.state, mem, word),
                 CycleType::OneCycle => {

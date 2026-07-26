@@ -237,27 +237,35 @@ Still **[open]** for Fill_Rectangle:
 
 ## 5. Triangles
 
-Knowledge from the Fill_Triangle (0x08) tests in 1-cycle mode. These ran green on hardware but the
-harness is currently feature-gated (`experimental_rdp`) due to instability; treat as
-**[provisional]** until re-validated by differential tests.
+Fill_Triangle (0x08) geometry in 1-cycle mode with coverage mode zap is now differentially
+verified: **[verified: "SoftRDP: FillTriangle (1-cycle)" - 6 shapes x 16/32bpp, including
+right/left major, negative x, past-scissor, fractional x and y edges]**.
 
 Edge walker (word layout: yl/ym/yh as 12.2 signed; xl/xm/xh and their per-scanline steps dl/dm/dh
 as 16.16 signed):
 
-- The major edge walks from yh with xh/dh; the minor side walks xm/dm until ym, then xl/dl until
-  yl. `right_major` (bit 55 of word 0) selects which side is left/right.
-- Edges step once per *subpixel* line (quarter-pixel), accumulating coverage out of 16 subpixel
-  samples per pixel.
+- The major edge starts at xh and walks from yh stepping dh once per *subpixel* line; the minor
+  side steps xm/dm until ym, then restarts at xl stepping dl until yl. `right_major` (bit 55 of
+  word 0) selects which side is left/right.
+- **Which pixels are painted (under zap)**: the same top-left-subpixel rule as the 1-cycle
+  rectangle. Only each pixel row's top subpixel line (y % 4 == 0) determines painted pixels, and
+  on it a pixel is painted iff its first subpixel column is inside [left, right - 2.0 subpixel
+  units]: the left edge rounds up to the next whole pixel, the right edge paints its containing
+  pixel, a fractional yh skips its partially covered top row, yl paints its containing row.
 - Scissor top and left clip at pixel granularity (`(edge + 3) >> 2`); scissor right and bottom
   clip at subpixel granularity.
-- Coverage-to-alpha mapping (coverage mode clamp) is only partially mapped: of the 16 possible
-  subpixel counts, 4->0x20, 7->0x40, 8..10->0x60, 12->0xA0, 16->0xE0 are known. **[open: the
-  remaining counts]**
-- Coverage modes zap (alpha = 0xE0 unconditionally) and the blender configuration
-  `(A=CombineAlpha, P=BlendColor, B=Zero, M=MemoryColor)` behaved as the tests model.
+- Whether the unsampled subpixels contribute to the coverage VALUE (clamp/save modes, AA
+  blending) is **[open]** - zap hides them. The pre-differential tests suggested a
+  subpixel-accumulating coverage with a partially-known clamp mapping (4->0x20, 7->0x40,
+  8..10->0x60, 12->0xA0, 16->0xE0) **[provisional; open: the remaining counts]**.
 
 Everything else about triangles (shade, texture, z), and all of TMEM, combiner, blender in
 general: **[open]**.
+
+> Toolchain note: the pre-differential triangle tests' hardware instability (which got them
+> feature-gated) is likely NOT an RDP phenomenon: the differential work exposed that the MIPS
+> backend miscompiles i64 pair arithmetic in exactly this kind of edge-walker code,
+> build-layout-dependently. rdp-core's walker uses i32 on purpose.
 
 ## 6. RDRAM hidden bits
 
