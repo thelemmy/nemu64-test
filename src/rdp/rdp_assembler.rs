@@ -221,6 +221,18 @@ impl<'a> RDPAssembler {
         self.data.start_physical() + (self.index << 3)
     }
 
+    /// Number of command words written so far
+    pub fn len(&self) -> usize {
+        self.index
+    }
+
+    /// Reads back a previously written command word (e.g. to feed the identical stream into the
+    /// soft-RDP)
+    pub fn word(&mut self, index: usize) -> u64 {
+        assert!(index < self.index);
+        self.data.read(index)
+    }
+
     fn write(&mut self, value: u64) {
         self.data.write(self.index, value);
         self.index += 1;

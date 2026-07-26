@@ -62,6 +62,7 @@ dependencies = [
  "linked_list_allocator",
  "num-traits",
  "oorandom",
+ "rdp-core",
  "spinning_top",
 ]
 
@@ -97,6 +98,10 @@ checksum = "dfbc457d0c7a0759a614551b11a6409e5951f6c7537be1f1b7682b9ae9230368"
 dependencies = [
  "proc-macro2",
 ]
+
+[[package]]
+name = "rdp-core"
+version = "0.1.0"
 
 [[package]]
 name = "scopeguard"

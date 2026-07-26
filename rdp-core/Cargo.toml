@@ -1,0 +1,12 @@
+[package]
+name = "rdp-core"
+version = "0.1.0"
+edition = "2021"
+description = "Hardware-verified software implementation of the N64 RDP"
+license = "MIT"
+
+# Standalone: not a member of the n64-systemtest workspace so it can be extracted
+# and used by emulators as-is.
+[workspace]
+
+[dependencies]

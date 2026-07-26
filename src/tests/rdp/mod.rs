@@ -21,6 +21,7 @@ use crate::tests::{Level, Test};
 use crate::uncached_memory::UncachedHeapMemory;
 
 pub mod filled_triangle;
+pub mod soft_differential;
 
 // TODO:
 //  - Make a test that uses FREEZE. It should not execute the RDP list until the RDP is unfrozen

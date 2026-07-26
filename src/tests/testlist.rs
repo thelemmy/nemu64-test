@@ -824,6 +824,7 @@ fn default_tests() -> Vec<Box<dyn Test>> {
         Box::new(super::rdp::RunFromDMEM {}),
         Box::new(super::rdp::RunFromDMEMEnd {}),
         Box::new(super::rdp::RunFromDMEMOverflow {}),
+        Box::new(super::rdp::soft_differential::SoftFillRectangle16 {}),
         Box::new(super::rdram::LWL {}),
         Box::new(super::rdram::LWR {}),
         Box::new(super::rdram::LDL {}),
