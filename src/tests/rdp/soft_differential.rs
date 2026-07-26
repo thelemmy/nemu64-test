@@ -43,15 +43,19 @@ impl Test for SoftFillRectangle16 {
     }
 
     fn values(&self) -> Vec<Box<dyn Any>> {
-        // (left, top, right, bottom) in pixels, inclusive
+        // (left, top, right, bottom) as raw 10.2 subpixel coordinates
         vec![
-            Box::new((0u32, 0u32, 31u32, 15u32)), // full framebuffer
-            Box::new((3u32, 2u32, 13u32, 9u32)),  // interior, odd left edge
-            Box::new((4u32, 1u32, 10u32, 1u32)),  // single row, even edges
-            Box::new((5u32, 3u32, 60u32, 30u32)), // clipped by the scissor on both axes
-            Box::new((5u32, 3u32, 32u32, 14u32)), // right exactly at the scissor
-            Box::new((5u32, 3u32, 60u32, 14u32)), // right beyond the scissor only
-            Box::new((5u32, 3u32, 13u32, 30u32)), // bottom beyond the scissor only
+            Box::new((0u32, 0u32, 31u32 * 4, 15u32 * 4)), // full framebuffer
+            Box::new((3u32 * 4, 2u32 * 4, 13u32 * 4, 9u32 * 4)), // interior, odd left edge
+            Box::new((4u32 * 4, 1u32 * 4, 10u32 * 4, 1u32 * 4)), // single row, even edges
+            Box::new((5u32 * 4, 3u32 * 4, 60u32 * 4, 30u32 * 4)), // clipped by the scissor on both axes
+            Box::new((5u32 * 4, 3u32 * 4, 32u32 * 4, 14u32 * 4)), // right exactly at the scissor
+            Box::new((5u32 * 4, 3u32 * 4, 60u32 * 4, 14u32 * 4)), // right beyond the scissor only
+            Box::new((5u32 * 4, 3u32 * 4, 13u32 * 4, 30u32 * 4)), // bottom beyond the scissor only
+            Box::new((3u32 * 4 + 1, 2u32 * 4, 13u32 * 4 + 2, 9u32 * 4)), // fractional left/right
+            Box::new((3u32 * 4, 2u32 * 4 + 3, 13u32 * 4, 9u32 * 4 + 1)), // fractional top/bottom
+            Box::new((3u32 * 4 + 3, 2u32 * 4 + 1, 13u32 * 4 + 3, 9u32 * 4 + 3)), // all fractional
+            Box::new((5u32 * 4, 3u32 * 4, 31u32 * 4 + 3, 14u32 * 4)), // right just inside the scissor
         ]
     }
 
@@ -92,10 +96,10 @@ impl Test for SoftFillRectangle16 {
         assembler.set_othermode(Othermode::DEFAULT.with_cycle_type(CycleType::Fill));
         assembler.set_fillcolor16(color_even, color_odd);
         assembler.filled_rectangle(&RDPRectangle::new(
-            U10_2::from_u32(left),
-            U10_2::from_u32(top),
-            U10_2::from_u32(right),
-            U10_2::from_u32(bottom),
+            U10_2::new_with_masked_value(left),
+            U10_2::new_with_masked_value(top),
+            U10_2::new_with_masked_value(right),
+            U10_2::new_with_masked_value(bottom),
         ));
         assembler.sync_full();
 
@@ -129,7 +133,7 @@ impl Test for SoftFillRectangle16 {
                     }
                     soft_assert_eq2(soft_value, hardware, || {
                         format!(
-                            "Rect ({}, {})..=({}, {}): pixel ({}, {}) soft-RDP vs hardware. HW row: {}",
+                            "Rect raw ({}, {})..=({}, {}): pixel ({}, {}) soft-RDP vs hardware. HW row: {}",
                             left, top, right, bottom, x, y, row
                         )
                     })?;

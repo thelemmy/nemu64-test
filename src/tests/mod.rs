@@ -625,6 +625,10 @@ pub fn run() {
                 }
                 None => {}
             }
+            match (*value).downcast_ref::<(u32, u32, u32, u32)>() {
+                Some(v) => return format!(" with '{:x?}'", v),
+                None => {}
+            }
             return " with unknown arguments".to_string();
         }
 

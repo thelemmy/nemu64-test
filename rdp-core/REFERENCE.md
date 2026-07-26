@@ -196,13 +196,16 @@ Behavior in fill cycle type, 16bpp **[verified: "SoftRDP: FillRectangle (fill mo
   painted. The asymmetry with the horizontal edge is real hardware behavior.
 - Rows are painted top to bottom; within a row, writes are per-pixel 16-bit (no observable
   64-bit chunk rounding at either span edge).
+- **Fractional coordinates**: on all four edges the pixel containing the subpixel coordinate is
+  painted - left/top truncate down (`xh >> 2`, `yh >> 2`), right/bottom include their containing
+  pixel (`xl >> 2`, `yl >> 2`). A right edge fractionally inside the scissor (e.g. 31.75 against a
+  scissor right of 32.0) does not produce the scissor spill pixel.
 
 Still **[open]** for Fill_Rectangle:
 
-- Fractional (non-integer 10.2) rectangle coordinates and fractional scissor edges - which pixel
-  does a half-covered edge belong to? Does the bottom clamp act on subpixels (`min(yl, sc_bottom-1)`)
-  or on pixel indices?
-- Left/top scissor clamping with fractional values.
+- Fractional *scissor* edges: does the bottom clamp act on subpixels (`min(yl, sc_bottom - 1)`) or
+  on pixel indices? Both match all observations so far. Same for left/top scissor clamping with
+  fractional values.
 - 32bpp framebuffers (including whether the scissor-right spill exists there), 4bpp/8bpp.
 - What fill mode writes into the hidden bits (coverage).
 - Fill_Rectangle in 1-cycle/2-cycle/copy cycle types.
