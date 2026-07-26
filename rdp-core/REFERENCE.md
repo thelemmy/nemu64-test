@@ -204,12 +204,15 @@ Behavior in fill cycle type, 16bpp **[verified: "SoftRDP: FillRectangle (fill mo
   `y1 = min(yl, sc_bottom - 1) >> 2`. A fractional scissor bottom (15.25/15.75) still paints its
   containing row, and one past the last full row (16.5) paints the row past the framebuffer -
   ruling out pixel-index clamping. **[verified: "SoftRDP: FillRectangle vs fractional scissor"]**
+- **32bpp**: every pixel is written with the full 32-bit fill color; all edge/scissor rules above
+  apply identically, and the scissor-right spill is a full 32-bit pixel write.
+  **[verified: "SoftRDP: FillRectangle (fill mode, 32bpp)"]**
 
 Still **[open]** for Fill_Rectangle:
 
 - Fractional scissor *left/top* values (does the triangle-style `(edge + 3) >> 2` exclusion apply,
   or plain truncation?).
-- 32bpp framebuffers (including whether the scissor-right spill exists there), 4bpp/8bpp.
+- 4bpp/8bpp framebuffers.
 - What fill mode writes into the hidden bits (coverage).
 - Fill_Rectangle in 1-cycle/2-cycle/copy cycle types.
 - xh > xl / yh > yl (inverted rectangles).

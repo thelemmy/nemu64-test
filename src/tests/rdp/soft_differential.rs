@@ -14,7 +14,7 @@ use core::any::Any;
 use arbitrary_int::prelude::*;
 use rdp_core::{SliceRdram, SoftRdp};
 
-use crate::graphics::color::RGBA5551;
+use crate::graphics::color::{ARGB8888, RGBA5551};
 use crate::rdp::fixedpoint::U10_2;
 use crate::rdp::modes::{CycleType, Format, Othermode, PixelSize};
 use crate::rdp::rdp::RDP;
@@ -28,7 +28,6 @@ const HEIGHT: usize = 16;
 /// Extra rows after the framebuffer, compared as well: fill mode can legitimately write one pixel
 /// past the scissor right/bottom, which lands past the nominal framebuffer end.
 const GUARD_ROWS: usize = 2;
-const TOTAL: usize = WIDTH * (HEIGHT + GUARD_ROWS);
 
 /// FillRectangle in fill mode on a 16 bpp framebuffer, hardware vs soft-RDP.
 pub struct SoftFillRectangle16 {}
@@ -60,19 +59,55 @@ impl Test for SoftFillRectangle16 {
     }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
-        let (left, top, right, bottom) = *value
+        let rect = *value
             .downcast_ref::<(u32, u32, u32, u32)>()
             .ok_or("Value is not a (u32, u32, u32, u32)")?;
 
         fill_rect_differential(
-            (left, top, right, bottom),
+            PixelSize::Bits16,
+            rect,
+            ((WIDTH * 4) as u32, (HEIGHT * 4) as u32),
+        )
+    }
+}
+
+/// FillRectangle in fill mode on a 32 bpp framebuffer, hardware vs soft-RDP.
+pub struct SoftFillRectangle32 {}
+
+impl Test for SoftFillRectangle32 {
+    fn name(&self) -> &str {
+        "SoftRDP: FillRectangle (fill mode, 32bpp)"
+    }
+
+    fn level(&self) -> Level {
+        Level::RDPBasic
+    }
+
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        // (left, top, right, bottom) as raw 10.2 subpixel coordinates
+        vec![
+            Box::new((0u32, 0u32, 31u32 * 4, 15u32 * 4)), // full framebuffer
+            Box::new((3u32 * 4, 2u32 * 4, 13u32 * 4, 9u32 * 4)), // interior, odd left edge
+            Box::new((5u32 * 4, 3u32 * 4, 60u32 * 4, 30u32 * 4)), // clipped by the scissor on both axes
+            Box::new((3u32 * 4 + 3, 2u32 * 4 + 1, 13u32 * 4 + 3, 9u32 * 4 + 3)), // all fractional
+        ]
+    }
+
+    fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
+        let rect = *value
+            .downcast_ref::<(u32, u32, u32, u32)>()
+            .ok_or("Value is not a (u32, u32, u32, u32)")?;
+
+        fill_rect_differential(
+            PixelSize::Bits32,
+            rect,
             ((WIDTH * 4) as u32, (HEIGHT * 4) as u32),
         )
     }
 }
 
 /// Same differential, but the scissor is the variable and a fixed fractional rectangle overhangs
-/// it on all sides.
+/// it on the right and bottom.
 pub struct SoftFillRectangleScissor16 {}
 
 impl Test for SoftFillRectangleScissor16 {
@@ -96,38 +131,40 @@ impl Test for SoftFillRectangleScissor16 {
     }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
-        let (sc_right, sc_bottom) = *value
+        let scissor = *value
             .downcast_ref::<(u32, u32)>()
             .ok_or("Value is not a (u32, u32)")?;
 
-        fill_rect_differential((2, 3, 60 * 4, 30 * 4), (sc_right, sc_bottom))
+        fill_rect_differential(PixelSize::Bits16, (2, 3, 60 * 4, 30 * 4), scissor)
     }
 }
 
 fn fill_rect_differential(
+    pixel_size: PixelSize,
     (left, top, right, bottom): (u32, u32, u32, u32),
     (sc_right, sc_bottom): (u32, u32),
 ) -> Result<(), String> {
-    let mut framebuffer = UncachedHeapMemory::<u16>::new_with_align(TOTAL, 64);
+    let bytes_per_pixel = match pixel_size {
+        PixelSize::Bits16 => 2,
+        PixelSize::Bits32 => 4,
+        _ => return Err("Unsupported pixel size".into()),
+    };
+    let total_bytes = WIDTH * (HEIGHT + GUARD_ROWS) * bytes_per_pixel;
+
+    let mut framebuffer = UncachedHeapMemory::<u32>::new_with_align(total_bytes / 4, 64);
     // Prefill both framebuffers with the same recognizable pattern so untouched pixels are
     // compared as well.
-    let mut soft_bytes = vec![0u8; TOTAL * 2];
-    for i in 0..TOTAL {
-        let value = 0x0100u16.wrapping_add(i as u16);
+    let mut soft_bytes = vec![0u8; total_bytes];
+    for i in 0..total_bytes / 4 {
+        let value = 0xA000_0000u32 | (i as u32);
         framebuffer.write(i, value);
-        soft_bytes[i * 2] = (value >> 8) as u8;
-        soft_bytes[i * 2 + 1] = value as u8;
+        soft_bytes[i * 4..i * 4 + 4].copy_from_slice(&value.to_be_bytes());
     }
-
-    // Two different colors so the differential also checks which fill color half lands on
-    // even/odd pixels.
-    let color_even = RGBA5551::new(u5::new(31), u5::new(0), u5::new(0), true);
-    let color_odd = RGBA5551::new(u5::new(0), u5::new(0), u5::new(31), false);
 
     let mut assembler = RDPAssembler::new();
     assembler.set_framebuffer_image(
         Format::RGBA,
-        PixelSize::Bits16,
+        pixel_size,
         u12::new((WIDTH - 1).try_into().unwrap()),
         &mut framebuffer,
     );
@@ -138,7 +175,16 @@ fn fill_rect_differential(
         U10_2::new_with_masked_value(sc_bottom),
     ));
     assembler.set_othermode(Othermode::DEFAULT.with_cycle_type(CycleType::Fill));
-    assembler.set_fillcolor16(color_even, color_odd);
+    match pixel_size {
+        // Two different colors so the differential also checks which fill color half lands on
+        // even/odd pixels.
+        PixelSize::Bits16 => assembler.set_fillcolor16(
+            RGBA5551::new(u5::new(31), u5::new(0), u5::new(0), true),
+            RGBA5551::new(u5::new(0), u5::new(0), u5::new(31), false),
+        ),
+        // Four distinct bytes to catch any partial write
+        _ => assembler.set_fillcolor32(ARGB8888::new_with_raw_value(0x1234_5678)),
+    }
     assembler.filled_rectangle(&RDPRectangle::new(
         U10_2::new_with_masked_value(left),
         U10_2::new_with_masked_value(top),
@@ -153,7 +199,7 @@ fn fill_rect_differential(
     let stream: Vec<u64> = (0..assembler.len()).map(|i| assembler.word(i)).collect();
     let mut soft = SoftRdp::new();
     {
-        let mut hidden = vec![0u8; TOTAL];
+        let mut hidden = vec![0u8; total_bytes / 2];
         let mut rdram = SliceRdram::new(
             framebuffer.start_physical() as u32,
             &mut soft_bytes,
@@ -163,25 +209,24 @@ fn fill_rect_differential(
     }
     soft_assert_eq(soft.unhandled, 0, "SoftRdp hit unhandled commands")?;
 
-    for y in 0..HEIGHT + GUARD_ROWS {
-        for x in 0..WIDTH {
-            let i = y * WIDTH + x;
-            let hardware = framebuffer.read(i);
-            let soft_value = ((soft_bytes[i * 2] as u16) << 8) | (soft_bytes[i * 2 + 1] as u16);
-            if soft_value != hardware {
-                // Dump the whole hardware row to make the mismatch pattern visible on screen
-                let mut row = String::new();
-                for x2 in 0..WIDTH {
-                    let value = framebuffer.read(y * WIDTH + x2);
-                    row.push_str(&format!("{:04x} ", value));
-                }
-                soft_assert_eq2(soft_value, hardware, || {
-                    format!(
-                            "Rect raw ({}, {})..=({}, {}), scissor ({}, {}): pixel ({}, {}) soft-RDP vs hardware. HW row: {}",
-                            left, top, right, bottom, sc_right, sc_bottom, x, y, row
-                        )
-                })?;
+    let words_per_row = WIDTH * bytes_per_pixel / 4;
+    for word in 0..total_bytes / 4 {
+        let hardware = framebuffer.read(word);
+        let soft_value = u32::from_be_bytes(soft_bytes[word * 4..word * 4 + 4].try_into().unwrap());
+        if soft_value != hardware {
+            let x = (word % words_per_row) * 4 / bytes_per_pixel;
+            let y = word / words_per_row;
+            // Dump the whole hardware row to make the mismatch pattern visible on screen
+            let mut row = String::new();
+            for word2 in y * words_per_row..(y + 1) * words_per_row {
+                row.push_str(&format!("{:08x} ", framebuffer.read(word2)));
             }
+            soft_assert_eq2(soft_value, hardware, || {
+                format!(
+                    "Rect raw ({}, {})..=({}, {}), scissor ({}, {}): pixel ({}, {}) soft-RDP vs hardware. HW row: {}",
+                    left, top, right, bottom, sc_right, sc_bottom, x, y, row
+                )
+            })?;
         }
     }
 
