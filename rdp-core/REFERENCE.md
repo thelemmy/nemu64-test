@@ -213,10 +213,27 @@ Behavior in fill cycle type, 16bpp **[verified: "SoftRDP: FillRectangle (fill mo
 - **Inverted rectangles** (xh > xl or yh > yl) paint nothing and do not hang the DP.
   **[verified: "SoftRDP: FillRectangle (fill mode, 16bpp)"]**
 
+### Fill_Rectangle in 1-cycle mode
+
+All **[verified: "SoftRDP: FillRectangle (1-cycle, 16bpp/32bpp)"]**, with the pipeline configured
+as blender cycle 0 `P=BlendColor, B=Zero` (output = blend color) and coverage mode zap:
+
+- **Geometry**: a pixel is painted iff its *top-left subpixel* lies inside `[xh, xl) x [yh, yl)`:
+  left/top round up (`(edge + 3) >> 2` - a fractional xh/yh SKIPS its partially covered
+  pixel/row), right/bottom paint their containing pixel (`(edge - 1) >> 2`). There is no
+  fill-mode extra pixel, and no scissor spill pixel either - the scissor clips the subpixel
+  ranges and the same rounding applies.
+- **16bpp write**: r/g/b truncated to 5 bits, alpha bit = 1 (full coverage under zap).
+- **32bpp write**: memory byte order is `r, g, b, coverage << 5` (0xE0 under zap) - this pins
+  down both the 32bpp framebuffer layout and that the alpha byte carries coverage.
+- Set_Blend_Color's word is `r, g, b, a` bytes high to low (r/g/b confirmed by the writes above).
+- Inverted rectangles paint nothing here as well.
+
 Still **[open]** for Fill_Rectangle:
 - 4bpp/8bpp framebuffers.
 - What fill mode writes into the hidden bits (coverage).
-- Fill_Rectangle in 1-cycle/2-cycle/copy cycle types.
+- Fill_Rectangle in 2-cycle/copy cycle types; 1-cycle beyond the blender/coverage configuration
+  above (other blender muxes, clamp/wrap/save coverage, alpha compare, dither).
 
 ## 5. Triangles
 

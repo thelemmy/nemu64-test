@@ -35,6 +35,21 @@ impl State {
         }
     }
 
+    /// Blender mux selects for cycle 0 as raw (p, a, m, b) values.
+    pub fn blender_0(&self) -> (u32, u32, u32, u32) {
+        (
+            ((self.other_modes >> 30) & 3) as u32,
+            ((self.other_modes >> 26) & 3) as u32,
+            ((self.other_modes >> 22) & 3) as u32,
+            ((self.other_modes >> 18) & 3) as u32,
+        )
+    }
+
+    /// Coverage mode (SetOtherModes bits 9..=8): 0 = clamp, 1 = wrap, 2 = zap, 3 = save.
+    pub fn coverage_mode(&self) -> u32 {
+        ((self.other_modes >> 8) & 3) as u32
+    }
+
     /// Scissor bounds as raw 10.2 fixed point: (left, top, right, bottom).
     pub fn scissor_bounds(&self) -> (u32, u32, u32, u32) {
         let left = ((self.scissor >> 44) & 0xFFF) as u32;

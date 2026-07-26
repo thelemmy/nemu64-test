@@ -16,7 +16,7 @@ use rdp_core::{SliceRdram, SoftRdp};
 
 use crate::graphics::color::{ARGB8888, RGBA5551};
 use crate::rdp::fixedpoint::U10_2;
-use crate::rdp::modes::{CycleType, Format, Othermode, PixelSize};
+use crate::rdp::modes::{Blender, CoverageMode, CycleType, Format, Othermode, PixelSize, A, B, PM};
 use crate::rdp::rdp::RDP;
 use crate::rdp::rdp_assembler::{RDPAssembler, RDPRectangle};
 use crate::tests::soft_asserts::{soft_assert_eq, soft_assert_eq2};
@@ -66,6 +66,7 @@ impl Test for SoftFillRectangle16 {
             .ok_or("Value is not a (u32, u32, u32, u32)")?;
 
         fill_rect_differential(
+            CycleType::Fill,
             PixelSize::Bits16,
             rect,
             (0, 0, (WIDTH * 4) as u32, (HEIGHT * 4) as u32),
@@ -101,6 +102,7 @@ impl Test for SoftFillRectangle32 {
             .ok_or("Value is not a (u32, u32, u32, u32)")?;
 
         fill_rect_differential(
+            CycleType::Fill,
             PixelSize::Bits32,
             rect,
             (0, 0, (WIDTH * 4) as u32, (HEIGHT * 4) as u32),
@@ -141,11 +143,87 @@ impl Test for SoftFillRectangleScissor16 {
             .downcast_ref::<(u32, u32, u32, u32)>()
             .ok_or("Value is not a (u32, u32, u32, u32)")?;
 
-        fill_rect_differential(PixelSize::Bits16, (2, 3, 60 * 4, 30 * 4), scissor)
+        fill_rect_differential(
+            CycleType::Fill,
+            PixelSize::Bits16,
+            (2, 3, 60 * 4, 30 * 4),
+            scissor,
+        )
+    }
+}
+
+/// FillRectangle in 1-cycle mode: no fill-mode extra pixel, subpixel-exclusive right/bottom.
+pub struct SoftOneCycleRectangle16 {}
+
+impl Test for SoftOneCycleRectangle16 {
+    fn name(&self) -> &str {
+        "SoftRDP: FillRectangle (1-cycle, 16bpp)"
+    }
+
+    fn level(&self) -> Level {
+        Level::RDPBasic
+    }
+
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        // (left, top, right, bottom) as raw 10.2 subpixel coordinates
+        vec![
+            Box::new((3u32 * 4, 2u32 * 4, 13u32 * 4, 9u32 * 4)), // integer: right/bottom exclusive?
+            Box::new((3u32 * 4 + 2, 2u32 * 4 + 1, 13u32 * 4 + 2, 9u32 * 4 + 3)), // fractional edges
+            Box::new((5u32 * 4, 3u32 * 4, 60u32 * 4, 30u32 * 4)), // clipped by the scissor
+            Box::new((13u32 * 4, 2u32 * 4, 3u32 * 4, 9u32 * 4)), // inverted horizontally
+        ]
+    }
+
+    fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
+        let rect = *value
+            .downcast_ref::<(u32, u32, u32, u32)>()
+            .ok_or("Value is not a (u32, u32, u32, u32)")?;
+
+        fill_rect_differential(
+            CycleType::SingleCycle,
+            PixelSize::Bits16,
+            rect,
+            (0, 0, (WIDTH * 4) as u32, (HEIGHT * 4) as u32),
+        )
+    }
+}
+
+/// Like [`SoftOneCycleRectangle16`], on a 32bpp framebuffer (also pins down the memory byte order
+/// and the coverage-to-alpha-byte write).
+pub struct SoftOneCycleRectangle32 {}
+
+impl Test for SoftOneCycleRectangle32 {
+    fn name(&self) -> &str {
+        "SoftRDP: FillRectangle (1-cycle, 32bpp)"
+    }
+
+    fn level(&self) -> Level {
+        Level::RDPBasic
+    }
+
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        vec![
+            Box::new((3u32 * 4, 2u32 * 4, 13u32 * 4, 9u32 * 4)),
+            Box::new((3u32 * 4 + 2, 2u32 * 4 + 1, 13u32 * 4 + 2, 9u32 * 4 + 3)),
+        ]
+    }
+
+    fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
+        let rect = *value
+            .downcast_ref::<(u32, u32, u32, u32)>()
+            .ok_or("Value is not a (u32, u32, u32, u32)")?;
+
+        fill_rect_differential(
+            CycleType::SingleCycle,
+            PixelSize::Bits32,
+            rect,
+            (0, 0, (WIDTH * 4) as u32, (HEIGHT * 4) as u32),
+        )
     }
 }
 
 fn fill_rect_differential(
+    cycle_type: CycleType,
     pixel_size: PixelSize,
     (left, top, right, bottom): (u32, u32, u32, u32),
     (sc_left, sc_top, sc_right, sc_bottom): (u32, u32, u32, u32),
@@ -180,16 +258,37 @@ fn fill_rect_differential(
         U10_2::new_with_masked_value(sc_right),
         U10_2::new_with_masked_value(sc_bottom),
     ));
-    assembler.set_othermode(Othermode::DEFAULT.with_cycle_type(CycleType::Fill));
-    match pixel_size {
-        // Two different colors so the differential also checks which fill color half lands on
-        // even/odd pixels.
-        PixelSize::Bits16 => assembler.set_fillcolor16(
-            RGBA5551::new(u5::new(31), u5::new(0), u5::new(0), true),
-            RGBA5551::new(u5::new(0), u5::new(0), u5::new(31), false),
-        ),
-        // Four distinct bytes to catch any partial write
-        _ => assembler.set_fillcolor32(ARGB8888::new_with_raw_value(0x1234_5678)),
+    match cycle_type {
+        CycleType::SingleCycle => {
+            // The blender/coverage configuration the triangle tests established: output = blend
+            // color, coverage zapped to full
+            assembler.set_othermode(
+                Othermode::DEFAULT
+                    .with_cycle_type(CycleType::SingleCycle)
+                    .with_coverage_mode(CoverageMode::Zap)
+                    .with_blender_0(Blender::new(
+                        A::CombineAlpha,
+                        PM::BlendColor,
+                        B::Zero,
+                        PM::MemoryColor,
+                    )),
+            );
+            // Distinct r/g/b bytes
+            assembler.set_blendcolor(ARGB8888::new_with_raw_value(0xF848_0800));
+        }
+        _ => {
+            assembler.set_othermode(Othermode::DEFAULT.with_cycle_type(CycleType::Fill));
+            match pixel_size {
+                // Two different colors so the differential also checks which fill color half lands
+                // on even/odd pixels.
+                PixelSize::Bits16 => assembler.set_fillcolor16(
+                    RGBA5551::new(u5::new(31), u5::new(0), u5::new(0), true),
+                    RGBA5551::new(u5::new(0), u5::new(0), u5::new(31), false),
+                ),
+                // Four distinct bytes to catch any partial write
+                _ => assembler.set_fillcolor32(ARGB8888::new_with_raw_value(0x1234_5678)),
+            }
+        }
     }
     assembler.filled_rectangle(&RDPRectangle::new(
         U10_2::new_with_masked_value(left),
