@@ -1,7 +1,10 @@
-# i64 values get corrupted under register pressure (MIPS codegen)
+# i64 values get corrupted under register pressure
 
-Status: **reproducible, characterized, not yet minimized.** Written down so the next person does
-not have to rediscover the dead ends.
+Status: **reproducible and characterized; cause NOT established.** Written down so the next person
+does not have to rediscover the dead ends.
+
+Do not read this as a compiler bug report - that is only one of the two live hypotheses, and the
+experiment that separates them has not been run yet (see "Which is it?" below).
 
 ## Symptom
 
@@ -57,27 +60,51 @@ Reverting just those types makes it pass again. Nothing else changes.
   correct assembly (checked by reading it), and the same loop as a ROM test passes on hardware -
   see `I64EdgeWalk` and `I64WalkAndPaint` in `src/tests/arithmetic/i64_codegen.rs`. Both are
   faithful structural copies, including the trait-dispatched memory writes, and both are green.
+- **Not the exception handler clobbering registers.** It saves and restores with `sd`/`ld`, and
+  `Status::DEFAULT` leaves interrupts disabled, so nothing runs between the corrupted value's
+  definition and its use.
+- **Not a semantic difference between the two spellings.** The observed values are arithmetically
+  unreachable by the expressions that produced them, and a direct i64-vs-i32 comparison of the
+  same inputs agrees everywhere outside the high-pressure context.
 - **Not stack misalignment.** `sd`/`ld` need an 8 byte aligned stack; it is aligned and a
   round-trip works - see `StackPointerIs8ByteAligned`.
 - **Not fat LTO.** It reproduces with `lto = "fat"` and with `lto = false`.
 - **Not the RDP.** The software rasterizer runs on a heap buffer before the DP is started at all.
 
-## What is still open
+## Which is it? Two hypotheses, one experiment
 
-The failure only appears when the rasterizer is inlined into `SoftRdp::run` (~6 KB of machine
-code, heavy register pressure, 64-bit values spilled to the stack - the disassembly shows
-`ld $1, 0xc0($sp)` feeding exactly the corrupted computation). Every attempt to shrink it below
-that pressure threshold makes it disappear, which is why there is no small repro yet.
+`rdp-core` is 595 lines of safe Rust with zero `unsafe`, and the observed value is arithmetically
+unreachable by the expression that produced it (`((x as i32) as i64) << 2` cannot exceed ~2^33,
+yet `0x0004_0000_0004_0000` came back). Safe Rust producing an impossible value leaves two
+candidates:
 
-Next steps, in the order that seems most promising:
+1. **The toolchain emits wrong machine code.**
+2. **The VR4300 executes correct machine code incorrectly** - a hardware erratum affecting 64-bit
+   operations under some pipeline or scheduling condition.
 
-1. Bisect inside the real function: flip the edge variables to `i64` one at a time and find the
-   smallest set that still corrupts.
-2. Dump the disassembly of the failing `SoftRdp::run` and trace the corrupted value backwards
-   from its use to the instruction that defines it (the shape of the corruption suggests looking
-   for a 32-bit-defining instruction whose result is later read as 64-bit).
-3. Once the defining instruction is known, reproduce it with `-C llvm-args` tweaks or a smaller
-   function that forces the same allocation, then report upstream.
+Both explain everything observed: host correctness, layout sensitivity, the pressure threshold,
+and the fact that reductions go green. They differ in one cheap, decisive way - the machine code
+is byte-identical either way, so:
+
+| | in an emulator | on hardware |
+|---|---|---|
+| toolchain bug | fails identically | fails |
+| VR4300 erratum | **passes** | fails |
+
+**Run the failing ROM in an emulator.** That single result eliminates one hypothesis. Until it has
+been run, neither wording ("miscompile", "errata") is justified.
+
+One weak signal already leans towards hardware: the disassembly of the span-bound computation was
+read and is correct MIPS III. That is not conclusive - the corrupted value's *definition* has not
+been traced, only its use.
+
+Next steps after the emulator run:
+
+- If the emulator also fails: trace the corrupted value backwards in the disassembly of
+  `SoftRdp::run` to the instruction defining it, then reduce towards an upstream report.
+- If the emulator passes: this is a hardware finding, and it belongs in the test suite as a real
+  VR4300 quirk test. Narrow down which instruction sequence triggers it and under what pipeline
+  conditions, the same way the other quirk tests in this suite were built.
 
 Until then, **prefer `i32` in hot code on this target**, and hardware-verify anything that has to
 use `i64`. The suite's existing `u64` use (register values, command words) is not obviously

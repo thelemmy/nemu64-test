@@ -2,8 +2,8 @@
 //!
 //! These exist because i64 values were observed to come back corrupted on console (low word
 //! correct, high word holding a stray value) while the identical code was correct on a host - see
-//! docs/mips-i64-codegen-bug.md. Nothing here touches hardware: every test computes a value two
-//! ways and compares, so a failure means the toolchain, not the N64, is at fault.
+//! docs/i64-value-corruption.md. Whether the cause is the toolchain or the CPU is still open.
+//! Nothing here touches hardware: every test computes a value two ways and compares.
 //!
 //! These reductions currently PASS: they are below the register-pressure threshold that triggers
 //! the corruption. They are kept as regression tests and as a record of what was already tried,
