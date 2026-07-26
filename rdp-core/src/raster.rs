@@ -15,7 +15,8 @@ use crate::state::State;
 ///   scissor right - one past what the scissor nominally allows, wrapping into the next
 ///   framebuffer row (hardware-observed).
 /// - Vertical: the yl pixel is included, but the scissor bottom is subpixel-exclusive - no row at
-///   or past it is painted (hardware-observed; the asymmetry to horizontal is real).
+///   or past it is painted (hardware-observed; the asymmetry to horizontal is real). The clamp
+///   operates on subpixels, not pixel indices (hardware-observed with fractional scissor values).
 /// - 16bpp: the 32-bit fill color holds two pixels; even x takes bits 31..=16, odd x bits 15..=0
 ///   (hardware-observed).
 /// - The hidden bits are left untouched for now; what fill mode writes there is untested.
