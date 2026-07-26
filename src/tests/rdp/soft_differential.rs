@@ -66,7 +66,7 @@ impl Test for SoftFillRectangle16 {
         fill_rect_differential(
             PixelSize::Bits16,
             rect,
-            ((WIDTH * 4) as u32, (HEIGHT * 4) as u32),
+            (0, 0, (WIDTH * 4) as u32, (HEIGHT * 4) as u32),
         )
     }
 }
@@ -101,7 +101,7 @@ impl Test for SoftFillRectangle32 {
         fill_rect_differential(
             PixelSize::Bits32,
             rect,
-            ((WIDTH * 4) as u32, (HEIGHT * 4) as u32),
+            (0, 0, (WIDTH * 4) as u32, (HEIGHT * 4) as u32),
         )
     }
 }
@@ -120,20 +120,24 @@ impl Test for SoftFillRectangleScissor16 {
     }
 
     fn values(&self) -> Vec<Box<dyn Any>> {
-        // (scissor right, scissor bottom) as raw 10.2 subpixel coordinates; the rectangle is fixed
-        // and overhangs the scissor right/bottom
+        // (scissor left, top, right, bottom) as raw 10.2 subpixel coordinates; the rectangle is
+        // fixed at (0.5, 0.75)..=(60, 30) and overhangs the scissor on all sides
         vec![
-            Box::new((127u32, 64u32)), // right 31.75
-            Box::new((126u32, 63u32)), // right 31.5, bottom 15.75
-            Box::new((125u32, 61u32)), // right 31.25, bottom 15.25
-            Box::new((129u32, 66u32)), // right 32.25 (past the framebuffer), bottom 16.5
+            Box::new((0u32, 0u32, 127u32, 64u32)),  // right 31.75
+            Box::new((0u32, 0u32, 126u32, 63u32)),  // right 31.5, bottom 15.75
+            Box::new((0u32, 0u32, 125u32, 61u32)),  // right 31.25, bottom 15.25
+            Box::new((0u32, 0u32, 129u32, 66u32)), // right 32.25 (past the framebuffer), bottom 16.5
+            Box::new((1u32, 0u32, 128u32, 64u32)), // left 0.25
+            Box::new((3u32, 2u32, 128u32, 64u32)), // left 0.75, top 0.5
+            Box::new((9u32, 11u32, 128u32, 64u32)), // left 2.25, top 2.75
+            Box::new((8u32, 12u32, 128u32, 64u32)), // left 2, top 3 (integer)
         ]
     }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
         let scissor = *value
-            .downcast_ref::<(u32, u32)>()
-            .ok_or("Value is not a (u32, u32)")?;
+            .downcast_ref::<(u32, u32, u32, u32)>()
+            .ok_or("Value is not a (u32, u32, u32, u32)")?;
 
         fill_rect_differential(PixelSize::Bits16, (2, 3, 60 * 4, 30 * 4), scissor)
     }
@@ -142,7 +146,7 @@ impl Test for SoftFillRectangleScissor16 {
 fn fill_rect_differential(
     pixel_size: PixelSize,
     (left, top, right, bottom): (u32, u32, u32, u32),
-    (sc_right, sc_bottom): (u32, u32),
+    (sc_left, sc_top, sc_right, sc_bottom): (u32, u32, u32, u32),
 ) -> Result<(), String> {
     let bytes_per_pixel = match pixel_size {
         PixelSize::Bits16 => 2,
@@ -169,8 +173,8 @@ fn fill_rect_differential(
         &mut framebuffer,
     );
     assembler.set_scissor(&RDPRectangle::new(
-        U10_2::from_u32(0),
-        U10_2::from_u32(0),
+        U10_2::new_with_masked_value(sc_left),
+        U10_2::new_with_masked_value(sc_top),
         U10_2::new_with_masked_value(sc_right),
         U10_2::new_with_masked_value(sc_bottom),
     ));
@@ -223,8 +227,8 @@ fn fill_rect_differential(
             }
             soft_assert_eq2(soft_value, hardware, || {
                 format!(
-                    "Rect raw ({}, {})..=({}, {}), scissor ({}, {}): pixel ({}, {}) soft-RDP vs hardware. HW row: {}",
-                    left, top, right, bottom, sc_right, sc_bottom, x, y, row
+                    "Rect raw ({}, {})..=({}, {}), scissor ({}, {}, {}, {}): pixel ({}, {}) soft-RDP vs hardware. HW row: {}",
+                    left, top, right, bottom, sc_left, sc_top, sc_right, sc_bottom, x, y, row
                 )
             })?;
         }

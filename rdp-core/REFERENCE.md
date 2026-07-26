@@ -207,11 +207,11 @@ Behavior in fill cycle type, 16bpp **[verified: "SoftRDP: FillRectangle (fill mo
 - **32bpp**: every pixel is written with the full 32-bit fill color; all edge/scissor rules above
   apply identically, and the scissor-right spill is a full 32-bit pixel write.
   **[verified: "SoftRDP: FillRectangle (fill mode, 32bpp)"]**
+- **Fractional scissor left/top** truncate: `x0 = max(xh, sc_left applied as >> 2)`, i.e. a
+  scissor left of 2.25 still paints pixel 2. This is NOT the triangle-style `(edge + 3) >> 2`
+  partial-pixel exclusion. **[verified: "SoftRDP: FillRectangle vs fractional scissor"]**
 
 Still **[open]** for Fill_Rectangle:
-
-- Fractional scissor *left/top* values (does the triangle-style `(edge + 3) >> 2` exclusion apply,
-  or plain truncation?).
 - 4bpp/8bpp framebuffers.
 - What fill mode writes into the hidden bits (coverage).
 - Fill_Rectangle in 1-cycle/2-cycle/copy cycle types.
