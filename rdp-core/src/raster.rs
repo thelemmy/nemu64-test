@@ -230,7 +230,7 @@ pub(crate) fn one_cycle_fill_triangle(state: &State, mem: &mut impl Rdram, cmd: 
     true
 }
 
-/// Fill_Triangle in 1-cycle mode with coverage mode CLAMP: like
+/// Fill_Triangle in 1-cycle mode with coverage modes CLAMP / WRAP / SAVE: like
 /// [`one_cycle_fill_triangle`], but the written alpha byte carries the pixel's coverage.
 ///
 /// Provisional model (this is the frontier - the differential tests are expected to correct it):
@@ -248,7 +248,7 @@ pub(crate) fn one_cycle_fill_triangle(state: &State, mem: &mut impl Rdram, cmd: 
 /// - 32bpp alpha byte = CLAMP_ALPHA[count]; entries not pinned down by the old gated tests are
 ///   the marker value 0x01 so a hardware mismatch reveals the true value.
 /// - 32bpp framebuffers only for now (the alpha byte is CPU-visible there).
-pub(crate) fn one_cycle_fill_triangle_clamp(
+pub(crate) fn one_cycle_fill_triangle_coverage(
     state: &State,
     mem: &mut impl Rdram,
     cmd: &[u64],
@@ -256,12 +256,10 @@ pub(crate) fn one_cycle_fill_triangle_clamp(
     if state.blender_0() != (2, 0, 1, 3) || state.color_image_size() != 3 {
         return false;
     }
+    // 0 = clamp, 1 = wrap (provisionally like clamp: without a memory coverage source there is
+    // nothing to wrap against), 3 = save (memory keeps its alpha byte)
+    let mode = state.coverage_mode();
 
-    // Coverage-minus-one, from the checkerboard sample sum (0..=8). A painted pixel always has
-    // its top-left subpixel covered, and (0, 0) is a checkerboard sample, so the sum is >= 1.
-    const fn clamp_alpha(sum: u32) -> u32 {
-        (sum - 1) << 5
-    }
 
     let right_major = (cmd[0] >> 55) & 1 != 0;
     let yl = sign_extend_14(((cmd[0] >> 32) & 0x3FFF) as u32);
@@ -325,7 +323,7 @@ pub(crate) fn one_cycle_fill_triangle_clamp(
                         base,
                         stride_pixels,
                         (r, g, b),
-                        clamp_alpha,
+                        mode,
                     );
                 }
                 row_y = y >> 2;
@@ -374,7 +372,7 @@ pub(crate) fn one_cycle_fill_triangle_clamp(
             base,
             stride_pixels,
             (r, g, b),
-            clamp_alpha,
+            mode,
         );
     }
 
@@ -391,15 +389,28 @@ fn flush_coverage_row(
     base: u32,
     stride_pixels: u32,
     (r, g, b): (u32, u32, u32),
-    alpha_table: fn(u32) -> u32,
+    mode: u32,
 ) {
     let row = base + (row_y as u32) * stride_pixels * 4;
     for (x, count) in coverage.iter_mut().enumerate() {
         if *count > 0 {
             if (px_start..=px_end).contains(&(x as i32)) {
-                let alpha = alpha_table((*count).min(8) as u32);
+                let address = row + (x as u32) * 4;
+                // Coverage-minus-one from the checkerboard sample sum (1..=8; a painted pixel
+                // always has its top-left subpixel covered, which is a checkerboard sample)
+                let sum = (*count).min(8) as u32;
+                let alpha = match mode {
+                    // save writes the MEMORY coverage back - but with image-read disabled the
+                    // memory coverage is never fetched and reads as full (hardware-observed:
+                    // 0xE0 regardless of the previous alpha byte). The read-modify path behind
+                    // the image-read enable bit is still unexplored.
+                    3 => 0xE0,
+                    // clamp; wrap is identical without a memory coverage source to wrap against
+                    // (hardware-observed)
+                    _ => (sum - 1) << 5,
+                };
                 let value = (r << 24) | (g << 16) | (b << 8) | alpha;
-                mem.write_u32(row + (x as u32) * 4, value);
+                mem.write_u32(address, value);
             }
             *count = 0;
         }

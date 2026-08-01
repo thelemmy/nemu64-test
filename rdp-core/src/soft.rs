@@ -56,8 +56,8 @@ impl SoftRdp {
                         self.unhandled += 1;
                     }
                 }
-                (CycleType::OneCycle, 0) => {
-                    if !raster::one_cycle_fill_triangle_clamp(&self.state, mem, command) {
+                (CycleType::OneCycle, 0) | (CycleType::OneCycle, 1) | (CycleType::OneCycle, 3) => {
+                    if !raster::one_cycle_fill_triangle_coverage(&self.state, mem, command) {
                         self.unhandled += 1;
                     }
                 }

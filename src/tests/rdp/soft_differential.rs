@@ -366,13 +366,14 @@ impl Test for SoftFillTriangle {
     }
 }
 
-/// Fill_Triangle in 1-cycle mode with coverage mode CLAMP on a 32bpp framebuffer: the alpha byte
-/// carries the pixel coverage, so this measures the coverage values themselves.
-pub struct SoftFillTriangleClamp32 {}
+/// Fill_Triangle in 1-cycle mode with coverage modes clamp/wrap/save on a 32bpp framebuffer: the
+/// alpha byte carries the pixel coverage, so this measures the coverage behavior itself.
+/// Values are (coverage mode, triangle case).
+pub struct SoftFillTriangleCoverage32 {}
 
-impl Test for SoftFillTriangleClamp32 {
+impl Test for SoftFillTriangleCoverage32 {
     fn name(&self) -> &str {
-        "SoftRDP: FillTriangle (1-cycle, clamp coverage, 32bpp)"
+        "SoftRDP: FillTriangle (1-cycle, clamp/wrap/save coverage, 32bpp)"
     }
 
     fn level(&self) -> Level {
@@ -381,14 +382,23 @@ impl Test for SoftFillTriangleClamp32 {
 
     fn values(&self) -> Vec<Box<dyn Any>> {
         let mut result: Vec<Box<dyn Any>> = Vec::new();
-        for i in 0..TRIANGLE_CASES.len() {
-            result.push(Box::new(i as u32));
+        for mode in [0u32, 1, 3] {
+            for i in 0..TRIANGLE_CASES.len() {
+                result.push(Box::new((mode, i as u32)));
+            }
         }
         result
     }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
-        let index = *value.downcast_ref::<u32>().ok_or("Value is not a u32")?;
+        let (mode, index) = *value
+            .downcast_ref::<(u32, u32)>()
+            .ok_or("Value is not a (u32, u32)")?;
+        let coverage_mode = match mode {
+            0 => CoverageMode::Clamp,
+            1 => CoverageMode::Wrap,
+            _ => CoverageMode::Save,
+        };
         let (right_major, yl, ym, yh, xl, dl, xh, dh, xm, dm) = TRIANGLE_CASES[index as usize];
 
         let triangle = TriangleBase::new(
@@ -409,12 +419,12 @@ impl Test for SoftFillTriangleClamp32 {
         run_differential(
             PixelSize::Bits32,
             (0, 0, (WIDTH * 4) as u32, (HEIGHT * 4) as u32),
-            format!("Clamp triangle case {}", index),
+            format!("Coverage mode {} triangle case {}", mode, index),
             |assembler| {
                 assembler.set_othermode(
                     Othermode::DEFAULT
                         .with_cycle_type(CycleType::SingleCycle)
-                        .with_coverage_mode(CoverageMode::Clamp)
+                        .with_coverage_mode(coverage_mode)
                         .with_blender_0(Blender::new(
                             A::CombineAlpha,
                             PM::BlendColor,

@@ -270,8 +270,16 @@ as 16.16 signed):
   - A fractional yh skips its partial top pixel row in clamp mode too.
   - The old partially-known clamp table from the pre-differential tests (8..10 -> 0x60 etc.) was
     partly wrong - measured in the miscompiled-i64 era; the checkerboard model replaces it.
+  - **Wrap mode is identical to clamp** in this configuration - with no memory coverage source
+    (image read disabled) there is nothing to wrap against.
+    **[verified: same test, coverage mode 1]**
+  - **Save mode writes full coverage (0xE0)** regardless of the framebuffer's previous alpha:
+    save stores the MEMORY coverage back, and with image read disabled that reads as full.
+    **[verified: same test, coverage mode 3]** The read-modify path behind the image-read enable
+    bit is **[open]**.
   - Still **[open]**: fractional yl bottom rows (which sample rows count), right edges exactly on
-    subpixel boundaries, wrap/save coverage modes, 16bpp (alpha bit + hidden bits).
+    subpixel boundaries, the image-read enable bit (real coverage blending), 16bpp coverage
+    (alpha bit + hidden bits).
 
 Everything else about triangles (shade, texture, z), and all of TMEM, combiner, blender in
 general: **[open]**.
