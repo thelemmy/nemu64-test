@@ -104,3 +104,57 @@ hinting only), then B is the correct scoping and `SLL64_32`/`Mips16` deserve the
 
 Happy to open a PR for whichever direction is preferred, including the `madd-msub.ll`
 regeneration and a `-run-pass=greedy` MIR regression test.
+
+---
+
+# Audit: other `isMoveReg` instructions in the MIPS backend
+
+Checked every `isMoveReg = 1` site in `llvm/lib/Target/Mips/*.td` against the consumer contract
+(`isCopyInstrImpl` returns `DestSourcePair{getOperand(0), getOperand(1)}`, i.e. "operand 0's
+register now holds operand 1's value"). Findings, by confidence:
+
+## Same bug family, structurally wrong: `MOVEP_MM` / `MOVEP_MMR6` (microMIPS `movep`)
+
+`MicroMipsInstrInfo.td:231` (`MovePMM16`, also used by `MOVEP_MMR6_DESC`):
+
+```tablegen
+class MovePMM16<...> :
+MicroMipsInst16<(outs RO1:$rd1, RO2:$rd2), (ins RO3:$rs, RO3:$rt), ...> {
+  let isReMaterializable = 1;
+  let isMoveReg = 1;
+  ...
+}
+```
+
+`movep` performs TWO moves: rd1 <- rs, rd2 <- rt. `isCopyInstrImpl` returns
+`{getOperand(0), getOperand(1)}` = `{$rd1, $rd2}` - which claims **rd1 is a copy of the second
+destination**. Both are GPRs, so unlike cross-bank moves nothing structurally prevents a consumer
+from acting on the bogus pair. Untested (no microMIPS hardware here), but the operand indexing is
+wrong by inspection; `isCopyInstr` has a multi-move-aware overload that `movep` would need, or the
+flag should go.
+
+## Questionable: `CFC1` / `CTC1` (FP control register moves)
+
+`MipsInstrFPU.td:597/599` - both inherit `isMoveReg = 1` from `MFC1_FT`/`MTC1_FT`. These
+move to/from the FP control registers (including FCSR: rounding mode, exception enables/flags),
+which FP instructions read and modify implicitly. Describing them as plain value-preserving
+copies, with no side-effect modelling, invites copy-forwarding around instructions that change
+FCSR. The cross-bank shape (GPR vs CCR) makes the identity-deletion path of this bug impossible,
+so this is a weaker concern - flagged for completeness.
+
+## Checked and fine
+
+- `SLL64_32`: claims GPR64 dest = GPR32 source. In practice safe with current consumers: the
+  cross-class shape means dest and source can never be the same register, so the deletion path
+  cannot trigger, and its input is produced by 32-bit ops (already sign-extended).
+- `FMOV_S`/`FMOV_D`(+microMIPS variants), MSA `MOVE_V`: genuine same-class copies.
+- `MFHI`/`MFLO`/`MTHI`/`MTLO` (base, microMIPS, Mips16, DSP): genuine cross-bank moves; the
+  HI/LO source appears as the implicit-use operand, which `getOperand(1)` picks up correctly.
+- `MFC1`/`MTC1`/`DMFC1`/`DMTC1`: bit-preserving cross-bank moves.
+- `MTC1_D64`(`MTC1_64_FT`): writes only the low half of a 64-bit FPR (tied operand) - would be
+  exactly this bug if flagged, but it is (correctly) NOT marked `isMoveReg`.
+- MSA `CFCMSA`/`CTCMSA`: control-register moves, but at least marked `hasSideEffects = 1`.
+
+Curiosity: Mips16 `Mfhi16` has `isMoveReg = 1` while the adjacent, structurally identical
+`Mflo16` has an explicit `isMoveReg = 0` - the asymmetry suggests someone already ran into
+trouble with one of these.
