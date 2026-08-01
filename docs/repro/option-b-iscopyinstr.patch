@@ -1,0 +1,19 @@
+diff --git a/llvm/lib/Target/Mips/MipsSEInstrInfo.cpp b/llvm/lib/Target/Mips/MipsSEInstrInfo.cpp
+index 6c59975a1..2e77d8546 100644
+--- a/llvm/lib/Target/Mips/MipsSEInstrInfo.cpp
++++ b/llvm/lib/Target/Mips/MipsSEInstrInfo.cpp
+@@ -294,6 +294,14 @@ static bool isORCopyInst(const MachineInstr &MI) {
+ /// Other move instructions for MIPS are directly identifiable.
+ std::optional<DestSourcePair>
+ MipsSEInstrInfo::isCopyInstrImpl(const MachineInstr &MI) const {
++  // SLL64_64 is marked isMoveReg for register-allocation hints, but with a
++  // 64-bit source it truncates to 32 bits and sign-extends, so its result is
++  // only equal to its source if the source is already sign-extended - which
++  // cannot be determined here. Treating it as a copy lets the register
++  // allocator delete it, dropping the truncation.
++  if (MI.getOpcode() == Mips::SLL64_64)
++    return std::nullopt;
++
+   if (MI.isMoveReg() || isORCopyInst(MI))
+     return DestSourcePair{MI.getOperand(0), MI.getOperand(1)};
+ 
