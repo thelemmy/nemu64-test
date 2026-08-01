@@ -281,8 +281,46 @@ as 16.16 signed):
     subpixel boundaries, the image-read enable bit (real coverage blending), 16bpp coverage
     (alpha bit + hidden bits).
 
-Everything else about triangles (shade, texture, z), and all of TMEM, combiner, blender in
-general: **[open]**.
+### Shade triangles (0x0C)
+
+Verified in 1-cycle mode through a shade-passthrough combiner on static-edge geometry
+**[verified: "SoftRDP: ShadeTriangle (1-cycle, 32bpp)"]**:
+
+- **Set_Combine encoding**: the community bit layout is correct as far as exercised - the
+  passthrough configuration (RGB: (zero - zero) * zero + SHADE, alpha likewise) behaves exactly
+  as encoded. See `COMBINE_PASSTHROUGH_SHADE` in rdp-core.
+- **Shade coefficient words** (after the 4 edge words): RGBA integer parts (4 x s16, r g b a
+  high to low), DcDx int, RGBA fractions, DcDx frac, DcDe int, DcDy int, DcDe frac, DcDy frac.
+  Channels are s15.16.
+- **DcDe** steps once per pixel row, counted from yh's pixel row (a skipped partial top row
+  still counts).
+- **DcDx** anchors at the exact fractional left edge position: pixel color =
+  base + de_steps * DcDe + (px * 4 - left) * DcDx/4 evaluated in subpixels at 16.16 precision.
+- Written bytes are the integer parts (truncated); the 32bpp alpha byte still carries coverage.
+
+**[open] Sloped/fractional left edges add a sub-subpixel sampling phase** that is not yet
+understood. Probe data (offset added to the sampling position of pixels with (px ^ py) even, in
+subpixels; other pixels stay exact; fitted per row):
+
+| left edge at row | dh/row = 0.5 | 0.25 | 0.75 | const |
+|---|---|---|---|---|
+| 12.0 | 0 | 0 | 0 | |
+| 12.25 | | unfit | | |
+| 12.5 | 0.5 | 0.5 | | |
+| 12.75 | | unfit | 0.75 | |
+| 13.0 | 1 | 1 | | 1 (all rows) |
+| 13.25 | | 1.25 | | |
+| 13.5 | **0** | **1.5** | **1.5** | |
+| 14.25 | | | 0.25 uniform (both parities) | |
+| 15.75 | | | unfit | |
+
+The phase mostly equals (left mod 2), but identical left values yield different phases under
+different slopes (13.5 above), some rows fit no per-parity quarter-subpixel offset at all, and
+one row shifted BOTH parities. Needs a dedicated probe series; until then the soft-RDP only
+claims shade on static-edge spans.
+
+Everything else about triangles (texture, z), and all of TMEM, combiner, blender in general:
+**[open]**.
 
 > Toolchain note: the pre-differential triangle tests' hardware instability (which got them
 > feature-gated) may well NOT be an RDP phenomenon. The differential work exposed that i64 values

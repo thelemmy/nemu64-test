@@ -298,6 +298,30 @@ const TRIANGLE_CASES: &[(bool, i32, i32, i32, i32, i32, i32, i32, i32, i32)] = &
     ),
 ];
 
+/// Extra triangles only used by the shade tests: their exact-boundary edge sampling exposes a
+/// still-open sub-LSB coverage question, so they stay out of the coverage tests.
+const SHADE_ONLY_TRIANGLES: &[(bool, i32, i32, i32, i32, i32, i32, i32, i32, i32)] = &[
+    // Fractional but CONSTANT left edge (probes whether shade phasing needs a sloped edge)
+    (
+        true,
+        40,
+        24,
+        8,
+        9 << 16,
+        0,
+        (3 << 16) + 0x4000,
+        0,
+        9 << 16,
+        0,
+    ),
+    // Integer start, sloped left edge
+    (true, 40, 24, 8, 9 << 16, 0, 3 << 16, 0x2000, 9 << 16, 0),
+    // Quarter-subpixel-per-row slope (decouples row parity from the edge fraction)
+    (true, 40, 24, 8, 9 << 16, 0, 3 << 16, 0x1000, 9 << 16, 0),
+    // Three-quarter-subpixel-per-row slope
+    (true, 40, 24, 8, 9 << 16, 0, 3 << 16, 0x3000, 9 << 16, 0),
+];
+
 impl Test for SoftFillTriangle {
     fn name(&self) -> &str {
         "SoftRDP: FillTriangle (1-cycle)"
@@ -434,6 +458,125 @@ impl Test for SoftFillTriangleCoverage32 {
                 );
                 assembler.set_blendcolor(ARGB8888::new_with_raw_value(0xF848_0800));
                 assembler.filled_triangle(&triangle);
+            },
+        )
+    }
+}
+
+/// Shade_Triangle in 1-cycle mode: RGBA interpolation through a shade-passthrough combiner.
+/// Values are indices into SHADE_CASES: (edges index into TRIANGLE_CASES, base color, per-pixel
+/// step, per-edge step) with the color channels as s15.16.
+pub struct SoftShadeTriangle32 {}
+
+const SHADE_CASES: &[(usize, [i32; 4], [i32; 4], [i32; 4])] = &[
+    // Flat color with fractional parts (probes int/frac split and rounding)
+    (
+        0,
+        [0x80_8000, 0x40_4000, 0xC0_0001, 0xFF_0000],
+        [0; 4],
+        [0; 4],
+    ),
+    // Horizontal gradient: red +8/pixel from 16, green fixed
+    (
+        0,
+        [0x10_0000, 0x20_0000, 0x30_0000, 0xFF_0000],
+        [0x08_0000, 0, 0, 0],
+        [0; 4],
+    ),
+    // Vertical gradient: green +16/row from 32
+    (
+        0,
+        [0x40_0000, 0x20_0000, 0x10_0000, 0xFF_0000],
+        [0; 4],
+        [0, 0x10_0000, 0, 0],
+    ),
+];
+
+impl Test for SoftShadeTriangle32 {
+    fn name(&self) -> &str {
+        "SoftRDP: ShadeTriangle (1-cycle, 32bpp)"
+    }
+
+    fn level(&self) -> Level {
+        Level::RDPBasic
+    }
+
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        let mut result: Vec<Box<dyn Any>> = Vec::new();
+        for i in 0..SHADE_CASES.len() {
+            result.push(Box::new(i as u32));
+        }
+        result
+    }
+
+    fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
+        let case = *value.downcast_ref::<u32>().ok_or("Value is not a u32")?;
+        let (tri, color, dcdx, dcde) = SHADE_CASES[case as usize];
+        let (right_major, yl, ym, yh, xl, dl, xh, dh, xm, dm) = if tri < TRIANGLE_CASES.len() {
+            TRIANGLE_CASES[tri]
+        } else {
+            SHADE_ONLY_TRIANGLES[tri - TRIANGLE_CASES.len()]
+        };
+
+        let triangle = TriangleBase::new(
+            right_major,
+            0,
+            0,
+            I12_2::new_with_masked_value((yl as u32) & 0x3FFF),
+            I12_2::new_with_masked_value((ym as u32) & 0x3FFF),
+            I12_2::new_with_masked_value((yh as u32) & 0x3FFF),
+            I16_16::new_with_masked_value(xl as u32),
+            I16_16::new_with_masked_value(xm as u32),
+            I16_16::new_with_masked_value(xh as u32),
+            I16_16::new_with_masked_value(dl as u32),
+            I16_16::new_with_masked_value(dm as u32),
+            I16_16::new_with_masked_value(dh as u32),
+        );
+
+        // Pack s15.16 channels into the shade coefficient words: int parts and fractions of
+        // (color, DcDx, DcDe, DcDy)
+        fn ints(c: [i32; 4]) -> u64 {
+            (((c[0] >> 16) as u16 as u64) << 48)
+                | (((c[1] >> 16) as u16 as u64) << 32)
+                | (((c[2] >> 16) as u16 as u64) << 16)
+                | ((c[3] >> 16) as u16 as u64)
+        }
+        fn fracs(c: [i32; 4]) -> u64 {
+            ((c[0] as u16 as u64) << 48)
+                | ((c[1] as u16 as u64) << 32)
+                | ((c[2] as u16 as u64) << 16)
+                | (c[3] as u16 as u64)
+        }
+        let dcdy = [0i32; 4];
+        let shade: [u64; 8] = [
+            ints(color),
+            ints(dcdx),
+            fracs(color),
+            fracs(dcdx),
+            ints(dcde),
+            ints(dcdy),
+            fracs(dcde),
+            fracs(dcdy),
+        ];
+
+        run_differential(
+            PixelSize::Bits32,
+            (0, 0, (WIDTH * 4) as u32, (HEIGHT * 4) as u32),
+            format!("Shade case {}", case),
+            |assembler| {
+                assembler.set_othermode(
+                    Othermode::DEFAULT
+                        .with_cycle_type(CycleType::SingleCycle)
+                        .with_coverage_mode(CoverageMode::Zap)
+                        .with_blender_0(Blender::new(
+                            A::CombineAlpha,
+                            PM::CombineColor,
+                            B::Zero,
+                            PM::MemoryColor,
+                        )),
+                );
+                assembler.set_combine_raw(rdp_core::COMBINE_PASSTHROUGH_SHADE);
+                assembler.shaded_triangle(&triangle, &shade);
             },
         )
     }
@@ -577,13 +720,16 @@ fn run_differential(
         if soft_value != hardware {
             let x = (word % words_per_row) * 4 / bytes_per_pixel;
             let y = word / words_per_row;
-            // Dump the row from both sides to make the mismatch pattern visible on screen
+            // Dump an 8-word window around the mismatch from both sides (a full row wraps into
+            // OCR-hostile clutter on screen)
+            let first = (word.saturating_sub(1)).max(y * words_per_row);
+            let last = (first + 8).min((y + 1) * words_per_row);
             let mut row = String::new();
-            for word2 in y * words_per_row..(y + 1) * words_per_row {
+            for word2 in first..last {
                 row.push_str(&format!("{:08x} ", framebuffer.read(word2)));
             }
             let mut soft_row = String::new();
-            for word2 in y * words_per_row..(y + 1) * words_per_row {
+            for word2 in first..last {
                 soft_row.push_str(&format!(
                     "{:08x} ",
                     u32::from_be_bytes(soft_bytes[word2 * 4..word2 * 4 + 4].try_into().unwrap())

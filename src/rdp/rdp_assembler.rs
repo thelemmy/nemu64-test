@@ -304,6 +304,23 @@ impl<'a> RDPAssembler {
         }
     }
 
+    /// Shaded triangle: the edge words followed by the 8 shade coefficient words
+    pub fn shaded_triangle(&mut self, base: &TriangleBase, shade: &[u64; 8]) {
+        self.write_command(RDPCommand::ShadedTriangle, base.data[0]);
+
+        for i in 1..base.data.len() {
+            self.write(base.data[i]);
+        }
+        for word in shade {
+            self.write(*word);
+        }
+    }
+
+    /// SetCombine from the raw 56-bit mux configuration
+    pub fn set_combine_raw(&mut self, value: u64) {
+        self.write_command(RDPCommand::SetCombine, value);
+    }
+
     pub fn filled_rectangle(&mut self, value: &RDPRectangle) {
         self.write_command(
             RDPCommand::FilledRectangle,

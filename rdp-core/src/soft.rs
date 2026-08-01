@@ -50,6 +50,15 @@ impl SoftRdp {
             op::SET_FILL_COLOR => self.state.fill_color = word as u32,
             op::SET_BLEND_COLOR => self.state.blend_color = word as u32,
             op::SET_COLOR_IMAGE => self.state.color_image = word,
+            op::SET_COMBINE => self.state.combine = word,
+            op::SHADE_TRIANGLE => match self.state.cycle_type() {
+                CycleType::OneCycle => {
+                    if !raster::one_cycle_shade_triangle(&self.state, mem, command) {
+                        self.unhandled += 1;
+                    }
+                }
+                _ => self.unhandled += 1,
+            },
             op::FILL_TRIANGLE => match (self.state.cycle_type(), self.state.coverage_mode()) {
                 (CycleType::OneCycle, 2) => {
                     if !raster::one_cycle_fill_triangle(&self.state, mem, command) {

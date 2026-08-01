@@ -114,6 +114,25 @@ pub(crate) fn one_cycle_rectangle(state: &State, mem: &mut impl Rdram, word: u64
     true
 }
 
+/// (a * b) >> 16 for two s15.16 values without touching i64: the MIPS backend's dropped-
+/// truncation bug (docs/i64-value-corruption.md) makes 64-bit intermediates hazardous here, so
+/// the product is assembled from 16-bit limbs.
+fn fixed_mul(a: i32, b: i32) -> i32 {
+    let a_int = a >> 16;
+    let a_frac = (a & 0xFFFF) as u32;
+    let b_int = b >> 16;
+    let b_frac = (b & 0xFFFF) as u32;
+    let cross = a_int
+        .wrapping_mul(b_frac as i32)
+        .wrapping_add(b_int.wrapping_mul(a_frac as i32));
+    let low = ((a_frac.wrapping_mul(b_frac)) >> 16) as i32;
+    a_int
+        .wrapping_mul(b_int)
+        .wrapping_shl(16)
+        .wrapping_add(cross)
+        .wrapping_add(low)
+}
+
 const fn sign_extend_14(value: u32) -> i32 {
     ((value << 18) as i32) >> 18
 }
@@ -415,6 +434,160 @@ fn flush_coverage_row(
             *count = 0;
         }
     }
+}
+
+/// The Set_Combine configuration meaning "output = shade" in both cycles:
+/// RGB (a - b) * c + d with a = zero(8), c = zero(16), b = zero(8), d = SHADE(4);
+/// alpha with a = b = c = zero(7), d = SHADE(4). Encoding is the community bit layout - it is
+/// hardware-verified exactly insofar as the shade tests below pass with it.
+pub const COMBINE_PASSTHROUGH_SHADE: u64 = (8 << 52)
+    | (16 << 47)
+    | (7 << 44)
+    | (7 << 41)
+    | (8 << 37)
+    | (16 << 32)
+    | (8 << 28)
+    | (8 << 24)
+    | (7 << 21)
+    | (7 << 18)
+    | (4 << 15)
+    | (7 << 12)
+    | (4 << 9)
+    | (4 << 6)
+    | (7 << 3)
+    | 4;
+
+/// Shade_Triangle (opcode 0x0C) in 1-cycle mode, restricted to the combiner passthrough above,
+/// the verified blender configuration with P = CombineColor, and coverage mode zap.
+///
+/// Provisional model (the differential corrects it):
+/// - Shade coefficient words after the 4 edge words: RGBA int parts (4 x s16, high to low
+///   r,g,b,a), DxDx int parts, RGBA fractions, DcDx fractions, DcDe int, DcDy int, DcDe frac,
+///   DcDy frac. Channels are s15.16.
+/// - The color of a pixel is base + (rows since yh's pixel row, including a skipped partial top
+///   row) * DcDe + (sample position - exact fractional left edge position) * DcDx / 4, where the
+///   sample position is subpixel px*4 for even span-relative pixels and px*4 + G for odd ones,
+///   with G = sx_first % 4 for a static left edge and ((sx_first - 1) % 4) + 1 for a sloped one
+///   (sx_first = the span's first covered subpixel column). Hardware-observed across static
+///   integer, static fractional, sloped integer and sloped fractional left edges.
+/// - Written bytes are the integer parts' low 8 bits; alpha byte = coverage (0xE0 under zap).
+pub(crate) fn one_cycle_shade_triangle(state: &State, mem: &mut impl Rdram, cmd: &[u64]) -> bool {
+    if state.blender_0() != (0, 0, 1, 3)
+        || state.coverage_mode() != 2
+        || state.combine & 0x00FF_FFFF_FFFF_FFFF != COMBINE_PASSTHROUGH_SHADE
+        || state.color_image_size() != 3
+    {
+        return false;
+    }
+
+    let right_major = (cmd[0] >> 55) & 1 != 0;
+    let yl = sign_extend_14(((cmd[0] >> 32) & 0x3FFF) as u32);
+    let ym = sign_extend_14(((cmd[0] >> 16) & 0x3FFF) as u32);
+    let yh = sign_extend_14((cmd[0] & 0x3FFF) as u32);
+    let xl = ((cmd[1] >> 32) as u32 as i32).wrapping_shl(2);
+    let dl = cmd[1] as u32 as i32;
+    let xh = ((cmd[2] >> 32) as u32 as i32).wrapping_shl(2);
+    let dh = cmd[2] as u32 as i32;
+    let xm = ((cmd[3] >> 32) as u32 as i32).wrapping_shl(2);
+    let dm = cmd[3] as u32 as i32;
+
+    // Shade coefficients: s15.16 per channel, split into int and fraction words
+    let channel = |int_word: u64, frac_word: u64, lane: u32| -> i32 {
+        let int_part = (int_word >> (48 - lane * 16)) as u16;
+        let frac_part = (frac_word >> (48 - lane * 16)) as u16;
+        (((int_part as i16 as i32) << 16) as u32 | frac_part as u32) as i32
+    };
+    let mut color = [0i32; 4];
+    let mut dcdx = [0i32; 4];
+    let mut dcde = [0i32; 4];
+    for lane in 0..4 {
+        color[lane as usize] = channel(cmd[4], cmd[6], lane);
+        dcdx[lane as usize] = channel(cmd[5], cmd[7], lane);
+        dcde[lane as usize] = channel(cmd[8], cmd[10], lane);
+    }
+
+    let (sc_left, sc_top, sc_right, sc_bottom) = state.scissor_bounds();
+    let first_pixel_x = ((sc_left as i32) + 3) >> 2;
+    let first_pixel_y = ((sc_top as i32) + 3) >> 2;
+
+    let base = state.color_image_addr();
+    let stride_pixels = state.color_image_width() + 1;
+
+    let yh_row = yh >> 2;
+    let mut major_x = xh;
+    let mut minor_x = xm;
+    let mut y = yh;
+    let mut section = 0;
+    loop {
+        let (y_target, minor_inc) = if section == 0 { (ym, dm) } else { (yl, dl) };
+        if y >= y_target {
+            if section == 1 {
+                break;
+            }
+            section = 1;
+            minor_x = xl;
+            continue;
+        }
+        if y >= sc_bottom as i32 {
+            break;
+        }
+
+        if (y & 3) == 0 && (y >> 2) >= first_pixel_y {
+            let (left, right) = if right_major {
+                (major_x, minor_x)
+            } else {
+                (minor_x, major_x)
+            };
+            if right >= left {
+                let px_start = (left.wrapping_add((1 << 18) - 1) >> 18).max(first_pixel_x);
+                let px_end = ((right.wrapping_sub(2 << 2) >> 16).min(sc_right as i32 - 1)) >> 2;
+                if px_start <= px_end {
+                    let py = (y >> 2) as u32;
+                    let de_steps = (y >> 2) - yh_row;
+                    let sx_first = left.wrapping_add(0xFFFF) >> 16;
+                    let left_step = if right_major { dh } else { minor_inc };
+                    // Odd span-relative pixels sample G subpixels further right
+                    let g_odd = if left_step == 0 {
+                        sx_first & 3
+                    } else {
+                        ((sx_first - 1) & 3) + 1
+                    };
+                    // Exact fractional edge position in 16.16 subpixels (the <<2-domain
+                    // accumulator is 16.16 subpixels already)
+                    let left_sub16 = left;
+                    let row_addr = base + py * stride_pixels * 4;
+                    let mut row_base = [0i32; 4];
+                    for lane in 0..4 {
+                        row_base[lane] =
+                            color[lane].wrapping_add(dcde[lane].wrapping_mul(de_steps));
+                    }
+                    let mut px = px_start;
+                    while px <= px_end {
+                        let rel_odd = ((px - px_start) & 1) == 1;
+                        let sample = (px << 2) + if rel_odd { g_odd } else { 0 };
+                        let dist16 = (sample << 16).wrapping_sub(left_sub16);
+                        let mut sampled = [0i32; 4];
+                        for lane in 0..4 {
+                            sampled[lane] =
+                                row_base[lane].wrapping_add(fixed_mul(dist16, dcdx[lane] >> 2));
+                        }
+                        let r = (sampled[0] >> 16) as u32 & 0xFF;
+                        let g = (sampled[1] >> 16) as u32 & 0xFF;
+                        let b = (sampled[2] >> 16) as u32 & 0xFF;
+                        let value = (r << 24) | (g << 16) | (b << 8) | 0xE0;
+                        mem.write_u32(row_addr + (px as u32) * 4, value);
+                        px += 1;
+                    }
+                }
+            }
+        }
+
+        major_x += dh;
+        minor_x += minor_inc;
+        y += 1;
+    }
+
+    true
 }
 
 /// Fills the pixels x0..=x1 of row y with the fill color.

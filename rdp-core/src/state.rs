@@ -23,6 +23,8 @@ pub struct State {
     pub blend_color: u32,
     /// SetColorImage command word.
     pub color_image: u64,
+    /// SetCombine command word.
+    pub combine: u64,
 }
 
 impl State {
