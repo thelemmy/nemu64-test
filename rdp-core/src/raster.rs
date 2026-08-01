@@ -151,7 +151,7 @@ pub(crate) fn one_cycle_fill_triangle(state: &State, mem: &mut impl Rdram, cmd: 
     // more so the per-subpixel-line step keeps full precision), which still fits i32 for the
     // whole 10.2 coordinate space - the hardware's own edge registers aren't wider either.
     // Spelling these as i64 also breaks on console: the values come back with a corrupted high
-    // word once this function is inlined into the command loop. See docs/mips-i64-codegen-bug.md.
+    // word once this function is inlined into the command loop. See docs/i64-value-corruption.md (branch bug/mips-i64-miscompile).
     let right_major = (cmd[0] >> 55) & 1 != 0;
     let yl = sign_extend_14(((cmd[0] >> 32) & 0x3FFF) as u32);
     let ym = sign_extend_14(((cmd[0] >> 16) & 0x3FFF) as u32);
@@ -228,6 +228,182 @@ pub(crate) fn one_cycle_fill_triangle(state: &State, mem: &mut impl Rdram, cmd: 
     }
 
     true
+}
+
+/// Fill_Triangle in 1-cycle mode with coverage mode CLAMP: like
+/// [`one_cycle_fill_triangle`], but the written alpha byte carries the pixel's coverage.
+///
+/// Provisional model (this is the frontier - the differential tests are expected to correct it):
+/// - WHICH pixels are painted follows the same top-left-subpixel rule as zap (hardware-observed:
+///   a pixel with 12/16 coverage on the left edge stays unpainted): px_start/px_end come from the
+///   row's top subpixel line, and a fractional yh skips its partial top row entirely.
+/// - The coverage is sampled on a CHECKERBOARD: of the 16 subpixels only the 8 with an even
+///   (sx ^ sy) contribute, accumulated over all four subpixel lines of the row (on each line the
+///   subpixel columns [left, right - 2.0 subpixel units] are covered). Memory stores the sum in
+///   coverage-minus-one encoding: alpha = (sum - 1) << 5, full coverage = 0xE0. The sum only
+///   affects the written alpha, not which pixels are written. This fits every measured value:
+///   full-column right-edge partials (2 samples per column), mixed-row cases distinguishing
+///   which subpixels count (e.g. cols 0..2 full + col 3 on rows 1..3 -> 8 -> 0xE0 because
+///   (0,3) is odd and never counted; col 2 on rows 1..3 -> 5 -> 0x80 because (0,2) is even).
+/// - 32bpp alpha byte = CLAMP_ALPHA[count]; entries not pinned down by the old gated tests are
+///   the marker value 0x01 so a hardware mismatch reveals the true value.
+/// - 32bpp framebuffers only for now (the alpha byte is CPU-visible there).
+pub(crate) fn one_cycle_fill_triangle_clamp(
+    state: &State,
+    mem: &mut impl Rdram,
+    cmd: &[u64],
+) -> bool {
+    if state.blender_0() != (2, 0, 1, 3) || state.color_image_size() != 3 {
+        return false;
+    }
+
+    // Coverage-minus-one, from the checkerboard sample sum (0..=8). A painted pixel always has
+    // its top-left subpixel covered, and (0, 0) is a checkerboard sample, so the sum is >= 1.
+    const fn clamp_alpha(sum: u32) -> u32 {
+        (sum - 1) << 5
+    }
+
+    let right_major = (cmd[0] >> 55) & 1 != 0;
+    let yl = sign_extend_14(((cmd[0] >> 32) & 0x3FFF) as u32);
+    let ym = sign_extend_14(((cmd[0] >> 16) & 0x3FFF) as u32);
+    let yh = sign_extend_14((cmd[0] & 0x3FFF) as u32);
+    let xl = ((cmd[1] >> 32) as u32 as i32).wrapping_shl(2);
+    let dl = cmd[1] as u32 as i32;
+    let xh = ((cmd[2] >> 32) as u32 as i32).wrapping_shl(2);
+    let dh = cmd[2] as u32 as i32;
+    let xm = ((cmd[3] >> 32) as u32 as i32).wrapping_shl(2);
+    let dm = cmd[3] as u32 as i32;
+
+    let (sc_left, sc_top, sc_right, sc_bottom) = state.scissor_bounds();
+    let first_pixel_x = ((sc_left as i32) + 3) >> 2;
+    let first_pixel_y = ((sc_top as i32) + 3) >> 2;
+    // The partially covered top pixel row of a fractional yh produces no coverage
+    let y_start = (yh + 3) & !3;
+
+    let blend = state.blend_color;
+    let (r, g, b) = (blend >> 24, (blend >> 16) & 0xFF, (blend >> 8) & 0xFF);
+    let base = state.color_image_addr();
+    let stride_pixels = state.color_image_width() + 1;
+
+    // Subpixel coverage counts for the current pixel row, plus the painted range determined by
+    // the row's top subpixel line
+    let mut coverage = [0u8; 1024];
+    let mut row_y = i32::MIN;
+    let mut row_px_start = 0i32;
+    let mut row_px_end = -1i32;
+
+    // The major edge is sampled one step ahead of the minor edge (hardware-observed: a major
+    // edge crossing exactly onto a subpixel boundary mid-triangle loses that sample, while a
+    // minor edge or a constant major edge does not)
+    let mut major_x = xh.wrapping_add(dh);
+    let mut minor_x = xm;
+    let mut y = yh;
+    let mut section = 0;
+    loop {
+        let (y_target, minor_inc) = if section == 0 { (ym, dm) } else { (yl, dl) };
+        if y >= y_target {
+            if section == 1 {
+                break;
+            }
+            section = 1;
+            minor_x = xl;
+            continue;
+        }
+        if y >= sc_bottom as i32 {
+            break;
+        }
+
+        if y >= y_start && (y >> 2) >= first_pixel_y {
+            if (y >> 2) != row_y {
+                if row_y != i32::MIN {
+                    flush_coverage_row(
+                        mem,
+                        &mut coverage,
+                        row_y,
+                        row_px_start,
+                        row_px_end,
+                        base,
+                        stride_pixels,
+                        (r, g, b),
+                        clamp_alpha,
+                    );
+                }
+                row_y = y >> 2;
+                row_px_start = 0;
+                row_px_end = -1;
+            }
+
+            let (left, right) = if right_major {
+                (major_x, minor_x)
+            } else {
+                (minor_x, major_x)
+            };
+            if right >= left {
+                // The row's top subpixel line decides which pixels are painted
+                if (y & 3) == 0 {
+                    row_px_start = (left.wrapping_add((1 << 18) - 1) >> 18).max(first_pixel_x);
+                    row_px_end = ((right.wrapping_sub(2 << 2) >> 16).min(sc_right as i32 - 1)) >> 2;
+                }
+                // Every line contributes its checkerboard samples to the coverage sums. A
+                // subpixel column is covered iff it lies at or right of the edge, so the start
+                // rounds UP at subpixel precision.
+                let sx_start = (left.wrapping_add(0xFFFF) >> 16).max(first_pixel_x << 2);
+                let sx_end = (right.wrapping_sub(2 << 2) >> 16).min(sc_right as i32 - 1);
+                let mut sx = sx_start;
+                while sx <= sx_end {
+                    let px = sx >> 2;
+                    if ((sx ^ y) & 1) == 0 && (0..1024).contains(&px) {
+                        coverage[px as usize] += 1;
+                    }
+                    sx += 1;
+                }
+            }
+        }
+
+        major_x += dh;
+        minor_x += minor_inc;
+        y += 1;
+    }
+    if row_y != i32::MIN {
+        flush_coverage_row(
+            mem,
+            &mut coverage,
+            row_y,
+            row_px_start,
+            row_px_end,
+            base,
+            stride_pixels,
+            (r, g, b),
+            clamp_alpha,
+        );
+    }
+
+    true
+}
+
+#[allow(clippy::too_many_arguments)]
+fn flush_coverage_row(
+    mem: &mut impl Rdram,
+    coverage: &mut [u8; 1024],
+    row_y: i32,
+    px_start: i32,
+    px_end: i32,
+    base: u32,
+    stride_pixels: u32,
+    (r, g, b): (u32, u32, u32),
+    alpha_table: fn(u32) -> u32,
+) {
+    let row = base + (row_y as u32) * stride_pixels * 4;
+    for (x, count) in coverage.iter_mut().enumerate() {
+        if *count > 0 {
+            if (px_start..=px_end).contains(&(x as i32)) {
+                let alpha = alpha_table((*count).min(8) as u32);
+                let value = (r << 24) | (g << 16) | (b << 8) | alpha;
+                mem.write_u32(row + (x as u32) * 4, value);
+            }
+            *count = 0;
+        }
+    }
 }
 
 /// Fills the pixels x0..=x1 of row y with the fill color.

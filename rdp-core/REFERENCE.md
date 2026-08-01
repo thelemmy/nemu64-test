@@ -254,10 +254,24 @@ as 16.16 signed):
   pixel, a fractional yh skips its partially covered top row, yl paints its containing row.
 - Scissor top and left clip at pixel granularity (`(edge + 3) >> 2`); scissor right and bottom
   clip at subpixel granularity.
-- Whether the unsampled subpixels contribute to the coverage VALUE (clamp/save modes, AA
-  blending) is **[open]** - zap hides them. The pre-differential tests suggested a
-  subpixel-accumulating coverage with a partially-known clamp mapping (4->0x20, 7->0x40,
-  8..10->0x60, 12->0xA0, 16->0xE0) **[provisional; open: the remaining counts]**.
+- **Coverage (clamp mode)** is now differentially verified
+  **[verified: "SoftRDP: FillTriangle (1-cycle, clamp coverage, 32bpp)"]**:
+  - WHICH pixels are painted is the same top-left-subpixel rule as zap - a pixel with high
+    partial coverage on the left edge still stays unpainted. Coverage only affects the written
+    alpha.
+  - The coverage samples form a CHECKERBOARD: of the 16 subpixels per pixel, only the 8 with an
+    even (sx ^ sy) count. The written alpha is the sample sum in coverage-minus-one encoding:
+    alpha = (sum - 1) << 5, so full coverage = 0xE0 and the finest partial = 0x00.
+  - Along a span line, a subpixel column is covered iff it lies at or right of the left edge
+    (subpixel-precision round-up) and at or left of right - 2.0 subpixel units.
+  - The MAJOR edge samples one dh step ahead of the minor edge (observed via a major edge
+    crossing exactly onto a subpixel boundary mid-triangle; a constant or minor edge at the same
+    position keeps the sample).
+  - A fractional yh skips its partial top pixel row in clamp mode too.
+  - The old partially-known clamp table from the pre-differential tests (8..10 -> 0x60 etc.) was
+    partly wrong - measured in the miscompiled-i64 era; the checkerboard model replaces it.
+  - Still **[open]**: fractional yl bottom rows (which sample rows count), right edges exactly on
+    subpixel boundaries, wrap/save coverage modes, 16bpp (alpha bit + hidden bits).
 
 Everything else about triangles (shade, texture, z), and all of TMEM, combiner, blender in
 general: **[open]**.

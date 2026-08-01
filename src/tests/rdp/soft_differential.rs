@@ -366,6 +366,69 @@ impl Test for SoftFillTriangle {
     }
 }
 
+/// Fill_Triangle in 1-cycle mode with coverage mode CLAMP on a 32bpp framebuffer: the alpha byte
+/// carries the pixel coverage, so this measures the coverage values themselves.
+pub struct SoftFillTriangleClamp32 {}
+
+impl Test for SoftFillTriangleClamp32 {
+    fn name(&self) -> &str {
+        "SoftRDP: FillTriangle (1-cycle, clamp coverage, 32bpp)"
+    }
+
+    fn level(&self) -> Level {
+        Level::RDPBasic
+    }
+
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        let mut result: Vec<Box<dyn Any>> = Vec::new();
+        for i in 0..TRIANGLE_CASES.len() {
+            result.push(Box::new(i as u32));
+        }
+        result
+    }
+
+    fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
+        let index = *value.downcast_ref::<u32>().ok_or("Value is not a u32")?;
+        let (right_major, yl, ym, yh, xl, dl, xh, dh, xm, dm) = TRIANGLE_CASES[index as usize];
+
+        let triangle = TriangleBase::new(
+            right_major,
+            0,
+            0,
+            I12_2::new_with_masked_value((yl as u32) & 0x3FFF),
+            I12_2::new_with_masked_value((ym as u32) & 0x3FFF),
+            I12_2::new_with_masked_value((yh as u32) & 0x3FFF),
+            I16_16::new_with_masked_value(xl as u32),
+            I16_16::new_with_masked_value(xm as u32),
+            I16_16::new_with_masked_value(xh as u32),
+            I16_16::new_with_masked_value(dl as u32),
+            I16_16::new_with_masked_value(dm as u32),
+            I16_16::new_with_masked_value(dh as u32),
+        );
+
+        run_differential(
+            PixelSize::Bits32,
+            (0, 0, (WIDTH * 4) as u32, (HEIGHT * 4) as u32),
+            format!("Clamp triangle case {}", index),
+            |assembler| {
+                assembler.set_othermode(
+                    Othermode::DEFAULT
+                        .with_cycle_type(CycleType::SingleCycle)
+                        .with_coverage_mode(CoverageMode::Clamp)
+                        .with_blender_0(Blender::new(
+                            A::CombineAlpha,
+                            PM::BlendColor,
+                            B::Zero,
+                            PM::MemoryColor,
+                        )),
+                );
+                assembler.set_blendcolor(ARGB8888::new_with_raw_value(0xF848_0800));
+                assembler.filled_triangle(&triangle);
+            },
+        )
+    }
+}
+
 fn fill_rect_differential(
     cycle_type: CycleType,
     pixel_size: PixelSize,
