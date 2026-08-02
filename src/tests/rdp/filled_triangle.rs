@@ -17,6 +17,15 @@ use crate::tests::soft_asserts::soft_assert_eq_2d_array;
 use crate::tests::{Level, Test};
 use crate::uncached_memory::UncachedHeapMemory;
 
+// NOTE: these tests are superseded by the differential tests in soft_differential.rs and remain
+// gated behind `experimental_rdp`. Their "instability on hardware" turns out to be two plain
+// bugs, not flakiness:
+//  1. Colors: expected pixels are built as ARGB8888 (alpha in bits 31..24), but 32bpp RDP memory
+//     is r, g, b, coverage - so hardware writes FFFF00E0 where this file expects E0FF0000. The
+//     same confusion feeds SetBlendColor, whose fields are r, g, b, a high to low.
+//  2. Coverage: the CLAMP alpha table below is wrong. Hardware samples a checkerboard of 8 of
+//     the 16 subpixels and stores coverage-minus-one; see rdp-core/REFERENCE.md.
+// Fixing both here would just duplicate rdp-core, so they are kept for reference only.
 fn render_on_cpu<
     T: Color + Copy + Clone + From<ARGB8888>,
     const WIDTH: usize,
@@ -37,14 +46,17 @@ fn render_on_cpu<
     let ym: i32 = base.ym().raw_value();
     let yh: i32 = base.yh().raw_value();
 
-    // TODO: Is 64 bit precision correct here or should it be i32 only?
-    let xl: i64 = (base.xl().raw_value() as i64) << 2;
-    let xm: i64 = (base.xm().raw_value() as i64) << 2;
-    let xh: i64 = (base.xh().raw_value() as i64) << 2;
+    // i32, not i64: the edge accumulators live in a <<2-shifted 16.16 domain which fits i32 for
+    // the whole 10.2 coordinate space, and the hardware's own edge registers are not wider. i64
+    // here also miscompiles on this target (docs/i64-value-corruption.md), which is the likely
+    // cause of this file's historic "instability on hardware".
+    let xl: i32 = base.xl().raw_value().wrapping_shl(2);
+    let xm: i32 = base.xm().raw_value().wrapping_shl(2);
+    let xh: i32 = base.xh().raw_value().wrapping_shl(2);
 
-    let dl: i64 = base.dl().raw_value() as i64;
-    let dm: i64 = base.dm().raw_value() as i64;
-    let dh: i64 = base.dh().raw_value() as i64;
+    let dl: i32 = base.dl().raw_value();
+    let dm: i32 = base.dm().raw_value();
+    let dh: i32 = base.dh().raw_value();
 
     let mut major_x = xh;
     let major_inc = dh;
@@ -70,12 +82,12 @@ fn render_on_cpu<
                     let subpixel_right = (right - (2 << 2)) >> 16;
                     for x in subpixel_left..=subpixel_right {
                         // Left scissor is "just" pixel accurate
-                        if (x >> 2) < (((scissor.left().raw_value() as i64) + 3) >> 2) {
+                        if (x >> 2) < (((scissor.left().raw_value() as i32) + 3) >> 2) {
                             continue;
                         }
 
                         // Right scissor is subpixel accurate
-                        if x >= scissor.right().raw_value() as i64 {
+                        if x >= scissor.right().raw_value() as i32 {
                             break;
                         }
                         let y_pixel = y as usize >> 2;
