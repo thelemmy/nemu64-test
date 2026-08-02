@@ -11,7 +11,6 @@ pub enum CycleType {
     Fill,
 }
 
-#[derive(Default)]
 pub struct State {
     /// SetOtherModes command word.
     pub other_modes: u64,
@@ -25,6 +24,81 @@ pub struct State {
     pub color_image: u64,
     /// SetCombine command word.
     pub combine: u64,
+    /// SetTextureImage command word.
+    pub texture_image: u64,
+    /// SetTile command words, per tile.
+    pub tiles: [u64; 8],
+    /// SetTileSize command words, per tile.
+    pub tile_sizes: [u64; 8],
+    /// Texture memory. Not CPU-visible on hardware; only reachable through the texture unit.
+    pub tmem: [u8; 4096],
+}
+
+impl Default for State {
+    fn default() -> Self {
+        Self {
+            other_modes: 0,
+            scissor: 0,
+            fill_color: 0,
+            blend_color: 0,
+            color_image: 0,
+            combine: 0,
+            texture_image: 0,
+            tiles: [0; 8],
+            tile_sizes: [0; 8],
+            tmem: [0; 4096],
+        }
+    }
+}
+
+/// A decoded SetTile descriptor.
+pub struct Tile {
+    pub format: u32,
+    pub size: u32,
+    /// Row stride in 64-bit words
+    pub line: u32,
+    /// Start in 64-bit words
+    pub tmem: u32,
+    pub palette: u32,
+}
+
+impl State {
+    pub fn tile(&self, index: usize) -> Tile {
+        let word = self.tiles[index & 7];
+        Tile {
+            format: ((word >> 53) & 7) as u32,
+            size: ((word >> 51) & 3) as u32,
+            line: ((word >> 41) & 0x1FF) as u32,
+            tmem: ((word >> 32) & 0x1FF) as u32,
+            palette: ((word >> 20) & 0xF) as u32,
+        }
+    }
+
+    /// Tile bounds from SetTileSize, as raw 10.2: (sl, tl, sh, th)
+    pub fn tile_size(&self, index: usize) -> (u32, u32, u32, u32) {
+        let word = self.tile_sizes[index & 7];
+        (
+            ((word >> 44) & 0xFFF) as u32,
+            ((word >> 32) & 0xFFF) as u32,
+            ((word >> 12) & 0xFFF) as u32,
+            (word & 0xFFF) as u32,
+        )
+    }
+
+    /// Physical RDRAM address of the texture image
+    pub fn texture_image_addr(&self) -> u32 {
+        (self.texture_image & 0x03FF_FFFF) as u32
+    }
+
+    /// log2(bits per pixel) - 2 of the texture image
+    pub fn texture_image_size(&self) -> u32 {
+        ((self.texture_image >> 51) & 3) as u32
+    }
+
+    /// Width - 1 of the texture image, in texels
+    pub fn texture_image_width(&self) -> u32 {
+        ((self.texture_image >> 32) & 0x3FF) as u32
+    }
 }
 
 impl State {

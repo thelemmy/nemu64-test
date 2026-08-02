@@ -279,7 +279,6 @@ pub(crate) fn one_cycle_fill_triangle_coverage(
     // nothing to wrap against), 3 = save (memory keeps its alpha byte)
     let mode = state.coverage_mode();
 
-
     let right_major = (cmd[0] >> 55) & 1 != 0;
     let yl = sign_extend_14(((cmd[0] >> 32) & 0x3FFF) as u32);
     let ym = sign_extend_14(((cmd[0] >> 16) & 0x3FFF) as u32);
@@ -587,6 +586,150 @@ pub(crate) fn one_cycle_shade_triangle(state: &State, mem: &mut impl Rdram, cmd:
         y += 1;
     }
 
+    true
+}
+
+/// The Set_Combine configuration meaning "output = texel 0": the shade passthrough above with
+/// every SHADE selector replaced by TEXEL0.
+pub const COMBINE_PASSTHROUGH_TEXEL0: u64 = (8 << 52)
+    | (16 << 47)
+    | (7 << 44)
+    | (7 << 41)
+    | (8 << 37)
+    | (16 << 32)
+    | (8 << 28)
+    | (8 << 24)
+    | (7 << 21)
+    | (7 << 18)
+    | (1 << 15)
+    | (7 << 12)
+    | (1 << 9)
+    | (1 << 6)
+    | (7 << 3)
+    | 1;
+
+/// Load_Tile (opcode 0x34): copies a rectangle of the texture image into the tile's TMEM range.
+///
+/// Provisional model:
+/// - The rectangle is [sl, sh] x [tl, th] in TEXELS (the 10.2 fields carry whole texels here).
+/// - Source rows come from the texture image at its own width; destination rows are the tile's
+///   `line` 64-bit words apart, starting at the tile's `tmem` word.
+/// - Bytes are copied verbatim, no swizzling. The odd-line word swapping that texture sampling
+///   is known to involve is deliberately NOT modelled yet - the differential decides.
+pub(crate) fn load_tile(state: &mut State, mem: &mut impl Rdram, word: u64) -> bool {
+    let tile_index = ((word >> 24) & 7) as usize;
+    let sl = (((word >> 44) & 0xFFF) >> 2) as u32;
+    let tl = (((word >> 32) & 0xFFF) >> 2) as u32;
+    let sh = (((word >> 12) & 0xFFF) >> 2) as u32;
+    let th = ((word & 0xFFF) >> 2) as u32;
+
+    let tile = state.tile(tile_index);
+    let src_size = state.texture_image_size();
+    if src_size != 3 || tile.size != 3 {
+        // Only 32bpp RGBA is modelled so far
+        return false;
+    }
+    let src_base = state.texture_image_addr();
+    let src_stride = (state.texture_image_width() + 1) * 4;
+
+    for (row, t) in (tl..=th).enumerate() {
+        let dst = tile.tmem * 8 + (row as u32) * tile.line * 8;
+        for (col, s) in (sl..=sh).enumerate() {
+            let src = src_base + t * src_stride + s * 4;
+            let value = mem.read_u32(src);
+            let offset = dst + (col as u32) * 4;
+            if offset as usize + 4 <= state.tmem.len() {
+                state.tmem[offset as usize..offset as usize + 4]
+                    .copy_from_slice(&value.to_be_bytes());
+            }
+        }
+    }
+    true
+}
+
+/// Texture_Rectangle (opcode 0x24) in 1-cycle mode with the texel passthrough combiner, the
+/// verified blender configuration and coverage mode zap.
+///
+/// Provisional model:
+/// - Screen rect follows the 1-cycle rectangle rule (top-left subpixel inside [xh, xl) x [yh, yl)).
+/// - Texture coordinates start at (s, t) in 10.5 and step by dsdx / dtdy in 5.10 per pixel;
+///   the texel is sampled at the truncated integer coordinate (point sampling).
+/// - Texels are read from the tile's TMEM range at its `line` stride.
+pub(crate) fn one_cycle_texture_rectangle(
+    state: &State,
+    mem: &mut impl Rdram,
+    cmd: &[u64],
+) -> bool {
+    if state.blender_0() != (0, 0, 1, 3)
+        || state.coverage_mode() != 2
+        || state.combine & 0x00FF_FFFF_FFFF_FFFF != COMBINE_PASSTHROUGH_TEXEL0
+        || state.color_image_size() != 3
+    {
+        return false;
+    }
+
+    let word = cmd[0];
+    let xl = ((word >> 44) & 0xFFF) as i32;
+    let yl = ((word >> 32) & 0xFFF) as i32;
+    let tile_index = ((word >> 24) & 7) as usize;
+    let xh = ((word >> 12) & 0xFFF) as i32;
+    let yh = (word & 0xFFF) as i32;
+
+    let coords = cmd[1];
+    let s_start = ((coords >> 48) & 0xFFFF) as i32;
+    let t_start = ((coords >> 32) & 0xFFFF) as i32;
+    let dsdx = (coords >> 16) as u16 as i16 as i32;
+    let dtdy = coords as u16 as i16 as i32;
+
+    let tile = state.tile(tile_index);
+    if tile.size != 3 {
+        return false;
+    }
+
+    let (sc_left, sc_top, sc_right, sc_bottom) = state.scissor_bounds();
+    let sx0 = xh.max(sc_left as i32);
+    let sx1 = xl.min(sc_right as i32);
+    let sy0 = yh.max(sc_top as i32);
+    let sy1 = yl.min(sc_bottom as i32);
+    if sx1 <= sx0 || sy1 <= sy0 {
+        return true;
+    }
+    let x0 = (sx0 + 3) >> 2;
+    let x1 = (sx1 - 1) >> 2;
+    let y0 = (sy0 + 3) >> 2;
+    let y1 = (sy1 - 1) >> 2;
+    if x1 < x0 || y1 < y0 {
+        return true;
+    }
+
+    let base = state.color_image_addr();
+    let stride_pixels = state.color_image_width() + 1;
+
+    for y in y0..=y1 {
+        // s/t are 10.5; dsdx/dtdy are 5.10. Step in 10.5 by dsdx >> 5 per pixel.
+        let t_coord = t_start + ((y - y0) * dtdy >> 5);
+        let row_addr = base + (y as u32) * stride_pixels * 4;
+        for x in x0..=x1 {
+            let s_coord = s_start + ((x - x0) * dsdx >> 5);
+            let s_texel = s_coord >> 5;
+            let t_texel = t_coord >> 5;
+            let offset =
+                (tile.tmem * 8 + (t_texel as u32) * tile.line * 8 + (s_texel as u32) * 4) as usize;
+            let texel = if offset + 4 <= state.tmem.len() {
+                u32::from_be_bytes([
+                    state.tmem[offset],
+                    state.tmem[offset + 1],
+                    state.tmem[offset + 2],
+                    state.tmem[offset + 3],
+                ])
+            } else {
+                0
+            };
+            // Texel RGB with coverage in the alpha byte
+            let value = (texel & 0xFFFF_FF00) | 0xE0;
+            mem.write_u32(row_addr + (x as u32) * 4, value);
+        }
+    }
     true
 }
 

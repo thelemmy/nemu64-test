@@ -206,6 +206,7 @@ pub struct RDPAssembler {
     index: usize,
 }
 
+#[allow(dead_code)] // texture/TMEM commands land ahead of the tests that exercise them
 impl<'a> RDPAssembler {
     pub fn new() -> Self {
         Self {
@@ -320,6 +321,117 @@ impl<'a> RDPAssembler {
     /// SetCombine from the raw 56-bit mux configuration
     pub fn set_combine_raw(&mut self, value: u64) {
         self.write_command(RDPCommand::SetCombine, value);
+    }
+
+    pub fn set_texture_image<T: Copy + Clone>(
+        &mut self,
+        format: Format,
+        pixel_size: PixelSize,
+        width_minus_one: u12,
+        memory: &'a mut UncachedHeapMemory<T>,
+    ) {
+        let value = ((memory.start_physical() as u64) & Bitmasks64::M26)
+            | ((width_minus_one.value() as u64) << 32)
+            | ((pixel_size as u64) << 51)
+            | ((format as u64) << 53);
+        self.write_command(RDPCommand::SetTextureImage, value);
+    }
+
+    /// SetTile. `line` is the tile's row stride in 64-bit words, `tmem` its start in 64-bit words.
+    #[allow(clippy::too_many_arguments)]
+    pub fn set_tile(
+        &mut self,
+        format: Format,
+        pixel_size: PixelSize,
+        line: u16,
+        tmem: u16,
+        tile: u8,
+        palette: u8,
+        clamp_mirror_t: (bool, bool),
+        mask_shift_t: (u8, u8),
+        clamp_mirror_s: (bool, bool),
+        mask_shift_s: (u8, u8),
+    ) {
+        let value = ((format as u64) << 53)
+            | ((pixel_size as u64) << 51)
+            | ((line as u64 & 0x1FF) << 41)
+            | ((tmem as u64 & 0x1FF) << 32)
+            | ((tile as u64 & 7) << 24)
+            | ((palette as u64 & 0xF) << 20)
+            | ((clamp_mirror_t.0 as u64) << 19)
+            | ((clamp_mirror_t.1 as u64) << 18)
+            | ((mask_shift_t.0 as u64 & 0xF) << 14)
+            | ((mask_shift_t.1 as u64 & 0xF) << 10)
+            | ((clamp_mirror_s.0 as u64) << 9)
+            | ((clamp_mirror_s.1 as u64) << 8)
+            | ((mask_shift_s.0 as u64 & 0xF) << 4)
+            | (mask_shift_s.1 as u64 & 0xF);
+        self.write_command(RDPCommand::SetTile, value);
+    }
+
+    /// Shared layout of SetTileSize / LoadTile / LoadTlut: two 10.2 corners plus a tile index
+    fn tile_rect_command(
+        &mut self,
+        command: RDPCommand,
+        tile: u8,
+        sl: u16,
+        tl: u16,
+        sh: u16,
+        th: u16,
+    ) {
+        let value = ((sl as u64 & 0xFFF) << 44)
+            | ((tl as u64 & 0xFFF) << 32)
+            | ((tile as u64 & 7) << 24)
+            | ((sh as u64 & 0xFFF) << 12)
+            | (th as u64 & 0xFFF);
+        self.write_command(command, value);
+    }
+
+    pub fn set_tile_size(&mut self, tile: u8, sl: u16, tl: u16, sh: u16, th: u16) {
+        self.tile_rect_command(RDPCommand::SetTileSize, tile, sl, tl, sh, th);
+    }
+
+    pub fn load_tile(&mut self, tile: u8, sl: u16, tl: u16, sh: u16, th: u16) {
+        self.tile_rect_command(RDPCommand::LoadTile, tile, sl, tl, sh, th);
+    }
+
+    pub fn load_tlut(&mut self, tile: u8, sl: u16, tl: u16, sh: u16, th: u16) {
+        self.tile_rect_command(RDPCommand::LoadPalette, tile, sl, tl, sh, th);
+    }
+
+    /// LoadBlock: `texels` is the count minus one, `dxt` the per-line T step
+    pub fn load_block(&mut self, tile: u8, sl: u16, tl: u16, texels: u16, dxt: u16) {
+        self.tile_rect_command(RDPCommand::LoadBlock, tile, sl, tl, texels, dxt);
+    }
+
+    pub fn sync_load(&mut self) {
+        self.write_command(RDPCommand::SyncLoad, 0);
+    }
+
+    pub fn sync_tile(&mut self) {
+        self.write_command(RDPCommand::TileSync, 0);
+    }
+
+    /// TextureRectangle: screen rect in 10.2, texture start in 10.5 and steps in 5.10
+    #[allow(clippy::too_many_arguments)]
+    pub fn texture_rectangle(
+        &mut self,
+        tile: u8,
+        rect: &RDPRectangle,
+        s: u16,
+        t: u16,
+        dsdx: u16,
+        dtdy: u16,
+    ) {
+        self.write_command(
+            RDPCommand::TexturedRectangle,
+            ((rect.right.masked_value() as u64) << 44)
+                | ((rect.bottom.masked_value() as u64) << 32)
+                | ((tile as u64 & 7) << 24)
+                | ((rect.left.masked_value() as u64) << 12)
+                | (rect.top.masked_value() as u64),
+        );
+        self.write(((s as u64) << 48) | ((t as u64) << 32) | ((dsdx as u64) << 16) | (dtdy as u64));
     }
 
     pub fn filled_rectangle(&mut self, value: &RDPRectangle) {

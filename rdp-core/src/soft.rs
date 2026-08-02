@@ -51,6 +51,28 @@ impl SoftRdp {
             op::SET_BLEND_COLOR => self.state.blend_color = word as u32,
             op::SET_COLOR_IMAGE => self.state.color_image = word,
             op::SET_COMBINE => self.state.combine = word,
+            op::SET_TEXTURE_IMAGE => self.state.texture_image = word,
+            op::SET_TILE => {
+                let tile = ((word >> 24) & 7) as usize;
+                self.state.tiles[tile] = word;
+            }
+            op::SET_TILE_SIZE => {
+                let tile = ((word >> 24) & 7) as usize;
+                self.state.tile_sizes[tile] = word;
+            }
+            op::LOAD_TILE => {
+                if !raster::load_tile(&mut self.state, mem, word) {
+                    self.unhandled += 1;
+                }
+            }
+            op::TEXTURE_RECTANGLE => match self.state.cycle_type() {
+                CycleType::OneCycle => {
+                    if !raster::one_cycle_texture_rectangle(&self.state, mem, command) {
+                        self.unhandled += 1;
+                    }
+                }
+                _ => self.unhandled += 1,
+            },
             op::SHADE_TRIANGLE => match self.state.cycle_type() {
                 CycleType::OneCycle => {
                     if !raster::one_cycle_shade_triangle(&self.state, mem, command) {

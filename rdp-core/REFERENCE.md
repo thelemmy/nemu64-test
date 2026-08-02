@@ -328,8 +328,35 @@ something latched or carried between scanlines rather than computed from the edg
 
 Until this is understood the soft-RDP only claims shade on static-edge spans.
 
-Everything else about triangles (texture, z), and all of TMEM, combiner, blender in general:
-**[open]**.
+Everything else about triangles (texture, z), and the combiner/blender in general: **[open]**.
+
+## 6. TMEM and texturing
+
+First contact only - the infrastructure exists (assembler commands, tile state, a two-region test
+memory so the soft-RDP can read a texture image) but **no TMEM behavior is verified yet**.
+
+What the first experiment established, using LoadTile of an RGBA 32bpp texture followed by a 1:1
+TextureRectangle in 1-cycle mode with a texel-passthrough combiner:
+
+- The command sequence runs on hardware and produces plausible textured output, so the command
+  encodings (Set_Texture_Image, Set_Tile, Set_Tile_Size, Load_Tile, Texture_Rectangle) are at
+  least structurally accepted.
+- **A uniform texture does not produce uniform output.** With every texel set to 0x11223344,
+  hardware wrote a repeating three-value pattern (0x384040, 0x33403c, 0x334040) while the naive
+  model predicts a constant 0x112233. No sampling or channel-mapping error can turn a constant
+  source into a varying result, so hardware must be sampling TMEM that the load never wrote:
+  **the load model is wrong, not the sampler**.
+- With a coordinate-encoding texture the hardware's red channel tracked the model's blue channel
+  for the first few texels before diverging, which is consistent with texels being split or
+  interleaved in TMEM rather than stored as contiguous 32-bit words.
+
+Working hypothesis to test next: RGBA 32bpp textures are stored split across TMEM (red/green in
+the low half, blue/alpha in the high half), and Load_Tile's addressing reflects that. **32bpp is
+therefore the wrong format to start from** - the next attempt should begin with 16bpp RGBA5551 or
+8bpp I, which have no known split, and only return to 32bpp once the simple case is pinned down.
+
+Everything about Load_Block, Load_Tlut, tile masks/shifts/clamp/mirror, formats other than RGBA,
+filtering, and the 4bpp/CI paths: **[open]**.
 
 > Toolchain note: the pre-differential triangle tests' hardware instability (which got them
 > feature-gated) may well NOT be an RDP phenomenon. The differential work exposed that i64 values

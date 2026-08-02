@@ -35,6 +35,6 @@ pub mod rdram;
 mod soft;
 pub mod state;
 
-pub use raster::COMBINE_PASSTHROUGH_SHADE;
+pub use raster::{COMBINE_PASSTHROUGH_SHADE, COMBINE_PASSTHROUGH_TEXEL0};
 pub use rdram::{Rdram, SliceRdram};
 pub use soft::SoftRdp;

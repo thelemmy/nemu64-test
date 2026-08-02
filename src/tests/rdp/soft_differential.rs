@@ -568,6 +568,177 @@ impl Test for SoftShadeTriangle32 {
     }
 }
 
+/// Memory for the soft-RDP spanning two disjoint regions: the framebuffer it writes and a
+/// read-only source image (texture). Real RDRAM is one address space; this is only a test
+/// convenience so out-of-window accesses still panic loudly.
+struct DualRdram<'a> {
+    base: u32,
+    bytes: &'a mut [u8],
+    hidden: &'a mut [u8],
+    extra_base: u32,
+    extra: &'a [u8],
+}
+
+impl DualRdram<'_> {
+    fn in_extra(&self, address: u32) -> bool {
+        address >= self.extra_base && ((address - self.extra_base) as usize) < self.extra.len()
+    }
+}
+
+impl rdp_core::Rdram for DualRdram<'_> {
+    fn read_u8(&self, address: u32) -> u8 {
+        if self.in_extra(address) {
+            self.extra[(address - self.extra_base) as usize]
+        } else {
+            self.bytes[(address - self.base) as usize]
+        }
+    }
+
+    fn write_u8(&mut self, address: u32, value: u8) {
+        let index = (address - self.base) as usize;
+        self.bytes[index] = value;
+    }
+
+    fn read_hidden(&self, address: u32) -> u8 {
+        self.hidden[((address - self.base) >> 1) as usize]
+    }
+
+    fn write_hidden(&mut self, address: u32, value: u8) {
+        let index = ((address - self.base) >> 1) as usize;
+        self.hidden[index] = value & 3;
+    }
+}
+
+/// LoadTile of a 32bpp RGBA texture followed by a 1:1 TextureRectangle, hardware vs soft-RDP.
+/// TMEM is not CPU-visible, so the rectangle is the readback path.
+///
+/// NOT REGISTERED YET: the soft-RDP's LoadTile model is wrong for 32bpp (see the TMEM section of
+/// rdp-core/REFERENCE.md). Kept as the starting point for that work - register it in testlist.rs
+/// once the load path is understood.
+#[allow(dead_code)]
+pub struct SoftLoadTileRgba32 {}
+
+impl Test for SoftLoadTileRgba32 {
+    fn name(&self) -> &str {
+        "SoftRDP: LoadTile + TextureRectangle (RGBA 32bpp)"
+    }
+
+    fn level(&self) -> Level {
+        Level::RDPBasic
+    }
+
+    fn values(&self) -> Vec<Box<dyn Any>> {
+        // (pattern, texture width, height, load width, load height). Pattern 0 is a uniform
+        // color, which isolates the channel mapping from any sampling behavior; pattern 1 gives
+        // every texel its own coordinates.
+        crate::tests::boxed_values(&[
+            (0u32, 8u32, 8u32, 8u32, 8u32),
+            (1, 8, 8, 8, 8),
+            (1, 8, 8, 4, 4),
+            (1, 16, 4, 16, 4),
+        ])
+    }
+
+    fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
+        let (pattern, tex_w, tex_h, load_w, load_h) = *value
+            .downcast_ref::<(u32, u32, u32, u32, u32)>()
+            .ok_or("Value is not a (u32, u32, u32, u32, u32)")?;
+
+        let mut texture = UncachedHeapMemory::<u32>::new_with_align((tex_w * tex_h) as usize, 64);
+        for t in 0..tex_h {
+            for s in 0..tex_w {
+                let texel = if pattern == 0 {
+                    0x1122_3344
+                } else {
+                    ((s * 0x11 + 0x10) << 24)
+                        | ((t * 0x11 + 0x20) << 16)
+                        | (((s ^ t) * 0x11) << 8)
+                        | 0xFF
+                };
+                texture.write((t * tex_w + s) as usize, texel);
+            }
+        }
+
+        let mut texture_bytes = vec![0u8; (tex_w * tex_h * 4) as usize];
+        for i in 0..(tex_w * tex_h) as usize {
+            texture_bytes[i * 4..i * 4 + 4].copy_from_slice(&texture.read(i).to_be_bytes());
+        }
+        let texture_base = texture.start_physical() as u32;
+
+        run_differential_with_source(
+            PixelSize::Bits32,
+            (0, 0, (WIDTH * 4) as u32, (HEIGHT * 4) as u32),
+            format!(
+                "LoadTile p{} {}x{} of {}x{}",
+                pattern, load_w, load_h, tex_w, tex_h
+            ),
+            Some((texture_base, &texture_bytes)),
+            |assembler| {
+                assembler.set_othermode(
+                    Othermode::DEFAULT
+                        .with_cycle_type(CycleType::SingleCycle)
+                        .with_coverage_mode(CoverageMode::Zap)
+                        .with_blender_0(Blender::new(
+                            A::CombineAlpha,
+                            PM::CombineColor,
+                            B::Zero,
+                            PM::MemoryColor,
+                        )),
+                );
+                assembler.set_combine_raw(rdp_core::COMBINE_PASSTHROUGH_TEXEL0);
+                assembler.set_texture_image(
+                    Format::RGBA,
+                    PixelSize::Bits32,
+                    u12::new((tex_w - 1) as u16),
+                    &mut texture,
+                );
+                // Tile 0: 32bpp RGBA, row stride = load_w texels * 4 bytes / 8 bytes per word
+                assembler.set_tile(
+                    Format::RGBA,
+                    PixelSize::Bits32,
+                    (load_w / 2) as u16,
+                    0,
+                    0,
+                    0,
+                    (false, false),
+                    (0, 0),
+                    (false, false),
+                    (0, 0),
+                );
+                assembler.load_tile(
+                    0,
+                    0,
+                    0,
+                    ((load_w - 1) * 4) as u16,
+                    ((load_h - 1) * 4) as u16,
+                );
+                assembler.sync_load();
+                assembler.set_tile_size(
+                    0,
+                    0,
+                    0,
+                    ((load_w - 1) * 4) as u16,
+                    ((load_h - 1) * 4) as u16,
+                );
+                // 1:1 rectangle at (2, 2)
+                assembler.texture_rectangle(
+                    0,
+                    &RDPRectangle::new(
+                        U10_2::from_u32(2),
+                        U10_2::from_u32(2),
+                        U10_2::from_u32(2 + load_w),
+                        U10_2::from_u32(2 + load_h),
+                    ),
+                    0,
+                    0,
+                    1 << 10,
+                    1 << 10,
+                );
+            },
+        )
+    }
+}
+
 fn fill_rect_differential(
     cycle_type: CycleType,
     pixel_size: PixelSize,
@@ -625,8 +796,20 @@ fn fill_rect_differential(
 /// compares the resulting framebuffers word-exact, including the guard rows.
 fn run_differential(
     pixel_size: PixelSize,
+    scissor: (u32, u32, u32, u32),
+    desc: String,
+    configure: impl FnOnce(&mut RDPAssembler),
+) -> Result<(), String> {
+    run_differential_with_source(pixel_size, scissor, desc, None, configure)
+}
+
+/// As [`run_differential`], plus a read-only source region (a texture image) that the soft-RDP
+/// must be able to read: (physical address, contents).
+fn run_differential_with_source(
+    pixel_size: PixelSize,
     (sc_left, sc_top, sc_right, sc_bottom): (u32, u32, u32, u32),
     desc: String,
+    source: Option<(u32, &[u8])>,
     configure: impl FnOnce(&mut RDPAssembler),
 ) -> Result<(), String> {
     let bytes_per_pixel = match pixel_size {
@@ -668,12 +851,23 @@ fn run_differential(
     let mut soft = SoftRdp::new();
     {
         let mut hidden = vec![0u8; total_bytes / 2];
-        let mut rdram = SliceRdram::new(
-            framebuffer.start_physical() as u32,
-            &mut soft_bytes,
-            &mut hidden,
-        );
-        soft.run(&stream, &mut rdram);
+        let base = framebuffer.start_physical() as u32;
+        match source {
+            Some((extra_base, extra)) => {
+                let mut rdram = DualRdram {
+                    base,
+                    bytes: &mut soft_bytes,
+                    hidden: &mut hidden,
+                    extra_base,
+                    extra,
+                };
+                soft.run(&stream, &mut rdram);
+            }
+            None => {
+                let mut rdram = SliceRdram::new(base, &mut soft_bytes, &mut hidden);
+                soft.run(&stream, &mut rdram);
+            }
+        }
     }
     soft_assert_eq(soft.unhandled, 0, "SoftRdp hit unhandled commands")?;
 
