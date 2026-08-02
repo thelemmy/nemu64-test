@@ -59,6 +59,7 @@ pub struct RDPRectangle {
     bottom: U10_2,
 }
 
+#[allow(dead_code)] // accessors round out the type; not all are exercised
 impl RDPRectangle {
     pub const fn new(left: U10_2, top: U10_2, right: U10_2, bottom: U10_2) -> Self {
         Self {

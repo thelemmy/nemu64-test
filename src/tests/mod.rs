@@ -72,6 +72,7 @@ pub enum Level {
 
     /// RDP coverage emulation, which is thought to not be runnable on dedicated 3D hardware
     /// (unless doing GPU compute).
+    #[allow(dead_code)] // reserved for the coverage-sensitive soft-RDP tests
     RDPPrecise = 4,
 
     /// A test that requires emulation of accurate time (e.g. a NOP is 0.5 cycles, Random decrements by 1 per instruction).

@@ -3,6 +3,7 @@ use core::fmt::{Debug, Formatter};
 use arbitrary_int::prelude::*;
 use bitbybit::bitfield;
 
+#[allow(dead_code)] // part of the color API surface; not all of it is exercised
 pub trait Color {
     const WHITE: Self;
     const BLACK: Self;

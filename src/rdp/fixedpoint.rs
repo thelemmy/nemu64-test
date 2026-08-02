@@ -11,6 +11,7 @@ pub struct SignedFixedPoint<const DIGITS_BEFORE: usize, const DIGITS_AFTER: usiz
     raw_value: i32,
 }
 
+#[allow(dead_code)] // fixed-point API surface; not all constructors are exercised
 impl<const DIGITS_BEFORE: usize, const DIGITS_AFTER: usize>
     SignedFixedPoint<DIGITS_BEFORE, DIGITS_AFTER>
 {
@@ -64,6 +65,7 @@ pub struct UnsignedFixedPoint<const DIGITS_BEFORE: usize, const DIGITS_AFTER: us
     raw_value: u32,
 }
 
+#[allow(dead_code)] // fixed-point API surface; not all constructors are exercised
 impl<const DIGITS_BEFORE: usize, const DIGITS_AFTER: usize>
     UnsignedFixedPoint<DIGITS_BEFORE, DIGITS_AFTER>
 {

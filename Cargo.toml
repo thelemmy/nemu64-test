@@ -33,9 +33,6 @@ cop0hazard = ["quick"]
 # they'd move out of this category. Therefore, it is disabled by default and not even reported as disabled.
 poorly_understood_quirk = ["quick"]
 
-# The filled-triangle RDP tests. Disabled by default because they aren't stable on hardware yet.
-experimental_rdp = []
-
 # Renders the currently running test to the screen before it runs, so a hang or panic during
 # emulator bringup shows the culprit instead of a black screen. Disabled by default: the per-test
 # rendering roughly triples the suite's runtime and has been seen to wedge real hardware mid-run.

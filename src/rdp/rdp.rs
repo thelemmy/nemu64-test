@@ -29,6 +29,7 @@ pub const DP_SET_STATUS_SET_FREEZE: u32 = 0x8;
 
 pub struct RDP {}
 
+#[allow(dead_code)] // register/run helpers, not all exercised by the current tests
 impl RDP {
     fn set_register(reg: RegisterOffset, value: u32) {
         unsafe { DP_BASE_REG.add(reg as usize >> 2).write_volatile(value) }

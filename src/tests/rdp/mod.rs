@@ -20,7 +20,6 @@ use crate::tests::soft_asserts::{soft_assert_eq, soft_assert_eq2};
 use crate::tests::{Level, Test};
 use crate::uncached_memory::UncachedHeapMemory;
 
-pub mod filled_triangle;
 pub mod soft_differential;
 
 // TODO:

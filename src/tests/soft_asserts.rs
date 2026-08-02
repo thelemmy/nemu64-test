@@ -96,6 +96,7 @@ pub fn soft_assert_eq_vector<H: FnOnce() -> String>(
 /// Inlined test of whether 2D arrays `v1 == v2`, Equivalent to [`soft_assert_eq2`] but prints
 /// a more readable error message on failure.
 #[inline(always)]
+#[allow(dead_code)] // kept for 2D framebuffer comparisons
 pub fn soft_assert_eq_2d_array<
     H: FnOnce() -> String,
     T: Debug + PartialEq + Eq,

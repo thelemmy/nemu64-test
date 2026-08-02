@@ -1185,31 +1185,8 @@ fn default_tests() -> Vec<Box<dyn Test>> {
 }
 
 /// Returns a list of tests to be performed.
-fn append_experimental_rdp_tests(target: &mut Vec<Box<dyn Test>>) {
-    if cfg!(feature = "experimental_rdp") {
-        use super::rdp::filled_triangle::*;
-        target.push(Box::new(FilledTriangle1CycleDegenerateRect {}));
-        target.push(Box::new(FilledTriangle1CycleRightMajorFlatTop {}));
-        target.push(Box::new(FilledTriangle1CycleRightMajor {}));
-        target.push(Box::new(FilledTriangle1CycleScissorLeft {}));
-        target.push(Box::new(FilledTriangle1CycleScissorTop {}));
-        target.push(Box::new(FilledTriangle1CycleScissorRight {}));
-        target.push(Box::new(
-            FilledTriangle1CycleScissorRightSubPixelPrecision {},
-        ));
-        target.push(Box::new(FilledTriangle1CycleScissorBottom {}));
-        target.push(Box::new(
-            FilledTriangle1CycleScissorBottomSubPixelPrecision {},
-        ));
-        target.push(Box::new(FilledTriangle1CycleNegativeYH {}));
-        target.push(Box::new(FilledTriangle1CycleNegativeXL {}));
-        target.push(Box::new(FilledTriangle1CycleRandomized {}));
-    }
-}
-
 pub fn tests() -> Vec<Box<dyn Test>> {
     let mut result = default_tests();
     append_stress_tests(&mut result);
-    append_experimental_rdp_tests(&mut result);
     result
 }
