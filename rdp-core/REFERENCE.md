@@ -316,8 +316,17 @@ subpixels; other pixels stay exact; fitted per row):
 
 The phase mostly equals (left mod 2), but identical left values yield different phases under
 different slopes (13.5 above), some rows fit no per-parity quarter-subpixel offset at all, and
-one row shifted BOTH parities. Needs a dedicated probe series; until then the soft-RDP only
-claims shade on static-edge spans.
+one row shifted BOTH parities.
+
+A second probe series (5 slopes: 0.25/0.5/0.75/1.0/2.0 subpixels per row, 10 rows, phase fitted
+at EIGHTH-subpixel resolution independently per parity) fit almost nothing - nearly every row
+came back unfit. Only the two steepest slopes fit, and they fit the PLAIN LINEAR model (phase 0,
+both parities): dh = 2.0/row on rows 7..11, dh = 1.0/row on row 11. So the phase is not a
+per-parity sub-subpixel sampling offset at all; refining the resolution made the fits worse, not
+better. Whatever the mechanism is, it vanishes once the edge moves fast enough, which hints at
+something latched or carried between scanlines rather than computed from the edge position.
+
+Until this is understood the soft-RDP only claims shade on static-edge spans.
 
 Everything else about triangles (texture, z), and all of TMEM, combiner, blender in general:
 **[open]**.

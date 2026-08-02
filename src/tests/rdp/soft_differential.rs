@@ -298,28 +298,14 @@ const TRIANGLE_CASES: &[(bool, i32, i32, i32, i32, i32, i32, i32, i32, i32)] = &
     ),
 ];
 
-/// Extra triangles only used by the shade tests: their exact-boundary edge sampling exposes a
-/// still-open sub-LSB coverage question, so they stay out of the coverage tests.
+/// Triangles for the shade sampling probes: identical shape, varying left-edge slope
+/// (dh per row in subpixels: 0.5, 0.25, 0.75, 1.0, 2.0), tall enough for rows 2..=11.
 const SHADE_ONLY_TRIANGLES: &[(bool, i32, i32, i32, i32, i32, i32, i32, i32, i32)] = &[
-    // Fractional but CONSTANT left edge (probes whether shade phasing needs a sloped edge)
-    (
-        true,
-        40,
-        24,
-        8,
-        9 << 16,
-        0,
-        (3 << 16) + 0x4000,
-        0,
-        9 << 16,
-        0,
-    ),
-    // Integer start, sloped left edge
-    (true, 40, 24, 8, 9 << 16, 0, 3 << 16, 0x2000, 9 << 16, 0),
-    // Quarter-subpixel-per-row slope (decouples row parity from the edge fraction)
-    (true, 40, 24, 8, 9 << 16, 0, 3 << 16, 0x1000, 9 << 16, 0),
-    // Three-quarter-subpixel-per-row slope
-    (true, 40, 24, 8, 9 << 16, 0, 3 << 16, 0x3000, 9 << 16, 0),
+    (true, 48, 44, 8, 20 << 16, 0, 3 << 16, 0x2000, 20 << 16, 0),
+    (true, 48, 44, 8, 20 << 16, 0, 3 << 16, 0x1000, 20 << 16, 0),
+    (true, 48, 44, 8, 20 << 16, 0, 3 << 16, 0x3000, 20 << 16, 0),
+    (true, 48, 44, 8, 20 << 16, 0, 3 << 16, 0x4000, 20 << 16, 0),
+    (true, 48, 44, 8, 20 << 16, 0, 3 << 16, 0x8000, 20 << 16, 0),
 ];
 
 impl Test for SoftFillTriangle {
