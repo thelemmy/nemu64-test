@@ -832,6 +832,7 @@ fn default_tests() -> Vec<Box<dyn Test>> {
         Box::new(super::rdp::soft_differential::SoftFillTriangle {}),
         Box::new(super::rdp::soft_differential::SoftFillTriangleCoverage32 {}),
         Box::new(super::rdp::soft_differential::SoftShadeTriangle32 {}),
+        Box::new(super::rdp::soft_differential::SoftLoadTileRgba16 {}),
         Box::new(super::rdram::LWL {}),
         Box::new(super::rdram::LWR {}),
         Box::new(super::rdram::LDL {}),

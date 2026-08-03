@@ -609,18 +609,14 @@ impl rdp_core::Rdram for DualRdram<'_> {
     }
 }
 
-/// LoadTile of a 32bpp RGBA texture followed by a 1:1 TextureRectangle, hardware vs soft-RDP.
-/// TMEM is not CPU-visible, so the rectangle is the readback path.
-///
-/// NOT REGISTERED YET: the soft-RDP's LoadTile model is wrong for 32bpp (see the TMEM section of
-/// rdp-core/REFERENCE.md). Kept as the starting point for that work - register it in testlist.rs
-/// once the load path is understood.
-#[allow(dead_code)]
-pub struct SoftLoadTileRgba32 {}
+/// LoadTile of a 16bpp RGBA5551 texture followed by a 1:1 TextureRectangle, hardware vs
+/// soft-RDP. TMEM is not CPU-visible, so the rectangle is the readback path; copy cycle type
+/// writes texels verbatim into a 16bpp framebuffer, bypassing the combiner and blender.
+pub struct SoftLoadTileRgba16 {}
 
-impl Test for SoftLoadTileRgba32 {
+impl Test for SoftLoadTileRgba16 {
     fn name(&self) -> &str {
-        "SoftRDP: LoadTile + TextureRectangle (RGBA 32bpp)"
+        "SoftRDP: LoadTile + TextureRectangle (RGBA 16bpp, copy mode)"
     }
 
     fn level(&self) -> Level {
@@ -632,10 +628,12 @@ impl Test for SoftLoadTileRgba32 {
         // color, which isolates the channel mapping from any sampling behavior; pattern 1 gives
         // every texel its own coordinates.
         crate::tests::boxed_values(&[
-            (0u32, 8u32, 8u32, 8u32, 8u32),
-            (1, 8, 8, 8, 8),
-            (1, 8, 8, 4, 4),
-            (1, 16, 4, 16, 4),
+            // Single row first: multi-row loads are known to involve odd-line swizzling, so the
+            // one-row cases isolate the basic load and sample path.
+            (0u32, 8u32, 1u32, 8u32, 1u32),
+            (1, 8, 1, 8, 1),
+            (1, 16, 1, 16, 1),
+            (1, 8, 4, 8, 4),
         ])
     }
 
@@ -644,29 +642,29 @@ impl Test for SoftLoadTileRgba32 {
             .downcast_ref::<(u32, u32, u32, u32, u32)>()
             .ok_or("Value is not a (u32, u32, u32, u32, u32)")?;
 
-        let mut texture = UncachedHeapMemory::<u32>::new_with_align((tex_w * tex_h) as usize, 64);
+        let mut texture = UncachedHeapMemory::<u16>::new_with_align((tex_w * tex_h) as usize, 64);
+        let mut texels = vec![0u16; (tex_w * tex_h) as usize];
         for t in 0..tex_h {
             for s in 0..tex_w {
-                let texel = if pattern == 0 {
-                    0x1122_3344
+                // RGBA5551: r = bits 15..11, g = 10..6, b = 5..1, a = bit 0
+                let texel: u32 = if pattern == 0 {
+                    0x2AA9
                 } else {
-                    ((s * 0x11 + 0x10) << 24)
-                        | ((t * 0x11 + 0x20) << 16)
-                        | (((s ^ t) * 0x11) << 8)
-                        | 0xFF
+                    ((s & 0x1F) << 11) | ((t & 0x1F) << 6) | (((s ^ t) & 0x1F) << 1) | 1
                 };
-                texture.write((t * tex_w + s) as usize, texel);
+                texels[(t * tex_w + s) as usize] = texel as u16;
             }
         }
 
-        let mut texture_bytes = vec![0u8; (tex_w * tex_h * 4) as usize];
-        for i in 0..(tex_w * tex_h) as usize {
-            texture_bytes[i * 4..i * 4 + 4].copy_from_slice(&texture.read(i).to_be_bytes());
+        let mut texture_bytes = vec![0u8; (tex_w * tex_h * 2) as usize];
+        for (i, texel) in texels.iter().enumerate() {
+            texture.write(i, *texel);
+            texture_bytes[i * 2..i * 2 + 2].copy_from_slice(&texel.to_be_bytes());
         }
         let texture_base = texture.start_physical() as u32;
 
         run_differential_with_source(
-            PixelSize::Bits32,
+            PixelSize::Bits16,
             (0, 0, (WIDTH * 4) as u32, (HEIGHT * 4) as u32),
             format!(
                 "LoadTile p{} {}x{} of {}x{}",
@@ -674,29 +672,20 @@ impl Test for SoftLoadTileRgba32 {
             ),
             Some((texture_base, &texture_bytes)),
             |assembler| {
-                assembler.set_othermode(
-                    Othermode::DEFAULT
-                        .with_cycle_type(CycleType::SingleCycle)
-                        .with_coverage_mode(CoverageMode::Zap)
-                        .with_blender_0(Blender::new(
-                            A::CombineAlpha,
-                            PM::CombineColor,
-                            B::Zero,
-                            PM::MemoryColor,
-                        )),
-                );
-                assembler.set_combine_raw(rdp_core::COMBINE_PASSTHROUGH_TEXEL0);
+                // Copy cycle type: texels go straight to the framebuffer, so neither the combiner
+                // nor the blender can confuse a TMEM readback
+                assembler.set_othermode(Othermode::DEFAULT.with_cycle_type(CycleType::Copy));
                 assembler.set_texture_image(
                     Format::RGBA,
-                    PixelSize::Bits32,
+                    PixelSize::Bits16,
                     u12::new((tex_w - 1) as u16),
                     &mut texture,
                 );
-                // Tile 0: 32bpp RGBA, row stride = load_w texels * 4 bytes / 8 bytes per word
+                // Tile 0: 16bpp RGBA, row stride = load_w texels * 2 bytes / 8 bytes per word
                 assembler.set_tile(
                     Format::RGBA,
-                    PixelSize::Bits32,
-                    (load_w / 2) as u16,
+                    PixelSize::Bits16,
+                    (load_w / 4).max(1) as u16,
                     0,
                     0,
                     0,
@@ -720,14 +709,16 @@ impl Test for SoftLoadTileRgba32 {
                     ((load_w - 1) * 4) as u16,
                     ((load_h - 1) * 4) as u16,
                 );
-                // 1:1 rectangle at (2, 2)
+                // 1:1 rectangle at (2, 2). The right/bottom edge is inclusive in copy mode, and
+                // the width is a whole number of 4-pixel groups so the span is not extended past
+                // the loaded texels (what TMEM holds beyond a load is a separate question).
                 assembler.texture_rectangle(
                     0,
                     &RDPRectangle::new(
                         U10_2::from_u32(2),
                         U10_2::from_u32(2),
-                        U10_2::from_u32(2 + load_w),
-                        U10_2::from_u32(2 + load_h),
+                        U10_2::from_u32(2 + load_w - 1),
+                        U10_2::from_u32(2 + load_h - 1),
                     ),
                     0,
                     0,

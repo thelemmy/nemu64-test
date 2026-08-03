@@ -71,6 +71,11 @@ impl SoftRdp {
                         self.unhandled += 1;
                     }
                 }
+                CycleType::Copy => {
+                    if !raster::copy_texture_rectangle(&self.state, mem, command) {
+                        self.unhandled += 1;
+                    }
+                }
                 _ => self.unhandled += 1,
             },
             op::SHADE_TRIANGLE => match self.state.cycle_type() {

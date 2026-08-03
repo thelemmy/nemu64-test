@@ -332,53 +332,41 @@ Everything else about triangles (texture, z), and the combiner/blender in genera
 
 ## 6. TMEM and texturing
 
-First contact only - the infrastructure exists (assembler commands, tile state, a two-region test
-memory so the soft-RDP can read a texture image) but **no TMEM behavior is verified yet**.
+TMEM is not CPU-visible, so everything here is measured through a readback: load into TMEM, then
+draw a Texture_Rectangle in COPY cycle type into a 16bpp framebuffer. Copy mode writes texels
+verbatim with no combiner or blender involved, which keeps a TMEM measurement from depending on
+either. **[verified: "SoftRDP: LoadTile + TextureRectangle (RGBA 16bpp, copy mode)"]**
 
-What the first experiment established, using LoadTile of an RGBA 32bpp texture followed by a 1:1
-TextureRectangle in 1-cycle mode with a texel-passthrough combiner:
+### Load_Tile (0x34), RGBA 16bpp, single row
 
-- The command sequence runs on hardware and produces plausible textured output, so the command
-  encodings (Set_Texture_Image, Set_Tile, Set_Tile_Size, Load_Tile, Texture_Rectangle) are at
-  least structurally accepted.
-- **A uniform texture does not produce uniform output.** With every texel set to 0x11223344,
-  hardware wrote a repeating three-value pattern (0x384040, 0x33403c, 0x334040) while the naive
-  model predicts a constant 0x112233. No sampling or channel-mapping error can turn a constant
-  source into a varying result, so hardware must be sampling TMEM that the load never wrote:
-  **the load model is wrong, not the sampler**.
-- With a coordinate-encoding texture the hardware's red channel tracked the model's blue channel
-  for the first few texels before diverging, which is consistent with texels being split or
-  interleaved in TMEM rather than stored as contiguous 32-bit words.
+- Copies the rectangle [sl, sh] x [tl, th] (the 10.2 fields carry whole texels) from the texture
+  image into the tile's TMEM range: source rows at the texture image's own width, destination
+  rows `line` 64-bit words apart starting at the tile's `tmem` word. Bytes are copied verbatim -
+  no swizzling for a single row.
+- Set_Texture_Image and Set_Tile take format/size in the same bit positions as Set_Color_Image.
 
-Working hypothesis to test next: RGBA 32bpp textures are stored split across TMEM (red/green in
-the low half, blue/alpha in the high half), and Load_Tile's addressing reflects that. **32bpp is
-therefore the wrong format to start from** - the next attempt should begin with 16bpp RGBA5551 or
-8bpp I, which have no known split, and only return to 32bpp once the simple case is pinned down.
+### Texture_Rectangle (0x24) in copy mode
 
-Everything about Load_Block, Load_Tlut, tile masks/shifts/clamp/mirror, formats other than RGBA,
-filtering, and the 4bpp/CI paths: **[open]**.
+Copy mode processes **four pixels per cycle**, which shows up in two distinct ways - both were
+found by hardware disagreeing with the naive model:
 
-> Toolchain note: the pre-differential triangle tests' hardware instability (which got them
-> feature-gated) may well NOT be an RDP phenomenon. The differential work exposed that i64 values
-> in this edge-walker code come back corrupted on console once the function is inlined into the
-> command loop (low word right, high word garbage), while the same code is correct on a host.
-> rdp-core's walker uses i32 on purpose; details and the reproduction recipe are in
-> docs/mips-i64-codegen-bug.md.
+- **The painted span is rounded up to a whole group of four**, measured from its start. A
+  rectangle covering pixels 2..=10 paints 2..=13. Found with a uniform texture, where hardware
+  painting past the rectangle could not be mistaken for a sampling difference.
+- **dsdx advances S once per GROUP, not per pixel**; inside a group each pixel takes the next
+  texel. With dsdx = 1.0 the sampled texels run 0,1,2,3, 1,2,3,4, 2,3,4,5 ... - so a 1:1 copy
+  needs **dsdx = 4.0**. Found by decoding the texel sequence from a coordinate-encoded texture.
+- The screen rectangle follows the fill-mode rule (the xl/yl pixel is included).
 
-## 6. RDRAM hidden bits
+### Still open
 
-RDRAM is 9 bits per byte; the RDP (and VI) see the 9th bits, the CPU cannot read them. For 16-bit
-framebuffers they extend each pixel's 1-bit alpha to a 3-bit coverage value; for 16-bit z-buffers
-they extend dz. rdp-core models them as 2 bits per 16-bit word via its `Rdram` trait.
-
-- Whether/how CPU writes clobber the hidden bits, and what value they take: **[open]** (testable
-  via an RDP readback pass that routes memory coverage into visible bits).
-- What fill mode and 1-cycle writes put there: **[open]**.
-
-## 7. Sync commands
-
-Sync_Full is required at the end of a list for the status bits to settle back to idle
-(`COMMAND_BUFFER_READY`), and is what the tests use to detect completion.
-**[verified: "RDP STATUS: Flags during a run"]** Whether Sync_Load/Pipe/Tile have any effect
-observable in memory results (as opposed to timing/hazards): **[open]** - rdp-core treats them as
-no-ops.
+- Multi-row loads (the odd-line swizzling texture sampling is believed to involve), Load_Block,
+  Load_Tlut, tile masks/shifts/clamp/mirror.
+- What TMEM holds beyond a load - the group rounding samples past the loaded texels, and hardware
+  returned data there where an empty model returns zero.
+- **RGBA 32bpp**: an earlier attempt showed a uniform 32bpp texture producing a varying result,
+  meaning hardware samples TMEM the load never wrote. The likely explanation is that 32bpp texels
+  are split across TMEM (red/green low, blue/alpha high) with a matching load path. 32bpp is the
+  wrong format to start from; it should be revisited now that the 16bpp path is pinned down.
+- Formats other than RGBA, 4bpp/CI, filtering, and the 1-cycle texture path (which needs the
+  texel-passthrough combiner encoding verified separately).
