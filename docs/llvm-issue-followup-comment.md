@@ -7,27 +7,40 @@ hypothesis, not something I demonstrated), and add the verification done since f
 
 Some follow-up work since filing, including a correction to the issue body.
 
-### Correction: the causal chain in the description is not established
+### Update: the causal chain is now identified
 
-The description asserts `isMoveReg` → `MipsSEInstrInfo::isCopyInstrImpl` → the allocator treats
-dest as equal to source and eliminates the instruction. The first and last links are solid, but I
-have **not** demonstrated the middle one, and several experiments argue against the simple version
-of it. None of these delete an `SLL64_64`:
+The description's root cause was right in outline but I had not verified the middle of it. I have
+now, and it is more specific than "the allocator treats it as a copy".
 
-- `-run-pass=machine-cp` forwarding a `SLL64_64` result;
-- an identity `$v0_64 = SLL64_64 $v0_64` run through `machine-cp`, `postra-machine-sink` and
-  `machine-latecleanup`;
-- `-run-pass=register-coalescer` on minimal virtual-register MIR;
-- `-run-pass=greedy` on the same minimal MIR;
-- a value spilled across a call (tried with 1 and with 12 live sign-extended values).
+### Mechanism (now identified)
 
-So generic copy machinery leaves the instruction alone, and the trigger is narrower than "any
-`isCopyInstr` consumer". What is verified is only that the deletion happens **during the Greedy
-Register Allocator** and that removing the flag prevents it. My current guess is `InlineSpiller`
-treating the destination as a sibling value of the source and reusing its spill slot - the final
-assembly matches that shape, with the raw 64-bit value spilled once and reloaded straight into the
-add - but I have not confirmed which decision actually removes it. Please read the description's
-"root cause" as a hypothesis.
+`InlineSpiller` spills the `SLL64_64` result and folds the spill into the defining instruction.
+`TargetInstrInfo::foldMemoryOperand` has a "Straight COPY may fold as load/store" path
+(`llvm/lib/CodeGen/TargetInstrInfo.cpp`, guarded by `if (!isCopyInstr(MI) || Ops.size() != 1)`)
+which takes `MI.getOperand(1 - Ops[0])` - the *other* operand, i.e. the copy's source - and emits
+`storeRegToStackSlot` for it in place of the instruction. For a real copy that is correct. For
+`SLL64_64` it stores the untruncated source, and every later reload yields the wrong value.
+
+`-debug-only=regalloc` on the attached MIR test shows it directly:
+
+```
+Inline spilling GPR64:%46
+	skipping remat of def %46:gpr64 = SLL64_64 %41:gpr64
+	cannot remat for 1632e	%57:gpr64 = DADDu %57:gpr64, %46:gpr64
+spillAroundUses %46
+	folded:   864r	SD %41:gpr64, %stack.1, 0
+	reload:   1624r	%90:gpr64 = LD %stack.1, 0
+	rewrite:  1632r	%57:gpr64 = DADDu %57:gpr64, killed %90:gpr64
+```
+
+The spill stores `%41`, the *source*, where the value being spilled is `%46`, the sign-extended
+result. So the chain is: `isMoveReg` -> `MipsSEInstrInfo::isCopyInstrImpl` returns a
+`DestSourcePair` -> `TargetInstrInfo::foldMemoryOperand` folds the "copy" into a store of its
+source -> the truncation is gone.
+
+This also explains why the bug needs register pressure: the value has to be spilled *and* the
+spill has to be folded into the def. Copy propagation, coalescing and a plain spill across a call
+all leave the instruction alone.
 
 ### The observation itself, re-verified on an assertions build
 
