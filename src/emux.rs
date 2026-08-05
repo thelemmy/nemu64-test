@@ -48,6 +48,7 @@ fn xdetect_extensions_20_3f() -> u32 {
         asm!(
             ".set noat",
             ".set noreorder",
+            "addiu $8, $zero, 0",
             ".word {instruction}",
             instruction = const encode_xdetect(8, 0, XDETECT_CODE_EXTENSIONS_20_3F),
             lateout("$8") result,
