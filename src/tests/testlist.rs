@@ -1090,7 +1090,7 @@ fn default_tests() -> Vec<Box<dyn Test>> {
         Box::new(super::sp_memory::dma::SPDMAIntoIMEMUntilEnd {}),
         Box::new(super::sp_memory::dma::SPDMAIntoIMEMWithOverflow {}),
         Box::new(super::sp_memory::dma::SPDMAFromDMEMWithOverflow {}),
-        Box::new(super::sp_memory::dma::SPDMAFromNowhereExpectZeroes {}),
+        Box::new(super::sp_memory::dma::SPDMAFromNowhereStaysInIMEM {}),
         Box::new(super::sp_memory::dma::SPDMAFromDMEMWithOverflowByCount {}),
         Box::new(super::sp_memory::dma::SPDMAFromIMEMWithOverflowByCount {}),
         Box::new(super::sp_memory::dma::SPDMAMultiRowDMEMRoundtrip {}),
