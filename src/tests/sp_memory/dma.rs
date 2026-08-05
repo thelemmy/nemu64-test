@@ -7,7 +7,7 @@ use core::any::Any;
 use crate::cop0;
 use crate::rsp::rsp::RSP;
 use crate::rsp::spmem::SPMEM;
-use crate::tests::soft_asserts::soft_assert_eq2;
+use crate::tests::soft_asserts::{soft_assert_eq2, soft_assert_neq};
 use crate::tests::{Level, Test};
 use crate::MemoryMap;
 
@@ -566,11 +566,16 @@ impl Test for SPDMAFromDMEMWithOverflow {
     }
 }
 
-pub struct SPDMAFromNowhereExpectZeroes {}
+/// A DMA sourced from beyond RDRAM: the overflow must stay inside IMEM.
+///
+/// The data dma'd in is usually 0, but occasionally we see values like 0xB4190010. Unclear where
+/// that value comes from, so we only verify that the target was overwritten but not the specific
+/// value.
+pub struct SPDMAFromNowhereStaysInIMEM {}
 
-impl Test for SPDMAFromNowhereExpectZeroes {
+impl Test for SPDMAFromNowhereStaysInIMEM {
     fn name(&self) -> &str {
-        "spmem: DMA (nowhere) -> IMEM (overflow, expect zeroes)"
+        "spmem: DMA (nowhere) -> IMEM (overflow stays in IMEM)"
     }
 
     fn level(&self) -> Level {
@@ -582,41 +587,51 @@ impl Test for SPDMAFromNowhereExpectZeroes {
     }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        // expected will read from both IMEM and DMEM. Ensure that nothing spilled into DMEM
-        // read from outside rdram bounds, which should fill in zeroes
-        dma_test_with_source(
+        const FILL: u32 = 0xBADDECAF;
+
+        for i in 0..20 {
+            SPMEM::write(0x1FE0 + i * 4, FILL);
+        }
+        for i in 0..4 {
+            SPMEM::write(0x1000 + i * 4, FILL);
+        }
+
+        RSP::start_dma_cpu_to_sp(
             MemoryMap::addr32_to_usize(0x80000000 + 12 * 1024 * 1024) as *const u8,
             0x1FF0,
             31,
-            0x1FE0,
-            0x1010,
-            [
-                [
-                    0xBADD, 0xECAF, 0xBADD, 0xECAF, 0xBADD, 0xECAF, 0xBADD, 0xECAF,
-                ],
-                [
-                    0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-                ],
-                [
-                    0xBADD, 0xECAF, 0xBADD, 0xECAF, 0xBADD, 0xECAF, 0xBADD, 0xECAF,
-                ],
-                [
-                    0xBADD, 0xECAF, 0xBADD, 0xECAF, 0xBADD, 0xECAF, 0xBADD, 0xECAF,
-                ],
-                [
-                    0xBADD, 0xECAF, 0xBADD, 0xECAF, 0xBADD, 0xECAF, 0xBADD, 0xECAF,
-                ],
-            ],
-        )?;
+        );
+        RSP::wait_until_dma_completed();
 
-        // But also ensure that IMEM properly overflowed
-        soft_assert_eq2(
-            SPMEM::read_vector16_from_dmem_or_imem(0x1000),
-            [
-                0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-            ],
-            || "SPMEM[0x1000] after DMA".to_string(),
-        )?;
+        // Untouched: before the destination, and the wrap past the end of SPMEM into DMEM
+        for i in 0..4 {
+            soft_assert_eq2(SPMEM::read(0x1FE0 + i * 4), FILL, || {
+                format!("SPMEM[0x{:x}] before the destination", 0x1FE0 + i * 4)
+            })?;
+        }
+        for i in 0..12 {
+            soft_assert_eq2(SPMEM::read(0x2000 + i * 4), FILL, || {
+                format!("SPMEM[0x{:x}] wrapped into DMEM", 0x2000 + i * 4)
+            })?;
+        }
+
+        // Written, with what is undefined: the destination and the IMEM overflow
+        for i in 0..4 {
+            soft_assert_neq(
+                SPMEM::read(0x1FF0 + i * 4),
+                FILL,
+                &format!("SPMEM[0x{:x}] written", 0x1FF0 + i * 4),
+            )?;
+            soft_assert_neq(
+                SPMEM::read(0x1000 + i * 4),
+                FILL,
+                &format!("SPMEM[0x{:x}] IMEM overflow", 0x1000 + i * 4),
+            )?;
+        }
+
+        soft_assert_eq2(RSP::sp_address(), 0x1010, || {
+            "SP-Address after DMA".to_string()
+        })?;
         Ok(())
     }
 }
