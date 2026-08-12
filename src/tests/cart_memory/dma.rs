@@ -387,6 +387,11 @@ impl Test for PIDMAMisalignedCrossPage {
     }
 }
 
+/// Destinations so close to the end of an RDRAM page that the first block is truncated to
+/// fewer bytes than the misalignment. On top of the usual first-block hole this opens a second
+/// hole at the end of the next block and shifts everything after it down by the misalignment.
+///
+/// Reachable for misalignments 2, 4 and 6 (page distances 6, 4 and 2).
 pub struct PIDMAMisalignedEndOfPage {}
 
 impl Test for PIDMAMisalignedEndOfPage {
@@ -411,6 +416,20 @@ impl Test for PIDMAMisalignedEndOfPage {
             Box::new((2u32, 132u32)),
             Box::new((2u32, 133u32)),
             Box::new((2u32, 224u32)),
+            Box::new((4u32, 1u32)),
+            Box::new((4u32, 2u32)),
+            Box::new((4u32, 3u32)),
+            Box::new((4u32, 4u32)),
+            Box::new((4u32, 6u32)),
+            Box::new((4u32, 7u32)),
+            Box::new((4u32, 8u32)),
+            Box::new((4u32, 16u32)),
+            Box::new((4u32, 127u32)),
+            Box::new((4u32, 128u32)),
+            Box::new((4u32, 129u32)),
+            Box::new((4u32, 130u32)),
+            Box::new((4u32, 133u32)),
+            Box::new((4u32, 224u32)),
             Box::new((6u32, 1u32)),
             Box::new((6u32, 2u32)),
             Box::new((6u32, 4u32)),
@@ -430,50 +449,58 @@ impl Test for PIDMAMisalignedEndOfPage {
         let (rdram_misalign, size) = *value.downcast_ref::<(u32, u32)>().unwrap();
         let cart_addr =
             MemoryMap::physical_cart_address(&COUNTER16[0] as *const u16 as *const u32) as u32;
+        let misalign = rdram_misalign as isize;
         let requested_size = size as isize;
-        let actual_rom_size = if requested_size >= (8 - rdram_misalign as isize) {
+
+        // Bytes from the destination to the end of its RDRAM page. A transfer is split into
+        // blocks of at most 128 bytes, and a block may never cross a page, so this truncates
+        // the first block to something far smaller than usual.
+        let page_distance = 8 - misalign;
+
+        let actual_rom_size = if requested_size >= page_distance {
             (requested_size + 1) & !1
         } else {
             requested_size
         };
         let mut actual_size = max(
             0,
-            if actual_rom_size < 8 - rdram_misalign as isize {
-                actual_rom_size - rdram_misalign as isize
+            if actual_rom_size < page_distance {
+                actual_rom_size - misalign
             } else {
                 actual_rom_size
             },
         );
-        if rdram_misalign == 2 && actual_size >= 134 as isize {
-            actual_size += 2;
+
+        // The first block reads page_distance bytes but writes only the first
+        // page_distance - misalign of them, leaving the usual first-block hole at its end.
+        // Where that hole would start before the destination, the whole first block is lost.
+        let first_hole_start = max(0, page_distance - misalign);
+
+        // Once the first block is this small, a second hole opens up at the end of the
+        // following 128-byte block, and everything past it lands misalign bytes lower than
+        // it otherwise would.
+        let second_hole_start = page_distance + 128 - misalign;
+        if actual_size > second_hole_start {
+            actual_size += misalign;
         }
-        if rdram_misalign == 6 && actual_size >= 124 as isize {
-            actual_size += 6;
-        }
+
         let cart_transfer_size = (actual_rom_size + 1) & !1;
-        let rdram_transfer_size =
-            ((actual_size + rdram_misalign as isize + 7) & !7) - rdram_misalign as isize;
-        let expected: Vec<u8> = match rdram_misalign {
-            2 => (0..actual_size)
-                .map(|x| match x {
-                    4..=5 => 0xaa,
-                    132..=133 => 0xaa,
-                    134..=511 => ((x - 2) & 255) as u8,
-                    _ => (x & 255) as u8,
-                })
-                .collect(),
-            6 => (0..actual_size)
-                .map(|x| match x {
-                    0..=1 => 0xaa,
-                    124..=129 => 0xaa,
-                    130..=511 => ((x - 6) & 255) as u8,
-                    _ => (x & 255) as u8,
-                })
-                .collect(),
-            _ => panic!("Unexpected misalignment"),
-        };
+        let rdram_transfer_size = ((actual_size + misalign + 7) & !7) - misalign;
+        let expected: Vec<u8> = (0..actual_size)
+            .map(|x| {
+                if (x >= first_hole_start && x < page_distance)
+                    || (x >= second_hole_start && x < second_hole_start + misalign)
+                {
+                    0xaa
+                } else if x >= second_hole_start {
+                    ((x - misalign) & 255) as u8
+                } else {
+                    (x & 255) as u8
+                }
+            })
+            .collect();
         test_pidma_transfer(
-            rdram_misalign as isize,
+            misalign,
             2048 - 8,
             cart_addr,
             requested_size,
