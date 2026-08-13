@@ -40,7 +40,7 @@ impl<T: Copy + Color> Image<T> {
         self.height
     }
 
-    pub fn pixels_mut(&mut self) -> &mut Box<[T]> {
+    pub fn pixels_mut(&mut self) -> &mut [T] {
         &mut self.pixels
     }
 }
