@@ -11,27 +11,29 @@ use crate::cop1::FCSRRoundingMode::{NegativeInfinity, PositiveInfinity};
 pub struct FConst {}
 
 impl FConst {
-    // Signalling NAN range (taken from https://www.doc.ic.ac.uk/~eedwards/compsys/float/nan.html).
-    pub const SIGNALLING_NAN_START_32: f32 = f32::from_bits(0x7F800001u32);
-    pub const SIGNALLING_NAN_END_32: f32 = f32::from_bits(0x7FBFFFFFu32);
-    pub const SIGNALLING_NAN_NEGATIVE_START_32: f32 = f32::from_bits(0xFF800001u32);
-    pub const SIGNALLING_NAN_NEGATIVE_END_32: f32 = f32::from_bits(0xFFBFFFFFu32);
+    // VR4300 inverts the IEEE 754 quiet/signalling convention: the fraction MSB set means
+    // signalling NaN, clear means quiet NaN.
+    // Quiet NAN range (fraction MSB clear)
+    pub const QUIET_NAN_START_32: f32 = f32::from_bits(0x7F800001u32);
+    pub const QUIET_NAN_END_32: f32 = f32::from_bits(0x7FBFFFFFu32);
+    pub const QUIET_NAN_NEGATIVE_START_32: f32 = f32::from_bits(0xFF800001u32);
+    pub const QUIET_NAN_NEGATIVE_END_32: f32 = f32::from_bits(0xFFBFFFFFu32);
 
-    pub const SIGNALLING_NAN_START_64: f64 = f64::from_bits(0x7FF0000000000001u64);
-    pub const SIGNALLING_NAN_END_64: f64 = f64::from_bits(0x7FF7FFFFFFFFFFFFu64);
-    pub const SIGNALLING_NAN_NEGATIVE_START_64: f64 = f64::from_bits(0xFFF0000000000001u64);
-    pub const SIGNALLING_NAN_NEGATIVE_END_64: f64 = f64::from_bits(0xFFF7FFFFFFFFFFFFu64);
+    pub const QUIET_NAN_START_64: f64 = f64::from_bits(0x7FF0000000000001u64);
+    pub const QUIET_NAN_END_64: f64 = f64::from_bits(0x7FF7FFFFFFFFFFFFu64);
+    pub const QUIET_NAN_NEGATIVE_START_64: f64 = f64::from_bits(0xFFF0000000000001u64);
+    pub const QUIET_NAN_NEGATIVE_END_64: f64 = f64::from_bits(0xFFF7FFFFFFFFFFFFu64);
 
-    // Quiet NAN range
-    pub const QUIET_NAN_START_32: f32 = f32::from_bits(0x7FC00000u32);
-    pub const QUIET_NAN_END_32: f32 = f32::from_bits(0x7FFFFFFFu32);
-    pub const QUIET_NAN_NEGATIVE_START_32: f32 = f32::from_bits(0xFFC00000u32);
-    pub const QUIET_NAN_NEGATIVE_END_32: f32 = f32::from_bits(0xFFFFFFFFu32);
+    // Signalling NAN range (fraction MSB set)
+    pub const SIGNALLING_NAN_START_32: f32 = f32::from_bits(0x7FC00000u32);
+    pub const SIGNALLING_NAN_END_32: f32 = f32::from_bits(0x7FFFFFFFu32);
+    pub const SIGNALLING_NAN_NEGATIVE_START_32: f32 = f32::from_bits(0xFFC00000u32);
+    pub const SIGNALLING_NAN_NEGATIVE_END_32: f32 = f32::from_bits(0xFFFFFFFFu32);
 
-    pub const QUIET_NAN_START_64: f64 = f64::from_bits(0x7FF8000000000000u64);
-    pub const QUIET_NAN_END_64: f64 = f64::from_bits(0x7FFFFFFFFFFFFFFFu64);
-    pub const QUIET_NAN_NEGATIVE_START_64: f64 = f64::from_bits(0xFFF8000000000000u64);
-    pub const QUIET_NAN_NEGATIVE_END_64: f64 = f64::from_bits(0xFFFFFFFFFFFFFFFFu64);
+    pub const SIGNALLING_NAN_START_64: f64 = f64::from_bits(0x7FF8000000000000u64);
+    pub const SIGNALLING_NAN_END_64: f64 = f64::from_bits(0x7FFFFFFFFFFFFFFFu64);
+    pub const SIGNALLING_NAN_NEGATIVE_START_64: f64 = f64::from_bits(0xFFF8000000000000u64);
+    pub const SIGNALLING_NAN_NEGATIVE_END_64: f64 = f64::from_bits(0xFFFFFFFFFFFFFFFFu64);
 
     // Subnormal range
     pub const SUBNORMAL_MIN_POSITIVE_32: f32 = f32::from_bits(0x00000001);
