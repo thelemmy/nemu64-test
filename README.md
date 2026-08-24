@@ -22,7 +22,7 @@ nemu64-test can be built on Windows, Mac or Linux (including within WSL). The st
 1. Install Rust: https://www.rust-lang.org/tools/install
 2. Get the source: (e.g. using git, or downloading an archive manually)
 ```
-git clone https://github.com/lemmy-64/nemu64-test.git
+git clone https://github.com/thelemmy/nemu64-test.git
 cd nemu64-test
 ```
 3. Install prerequisites:
