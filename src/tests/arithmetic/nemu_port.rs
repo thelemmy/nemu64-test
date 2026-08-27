@@ -6,30 +6,18 @@ use alloc::vec::Vec;
 use core::any::Any;
 use core::arch::asm;
 
+use crate::tests::soft_asserts::soft_assert_eq2;
 use crate::tests::{Level, Test};
 
-/// The registers these tests assert, in assert order. The three-register form
-/// checks a prefix of this list.
+/// The registers these tests assert, in assert order.
 const CHECKED_REGS: [u8; 4] = [0, 2, 3, 4];
 
-/// Compare one register against its expected value.
-///
-/// Deliberately out of line. `soft_assert_eq` is small enough that LTO inlined it
-/// into every `run()` below, and the `format!` argument setup for a failure that
-/// almost never happens cost ~800 bytes per test -- 320 KB across the file.
+/// Out of line: inlining the failure path into all 371 tests cost ~800 bytes each.
 #[inline(never)]
 fn check_one(actual: u64, expected: u64, reg: u8) -> Result<(), String> {
-    if actual == expected {
-        Ok(())
-    } else {
-        Err(format!(
-            "a == b expected, but a={:#x?} b={:#x?}. Register ${}",
-            actual, expected, reg
-        ))
-    }
+    soft_assert_eq2(actual, expected, || format!("Register ${}", reg))
 }
 
-/// Compare the first `actual.len()` of [`CHECKED_REGS`], stopping at the first mismatch.
 #[inline(never)]
 fn check_n(actual: &[u64], expected: &[u64]) -> Result<(), String> {
     for i in 0..actual.len() {
