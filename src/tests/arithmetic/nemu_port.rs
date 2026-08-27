@@ -1,12 +1,30 @@
 use alloc::boxed::Box;
+use alloc::format;
 use alloc::string::String;
 use alloc::vec;
 use alloc::vec::Vec;
 use core::any::Any;
 use core::arch::asm;
 
-use crate::tests::soft_asserts::soft_assert_eq;
+use crate::tests::soft_asserts::soft_assert_eq2;
 use crate::tests::{Level, Test};
+
+/// The registers these tests assert, in assert order.
+const CHECKED_REGS: [u8; 4] = [0, 2, 3, 4];
+
+/// Out of line: inlining the failure path into all 371 tests cost ~800 bytes each.
+#[inline(never)]
+fn check_one(actual: u64, expected: u64, reg: u8) -> Result<(), String> {
+    soft_assert_eq2(actual, expected, || format!("Register ${}", reg))
+}
+
+#[inline(never)]
+fn check_n(actual: &[u64], expected: &[u64]) -> Result<(), String> {
+    for i in 0..actual.len() {
+        check_one(actual[i], expected[i], CHECKED_REGS[i])?;
+    }
+    Ok(())
+}
 
 pub struct LUIOpcodeTest1 {}
 
@@ -32,8 +50,7 @@ impl Test for LUIOpcodeTest1 {
                 LUI $2, 0x891
             ", inout("$2") r2);
         }
-        soft_assert_eq(r2, 0x8910000, "Register $2")?;
-        Ok(())
+        check_one(r2, 0x8910000, 2)
     }
 }
 
@@ -61,8 +78,7 @@ impl Test for LUIOpcodeTest2 {
                 LUI $2, 0xf891
             ", inout("$2") r2);
         }
-        soft_assert_eq(r2, 0xfffffffff8910000, "Register $2")?;
-        Ok(())
+        check_one(r2, 0xfffffffff8910000, 2)
     }
 }
 
@@ -91,8 +107,7 @@ impl Test for LUIOpcodeTestIntoR0 {
                 DADDU {z0}, $0, $0
             ", z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        Ok(())
+        check_one(r0, 0x0, 0)
     }
 }
 
@@ -121,8 +136,7 @@ impl Test for DADDIOpcodeTest {
                 DADDI $3, $2, 4660
             ", in("$2") r2, inout("$3") r3);
         }
-        soft_assert_eq(r3, 0x1234567898761344, "Register $3")?;
-        Ok(())
+        check_one(r3, 0x1234567898761344, 3)
     }
 }
 
@@ -151,8 +165,7 @@ impl Test for DADDIOpcodeTestWithNegativeImmediate {
                 DADDI $3, $2, -3532
             ", in("$2") r2, inout("$3") r3);
         }
-        soft_assert_eq(r3, 0x123456789875f344, "Register $3")?;
-        Ok(())
+        check_one(r3, 0x123456789875f344, 3)
     }
 }
 
@@ -181,8 +194,7 @@ impl Test for DADDIOpcodeTestLargeNegative1 {
                 DADDI $4, $3, -10208
             ", in("$3") r3, inout("$4") r4);
         }
-        soft_assert_eq(r4, 0x4321432143211b41, "Register $4")?;
-        Ok(())
+        check_one(r4, 0x4321432143211b41, 4)
     }
 }
 
@@ -210,8 +222,7 @@ impl Test for DADDIOpcodeTestLargeNegative2 {
                 DADDI $3, $3, -10208
             ", inout("$3") r3);
         }
-        soft_assert_eq(r3, 0x4321432143211b41, "Register $3")?;
-        Ok(())
+        check_one(r3, 0x4321432143211b41, 3)
     }
 }
 
@@ -242,10 +253,8 @@ impl Test for DADDIOpcodeTestWithR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x1234, "Register $3")?;
-        Ok(())
+        const EXPECTED: [u64; 3] = [0x0, 0x1234567898760110, 0x1234];
+        check_n(&[r0, r2, r3], &EXPECTED)
     }
 }
 
@@ -276,10 +285,8 @@ impl Test for DADDIOpcodeTestWithOffsetZero {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x1234567898760110, "Register $3")?;
-        Ok(())
+        const EXPECTED: [u64; 3] = [0x0, 0x1234567898760110, 0x1234567898760110];
+        check_n(&[r0, r2, r3], &EXPECTED)
     }
 }
 
@@ -310,10 +317,8 @@ impl Test for DADDIOpcodeTestWithOffsetZeroAndR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x0, "Register $3")?;
-        Ok(())
+        const EXPECTED: [u64; 3] = [0x0, 0x1234567898760110, 0x0];
+        check_n(&[r0, r2, r3], &EXPECTED)
     }
 }
 
@@ -344,10 +349,8 @@ impl Test for DADDIOpcodeTestIntoR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        Ok(())
+        const EXPECTED: [u64; 3] = [0x0, 0x1234567898760110, 0x4321432143214321];
+        check_n(&[r0, r2, r3], &EXPECTED)
     }
 }
 
@@ -378,10 +381,8 @@ impl Test for DADDIOpcodeTestIntoR0WithOffset0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        Ok(())
+        const EXPECTED: [u64; 3] = [0x0, 0x1234567898760110, 0x4321432143214321];
+        check_n(&[r0, r2, r3], &EXPECTED)
     }
 }
 
@@ -410,8 +411,7 @@ impl Test for DADDIUOpcodeTest {
                 DADDIU $3, $2, 4660
             ", in("$2") r2, inout("$3") r3);
         }
-        soft_assert_eq(r3, 0x1234567898761344, "Register $3")?;
-        Ok(())
+        check_one(r3, 0x1234567898761344, 3)
     }
 }
 
@@ -440,8 +440,7 @@ impl Test for DADDIUOpcodeTestWithNegativeImmediate {
                 DADDIU $3, $2, -3532
             ", in("$2") r2, inout("$3") r3);
         }
-        soft_assert_eq(r3, 0x123456789875f344, "Register $3")?;
-        Ok(())
+        check_one(r3, 0x123456789875f344, 3)
     }
 }
 
@@ -470,8 +469,7 @@ impl Test for DADDIUOpcodeTestLargeNegative1 {
                 DADDIU $4, $3, -10208
             ", in("$3") r3, inout("$4") r4);
         }
-        soft_assert_eq(r4, 0x4321432143211b41, "Register $4")?;
-        Ok(())
+        check_one(r4, 0x4321432143211b41, 4)
     }
 }
 
@@ -499,8 +497,7 @@ impl Test for DADDIUOpcodeTestLargeNegative2 {
                 DADDIU $3, $3, -10208
             ", inout("$3") r3);
         }
-        soft_assert_eq(r3, 0x4321432143211b41, "Register $3")?;
-        Ok(())
+        check_one(r3, 0x4321432143211b41, 3)
     }
 }
 
@@ -531,10 +528,8 @@ impl Test for DADDIUOpcodeTestWithR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x1234, "Register $3")?;
-        Ok(())
+        const EXPECTED: [u64; 3] = [0x0, 0x1234567898760110, 0x1234];
+        check_n(&[r0, r2, r3], &EXPECTED)
     }
 }
 
@@ -565,10 +560,8 @@ impl Test for DADDIUOpcodeTestWithOffsetZero {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x1234567898760110, "Register $3")?;
-        Ok(())
+        const EXPECTED: [u64; 3] = [0x0, 0x1234567898760110, 0x1234567898760110];
+        check_n(&[r0, r2, r3], &EXPECTED)
     }
 }
 
@@ -599,10 +592,8 @@ impl Test for DADDIUOpcodeTestWithOffsetZeroAndR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x0, "Register $3")?;
-        Ok(())
+        const EXPECTED: [u64; 3] = [0x0, 0x1234567898760110, 0x0];
+        check_n(&[r0, r2, r3], &EXPECTED)
     }
 }
 
@@ -633,10 +624,8 @@ impl Test for DADDIUOpcodeTestIntoR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        Ok(())
+        const EXPECTED: [u64; 3] = [0x0, 0x1234567898760110, 0x4321432143214321];
+        check_n(&[r0, r2, r3], &EXPECTED)
     }
 }
 
@@ -665,9 +654,8 @@ impl Test for DADDIUOpcodeTestNoOverflowPositive {
                 DADDIU $3, $2, 256
             ", inout("$2") r2, inout("$3") r3);
         }
-        soft_assert_eq(r2, 0x7fffffffffffff00, "Register $2")?;
-        soft_assert_eq(r3, 0x8000000000000000, "Register $3")?;
-        Ok(())
+        check_one(r2, 0x7fffffffffffff00, 2)?;
+        check_one(r3, 0x8000000000000000, 3)
     }
 }
 
@@ -696,9 +684,8 @@ impl Test for DADDIUOpcodeTestNoOverflowNegative {
                 DADDIU $3, $2, -1
             ", inout("$2") r2, inout("$3") r3);
         }
-        soft_assert_eq(r2, 0x8000000000000000, "Register $2")?;
-        soft_assert_eq(r3, 0x7fffffffffffffff, "Register $3")?;
-        Ok(())
+        check_one(r2, 0x8000000000000000, 2)?;
+        check_one(r3, 0x7fffffffffffffff, 3)
     }
 }
 
@@ -727,8 +714,7 @@ impl Test for ADDIOpcodeTest {
                 ADDI $3, $2, 4660
             ", in("$2") r2, inout("$3") r3);
         }
-        soft_assert_eq(r3, 0xffffffff98761344, "Register $3")?;
-        Ok(())
+        check_one(r3, 0xffffffff98761344, 3)
     }
 }
 
@@ -757,8 +743,7 @@ impl Test for ADDIOpcodeTestWithNegativeImmediate {
                 ADDI $3, $2, -3532
             ", in("$2") r2, inout("$3") r3);
         }
-        soft_assert_eq(r3, 0xffffffff9875f344, "Register $3")?;
-        Ok(())
+        check_one(r3, 0xffffffff9875f344, 3)
     }
 }
 
@@ -787,8 +772,7 @@ impl Test for ADDIOpcodeTestLower12Bit {
                 ADDI $3, $2, 4000
             ", in("$2") r2, inout("$3") r3);
         }
-        soft_assert_eq(r3, 0x1004, "Register $3")?;
-        Ok(())
+        check_one(r3, 0x1004, 3)
     }
 }
 
@@ -817,8 +801,7 @@ impl Test for ADDIOpcodeTestUpper4Bit {
                 ADDI $3, $2, 12288
             ", in("$2") r2, inout("$3") r3);
         }
-        soft_assert_eq(r3, 0x3064, "Register $3")?;
-        Ok(())
+        check_one(r3, 0x3064, 3)
     }
 }
 
@@ -847,8 +830,7 @@ impl Test for ADDIOpcodeTestLower12BitNegative {
                 ADDI $3, $2, -50
             ", in("$2") r2, inout("$3") r3);
         }
-        soft_assert_eq(r3, 0x32, "Register $3")?;
-        Ok(())
+        check_one(r3, 0x32, 3)
     }
 }
 
@@ -877,8 +859,7 @@ impl Test for ADDIOpcodeTestUpper4BitNegative {
                 ADDI $3, $2, -12288
             ", in("$2") r2, inout("$3") r3);
         }
-        soft_assert_eq(r3, 0xffffffffffffd064, "Register $3")?;
-        Ok(())
+        check_one(r3, 0xffffffffffffd064, 3)
     }
 }
 
@@ -907,8 +888,7 @@ impl Test for ADDIOpcodeTestLargeNegative1 {
                 ADDI $4, $3, -10208
             ", in("$3") r3, inout("$4") r4);
         }
-        soft_assert_eq(r4, 0x43211b41, "Register $4")?;
-        Ok(())
+        check_one(r4, 0x43211b41, 4)
     }
 }
 
@@ -936,8 +916,7 @@ impl Test for ADDIOpcodeTestLargeNegative2 {
                 ADDI $3, $3, -10208
             ", inout("$3") r3);
         }
-        soft_assert_eq(r3, 0x43211b41, "Register $3")?;
-        Ok(())
+        check_one(r3, 0x43211b41, 3)
     }
 }
 
@@ -968,10 +947,8 @@ impl Test for ADDIOpcodeTestWithR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x1234, "Register $3")?;
-        Ok(())
+        const EXPECTED: [u64; 3] = [0x0, 0x1234567898760110, 0x1234];
+        check_n(&[r0, r2, r3], &EXPECTED)
     }
 }
 
@@ -1002,10 +979,8 @@ impl Test for ADDIOpcodeTestWithOffsetZero {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0xffffffff98760110, "Register $3")?;
-        Ok(())
+        const EXPECTED: [u64; 3] = [0x0, 0x1234567898760110, 0xffffffff98760110];
+        check_n(&[r0, r2, r3], &EXPECTED)
     }
 }
 
@@ -1036,10 +1011,8 @@ impl Test for ADDIOpcodeTestWithOffsetZeroAndR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x0, "Register $3")?;
-        Ok(())
+        const EXPECTED: [u64; 3] = [0x0, 0x1234567898760110, 0x0];
+        check_n(&[r0, r2, r3], &EXPECTED)
     }
 }
 
@@ -1070,10 +1043,8 @@ impl Test for ADDIOpcodeTestIntoR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        Ok(())
+        const EXPECTED: [u64; 3] = [0x0, 0x1234567898760110, 0x4321432143214321];
+        check_n(&[r0, r2, r3], &EXPECTED)
     }
 }
 
@@ -1104,10 +1075,8 @@ impl Test for ADDIOpcodeTestIntoR0WithOffset0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        Ok(())
+        const EXPECTED: [u64; 3] = [0x0, 0x1234567898760110, 0x4321432143214321];
+        check_n(&[r0, r2, r3], &EXPECTED)
     }
 }
 
@@ -1136,8 +1105,7 @@ impl Test for ADDIUOpcodeTest {
                 ADDIU $3, $2, 4660
             ", in("$2") r2, inout("$3") r3);
         }
-        soft_assert_eq(r3, 0xffffffff98761344, "Register $3")?;
-        Ok(())
+        check_one(r3, 0xffffffff98761344, 3)
     }
 }
 
@@ -1166,8 +1134,7 @@ impl Test for ADDIUOpcodeTestWithNegativeImmediate {
                 ADDIU $3, $2, -3532
             ", in("$2") r2, inout("$3") r3);
         }
-        soft_assert_eq(r3, 0xffffffff9875f344, "Register $3")?;
-        Ok(())
+        check_one(r3, 0xffffffff9875f344, 3)
     }
 }
 
@@ -1196,8 +1163,7 @@ impl Test for ADDIUOpcodeTestLower12Bit {
                 ADDIU $3, $2, 4000
             ", in("$2") r2, inout("$3") r3);
         }
-        soft_assert_eq(r3, 0x1004, "Register $3")?;
-        Ok(())
+        check_one(r3, 0x1004, 3)
     }
 }
 
@@ -1226,8 +1192,7 @@ impl Test for ADDIUOpcodeTestUpper4Bit {
                 ADDIU $3, $2, 12288
             ", in("$2") r2, inout("$3") r3);
         }
-        soft_assert_eq(r3, 0x3064, "Register $3")?;
-        Ok(())
+        check_one(r3, 0x3064, 3)
     }
 }
 
@@ -1256,8 +1221,7 @@ impl Test for ADDIUOpcodeTestLower12BitNegative {
                 ADDIU $3, $2, -50
             ", in("$2") r2, inout("$3") r3);
         }
-        soft_assert_eq(r3, 0x32, "Register $3")?;
-        Ok(())
+        check_one(r3, 0x32, 3)
     }
 }
 
@@ -1286,8 +1250,7 @@ impl Test for ADDIUOpcodeTestUpper4BitNegative {
                 ADDIU $3, $2, -12288
             ", in("$2") r2, inout("$3") r3);
         }
-        soft_assert_eq(r3, 0xffffffffffffd064, "Register $3")?;
-        Ok(())
+        check_one(r3, 0xffffffffffffd064, 3)
     }
 }
 
@@ -1316,8 +1279,7 @@ impl Test for ADDIUOpcodeTestLargeNegative1 {
                 ADDIU $4, $3, -10208
             ", in("$3") r3, inout("$4") r4);
         }
-        soft_assert_eq(r4, 0x43211b41, "Register $4")?;
-        Ok(())
+        check_one(r4, 0x43211b41, 4)
     }
 }
 
@@ -1345,8 +1307,7 @@ impl Test for ADDIUOpcodeTestLargeNegative2 {
                 ADDIU $3, $3, -10208
             ", inout("$3") r3);
         }
-        soft_assert_eq(r3, 0x43211b41, "Register $3")?;
-        Ok(())
+        check_one(r3, 0x43211b41, 3)
     }
 }
 
@@ -1377,10 +1338,8 @@ impl Test for ADDIUOpcodeTestWithR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x1234, "Register $3")?;
-        Ok(())
+        const EXPECTED: [u64; 3] = [0x0, 0x1234567898760110, 0x1234];
+        check_n(&[r0, r2, r3], &EXPECTED)
     }
 }
 
@@ -1411,10 +1370,8 @@ impl Test for ADDIUOpcodeTestWithOffsetZero {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0xffffffff98760110, "Register $3")?;
-        Ok(())
+        const EXPECTED: [u64; 3] = [0x0, 0x1234567898760110, 0xffffffff98760110];
+        check_n(&[r0, r2, r3], &EXPECTED)
     }
 }
 
@@ -1445,10 +1402,8 @@ impl Test for ADDIUOpcodeTestWithOffsetZeroAndR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x0, "Register $3")?;
-        Ok(())
+        const EXPECTED: [u64; 3] = [0x0, 0x1234567898760110, 0x0];
+        check_n(&[r0, r2, r3], &EXPECTED)
     }
 }
 
@@ -1479,10 +1434,8 @@ impl Test for ADDIUOpcodeTestWithOffsetZeroIntoItself {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0xffffffff83214321, "Register $3")?;
-        Ok(())
+        const EXPECTED: [u64; 3] = [0x0, 0x1234567898760110, 0xffffffff83214321];
+        check_n(&[r0, r2, r3], &EXPECTED)
     }
 }
 
@@ -1513,10 +1466,8 @@ impl Test for ADDIUOpcodeTestIntoR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        Ok(())
+        const EXPECTED: [u64; 3] = [0x0, 0x1234567898760110, 0x4321432143214321];
+        check_n(&[r0, r2, r3], &EXPECTED)
     }
 }
 
@@ -1545,8 +1496,7 @@ impl Test for SLTIOpcodeTest1 {
                 SLTI $3, $2, 5
             ", in("$2") r2, inout("$3") r3);
         }
-        soft_assert_eq(r3, 0x0, "Register $3")?;
-        Ok(())
+        check_one(r3, 0x0, 3)
     }
 }
 
@@ -1575,8 +1525,7 @@ impl Test for SLTIOpcodeTest2 {
                 SLTI $3, $2, 5
             ", in("$2") r2, inout("$3") r3);
         }
-        soft_assert_eq(r3, 0x1, "Register $3")?;
-        Ok(())
+        check_one(r3, 0x1, 3)
     }
 }
 
@@ -1605,8 +1554,7 @@ impl Test for SLTIOpcodeTest3 {
                 SLTI $3, $2, -2
             ", in("$2") r2, inout("$3") r3);
         }
-        soft_assert_eq(r3, 0x1, "Register $3")?;
-        Ok(())
+        check_one(r3, 0x1, 3)
     }
 }
 
@@ -1635,8 +1583,7 @@ impl Test for SLTIOpcodeTest4 {
                 SLTI $3, $2, -5
             ", in("$2") r2, inout("$3") r3);
         }
-        soft_assert_eq(r3, 0x0, "Register $3")?;
-        Ok(())
+        check_one(r3, 0x0, 3)
     }
 }
 
@@ -1665,8 +1612,7 @@ impl Test for SLTIOpcodeTest5 {
                 SLTI $3, $2, 511
             ", in("$2") r2, inout("$3") r3);
         }
-        soft_assert_eq(r3, 0x1, "Register $3")?;
-        Ok(())
+        check_one(r3, 0x1, 3)
     }
 }
 
@@ -1695,8 +1641,7 @@ impl Test for SLTIOpcodeTest6 {
                 SLTI $3, $2, -261
             ", in("$2") r2, inout("$3") r3);
         }
-        soft_assert_eq(r3, 0x0, "Register $3")?;
-        Ok(())
+        check_one(r3, 0x0, 3)
     }
 }
 
@@ -1725,8 +1670,7 @@ impl Test for SLTIOpcodeTestEqual {
                 SLTI $3, $2, -4
             ", in("$2") r2, inout("$3") r3);
         }
-        soft_assert_eq(r3, 0x0, "Register $3")?;
-        Ok(())
+        check_one(r3, 0x0, 3)
     }
 }
 
@@ -1757,10 +1701,8 @@ impl Test for SLTIOpcodeTestWithR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x1, "Register $3")?;
-        Ok(())
+        const EXPECTED: [u64; 3] = [0x0, 0x1234567898760110, 0x1];
+        check_n(&[r0, r2, r3], &EXPECTED)
     }
 }
 
@@ -1791,10 +1733,8 @@ impl Test for SLTIOpcodeTestWithR0_1 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x0, "Register $3")?;
-        Ok(())
+        const EXPECTED: [u64; 3] = [0x0, 0x1234567898760110, 0x0];
+        check_n(&[r0, r2, r3], &EXPECTED)
     }
 }
 
@@ -1825,10 +1765,8 @@ impl Test for SLTIOpcodeTestIntoR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1233, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        Ok(())
+        const EXPECTED: [u64; 3] = [0x0, 0x1233, 0x4321432143214321];
+        check_n(&[r0, r2, r3], &EXPECTED)
     }
 }
 
@@ -1859,10 +1797,8 @@ impl Test for SLTIOpcodeTestPositiveAgainst0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1233, "Register $2")?;
-        soft_assert_eq(r3, 0x0, "Register $3")?;
-        Ok(())
+        const EXPECTED: [u64; 3] = [0x0, 0x1233, 0x0];
+        check_n(&[r0, r2, r3], &EXPECTED)
     }
 }
 
@@ -1893,10 +1829,8 @@ impl Test for SLTIOpcodeTestNegativeAgainst0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0xfffffffffffff233, "Register $2")?;
-        soft_assert_eq(r3, 0x1, "Register $3")?;
-        Ok(())
+        const EXPECTED: [u64; 3] = [0x0, 0xfffffffffffff233, 0x1];
+        check_n(&[r0, r2, r3], &EXPECTED)
     }
 }
 
@@ -1927,10 +1861,8 @@ impl Test for SLTIOpcodeTestR0Against0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1233, "Register $2")?;
-        soft_assert_eq(r3, 0x0, "Register $3")?;
-        Ok(())
+        const EXPECTED: [u64; 3] = [0x0, 0x1233, 0x0];
+        check_n(&[r0, r2, r3], &EXPECTED)
     }
 }
 
@@ -1959,8 +1891,7 @@ impl Test for SLTIUOpcodeTest1 {
                 SLTIU $3, $2, 5
             ", in("$2") r2, inout("$3") r3);
         }
-        soft_assert_eq(r3, 0x0, "Register $3")?;
-        Ok(())
+        check_one(r3, 0x0, 3)
     }
 }
 
@@ -1989,8 +1920,7 @@ impl Test for SLTIUOpcodeTest2 {
                 SLTIU $3, $2, 5
             ", in("$2") r2, inout("$3") r3);
         }
-        soft_assert_eq(r3, 0x1, "Register $3")?;
-        Ok(())
+        check_one(r3, 0x1, 3)
     }
 }
 
@@ -2019,8 +1949,7 @@ impl Test for SLTIUOpcodeTest3 {
                 SLTIU $3, $2, -2
             ", in("$2") r2, inout("$3") r3);
         }
-        soft_assert_eq(r3, 0x1, "Register $3")?;
-        Ok(())
+        check_one(r3, 0x1, 3)
     }
 }
 
@@ -2049,8 +1978,7 @@ impl Test for SLTIUOpcodeTest4 {
                 SLTIU $3, $2, -5
             ", in("$2") r2, inout("$3") r3);
         }
-        soft_assert_eq(r3, 0x0, "Register $3")?;
-        Ok(())
+        check_one(r3, 0x0, 3)
     }
 }
 
@@ -2079,8 +2007,7 @@ impl Test for SLTIUOpcodeTestEqual {
                 SLTIU $3, $2, -4
             ", in("$2") r2, inout("$3") r3);
         }
-        soft_assert_eq(r3, 0x0, "Register $3")?;
-        Ok(())
+        check_one(r3, 0x0, 3)
     }
 }
 
@@ -2111,10 +2038,8 @@ impl Test for SLTIUOpcodeTestWithR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x1, "Register $3")?;
-        Ok(())
+        const EXPECTED: [u64; 3] = [0x0, 0x1234567898760110, 0x1];
+        check_n(&[r0, r2, r3], &EXPECTED)
     }
 }
 
@@ -2145,10 +2070,8 @@ impl Test for SLTIUOpcodeTestWithR0_1 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x1, "Register $3")?;
-        Ok(())
+        const EXPECTED: [u64; 3] = [0x0, 0x1234567898760110, 0x1];
+        check_n(&[r0, r2, r3], &EXPECTED)
     }
 }
 
@@ -2179,10 +2102,8 @@ impl Test for SLTIUOpcodeTestIntoR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1233, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        Ok(())
+        const EXPECTED: [u64; 3] = [0x0, 0x1233, 0x4321432143214321];
+        check_n(&[r0, r2, r3], &EXPECTED)
     }
 }
 
@@ -2213,10 +2134,8 @@ impl Test for SLTIUOpcodeTestPositiveAgainst0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1233, "Register $2")?;
-        soft_assert_eq(r3, 0x0, "Register $3")?;
-        Ok(())
+        const EXPECTED: [u64; 3] = [0x0, 0x1233, 0x0];
+        check_n(&[r0, r2, r3], &EXPECTED)
     }
 }
 
@@ -2247,10 +2166,8 @@ impl Test for SLTIUOpcodeTestNegativeAgainst0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0xffffffffffff1234, "Register $2")?;
-        soft_assert_eq(r3, 0x0, "Register $3")?;
-        Ok(())
+        const EXPECTED: [u64; 3] = [0x0, 0xffffffffffff1234, 0x0];
+        check_n(&[r0, r2, r3], &EXPECTED)
     }
 }
 
@@ -2281,10 +2198,8 @@ impl Test for SLTIUOpcodeTestR0Against0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1233, "Register $2")?;
-        soft_assert_eq(r3, 0x0, "Register $3")?;
-        Ok(())
+        const EXPECTED: [u64; 3] = [0x0, 0x1233, 0x0];
+        check_n(&[r0, r2, r3], &EXPECTED)
     }
 }
 
@@ -2316,11 +2231,13 @@ impl Test for OROpcodeTest {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x53355779db774331, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0x53355779db774331,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -2352,11 +2269,13 @@ impl Test for OROpcodeTestRTIsR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x4321432143214321, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0x4321432143214321,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -2388,11 +2307,13 @@ impl Test for OROpcodeTestRSIsR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x4321432143214321, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0x4321432143214321,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -2424,11 +2345,8 @@ impl Test for OROpcodeTestBothAreR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x0, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x4321432143214321, 0x0];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -2460,11 +2378,13 @@ impl Test for OROpcodeTestIntoR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0xabcdefabcdefabcd,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -2496,11 +2416,13 @@ impl Test for OROpcodeTestWithItself {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x4321432143214321, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0x4321432143214321,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -2532,11 +2454,13 @@ impl Test for OROpcodeTestInputOutput1 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0xebedefabcfefebed, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0xebedefabcfefebed,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -2568,11 +2492,13 @@ impl Test for OROpcodeTestInputOutput2 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0xebedefabcfefebed, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0xebedefabcfefebed,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -2604,11 +2530,13 @@ impl Test for OROpcodeTestInputOutput3 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0xabcdefabcdefabcd,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -2640,11 +2568,13 @@ impl Test for ANDOpcodeTest {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321012345432101, "Register $3")?;
-        soft_assert_eq(r4, 0x220002000420100, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321012345432101,
+            0x220002000420100,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -2676,11 +2606,8 @@ impl Test for ANDOpcodeTestRTIsR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x0, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x4321432143214321, 0x0];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -2712,11 +2639,8 @@ impl Test for ANDOpcodeTestRSIsR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x0, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x4321432143214321, 0x0];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -2748,11 +2672,8 @@ impl Test for ANDOpcodeTestBothAreR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x0, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x4321432143214321, 0x0];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -2784,11 +2705,13 @@ impl Test for ANDOpcodeTestIntoR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0xabcdefabcdefabcd,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -2820,11 +2743,13 @@ impl Test for ANDOpcodeTestWithItself {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x4321432143214321, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0x4321432143214321,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -2856,11 +2781,13 @@ impl Test for ANDOpcodeTestInputOutput1 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x301432141210301, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0x301432141210301,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -2892,11 +2819,13 @@ impl Test for ANDOpcodeTestInputOutput2 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x301432141210301, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0x301432141210301,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -2928,11 +2857,13 @@ impl Test for ANDOpcodeTestInputOutput3 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0xabcdefabcdefabcd,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -2964,11 +2895,13 @@ impl Test for XOROpcodeTest {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x51151559db574231, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0x51151559db574231,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -3000,11 +2933,13 @@ impl Test for XOROpcodeTestRTIsR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x4321432143214321, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0x4321432143214321,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -3036,11 +2971,13 @@ impl Test for XOROpcodeTestRSIsR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x4321432143214321, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0x4321432143214321,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -3072,11 +3009,8 @@ impl Test for XOROpcodeTestBothAreR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x0, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x4321432143214321, 0x0];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -3108,11 +3042,13 @@ impl Test for XOROpcodeTestIntoR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0xabcdefabcdefabcd,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -3144,11 +3080,8 @@ impl Test for XOROpcodeTestWithItself {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x0, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x4321432143214321, 0x0];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -3180,11 +3113,13 @@ impl Test for XOROpcodeTestInputOutput1 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0xe8ecac8a8ecee8ec, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0xe8ecac8a8ecee8ec,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -3216,11 +3151,13 @@ impl Test for XOROpcodeTestInputOutput2 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0xe8ecac8a8ecee8ec, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0xe8ecac8a8ecee8ec,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -3252,11 +3189,8 @@ impl Test for XOROpcodeTestInputOutput3 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x0, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x4321432143214321, 0x0];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -3288,11 +3222,13 @@ impl Test for NOROpcodeTest {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0xaccaa8862488bcce, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0xaccaa8862488bcce,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -3324,11 +3260,13 @@ impl Test for NOROpcodeTestRTIsR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0xbcdebcdebcdebcde, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0xbcdebcdebcdebcde,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -3360,11 +3298,13 @@ impl Test for NOROpcodeTestRSIsR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0xbcdebcdebcdebcde, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0xbcdebcdebcdebcde,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -3396,11 +3336,13 @@ impl Test for NOROpcodeTestBothAreR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0xffffffffffffffff, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0xffffffffffffffff,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -3432,11 +3374,13 @@ impl Test for NOROpcodeTestIntoR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0xabcdefabcdefabcd,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -3468,11 +3412,13 @@ impl Test for NOROpcodeTestWithItself {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0xbcdebcdebcdebcde, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0xbcdebcdebcdebcde,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -3504,11 +3450,13 @@ impl Test for NOROpcodeTestInputOutput1 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x1412105430101412, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0x1412105430101412,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -3540,11 +3488,13 @@ impl Test for NOROpcodeTestInputOutput2 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x1412105430101412, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0x1412105430101412,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -3576,11 +3526,13 @@ impl Test for NOROpcodeTestInputOutput3 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x5432105432105432, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0x5432105432105432,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -3610,8 +3562,7 @@ impl Test for SLTOpcodeTest {
                 SLT $4, $2, $3
             ", in("$2") r2, in("$3") r3, inout("$4") r4);
         }
-        soft_assert_eq(r4, 0x1, "Register $4")?;
-        Ok(())
+        check_one(r4, 0x1, 4)
     }
 }
 
@@ -3641,8 +3592,7 @@ impl Test for SLTOpcodeTest2 {
                 SLT $4, $2, $3
             ", in("$2") r2, in("$3") r3, inout("$4") r4);
         }
-        soft_assert_eq(r4, 0x0, "Register $4")?;
-        Ok(())
+        check_one(r4, 0x0, 4)
     }
 }
 
@@ -3672,8 +3622,7 @@ impl Test for SLTOpcodeTest3 {
                 SLT $4, $2, $3
             ", in("$2") r2, in("$3") r3, inout("$4") r4);
         }
-        soft_assert_eq(r4, 0x0, "Register $4")?;
-        Ok(())
+        check_one(r4, 0x0, 4)
     }
 }
 
@@ -3703,8 +3652,7 @@ impl Test for SLTOpcodeTest4 {
                 SLT $4, $2, $3
             ", in("$2") r2, in("$3") r3, inout("$4") r4);
         }
-        soft_assert_eq(r4, 0x1, "Register $4")?;
-        Ok(())
+        check_one(r4, 0x1, 4)
     }
 }
 
@@ -3734,8 +3682,7 @@ impl Test for SLTOpcodeTest5 {
                 SLT $4, $2, $3
             ", in("$2") r2, in("$3") r3, inout("$4") r4);
         }
-        soft_assert_eq(r4, 0x0, "Register $4")?;
-        Ok(())
+        check_one(r4, 0x0, 4)
     }
 }
 
@@ -3765,8 +3712,7 @@ impl Test for SLTOpcodeTest6 {
                 SLT $4, $2, $3
             ", in("$2") r2, in("$3") r3, inout("$4") r4);
         }
-        soft_assert_eq(r4, 0x0, "Register $4")?;
-        Ok(())
+        check_one(r4, 0x0, 4)
     }
 }
 
@@ -3796,8 +3742,7 @@ impl Test for SLTOpcodeTest7 {
                 SLT $4, $2, $3
             ", in("$2") r2, in("$3") r3, inout("$4") r4);
         }
-        soft_assert_eq(r4, 0x0, "Register $4")?;
-        Ok(())
+        check_one(r4, 0x0, 4)
     }
 }
 
@@ -3827,8 +3772,7 @@ impl Test for SLTOpcodeTest8 {
                 SLT $4, $2, $3
             ", in("$2") r2, in("$3") r3, inout("$4") r4);
         }
-        soft_assert_eq(r4, 0x0, "Register $4")?;
-        Ok(())
+        check_one(r4, 0x0, 4)
     }
 }
 
@@ -3858,8 +3802,7 @@ impl Test for SLTOpcodeTestWithSelf {
                 SLT $4, $2, $2
             ", in("$2") r2, in("$3") r3, inout("$4") r4);
         }
-        soft_assert_eq(r4, 0x0, "Register $4")?;
-        Ok(())
+        check_one(r4, 0x0, 4)
     }
 }
 
@@ -3889,8 +3832,7 @@ impl Test for SLTOpcodeTestWithR0Pos {
                 SLT $4, $2, $0
             ", in("$2") r2, in("$3") r3, inout("$4") r4);
         }
-        soft_assert_eq(r4, 0x0, "Register $4")?;
-        Ok(())
+        check_one(r4, 0x0, 4)
     }
 }
 
@@ -3920,8 +3862,7 @@ impl Test for SLTOpcodeTestWithR0Neg {
                 SLT $4, $2, $0
             ", in("$2") r2, in("$3") r3, inout("$4") r4);
         }
-        soft_assert_eq(r4, 0x1, "Register $4")?;
-        Ok(())
+        check_one(r4, 0x1, 4)
     }
 }
 
@@ -3953,8 +3894,7 @@ impl Test for SLTOpcodeTestIntoR0 {
                 DADDU {z0}, $0, $0
             ", in("$2") r2, in("$3") r3, in("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        Ok(())
+        check_one(r0, 0x0, 0)
     }
 }
 
@@ -3984,8 +3924,7 @@ impl Test for SLTUOpcodeTest {
                 SLTU $4, $2, $3
             ", in("$2") r2, in("$3") r3, inout("$4") r4);
         }
-        soft_assert_eq(r4, 0x1, "Register $4")?;
-        Ok(())
+        check_one(r4, 0x1, 4)
     }
 }
 
@@ -4015,8 +3954,7 @@ impl Test for SLTUOpcodeTest2 {
                 SLTU $4, $2, $3
             ", in("$2") r2, in("$3") r3, inout("$4") r4);
         }
-        soft_assert_eq(r4, 0x0, "Register $4")?;
-        Ok(())
+        check_one(r4, 0x0, 4)
     }
 }
 
@@ -4046,8 +3984,7 @@ impl Test for SLTUOpcodeTest3 {
                 SLTU $4, $2, $3
             ", in("$2") r2, in("$3") r3, inout("$4") r4);
         }
-        soft_assert_eq(r4, 0x0, "Register $4")?;
-        Ok(())
+        check_one(r4, 0x0, 4)
     }
 }
 
@@ -4077,8 +4014,7 @@ impl Test for SLTUOpcodeTest4 {
                 SLTU $4, $2, $3
             ", in("$2") r2, in("$3") r3, inout("$4") r4);
         }
-        soft_assert_eq(r4, 0x1, "Register $4")?;
-        Ok(())
+        check_one(r4, 0x1, 4)
     }
 }
 
@@ -4108,8 +4044,7 @@ impl Test for SLTUOpcodeTest5 {
                 SLTU $4, $2, $3
             ", in("$2") r2, in("$3") r3, inout("$4") r4);
         }
-        soft_assert_eq(r4, 0x0, "Register $4")?;
-        Ok(())
+        check_one(r4, 0x0, 4)
     }
 }
 
@@ -4139,8 +4074,7 @@ impl Test for SLTUOpcodeTest6 {
                 SLTU $4, $2, $3
             ", in("$2") r2, in("$3") r3, inout("$4") r4);
         }
-        soft_assert_eq(r4, 0x0, "Register $4")?;
-        Ok(())
+        check_one(r4, 0x0, 4)
     }
 }
 
@@ -4170,8 +4104,7 @@ impl Test for SLTUOpcodeTest7 {
                 SLTU $4, $2, $3
             ", in("$2") r2, in("$3") r3, inout("$4") r4);
         }
-        soft_assert_eq(r4, 0x1, "Register $4")?;
-        Ok(())
+        check_one(r4, 0x1, 4)
     }
 }
 
@@ -4201,8 +4134,7 @@ impl Test for SLTUOpcodeTest8 {
                 SLTU $4, $2, $3
             ", in("$2") r2, in("$3") r3, inout("$4") r4);
         }
-        soft_assert_eq(r4, 0x1, "Register $4")?;
-        Ok(())
+        check_one(r4, 0x1, 4)
     }
 }
 
@@ -4232,8 +4164,7 @@ impl Test for SLTUOpcodeTestWithSelf {
                 SLTU $4, $2, $2
             ", in("$2") r2, in("$3") r3, inout("$4") r4);
         }
-        soft_assert_eq(r4, 0x0, "Register $4")?;
-        Ok(())
+        check_one(r4, 0x0, 4)
     }
 }
 
@@ -4263,8 +4194,7 @@ impl Test for SLTUOpcodeTestWithR0Pos {
                 SLTU $4, $2, $0
             ", in("$2") r2, in("$3") r3, inout("$4") r4);
         }
-        soft_assert_eq(r4, 0x0, "Register $4")?;
-        Ok(())
+        check_one(r4, 0x0, 4)
     }
 }
 
@@ -4294,8 +4224,7 @@ impl Test for SLTUOpcodeTestWithR0Neg {
                 SLTU $4, $2, $0
             ", in("$2") r2, in("$3") r3, inout("$4") r4);
         }
-        soft_assert_eq(r4, 0x0, "Register $4")?;
-        Ok(())
+        check_one(r4, 0x0, 4)
     }
 }
 
@@ -4327,8 +4256,7 @@ impl Test for SLTUOpcodeTestIntoR0 {
                 DADDU {z0}, $0, $0
             ", in("$2") r2, in("$3") r3, in("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        Ok(())
+        check_one(r0, 0x0, 0)
     }
 }
 
@@ -4357,8 +4285,7 @@ impl Test for ORIOpcodeTest1 {
                 ORI $3, $2, 0xf2ff
             ", in("$2") r2, inout("$3") r3);
         }
-        soft_assert_eq(r3, 0x123456789876f3ff, "Register $3")?;
-        Ok(())
+        check_one(r3, 0x123456789876f3ff, 3)
     }
 }
 
@@ -4387,8 +4314,7 @@ impl Test for ORIOpcodeTest2 {
                 ORI $3, $2, 0x1234
             ", in("$2") r2, inout("$3") r3);
         }
-        soft_assert_eq(r3, 0x1234567898761334, "Register $3")?;
-        Ok(())
+        check_one(r3, 0x1234567898761334, 3)
     }
 }
 
@@ -4417,8 +4343,7 @@ impl Test for ORIOpcodeTest3 {
                 ORI $3, $2, 0xf0
             ", in("$2") r2, inout("$3") r3);
         }
-        soft_assert_eq(r3, 0x12345678987601f0, "Register $3")?;
-        Ok(())
+        check_one(r3, 0x12345678987601f0, 3)
     }
 }
 
@@ -4447,8 +4372,7 @@ impl Test for ORIOpcodeTest4 {
                 ORI $3, $2, 0xc0
             ", in("$2") r2, inout("$3") r3);
         }
-        soft_assert_eq(r3, 0x12345678987601d0, "Register $3")?;
-        Ok(())
+        check_one(r3, 0x12345678987601d0, 3)
     }
 }
 
@@ -4479,10 +4403,8 @@ impl Test for ORIOpcodeTestWithR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x1234, "Register $3")?;
-        Ok(())
+        const EXPECTED: [u64; 3] = [0x0, 0x1234567898760110, 0x1234];
+        check_n(&[r0, r2, r3], &EXPECTED)
     }
 }
 
@@ -4513,10 +4435,8 @@ impl Test for ORIOpcodeTestWithOffsetZero {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x1234567898760110, "Register $3")?;
-        Ok(())
+        const EXPECTED: [u64; 3] = [0x0, 0x1234567898760110, 0x1234567898760110];
+        check_n(&[r0, r2, r3], &EXPECTED)
     }
 }
 
@@ -4547,10 +4467,8 @@ impl Test for ORIOpcodeTestWithOffsetZeroAndR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x0, "Register $3")?;
-        Ok(())
+        const EXPECTED: [u64; 3] = [0x0, 0x1234567898760110, 0x0];
+        check_n(&[r0, r2, r3], &EXPECTED)
     }
 }
 
@@ -4581,10 +4499,8 @@ impl Test for ORIOpcodeTestIntoR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        Ok(())
+        const EXPECTED: [u64; 3] = [0x0, 0x1234567898760110, 0x4321432143214321];
+        check_n(&[r0, r2, r3], &EXPECTED)
     }
 }
 
@@ -4613,8 +4529,7 @@ impl Test for ANDIOpcodeTest1 {
                 ANDI $3, $2, 0x1234
             ", in("$2") r2, inout("$3") r3);
         }
-        soft_assert_eq(r3, 0x10, "Register $3")?;
-        Ok(())
+        check_one(r3, 0x10, 3)
     }
 }
 
@@ -4643,8 +4558,7 @@ impl Test for ANDIOpcodeTest2 {
                 ANDI $3, $2, 0xffff
             ", in("$2") r2, inout("$3") r3);
         }
-        soft_assert_eq(r3, 0x110, "Register $3")?;
-        Ok(())
+        check_one(r3, 0x110, 3)
     }
 }
 
@@ -4673,8 +4587,7 @@ impl Test for ANDIOpcodeTest3 {
                 ANDI $3, $2, 0x1fc0
             ", in("$2") r2, inout("$3") r3);
         }
-        soft_assert_eq(r3, 0x1f80, "Register $3")?;
-        Ok(())
+        check_one(r3, 0x1f80, 3)
     }
 }
 
@@ -4703,8 +4616,7 @@ impl Test for ANDIOpcodeTest4 {
                 ANDI $3, $2, 0x72
             ", in("$2") r2, inout("$3") r3);
         }
-        soft_assert_eq(r3, 0x62, "Register $3")?;
-        Ok(())
+        check_one(r3, 0x62, 3)
     }
 }
 
@@ -4733,8 +4645,7 @@ impl Test for ANDIOpcodeTest5 {
                 ANDI $3, $2, 0x83
             ", in("$2") r2, inout("$3") r3);
         }
-        soft_assert_eq(r3, 0x82, "Register $3")?;
-        Ok(())
+        check_one(r3, 0x82, 3)
     }
 }
 
@@ -4765,10 +4676,8 @@ impl Test for ANDIOpcodeTestWithR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x0, "Register $3")?;
-        Ok(())
+        const EXPECTED: [u64; 3] = [0x0, 0x1234567898760110, 0x0];
+        check_n(&[r0, r2, r3], &EXPECTED)
     }
 }
 
@@ -4799,10 +4708,8 @@ impl Test for ANDIOpcodeTestWithOffsetZero {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x0, "Register $3")?;
-        Ok(())
+        const EXPECTED: [u64; 3] = [0x0, 0x1234567898760110, 0x0];
+        check_n(&[r0, r2, r3], &EXPECTED)
     }
 }
 
@@ -4833,10 +4740,8 @@ impl Test for ANDIOpcodeTestWithOffsetZeroAndR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x0, "Register $3")?;
-        Ok(())
+        const EXPECTED: [u64; 3] = [0x0, 0x1234567898760110, 0x0];
+        check_n(&[r0, r2, r3], &EXPECTED)
     }
 }
 
@@ -4867,10 +4772,8 @@ impl Test for ANDIOpcodeTestIntoR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        Ok(())
+        const EXPECTED: [u64; 3] = [0x0, 0x1234567898760110, 0x4321432143214321];
+        check_n(&[r0, r2, r3], &EXPECTED)
     }
 }
 
@@ -4899,8 +4802,7 @@ impl Test for XORIOpcodeTest1 {
                 XORI $3, $2, 0x1234
             ", in("$2") r2, inout("$3") r3);
         }
-        soft_assert_eq(r3, 0x1234567898761324, "Register $3")?;
-        Ok(())
+        check_one(r3, 0x1234567898761324, 3)
     }
 }
 
@@ -4929,8 +4831,7 @@ impl Test for XORIOpcodeTest2 {
                 XORI $3, $2, 0xffff
             ", in("$2") r2, inout("$3") r3);
         }
-        soft_assert_eq(r3, 0x123456789876feef, "Register $3")?;
-        Ok(())
+        check_one(r3, 0x123456789876feef, 3)
     }
 }
 
@@ -4959,8 +4860,7 @@ impl Test for XORIOpcodeTest3 {
                 XORI $3, $2, 0x1f0
             ", in("$2") r2, inout("$3") r3);
         }
-        soft_assert_eq(r3, 0x12345678987600e0, "Register $3")?;
-        Ok(())
+        check_one(r3, 0x12345678987600e0, 3)
     }
 }
 
@@ -4989,8 +4889,7 @@ impl Test for XORIOpcodeTest4 {
                 XORI $3, $2, 0x71
             ", in("$2") r2, inout("$3") r3);
         }
-        soft_assert_eq(r3, 0x1234567898760161, "Register $3")?;
-        Ok(())
+        check_one(r3, 0x1234567898760161, 3)
     }
 }
 
@@ -5019,8 +4918,7 @@ impl Test for XORIOpcodeTest5 {
                 XORI $3, $2, 0x80
             ", in("$2") r2, inout("$3") r3);
         }
-        soft_assert_eq(r3, 0x1234567898760190, "Register $3")?;
-        Ok(())
+        check_one(r3, 0x1234567898760190, 3)
     }
 }
 
@@ -5051,10 +4949,8 @@ impl Test for XORIOpcodeTestWithR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x1234, "Register $3")?;
-        Ok(())
+        const EXPECTED: [u64; 3] = [0x0, 0x1234567898760110, 0x1234];
+        check_n(&[r0, r2, r3], &EXPECTED)
     }
 }
 
@@ -5085,10 +4981,8 @@ impl Test for XORIOpcodeTestWithOffsetZero {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x1234567898760110, "Register $3")?;
-        Ok(())
+        const EXPECTED: [u64; 3] = [0x0, 0x1234567898760110, 0x1234567898760110];
+        check_n(&[r0, r2, r3], &EXPECTED)
     }
 }
 
@@ -5119,10 +5013,8 @@ impl Test for XORIOpcodeTestWithOffsetZeroAndR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x0, "Register $3")?;
-        Ok(())
+        const EXPECTED: [u64; 3] = [0x0, 0x1234567898760110, 0x0];
+        check_n(&[r0, r2, r3], &EXPECTED)
     }
 }
 
@@ -5153,10 +5045,8 @@ impl Test for XORIOpcodeTestIntoR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        Ok(())
+        const EXPECTED: [u64; 3] = [0x0, 0x1234567898760110, 0x4321432143214321];
+        check_n(&[r0, r2, r3], &EXPECTED)
     }
 }
 
@@ -5188,11 +5078,13 @@ impl Test for ADDOpcodeTest {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0xffffffffdb974431, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0xffffffffdb974431,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -5224,11 +5116,13 @@ impl Test for ADDOpcodeTestInputOutput1 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0xffffffffb665acdd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0xffffffffb665acdd,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -5260,11 +5154,8 @@ impl Test for ADDOpcodeTestInputOutput2 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x1110eeee, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x4321432143214321, 0x1110eeee];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -5296,11 +5187,8 @@ impl Test for ADDOpcodeTestInputOutput3 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x2, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x4321432143214321, 0x2];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -5332,11 +5220,8 @@ impl Test for ADDOpcodeTestRTIsR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x43214321, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x4321432143214321, 0x43214321];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -5368,11 +5253,8 @@ impl Test for ADDOpcodeTestRSIsR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x43214321, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x4321432143214321, 0x43214321];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -5404,11 +5286,8 @@ impl Test for ADDOpcodeTestBothAreR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x0, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x4321432143214321, 0x0];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -5440,11 +5319,13 @@ impl Test for ADDOpcodeTestIntoR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0xabcdefabcdefabcd,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -5476,11 +5357,8 @@ impl Test for ADDOpcodeTestWithItself {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432133214321, "Register $3")?;
-        soft_assert_eq(r4, 0x66428642, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x4321432133214321, 0x66428642];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -5512,11 +5390,13 @@ impl Test for ADDUOpcodeTest {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0xffffffffdb974431, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0xffffffffdb974431,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -5548,11 +5428,8 @@ impl Test for ADDUOpcodeTestInputOutput1 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x6665acdd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x4321432143214321, 0x6665acdd];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -5584,11 +5461,8 @@ impl Test for ADDUOpcodeTestInputOutput2 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x1110eeee, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x4321432143214321, 0x1110eeee];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -5620,11 +5494,13 @@ impl Test for ADDUOpcodeTestInputOutput3 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0xffffffff9bdf579a, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0xffffffff9bdf579a,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -5656,11 +5532,8 @@ impl Test for ADDUOpcodeTestRTIsR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x43214321, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x4321432143214321, 0x43214321];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -5692,11 +5565,8 @@ impl Test for ADDUOpcodeTestRSIsR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x43214321, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x4321432143214321, 0x43214321];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -5728,11 +5598,8 @@ impl Test for ADDUOpcodeTestBothAreR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x0, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x4321432143214321, 0x0];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -5764,11 +5631,13 @@ impl Test for ADDUOpcodeTestIntoR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0xabcdefabcdefabcd,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -5800,11 +5669,13 @@ impl Test for ADDUOpcodeTestWithItself {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0xffffffff86428642, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0xffffffff86428642,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -5836,11 +5707,13 @@ impl Test for DADDOpcodeTest {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x55559999db974431, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0x55559999db974431,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -5872,11 +5745,13 @@ impl Test for DADDOpcodeTestInputOutput1 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0xbe024623b665acdd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0xbe024623b665acdd,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -5908,11 +5783,13 @@ impl Test for DADDOpcodeTestInputOutput2 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0xeeef32cd1110eeee, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0xeeef32cd1110eeee,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -5944,11 +5821,8 @@ impl Test for DADDOpcodeTestInputOutput3 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x2, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x4321432143214321, 0x2];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -5980,11 +5854,13 @@ impl Test for DADDOpcodeTestRTIsR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x4321432143214321, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0x4321432143214321,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -6016,11 +5892,13 @@ impl Test for DADDOpcodeTestRSIsR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x4321432143214321, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0x4321432143214321,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -6052,11 +5930,8 @@ impl Test for DADDOpcodeTestBothAreR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x0, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x4321432143214321, 0x0];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -6088,11 +5963,13 @@ impl Test for DADDOpcodeTestIntoR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0xabcdefabcdefabcd,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -6124,11 +6001,13 @@ impl Test for DADDOpcodeTestWithItself {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x3321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x6642864286428642, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x3321432143214321,
+            0x6642864286428642,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -6160,11 +6039,13 @@ impl Test for DADDUOpcodeTest {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x55559999db974431, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0x55559999db974431,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -6196,11 +6077,13 @@ impl Test for DADDUOpcodeTestInputOutput1 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0xbe0246246665acdd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0xbe0246246665acdd,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -6232,11 +6115,13 @@ impl Test for DADDUOpcodeTestInputOutput2 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0xeeef32cd1110eeee, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0xeeef32cd1110eeee,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -6268,11 +6153,13 @@ impl Test for DADDUOpcodeTestInputOutput3 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x579bdf579bdf579a, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0x579bdf579bdf579a,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -6304,11 +6191,13 @@ impl Test for DADDUOpcodeTestRTIsR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x4321432143214321, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0x4321432143214321,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -6340,11 +6229,13 @@ impl Test for DADDUOpcodeTestRSIsR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x4321432143214321, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0x4321432143214321,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -6376,11 +6267,8 @@ impl Test for DADDUOpcodeTestBothAreR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x0, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x4321432143214321, 0x0];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -6412,11 +6300,13 @@ impl Test for DADDUOpcodeTestIntoR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0xabcdefabcdefabcd,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -6448,11 +6338,13 @@ impl Test for DADDUOpcodeTestWithItself {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x8642864286428642, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0x8642864286428642,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -6484,11 +6376,8 @@ impl Test for SUBOpcodeTest {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567818760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x2aab4211, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567818760110, 0x4321432143214321, 0x2aab4211];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -6520,11 +6409,13 @@ impl Test for SUBOpcodeTestInputOutput1 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567818760110, "Register $2")?;
-        soft_assert_eq(r3, 0x3321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0xffffffffb579aabd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567818760110,
+            0x3321432143214321,
+            0xffffffffb579aabd,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -6556,11 +6447,8 @@ impl Test for SUBOpcodeTestInputOutput2 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567818760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x33214321, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567818760110, 0x4321432143214321, 0x33214321];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -6592,11 +6480,8 @@ impl Test for SUBOpcodeTestInputOutput3 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567818760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x0, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567818760110, 0x4321432143214321, 0x0];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -6628,11 +6513,8 @@ impl Test for SUBOpcodeTestRTIsR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x43214321, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x4321432143214321, 0x43214321];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -6664,11 +6546,13 @@ impl Test for SUBOpcodeTestRSIsR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0xffffffffbcdebcdf, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0xffffffffbcdebcdf,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -6700,11 +6584,8 @@ impl Test for SUBOpcodeTestBothAreR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x0, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x4321432143214321, 0x0];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -6736,11 +6617,13 @@ impl Test for SUBOpcodeTestIntoR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567878760110, "Register $2")?;
-        soft_assert_eq(r3, 0x321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567878760110,
+            0x321432143214321,
+            0xabcdefabcdefabcd,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -6772,11 +6655,8 @@ impl Test for SUBOpcodeTestWithItself {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x0, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x4321432143214321, 0x0];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -6808,11 +6688,13 @@ impl Test for SUBUOpcodeTest {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0xffffffffaaab4211, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0xffffffffaaab4211,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -6844,11 +6726,13 @@ impl Test for SUBUOpcodeTestInputOutput1 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567818760110, "Register $2")?;
-        soft_assert_eq(r3, 0x3321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0xffffffffb579aabd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567818760110,
+            0x3321432143214321,
+            0xffffffffb579aabd,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -6880,11 +6764,8 @@ impl Test for SUBUOpcodeTestInputOutput2 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567818760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x33214321, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567818760110, 0x4321432143214321, 0x33214321];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -6916,11 +6797,8 @@ impl Test for SUBUOpcodeTestInputOutput3 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567818760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x0, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567818760110, 0x4321432143214321, 0x0];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -6952,11 +6830,8 @@ impl Test for SUBUOpcodeTestRTIsR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x43214321, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x4321432143214321, 0x43214321];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -6988,11 +6863,13 @@ impl Test for SUBUOpcodeTestRSIsR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0xffffffffbcdebcdf, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0xffffffffbcdebcdf,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -7024,11 +6901,8 @@ impl Test for SUBUOpcodeTestBothAreR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x0, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x4321432143214321, 0x0];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -7060,11 +6934,13 @@ impl Test for SUBUOpcodeTestIntoR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0xabcdefabcdefabcd,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -7096,11 +6972,8 @@ impl Test for SUBUOpcodeTestWithItself {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x0, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x4321432143214321, 0x0];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -7132,11 +7005,13 @@ impl Test for DSUBOpcodeTest {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x30ececa8aaab4211, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0x30ececa8aaab4211,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -7168,11 +7043,13 @@ impl Test for DSUBOpcodeTestInputOutput1 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567818760110, "Register $2")?;
-        soft_assert_eq(r3, 0x3321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x29999933b579aabd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567818760110,
+            0x3321432143214321,
+            0x29999933b579aabd,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -7204,11 +7081,13 @@ impl Test for DSUBOpcodeTestInputOutput2 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567818760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x2321432133214321, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567818760110,
+            0x4321432143214321,
+            0x2321432133214321,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -7240,11 +7119,8 @@ impl Test for DSUBOpcodeTestInputOutput3 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567818760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x0, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567818760110, 0x4321432143214321, 0x0];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -7276,11 +7152,13 @@ impl Test for DSUBOpcodeTestRTIsR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x4321432143214321, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0x4321432143214321,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -7312,11 +7190,13 @@ impl Test for DSUBOpcodeTestRSIsR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0xbcdebcdebcdebcdf, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0xbcdebcdebcdebcdf,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -7348,11 +7228,8 @@ impl Test for DSUBOpcodeTestBothAreR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x0, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x4321432143214321, 0x0];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -7384,11 +7261,13 @@ impl Test for DSUBOpcodeTestIntoR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0xabcdefabcdefabcd,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -7420,11 +7299,8 @@ impl Test for DSUBOpcodeTestWithItself {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x0, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x4321432143214321, 0x0];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -7456,11 +7332,13 @@ impl Test for DSUBUOpcodeTest {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x30ececa8aaab4211, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0x30ececa8aaab4211,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -7492,11 +7370,13 @@ impl Test for DSUBUOpcodeTestInputOutput1 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567818760110, "Register $2")?;
-        soft_assert_eq(r3, 0x3321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x29999933b579aabd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567818760110,
+            0x3321432143214321,
+            0x29999933b579aabd,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -7528,11 +7408,13 @@ impl Test for DSUBUOpcodeTestInputOutput2 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567818760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x1321432133214321, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567818760110,
+            0x4321432143214321,
+            0x1321432133214321,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -7564,11 +7446,8 @@ impl Test for DSUBUOpcodeTestInputOutput3 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567818760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x0, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567818760110, 0x4321432143214321, 0x0];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -7600,11 +7479,13 @@ impl Test for DSUBUOpcodeTestRTIsR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x4321432143214321, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0x4321432143214321,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -7636,11 +7517,13 @@ impl Test for DSUBUOpcodeTestRSIsR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0xbcdebcdebcdebcdf, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0xbcdebcdebcdebcdf,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -7672,11 +7555,8 @@ impl Test for DSUBUOpcodeTestBothAreR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x0, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x4321432143214321, 0x0];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -7708,11 +7588,13 @@ impl Test for DSUBUOpcodeTestIntoR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0xabcdefabcdefabcd,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -7744,11 +7626,8 @@ impl Test for DSUBUOpcodeTestWithItself {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x0, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x4321432143214321, 0x0];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -7778,10 +7657,9 @@ impl Test for DSUBUOpcodeTestNoOverflowNegativeMinusPositive {
                 DSUBU $4, $3, $2
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4);
         }
-        soft_assert_eq(r2, 0xbffffff000000000, "Register $2")?;
-        soft_assert_eq(r3, 0x6f00000000123456, "Register $3")?;
-        soft_assert_eq(r4, 0xaf00001000123456, "Register $4")?;
-        Ok(())
+        check_one(r2, 0xbffffff000000000, 2)?;
+        check_one(r3, 0x6f00000000123456, 3)?;
+        check_one(r4, 0xaf00001000123456, 4)
     }
 }
 
@@ -7813,11 +7691,8 @@ impl Test for SLLOpcodeTest {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x64286420, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x4321432143214321, 0x64286420];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -7849,11 +7724,13 @@ impl Test for SLLOpcodeTestShift0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x43214321f3214321, "Register $3")?;
-        soft_assert_eq(r4, 0xfffffffff3214321, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x43214321f3214321,
+            0xfffffffff3214321,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -7885,11 +7762,13 @@ impl Test for SLLOpcodeTestSignExtension {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0xffffffffc850c840, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0xffffffffc850c840,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -7921,11 +7800,13 @@ impl Test for SLLOpcodeTestIntoItself {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0xffffffffc850c840, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0xffffffffc850c840,
+            0xabcdefabcdefabcd,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -7957,11 +7838,13 @@ impl Test for SLLOpcodeTestIntoItself0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0xffffffffc3214321, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0xffffffffc3214321,
+            0xabcdefabcdefabcd,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -7993,11 +7876,13 @@ impl Test for SLLOpcodeTestIntoR0Shift0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x43214321c3214321, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x43214321c3214321,
+            0xabcdefabcdefabcd,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -8029,11 +7914,8 @@ impl Test for SLLOpcodeTestFromR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x0, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x0, 0xabcdefabcdefabcd];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -8065,11 +7947,8 @@ impl Test for SLLOpcodeTestFromR0Shift0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x0, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x0, 0xabcdefabcdefabcd];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -8101,11 +7980,8 @@ impl Test for SLLVOpcodeTest {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x5, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x64286420, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x5, 0x4321432143214321, 0x64286420];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -8137,11 +8013,8 @@ impl Test for SLLVOpcodeTestShift0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x0, "Register $2")?;
-        soft_assert_eq(r3, 0x43214321f3214321, "Register $3")?;
-        soft_assert_eq(r4, 0xfffffffff3214321, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x0, 0x43214321f3214321, 0xfffffffff3214321];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -8173,11 +8046,8 @@ impl Test for SLLVOpcodeTestShiftTargetAndSourceSame1 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x0, "Register $2")?;
-        soft_assert_eq(r3, 0x2, "Register $3")?;
-        soft_assert_eq(r4, 0x10, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x0, 0x2, 0x10];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -8209,11 +8079,8 @@ impl Test for SLLVOpcodeTestShiftTargetAndSourceSame2 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x0, "Register $2")?;
-        soft_assert_eq(r3, 0x2, "Register $3")?;
-        soft_assert_eq(r4, 0xc, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x0, 0x2, 0xc];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -8245,11 +8112,8 @@ impl Test for SLLVOpcodeTestShiftTargetAndSourceSame3 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x0, "Register $2")?;
-        soft_assert_eq(r3, 0x2, "Register $3")?;
-        soft_assert_eq(r4, 0x18, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x0, 0x2, 0x18];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -8281,11 +8145,8 @@ impl Test for SLLVOpcodeTestShiftTooLarge {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x24, "Register $2")?;
-        soft_assert_eq(r3, 0x43214321f3214321, "Register $3")?;
-        soft_assert_eq(r4, 0x32143210, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x24, 0x43214321f3214321, 0x32143210];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -8317,11 +8178,8 @@ impl Test for SLLVOpcodeTestSignExtension {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x6, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0xffffffffc850c840, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x6, 0x4321432143214321, 0xffffffffc850c840];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -8353,11 +8211,8 @@ impl Test for SLLVOpcodeTestIntoItself {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x6, "Register $2")?;
-        soft_assert_eq(r3, 0xffffffffc850c840, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x6, 0xffffffffc850c840, 0xabcdefabcdefabcd];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -8389,11 +8244,8 @@ impl Test for SLLVOpcodeTestIntoItself0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x0, "Register $2")?;
-        soft_assert_eq(r3, 0xffffffffc3214321, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x0, 0xffffffffc3214321, 0xabcdefabcdefabcd];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -8425,11 +8277,8 @@ impl Test for SLLVOpcodeTestIntoR0Shift0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x0, "Register $2")?;
-        soft_assert_eq(r3, 0x43214321c3214321, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x0, 0x43214321c3214321, 0xabcdefabcdefabcd];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -8461,11 +8310,8 @@ impl Test for SLLVOpcodeTestFromR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x5, "Register $2")?;
-        soft_assert_eq(r3, 0x0, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x5, 0x0, 0xabcdefabcdefabcd];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -8497,11 +8343,8 @@ impl Test for SLLVOpcodeTestFromR0Shift0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x0, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x0, 0xabcdefabcdefabcd];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -8533,11 +8376,13 @@ impl Test for DSLL32OpcodeTest {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x8321432183214321, "Register $3")?;
-        soft_assert_eq(r4, 0x6428642000000000, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x8321432183214321,
+            0x6428642000000000,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -8569,11 +8414,13 @@ impl Test for DSLL32OpcodeTestShift0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x83214321f3214321, "Register $3")?;
-        soft_assert_eq(r4, 0xf321432100000000, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x83214321f3214321,
+            0xf321432100000000,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -8605,11 +8452,13 @@ impl Test for DSLL32OpcodeTestIntoItself {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0xc850c84000000000, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0xc850c84000000000,
+            0xabcdefabcdefabcd,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -8641,11 +8490,13 @@ impl Test for DSLL32OpcodeTestIntoItself0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0xc321432100000000, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0xc321432100000000,
+            0xabcdefabcdefabcd,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -8677,11 +8528,13 @@ impl Test for DSLL32OpcodeTestIntoR0Shift0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x43214321c3214321, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x43214321c3214321,
+            0xabcdefabcdefabcd,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -8713,11 +8566,8 @@ impl Test for DSLL32OpcodeTestFromR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x0, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x0, 0xabcdefabcdefabcd];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -8749,11 +8599,8 @@ impl Test for DSLL32OpcodeTestFromR0Shift0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x0, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x0, 0xabcdefabcdefabcd];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -8785,11 +8632,13 @@ impl Test for DSLLOpcodeTest {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x6428642864286420, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0x6428642864286420,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -8821,11 +8670,13 @@ impl Test for DSLLOpcodeTestShift0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x4321432143214321, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0x4321432143214321,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -8857,11 +8708,13 @@ impl Test for DSLLOpcodeTestIntoItself {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0xc850c850c850c840, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0xc850c850c850c840,
+            0xabcdefabcdefabcd,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -8893,11 +8746,13 @@ impl Test for DSLLOpcodeTestIntoItself0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x43214321c3214321, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x43214321c3214321,
+            0xabcdefabcdefabcd,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -8929,11 +8784,13 @@ impl Test for DSLLOpcodeTestIntoR0Shift0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x43214321c3214321, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x43214321c3214321,
+            0xabcdefabcdefabcd,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -8965,11 +8822,8 @@ impl Test for DSLLOpcodeTestFromR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x0, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x0, 0xabcdefabcdefabcd];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -9001,11 +8855,8 @@ impl Test for DSLLOpcodeTestFromR0Shift0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x0, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x0, 0xabcdefabcdefabcd];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -9037,11 +8888,8 @@ impl Test for DSLLVOpcodeTest {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x5, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x6428642864286420, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x5, 0x4321432143214321, 0x6428642864286420];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -9073,11 +8921,8 @@ impl Test for DSLLVOpcodeTestShift0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x0, "Register $2")?;
-        soft_assert_eq(r3, 0x43214321f3214321, "Register $3")?;
-        soft_assert_eq(r4, 0x43214321f3214321, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x0, 0x43214321f3214321, 0x43214321f3214321];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -9109,11 +8954,8 @@ impl Test for DSLLVOpcodeTestShift1 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x24, "Register $2")?;
-        soft_assert_eq(r3, 0x43214321f3214321, "Register $3")?;
-        soft_assert_eq(r4, 0x3214321000000000, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x24, 0x43214321f3214321, 0x3214321000000000];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -9145,11 +8987,8 @@ impl Test for DSLLVOpcodeTestShiftTargetAndSourceSame1 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x0, "Register $2")?;
-        soft_assert_eq(r3, 0x2, "Register $3")?;
-        soft_assert_eq(r4, 0x10, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x0, 0x2, 0x10];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -9181,11 +9020,8 @@ impl Test for DSLLVOpcodeTestShiftTargetAndSourceSame2 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x0, "Register $2")?;
-        soft_assert_eq(r3, 0x2, "Register $3")?;
-        soft_assert_eq(r4, 0xc, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x0, 0x2, 0xc];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -9217,11 +9053,8 @@ impl Test for DSLLVOpcodeTestShiftTargetAndSourceSame3 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x0, "Register $2")?;
-        soft_assert_eq(r3, 0x2, "Register $3")?;
-        soft_assert_eq(r4, 0x18, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x0, 0x2, 0x18];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -9253,11 +9086,8 @@ impl Test for DSLLVOpcodeTestShiftTooLarge {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x44, "Register $2")?;
-        soft_assert_eq(r3, 0x43214321f3214321, "Register $3")?;
-        soft_assert_eq(r4, 0x3214321f32143210, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x44, 0x43214321f3214321, 0x3214321f32143210];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -9289,11 +9119,8 @@ impl Test for DSLLVOpcodeTestIntoItself {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x6, "Register $2")?;
-        soft_assert_eq(r3, 0xc850c850c850c840, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x6, 0xc850c850c850c840, 0xabcdefabcdefabcd];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -9325,11 +9152,8 @@ impl Test for DSLLVOpcodeTestIntoItself0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x0, "Register $2")?;
-        soft_assert_eq(r3, 0x43214321c3214321, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x0, 0x43214321c3214321, 0xabcdefabcdefabcd];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -9361,11 +9185,8 @@ impl Test for DSLLVOpcodeTestIntoR0Shift0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x0, "Register $2")?;
-        soft_assert_eq(r3, 0x43214321c3214321, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x0, 0x43214321c3214321, 0xabcdefabcdefabcd];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -9397,11 +9218,8 @@ impl Test for DSLLVOpcodeTestFromR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x5, "Register $2")?;
-        soft_assert_eq(r3, 0x0, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x5, 0x0, 0xabcdefabcdefabcd];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -9433,11 +9251,8 @@ impl Test for DSLLVOpcodeTestFromR0Shift0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x0, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x0, 0xabcdefabcdefabcd];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -9469,11 +9284,8 @@ impl Test for SRLOpcodeTest {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432183214321, "Register $3")?;
-        soft_assert_eq(r4, 0x4190a19, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x4321432183214321, 0x4190a19];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -9505,11 +9317,13 @@ impl Test for SRLOpcodeTestShift0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x43214321f3214321, "Register $3")?;
-        soft_assert_eq(r4, 0xfffffffff3214321, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x43214321f3214321,
+            0xfffffffff3214321,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -9541,11 +9355,8 @@ impl Test for SRLOpcodeTestIntoItself {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x10c850c, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x10c850c, 0xabcdefabcdefabcd];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -9577,11 +9388,13 @@ impl Test for SRLOpcodeTestIntoItself0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0xffffffffc3214321, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0xffffffffc3214321,
+            0xabcdefabcdefabcd,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -9613,11 +9426,13 @@ impl Test for SRLOpcodeTestIntoR0Shift0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x43214321c3214321, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x43214321c3214321,
+            0xabcdefabcdefabcd,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -9649,11 +9464,8 @@ impl Test for SRLOpcodeTestFromR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x0, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x0, 0xabcdefabcdefabcd];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -9685,11 +9497,8 @@ impl Test for SRLOpcodeTestFromR0Shift0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x0, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x0, 0xabcdefabcdefabcd];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -9721,11 +9530,8 @@ impl Test for SRLVOpcodeTest {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x5, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432183214321, "Register $3")?;
-        soft_assert_eq(r4, 0x4190a19, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x5, 0x4321432183214321, 0x4190a19];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -9757,11 +9563,8 @@ impl Test for SRLVOpcodeTestShift0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x0, "Register $2")?;
-        soft_assert_eq(r3, 0x43214321f3214321, "Register $3")?;
-        soft_assert_eq(r4, 0xfffffffff3214321, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x0, 0x43214321f3214321, 0xfffffffff3214321];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -9793,11 +9596,8 @@ impl Test for SRLVOpcodeTestShiftTargetAndSourceSame1 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x0, "Register $2")?;
-        soft_assert_eq(r3, 0x10, "Register $3")?;
-        soft_assert_eq(r4, 0x2, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x0, 0x10, 0x2];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -9829,11 +9629,8 @@ impl Test for SRLVOpcodeTestShiftTargetAndSourceSame2 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x0, "Register $2")?;
-        soft_assert_eq(r3, 0x2, "Register $3")?;
-        soft_assert_eq(r4, 0x3, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x0, 0x2, 0x3];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -9865,11 +9662,8 @@ impl Test for SRLVOpcodeTestShiftTargetAndSourceSame3 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x0, "Register $2")?;
-        soft_assert_eq(r3, 0x2, "Register $3")?;
-        soft_assert_eq(r4, 0x0, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x0, 0x2, 0x0];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -9901,11 +9695,8 @@ impl Test for SRLVOpcodeTestShiftTargetAndSourceSame4 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x0, "Register $2")?;
-        soft_assert_eq(r3, 0x2, "Register $3")?;
-        soft_assert_eq(r4, 0x1, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x0, 0x2, 0x1];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -9937,11 +9728,8 @@ impl Test for SRLVOpcodeTestShiftTooLarge {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x24, "Register $2")?;
-        soft_assert_eq(r3, 0x43214321f3214321, "Register $3")?;
-        soft_assert_eq(r4, 0xf321432, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x24, 0x43214321f3214321, 0xf321432];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -9973,11 +9761,8 @@ impl Test for SRLVOpcodeTestIntoItself {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x6, "Register $2")?;
-        soft_assert_eq(r3, 0x10c850c, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x6, 0x10c850c, 0xabcdefabcdefabcd];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -10009,11 +9794,8 @@ impl Test for SRLVOpcodeTestIntoItself0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x0, "Register $2")?;
-        soft_assert_eq(r3, 0xffffffffc3214321, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x0, 0xffffffffc3214321, 0xabcdefabcdefabcd];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -10045,11 +9827,8 @@ impl Test for SRLVOpcodeTestIntoR0Shift0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x0, "Register $2")?;
-        soft_assert_eq(r3, 0x43214321c3214321, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x0, 0x43214321c3214321, 0xabcdefabcdefabcd];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -10081,11 +9860,8 @@ impl Test for SRLVOpcodeTestFromR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x5, "Register $2")?;
-        soft_assert_eq(r3, 0x0, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x5, 0x0, 0xabcdefabcdefabcd];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -10117,11 +9893,8 @@ impl Test for SRLVOpcodeTestFromR0Shift0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x0, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x0, 0xabcdefabcdefabcd];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -10153,11 +9926,8 @@ impl Test for DSRL32OpcodeTest {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x8321432183214321, "Register $3")?;
-        soft_assert_eq(r4, 0x4190a19, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x8321432183214321, 0x4190a19];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -10189,11 +9959,8 @@ impl Test for DSRL32OpcodeTestShift0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x83214321f3214321, "Register $3")?;
-        soft_assert_eq(r4, 0x83214321, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x83214321f3214321, 0x83214321];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -10225,11 +9992,8 @@ impl Test for DSRL32OpcodeTestIntoItself {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x20c850c, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x20c850c, 0xabcdefabcdefabcd];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -10261,11 +10025,8 @@ impl Test for DSRL32OpcodeTestIntoItself0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x43214321, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x43214321, 0xabcdefabcdefabcd];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -10297,11 +10058,13 @@ impl Test for DSRL32OpcodeTestIntoR0Shift0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x43214321c3214321, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x43214321c3214321,
+            0xabcdefabcdefabcd,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -10333,11 +10096,8 @@ impl Test for DSRL32OpcodeTestFromR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x0, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x0, 0xabcdefabcdefabcd];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -10369,11 +10129,8 @@ impl Test for DSRL32OpcodeTestFromR0Shift0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x0, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x0, 0xabcdefabcdefabcd];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -10405,11 +10162,13 @@ impl Test for DSRLOpcodeTest {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x8321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x4190a190a190a19, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x8321432143214321,
+            0x4190a190a190a19,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -10441,11 +10200,13 @@ impl Test for DSRLOpcodeTestShift0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x4321432143214321, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0x4321432143214321,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -10477,11 +10238,13 @@ impl Test for DSRLOpcodeTestIntoItself {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x10c850c850c850c, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x10c850c850c850c,
+            0xabcdefabcdefabcd,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -10513,11 +10276,13 @@ impl Test for DSRLOpcodeTestIntoItself0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x43214321c3214321, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x43214321c3214321,
+            0xabcdefabcdefabcd,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -10549,11 +10314,13 @@ impl Test for DSRLOpcodeTestIntoR0Shift0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x43214321c3214321, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x43214321c3214321,
+            0xabcdefabcdefabcd,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -10585,11 +10352,8 @@ impl Test for DSRLOpcodeTestFromR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x0, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x0, 0xabcdefabcdefabcd];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -10621,11 +10385,8 @@ impl Test for DSRLOpcodeTestFromR0Shift0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x0, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x0, 0xabcdefabcdefabcd];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -10657,11 +10418,8 @@ impl Test for DSRLVOpcodeTest {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x5, "Register $2")?;
-        soft_assert_eq(r3, 0x8321432183214321, "Register $3")?;
-        soft_assert_eq(r4, 0x4190a190c190a19, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x5, 0x8321432183214321, 0x4190a190c190a19];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -10693,11 +10451,8 @@ impl Test for DSRLVOpcodeTestShift0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x0, "Register $2")?;
-        soft_assert_eq(r3, 0x83214321f3214321, "Register $3")?;
-        soft_assert_eq(r4, 0x83214321f3214321, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x0, 0x83214321f3214321, 0x83214321f3214321];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -10729,11 +10484,8 @@ impl Test for DSRLVOpcodeTestShift1 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x24, "Register $2")?;
-        soft_assert_eq(r3, 0x83214321f3214321, "Register $3")?;
-        soft_assert_eq(r4, 0x8321432, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x24, 0x83214321f3214321, 0x8321432];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -10765,11 +10517,8 @@ impl Test for DSRLVOpcodeTestShiftTargetAndSourceSame1 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x0, "Register $2")?;
-        soft_assert_eq(r3, 0x10, "Register $3")?;
-        soft_assert_eq(r4, 0x2, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x0, 0x10, 0x2];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -10801,11 +10550,8 @@ impl Test for DSRLVOpcodeTestShiftTargetAndSourceSame2 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x0, "Register $2")?;
-        soft_assert_eq(r3, 0x2, "Register $3")?;
-        soft_assert_eq(r4, 0x3, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x0, 0x2, 0x3];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -10837,11 +10583,8 @@ impl Test for DSRLVOpcodeTestShiftTargetAndSourceSame3 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x0, "Register $2")?;
-        soft_assert_eq(r3, 0x2, "Register $3")?;
-        soft_assert_eq(r4, 0x0, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x0, 0x2, 0x0];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -10873,11 +10616,8 @@ impl Test for DSRLVOpcodeTestShiftTargetAndSourceSame4 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x0, "Register $2")?;
-        soft_assert_eq(r3, 0x2, "Register $3")?;
-        soft_assert_eq(r4, 0x1, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x0, 0x2, 0x1];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -10909,11 +10649,8 @@ impl Test for DSRLVOpcodeTestShiftTooLarge {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x44, "Register $2")?;
-        soft_assert_eq(r3, 0x83214321f3214321, "Register $3")?;
-        soft_assert_eq(r4, 0x83214321f321432, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x44, 0x83214321f3214321, 0x83214321f321432];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -10945,11 +10682,8 @@ impl Test for DSRLVOpcodeTestIntoItself {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x6, "Register $2")?;
-        soft_assert_eq(r3, 0x10c850c850c850c, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x6, 0x10c850c850c850c, 0xabcdefabcdefabcd];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -10981,11 +10715,8 @@ impl Test for DSRLVOpcodeTestIntoItself0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x0, "Register $2")?;
-        soft_assert_eq(r3, 0x43214321c3214321, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x0, 0x43214321c3214321, 0xabcdefabcdefabcd];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -11017,11 +10748,8 @@ impl Test for DSRLVOpcodeTestIntoR0Shift0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x0, "Register $2")?;
-        soft_assert_eq(r3, 0x43214321c3214321, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x0, 0x43214321c3214321, 0xabcdefabcdefabcd];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -11053,11 +10781,8 @@ impl Test for DSRLVOpcodeTestFromR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x5, "Register $2")?;
-        soft_assert_eq(r3, 0x0, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x5, 0x0, 0xabcdefabcdefabcd];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -11089,11 +10814,8 @@ impl Test for DSRLVOpcodeTestFromR0Shift0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x0, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x0, 0xabcdefabcdefabcd];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -11125,11 +10847,8 @@ impl Test for SRAOpcodeTest {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432183214321, "Register $3")?;
-        soft_assert_eq(r4, 0xc190a19, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x4321432183214321, 0xc190a19];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -11161,11 +10880,13 @@ impl Test for SRAOpcodeTest2 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321932183214321, "Register $3")?;
-        soft_assert_eq(r4, 0xffffffff93218321, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321932183214321,
+            0xffffffff93218321,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -11197,11 +10918,13 @@ impl Test for SRAOpcodeTestShift0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x43214321f3214321, "Register $3")?;
-        soft_assert_eq(r4, 0xfffffffff3214321, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x43214321f3214321,
+            0xfffffffff3214321,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -11233,11 +10956,13 @@ impl Test for SRAOpcodeTestIntoItself {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0xffffffff850c850c, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0xffffffff850c850c,
+            0xabcdefabcdefabcd,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -11269,11 +10994,13 @@ impl Test for SRAOpcodeTestIntoItself0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0xffffffffc3214321, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0xffffffffc3214321,
+            0xabcdefabcdefabcd,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -11305,11 +11032,13 @@ impl Test for SRAOpcodeTestIntoR0Shift0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x43214321c3214321, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x43214321c3214321,
+            0xabcdefabcdefabcd,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -11341,11 +11070,8 @@ impl Test for SRAOpcodeTestFromR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x0, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x0, 0xabcdefabcdefabcd];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -11377,11 +11103,8 @@ impl Test for SRAOpcodeTestFromR0Shift0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x0, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x0, 0xabcdefabcdefabcd];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -11413,11 +11136,8 @@ impl Test for SRAVOpcodeTest {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x5, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432183214321, "Register $3")?;
-        soft_assert_eq(r4, 0xc190a19, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x5, 0x4321432183214321, 0xc190a19];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -11449,11 +11169,8 @@ impl Test for SRAVOpcodeTest2 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x10, "Register $2")?;
-        soft_assert_eq(r3, 0x4321932183214321, "Register $3")?;
-        soft_assert_eq(r4, 0xffffffff93218321, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x10, 0x4321932183214321, 0xffffffff93218321];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -11485,11 +11202,8 @@ impl Test for SRAVOpcodeTestShift0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x0, "Register $2")?;
-        soft_assert_eq(r3, 0x43214321f3214321, "Register $3")?;
-        soft_assert_eq(r4, 0xfffffffff3214321, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x0, 0x43214321f3214321, 0xfffffffff3214321];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -11521,11 +11235,8 @@ impl Test for SRAVOpcodeTestShiftTargetAndSourceSame1 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x0, "Register $2")?;
-        soft_assert_eq(r3, 0x10, "Register $3")?;
-        soft_assert_eq(r4, 0x2, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x0, 0x10, 0x2];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -11557,11 +11268,8 @@ impl Test for SRAVOpcodeTestShiftTargetAndSourceSame2 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x0, "Register $2")?;
-        soft_assert_eq(r3, 0x2, "Register $3")?;
-        soft_assert_eq(r4, 0x3, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x0, 0x2, 0x3];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -11593,11 +11301,8 @@ impl Test for SRAVOpcodeTestShiftTargetAndSourceSame3 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x0, "Register $2")?;
-        soft_assert_eq(r3, 0x2, "Register $3")?;
-        soft_assert_eq(r4, 0x0, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x0, 0x2, 0x0];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -11629,11 +11334,8 @@ impl Test for SRAVOpcodeTestShiftTargetAndSourceSame4 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x0, "Register $2")?;
-        soft_assert_eq(r3, 0x2, "Register $3")?;
-        soft_assert_eq(r4, 0xffffffffffffe247, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x0, 0x2, 0xffffffffffffe247];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -11665,11 +11367,8 @@ impl Test for SRAVOpcodeTestShiftTooLarge {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x24, "Register $2")?;
-        soft_assert_eq(r3, 0x43214321f3214321, "Register $3")?;
-        soft_assert_eq(r4, 0x1f321432, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x24, 0x43214321f3214321, 0x1f321432];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -11701,11 +11400,8 @@ impl Test for SRAVOpcodeTestIntoItself {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x6, "Register $2")?;
-        soft_assert_eq(r3, 0xffffffff850c850c, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x6, 0xffffffff850c850c, 0xabcdefabcdefabcd];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -11737,11 +11433,8 @@ impl Test for SRAVOpcodeTestIntoItself0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x0, "Register $2")?;
-        soft_assert_eq(r3, 0xffffffffc3214321, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x0, 0xffffffffc3214321, 0xabcdefabcdefabcd];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -11773,11 +11466,8 @@ impl Test for SRAVOpcodeTestIntoR0Shift0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x0, "Register $2")?;
-        soft_assert_eq(r3, 0x43214321c3214321, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x0, 0x43214321c3214321, 0xabcdefabcdefabcd];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -11809,11 +11499,8 @@ impl Test for SRAVOpcodeTestFromR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x5, "Register $2")?;
-        soft_assert_eq(r3, 0x0, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x5, 0x0, 0xabcdefabcdefabcd];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -11845,11 +11532,8 @@ impl Test for SRAVOpcodeTestFromR0Shift0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x0, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x0, 0xabcdefabcdefabcd];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -11881,11 +11565,13 @@ impl Test for DSRA32OpcodeTest {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x8321432183214321, "Register $3")?;
-        soft_assert_eq(r4, 0xfffffffffc190a19, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x8321432183214321,
+            0xfffffffffc190a19,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -11917,11 +11603,13 @@ impl Test for DSRA32OpcodeTestShift0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x83214321f3214321, "Register $3")?;
-        soft_assert_eq(r4, 0xffffffff83214321, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x83214321f3214321,
+            0xffffffff83214321,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -11953,11 +11641,13 @@ impl Test for DSRA32OpcodeTestIntoItself {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0xfffffffffe0c850c, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0xfffffffffe0c850c,
+            0xabcdefabcdefabcd,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -11989,11 +11679,8 @@ impl Test for DSRA32OpcodeTestIntoItself0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x43214321, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x43214321, 0xabcdefabcdefabcd];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -12025,11 +11712,13 @@ impl Test for DSRA32OpcodeTestIntoR0Shift0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x43214321c3214321, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x43214321c3214321,
+            0xabcdefabcdefabcd,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -12061,11 +11750,8 @@ impl Test for DSRA32OpcodeTestFromR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x0, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x0, 0xabcdefabcdefabcd];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -12097,11 +11783,8 @@ impl Test for DSRA32OpcodeTestFromR0Shift0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x0, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x0, 0xabcdefabcdefabcd];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -12133,11 +11816,13 @@ impl Test for DSRAOpcodeTest {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x8321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0xfc190a190a190a19, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x8321432143214321,
+            0xfc190a190a190a19,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -12169,11 +11854,13 @@ impl Test for DSRAOpcodeTestShift0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x4321432143214321, "Register $3")?;
-        soft_assert_eq(r4, 0x4321432143214321, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x4321432143214321,
+            0x4321432143214321,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -12205,11 +11892,13 @@ impl Test for DSRAOpcodeTestIntoItself {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x10c850c850c850c, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x10c850c850c850c,
+            0xabcdefabcdefabcd,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -12241,11 +11930,13 @@ impl Test for DSRAOpcodeTestIntoItself0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x43214321c3214321, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x43214321c3214321,
+            0xabcdefabcdefabcd,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -12277,11 +11968,13 @@ impl Test for DSRAOpcodeTestIntoR0Shift0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x43214321c3214321, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [
+            0x0,
+            0x1234567898760110,
+            0x43214321c3214321,
+            0xabcdefabcdefabcd,
+        ];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -12313,11 +12006,8 @@ impl Test for DSRAOpcodeTestFromR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x0, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x0, 0xabcdefabcdefabcd];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -12349,11 +12039,8 @@ impl Test for DSRAOpcodeTestFromR0Shift0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x0, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x0, 0xabcdefabcdefabcd];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -12385,11 +12072,8 @@ impl Test for DSRAVOpcodeTest {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x5, "Register $2")?;
-        soft_assert_eq(r3, 0x8321432183214321, "Register $3")?;
-        soft_assert_eq(r4, 0xfc190a190c190a19, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x5, 0x8321432183214321, 0xfc190a190c190a19];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -12421,11 +12105,8 @@ impl Test for DSRAVOpcodeTestShift0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x0, "Register $2")?;
-        soft_assert_eq(r3, 0x83214321f3214321, "Register $3")?;
-        soft_assert_eq(r4, 0x83214321f3214321, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x0, 0x83214321f3214321, 0x83214321f3214321];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -12457,11 +12138,8 @@ impl Test for DSRAVOpcodeTestShift1 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x24, "Register $2")?;
-        soft_assert_eq(r3, 0x83214321f3214321, "Register $3")?;
-        soft_assert_eq(r4, 0xfffffffff8321432, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x24, 0x83214321f3214321, 0xfffffffff8321432];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -12493,11 +12171,8 @@ impl Test for DSRAVOpcodeTestShiftTargetAndSourceSame1 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x0, "Register $2")?;
-        soft_assert_eq(r3, 0x10, "Register $3")?;
-        soft_assert_eq(r4, 0x2, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x0, 0x10, 0x2];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -12529,11 +12204,8 @@ impl Test for DSRAVOpcodeTestShiftTargetAndSourceSame2 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x0, "Register $2")?;
-        soft_assert_eq(r3, 0x2, "Register $3")?;
-        soft_assert_eq(r4, 0x3, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x0, 0x2, 0x3];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -12565,11 +12237,8 @@ impl Test for DSRAVOpcodeTestShiftTargetAndSourceSame3 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x0, "Register $2")?;
-        soft_assert_eq(r3, 0x2, "Register $3")?;
-        soft_assert_eq(r4, 0x0, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x0, 0x2, 0x0];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -12601,11 +12270,8 @@ impl Test for DSRAVOpcodeTestShiftTargetAndSourceSame4 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x0, "Register $2")?;
-        soft_assert_eq(r3, 0x2, "Register $3")?;
-        soft_assert_eq(r4, 0xffffffffffffffff, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x0, 0x2, 0xffffffffffffffff];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -12637,11 +12303,8 @@ impl Test for DSRAVOpcodeTestShiftTooLarge {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x44, "Register $2")?;
-        soft_assert_eq(r3, 0x83214321f3214321, "Register $3")?;
-        soft_assert_eq(r4, 0xf83214321f321432, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x44, 0x83214321f3214321, 0xf83214321f321432];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -12673,11 +12336,8 @@ impl Test for DSRAVOpcodeTestIntoItself {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x6, "Register $2")?;
-        soft_assert_eq(r3, 0x10c850c850c850c, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x6, 0x10c850c850c850c, 0xabcdefabcdefabcd];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -12709,11 +12369,8 @@ impl Test for DSRAVOpcodeTestIntoItself0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x0, "Register $2")?;
-        soft_assert_eq(r3, 0x43214321c3214321, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x0, 0x43214321c3214321, 0xabcdefabcdefabcd];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -12745,11 +12402,8 @@ impl Test for DSRAVOpcodeTestIntoR0Shift0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x0, "Register $2")?;
-        soft_assert_eq(r3, 0x43214321c3214321, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x0, 0x43214321c3214321, 0xabcdefabcdefabcd];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -12781,11 +12435,8 @@ impl Test for DSRAVOpcodeTestFromR0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x5, "Register $2")?;
-        soft_assert_eq(r3, 0x0, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x5, 0x0, 0xabcdefabcdefabcd];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }
 
@@ -12817,10 +12468,7 @@ impl Test for DSRAVOpcodeTestFromR0Shift0 {
                 DADDU {z0}, $0, $0
             ", inout("$2") r2, inout("$3") r3, inout("$4") r4, z0 = inout(reg) r0);
         }
-        soft_assert_eq(r0, 0x0, "Register $0")?;
-        soft_assert_eq(r2, 0x1234567898760110, "Register $2")?;
-        soft_assert_eq(r3, 0x0, "Register $3")?;
-        soft_assert_eq(r4, 0xabcdefabcdefabcd, "Register $4")?;
-        Ok(())
+        const EXPECTED: [u64; 4] = [0x0, 0x1234567898760110, 0x0, 0xabcdefabcdefabcd];
+        check_n(&[r0, r2, r3, r4], &EXPECTED)
     }
 }

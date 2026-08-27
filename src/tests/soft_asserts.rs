@@ -6,6 +6,10 @@ use core::ops::{Add, RangeInclusive, Sub};
 use crate::math::vector::Vector;
 
 /// Tests if `v1 == v2`.
+///
+/// `#[inline(never)]`: LTO otherwise inlines each monomorphization into all ~1600
+/// callers, duplicating the failure path's `format!` setup for ~570 KB of ROM.
+#[inline(never)]
 pub fn soft_assert_eq<T: Debug + PartialEq>(v1: T, v2: T, help: &str) -> Result<(), String> {
     if v1 == v2 {
         Ok(())
