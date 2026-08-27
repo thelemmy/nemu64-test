@@ -853,14 +853,22 @@ impl Test for SingleInstructionCPUTiming {
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
         match (*value).downcast_ref::<(&str, u32, u32)>() {
             Some((_context, expected_cycles, instruction)) => {
-                assert_cycles_with_codegen_one_instruction(
+                let result = assert_cycles_with_codegen_one_instruction(
                     *expected_cycles,
                     0,
                     0,
                     Status::DEFAULT,
                     ExceptionTimingMode::Off,
                     *instruction,
-                )
+                );
+                // Measuring TLBWR/TLBWI runs them in a loop, scattering the live EntryHi
+                // across many entries (TLBWR picks a random index). A later lookup then
+                // multiple-matches those duplicates and latches the sticky Status.TS, which
+                // fails every subsequent TLB test.
+                unsafe {
+                    crate::cop0::clear_tlb();
+                }
+                result
             }
             _ => Err(format!("Unexpected pattern")),
         }
