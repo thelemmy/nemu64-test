@@ -7,6 +7,7 @@ use super::cache_common;
 use crate::cop0;
 use crate::tests::soft_asserts::soft_assert_eq;
 use crate::tests::{Level, Test};
+use crate::MemoryMap;
 
 const ICACHE_LOAD_TAG: u8 = 4;
 const ICACHE_STORE_TAG: u8 = 8;
@@ -21,8 +22,15 @@ fn tag_lo_cpcs(tag_lo: u32) -> u32 {
     (tag_lo >> 6) & 3
 }
 
-fn run_icache_test(body: impl FnOnce() -> Result<(), String>) -> Result<(), String> {
-    cache_common::run_cache_isolated_test(body)
+/// Runs `body` against a line whose icache set does not alias the code running inside it.
+/// See [`cache_common::with_line_in_a_free_set`].
+fn run_icache_test(body: impl Fn(usize, u32) -> Result<(), String>) -> Result<(), String> {
+    cache_common::run_cache_isolated_test(|| {
+        cache_common::with_line_in_a_free_set(|cached, _uncached| {
+            let phys = MemoryMap::cached_to_physical_mut(cached as *mut u32) as u32;
+            body(cached, phys)
+        })
+    })
 }
 
 pub struct IcacheStoreTagThenLoadTag;
@@ -41,9 +49,7 @@ impl Test for IcacheStoreTagThenLoadTag {
     }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        run_icache_test(|| {
-            let addr = 0xFFFF_FFFF_8000_1000usize;
-            let phys = 0x0000_1000u32;
+        run_icache_test(|addr, phys| {
             let want = icache_tag_lo(true, phys);
             unsafe {
                 cop0::cache::<{ cop0::ICACHE_INDEX_INVALIDATE }, 0>(addr);
@@ -75,9 +81,7 @@ impl Test for IcacheIndexInvalidateClearsValidInTagLo {
     }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        run_icache_test(|| {
-            let addr = 0xFFFF_FFFF_8000_2000usize;
-            let phys = 0x0000_2000u32;
+        run_icache_test(|addr, phys| {
             let before_store = icache_tag_lo(true, phys);
             unsafe {
                 cop0::cache::<{ cop0::ICACHE_INDEX_INVALIDATE }, 0>(addr);
@@ -123,9 +127,7 @@ impl Test for IcacheHitInvalidateClearsValidWhenLineHits {
     }
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
-        run_icache_test(|| {
-            let addr = 0xFFFF_FFFF_8000_3000usize;
-            let phys = 0x0000_3000u32;
+        run_icache_test(|addr, phys| {
             unsafe {
                 cop0::cache::<{ cop0::ICACHE_INDEX_INVALIDATE }, 0>(addr);
                 cop0::set_tag_lo(icache_tag_lo(true, phys));
