@@ -2512,7 +2512,7 @@ impl Test for COP1Instructions32 {
             (
                 "ADD.S",
                 2u32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 123f32,
                 Assembler::make_cop1_add(FR::F0, FR::F2, FR::F4).s(),
             ),
@@ -2520,7 +2520,7 @@ impl Test for COP1Instructions32 {
                 "ADD.S",
                 2u32,
                 123f32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 Assembler::make_cop1_add(FR::F0, FR::F2, FR::F4).s(),
             ),
             // Overflow
@@ -2648,7 +2648,7 @@ impl Test for COP1Instructions32 {
             (
                 "SUB.S",
                 2u32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 123f32,
                 Assembler::make_cop1_sub(FR::F0, FR::F2, FR::F4).s(),
             ),
@@ -2656,7 +2656,7 @@ impl Test for COP1Instructions32 {
                 "SUB.S",
                 2u32,
                 123f32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 Assembler::make_cop1_sub(FR::F0, FR::F2, FR::F4).s(),
             ),
             // Overflow
@@ -2931,7 +2931,7 @@ impl Test for COP1Instructions32 {
             (
                 "MUL.S",
                 2u32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 123f32,
                 Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).s(),
             ),
@@ -2939,7 +2939,7 @@ impl Test for COP1Instructions32 {
                 "MUL.S",
                 2u32,
                 123f32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).s(),
             ),
             // Overflow
@@ -3117,7 +3117,7 @@ impl Test for COP1Instructions32 {
             (
                 "DIV.S",
                 2u32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 123f32,
                 Assembler::make_cop1_div(FR::F0, FR::F2, FR::F4).s(),
             ),
@@ -3125,7 +3125,7 @@ impl Test for COP1Instructions32 {
                 "DIV.S",
                 2u32,
                 123f32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 Assembler::make_cop1_div(FR::F0, FR::F2, FR::F4).s(),
             ),
             // NEG.S is always 1 cycle
@@ -3160,7 +3160,7 @@ impl Test for COP1Instructions32 {
             (
                 "NEG.S",
                 1u32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 0f32,
                 Assembler::make_cop1_neg(FR::F0, FR::F2).s(),
             ),
@@ -3196,7 +3196,7 @@ impl Test for COP1Instructions32 {
             (
                 "ABS.S",
                 1u32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 0f32,
                 Assembler::make_cop1_abs(FR::F0, FR::F2).s(),
             ),
@@ -3272,9 +3272,9 @@ impl Test for COP1Instructions32 {
                 Assembler::make_cop1_sqrt(FR::F0, FR::F2).s(),
             ),
             (
-                "SQRT.S (qNAN with exceptions disabled)",
+                "SQRT.S (sNAN with exceptions disabled)",
                 2u32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 0f32,
                 Assembler::make_cop1_sqrt(FR::F0, FR::F2).s(),
             ),
@@ -3310,14 +3310,14 @@ impl Test for COP1Instructions32 {
             (
                 "MOV.S",
                 1u32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 0f32,
                 Assembler::make_cop1_mov(FR::F0, FR::F2).s(),
             ),
             (
                 "MOV.S",
                 1u32,
-                FConst::SIGNALLING_NAN_START_32,
+                FConst::QUIET_NAN_START_32,
                 0f32,
                 Assembler::make_cop1_mov(FR::F0, FR::F2).s(),
             ),
@@ -3579,7 +3579,7 @@ impl Test for COP1Instructions32 {
             (
                 "CVT.D.S",
                 1u32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 0f32,
                 Assembler::make_cop1_cvt_d(FR::F0, FR::F2).s(),
             ),
@@ -3609,7 +3609,7 @@ impl Test for COP1Instructions32 {
             (
                 "C.F.S",
                 1u32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 1.0f32,
                 Assembler::make_cop1_c_cond(Cop1Condition::F, FR::F2, FR::F4).s(),
             ),
@@ -3630,7 +3630,7 @@ impl Test for COP1Instructions32 {
             (
                 "C.UN.S",
                 1u32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 1.0f32,
                 Assembler::make_cop1_c_cond(Cop1Condition::UN, FR::F2, FR::F4).s(),
             ),
@@ -3651,7 +3651,7 @@ impl Test for COP1Instructions32 {
             (
                 "C.EQ.S",
                 1u32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 1.0f32,
                 Assembler::make_cop1_c_cond(Cop1Condition::EQ, FR::F2, FR::F4).s(),
             ),
@@ -3672,7 +3672,7 @@ impl Test for COP1Instructions32 {
             (
                 "C.UEQ.S",
                 1u32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 1.0f32,
                 Assembler::make_cop1_c_cond(Cop1Condition::UEQ, FR::F2, FR::F4).s(),
             ),
@@ -3693,7 +3693,7 @@ impl Test for COP1Instructions32 {
             (
                 "C.OLT.S",
                 1u32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 1.0f32,
                 Assembler::make_cop1_c_cond(Cop1Condition::OLT, FR::F2, FR::F4).s(),
             ),
@@ -3714,7 +3714,7 @@ impl Test for COP1Instructions32 {
             (
                 "C.ULT.S",
                 1u32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 1.0f32,
                 Assembler::make_cop1_c_cond(Cop1Condition::ULT, FR::F2, FR::F4).s(),
             ),
@@ -3735,7 +3735,7 @@ impl Test for COP1Instructions32 {
             (
                 "C.OLE.S",
                 1u32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 1.0f32,
                 Assembler::make_cop1_c_cond(Cop1Condition::OLE, FR::F2, FR::F4).s(),
             ),
@@ -3756,7 +3756,7 @@ impl Test for COP1Instructions32 {
             (
                 "C.OLE.S",
                 1u32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 1.0f32,
                 Assembler::make_cop1_c_cond(Cop1Condition::ULE, FR::F2, FR::F4).s(),
             ),
@@ -3777,14 +3777,14 @@ impl Test for COP1Instructions32 {
             (
                 "C.SF.S",
                 1u32,
-                FConst::SIGNALLING_NAN_START_32,
+                FConst::QUIET_NAN_START_32,
                 1.0f32,
                 Assembler::make_cop1_c_cond(Cop1Condition::SF, FR::F2, FR::F4).s(),
             ),
             (
                 "C.SF.S",
                 1u32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 1.0f32,
                 Assembler::make_cop1_c_cond(Cop1Condition::SF, FR::F2, FR::F4).s(),
             ),
@@ -3805,14 +3805,14 @@ impl Test for COP1Instructions32 {
             (
                 "C.NGLE.S",
                 1u32,
-                FConst::SIGNALLING_NAN_START_32,
+                FConst::QUIET_NAN_START_32,
                 1.0f32,
                 Assembler::make_cop1_c_cond(Cop1Condition::NGLE, FR::F2, FR::F4).s(),
             ),
             (
                 "C.NGLE.S",
                 1u32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 1.0f32,
                 Assembler::make_cop1_c_cond(Cop1Condition::NGLE, FR::F2, FR::F4).s(),
             ),
@@ -3833,14 +3833,14 @@ impl Test for COP1Instructions32 {
             (
                 "C.SEQ.S",
                 1u32,
-                FConst::SIGNALLING_NAN_START_32,
+                FConst::QUIET_NAN_START_32,
                 1.0f32,
                 Assembler::make_cop1_c_cond(Cop1Condition::SEQ, FR::F2, FR::F4).s(),
             ),
             (
                 "C.SEQ.S",
                 1u32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 1.0f32,
                 Assembler::make_cop1_c_cond(Cop1Condition::SEQ, FR::F2, FR::F4).s(),
             ),
@@ -3861,14 +3861,14 @@ impl Test for COP1Instructions32 {
             (
                 "C.NGL.S",
                 1u32,
-                FConst::SIGNALLING_NAN_START_32,
+                FConst::QUIET_NAN_START_32,
                 1.0f32,
                 Assembler::make_cop1_c_cond(Cop1Condition::NGL, FR::F2, FR::F4).s(),
             ),
             (
                 "C.NGL.S",
                 1u32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 1.0f32,
                 Assembler::make_cop1_c_cond(Cop1Condition::NGL, FR::F2, FR::F4).s(),
             ),
@@ -3889,14 +3889,14 @@ impl Test for COP1Instructions32 {
             (
                 "C.LT.S",
                 1u32,
-                FConst::SIGNALLING_NAN_START_32,
+                FConst::QUIET_NAN_START_32,
                 1.0f32,
                 Assembler::make_cop1_c_cond(Cop1Condition::LT, FR::F2, FR::F4).s(),
             ),
             (
                 "C.LT.S",
                 1u32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 1.0f32,
                 Assembler::make_cop1_c_cond(Cop1Condition::LT, FR::F2, FR::F4).s(),
             ),
@@ -3917,14 +3917,14 @@ impl Test for COP1Instructions32 {
             (
                 "C.NGE.S",
                 1u32,
-                FConst::SIGNALLING_NAN_START_32,
+                FConst::QUIET_NAN_START_32,
                 1.0f32,
                 Assembler::make_cop1_c_cond(Cop1Condition::NGE, FR::F2, FR::F4).s(),
             ),
             (
                 "C.NGE.S",
                 1u32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 1.0f32,
                 Assembler::make_cop1_c_cond(Cop1Condition::NGE, FR::F2, FR::F4).s(),
             ),
@@ -3945,14 +3945,14 @@ impl Test for COP1Instructions32 {
             (
                 "C.LE.S",
                 1u32,
-                FConst::SIGNALLING_NAN_START_32,
+                FConst::QUIET_NAN_START_32,
                 1.0f32,
                 Assembler::make_cop1_c_cond(Cop1Condition::LE, FR::F2, FR::F4).s(),
             ),
             (
                 "C.LE.S",
                 1u32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 1.0f32,
                 Assembler::make_cop1_c_cond(Cop1Condition::LE, FR::F2, FR::F4).s(),
             ),
@@ -3973,14 +3973,14 @@ impl Test for COP1Instructions32 {
             (
                 "C.NGT.S",
                 1u32,
-                FConst::SIGNALLING_NAN_START_32,
+                FConst::QUIET_NAN_START_32,
                 1.0f32,
                 Assembler::make_cop1_c_cond(Cop1Condition::NGT, FR::F2, FR::F4).s(),
             ),
             (
                 "C.NGT.S",
                 1u32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 1.0f32,
                 Assembler::make_cop1_c_cond(Cop1Condition::NGT, FR::F2, FR::F4).s(),
             ),
@@ -4055,22 +4055,6 @@ impl Test for COP1Instructions32 {
                 "ADD.S",
                 7u32,
                 2f32,
-                FConst::QUIET_NAN_START_32,
-                ExceptionTimingMode::JustFire,
-                Assembler::make_cop1_add(FR::F0, FR::F2, FR::F4).s(),
-            ),
-            (
-                "ADD.S",
-                7u32,
-                FConst::QUIET_NAN_START_32,
-                2f32,
-                ExceptionTimingMode::JustFire,
-                Assembler::make_cop1_add(FR::F0, FR::F2, FR::F4).s(),
-            ),
-            (
-                "ADD.S",
-                7u32,
-                2f32,
                 FConst::SIGNALLING_NAN_START_32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_add(FR::F0, FR::F2, FR::F4).s(),
@@ -4079,6 +4063,22 @@ impl Test for COP1Instructions32 {
                 "ADD.S",
                 7u32,
                 FConst::SIGNALLING_NAN_START_32,
+                2f32,
+                ExceptionTimingMode::JustFire,
+                Assembler::make_cop1_add(FR::F0, FR::F2, FR::F4).s(),
+            ),
+            (
+                "ADD.S",
+                7u32,
+                2f32,
+                FConst::QUIET_NAN_START_32,
+                ExceptionTimingMode::JustFire,
+                Assembler::make_cop1_add(FR::F0, FR::F2, FR::F4).s(),
+            ),
+            (
+                "ADD.S",
+                7u32,
+                FConst::QUIET_NAN_START_32,
                 2f32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_add(FR::F0, FR::F2, FR::F4).s(),
@@ -4152,22 +4152,6 @@ impl Test for COP1Instructions32 {
                 "SUB.S",
                 7u32,
                 2f32,
-                FConst::QUIET_NAN_START_32,
-                ExceptionTimingMode::JustFire,
-                Assembler::make_cop1_sub(FR::F0, FR::F2, FR::F4).s(),
-            ),
-            (
-                "SUB.S",
-                7u32,
-                FConst::QUIET_NAN_START_32,
-                2f32,
-                ExceptionTimingMode::JustFire,
-                Assembler::make_cop1_sub(FR::F0, FR::F2, FR::F4).s(),
-            ),
-            (
-                "SUB.S",
-                7u32,
-                2f32,
                 FConst::SIGNALLING_NAN_START_32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_sub(FR::F0, FR::F2, FR::F4).s(),
@@ -4176,6 +4160,22 @@ impl Test for COP1Instructions32 {
                 "SUB.S",
                 7u32,
                 FConst::SIGNALLING_NAN_START_32,
+                2f32,
+                ExceptionTimingMode::JustFire,
+                Assembler::make_cop1_sub(FR::F0, FR::F2, FR::F4).s(),
+            ),
+            (
+                "SUB.S",
+                7u32,
+                2f32,
+                FConst::QUIET_NAN_START_32,
+                ExceptionTimingMode::JustFire,
+                Assembler::make_cop1_sub(FR::F0, FR::F2, FR::F4).s(),
+            ),
+            (
+                "SUB.S",
+                7u32,
+                FConst::QUIET_NAN_START_32,
                 2f32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_sub(FR::F0, FR::F2, FR::F4).s(),
@@ -4249,22 +4249,6 @@ impl Test for COP1Instructions32 {
                 "MUL.S",
                 7u32,
                 1.1f32,
-                FConst::QUIET_NAN_START_32,
-                ExceptionTimingMode::JustFire,
-                Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).s(),
-            ),
-            (
-                "MUL.S",
-                7u32,
-                FConst::QUIET_NAN_START_32,
-                1.1f32,
-                ExceptionTimingMode::JustFire,
-                Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).s(),
-            ),
-            (
-                "MUL.S",
-                7u32,
-                1.1f32,
                 FConst::SIGNALLING_NAN_START_32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).s(),
@@ -4273,6 +4257,22 @@ impl Test for COP1Instructions32 {
                 "MUL.S",
                 7u32,
                 FConst::SIGNALLING_NAN_START_32,
+                1.1f32,
+                ExceptionTimingMode::JustFire,
+                Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).s(),
+            ),
+            (
+                "MUL.S",
+                7u32,
+                1.1f32,
+                FConst::QUIET_NAN_START_32,
+                ExceptionTimingMode::JustFire,
+                Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).s(),
+            ),
+            (
+                "MUL.S",
+                7u32,
+                FConst::QUIET_NAN_START_32,
                 1.1f32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).s(),
@@ -4343,22 +4343,6 @@ impl Test for COP1Instructions32 {
                 Assembler::make_cop1_div(FR::F0, FR::F2, FR::F4).s(),
             ),
             (
-                "DIV.S (1/qNAN)",
-                7u32,
-                1f32,
-                FConst::QUIET_NAN_START_32,
-                ExceptionTimingMode::JustFire,
-                Assembler::make_cop1_div(FR::F0, FR::F2, FR::F4).s(),
-            ),
-            (
-                "DIV.S (qNAN/1)",
-                7u32,
-                FConst::QUIET_NAN_START_32,
-                1f32,
-                ExceptionTimingMode::JustFire,
-                Assembler::make_cop1_div(FR::F0, FR::F2, FR::F4).s(),
-            ),
-            (
                 "DIV.S (1/sNAN)",
                 7u32,
                 1f32,
@@ -4375,6 +4359,22 @@ impl Test for COP1Instructions32 {
                 Assembler::make_cop1_div(FR::F0, FR::F2, FR::F4).s(),
             ),
             (
+                "DIV.S (1/qNAN)",
+                7u32,
+                1f32,
+                FConst::QUIET_NAN_START_32,
+                ExceptionTimingMode::JustFire,
+                Assembler::make_cop1_div(FR::F0, FR::F2, FR::F4).s(),
+            ),
+            (
+                "DIV.S (qNAN/1)",
+                7u32,
+                FConst::QUIET_NAN_START_32,
+                1f32,
+                ExceptionTimingMode::JustFire,
+                Assembler::make_cop1_div(FR::F0, FR::F2, FR::F4).s(),
+            ),
+            (
                 "NEG.S",
                 6u32,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
@@ -4385,7 +4385,7 @@ impl Test for COP1Instructions32 {
             (
                 "NEG.S",
                 6u32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 0f32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_neg(FR::F0, FR::F2).s(),
@@ -4393,7 +4393,7 @@ impl Test for COP1Instructions32 {
             (
                 "NEG.S",
                 6u32,
-                FConst::SIGNALLING_NAN_START_32,
+                FConst::QUIET_NAN_START_32,
                 0f32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_neg(FR::F0, FR::F2).s(),
@@ -4409,7 +4409,7 @@ impl Test for COP1Instructions32 {
             (
                 "ABS.S",
                 6u32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 0f32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_abs(FR::F0, FR::F2).s(),
@@ -4417,7 +4417,7 @@ impl Test for COP1Instructions32 {
             (
                 "ABS.S",
                 6u32,
-                FConst::SIGNALLING_NAN_START_32,
+                FConst::QUIET_NAN_START_32,
                 0f32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_abs(FR::F0, FR::F2).s(),
@@ -4449,7 +4449,7 @@ impl Test for COP1Instructions32 {
             (
                 "SQRT.S",
                 7u32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 0f32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_sqrt(FR::F0, FR::F2).s(),
@@ -4457,7 +4457,7 @@ impl Test for COP1Instructions32 {
             (
                 "SQRT.S",
                 7u32,
-                FConst::SIGNALLING_NAN_START_32,
+                FConst::QUIET_NAN_START_32,
                 0f32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_sqrt(FR::F0, FR::F2).s(),
@@ -4537,7 +4537,7 @@ impl Test for COP1Instructions32 {
             (
                 "ROUND.W.S",
                 7u32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 0f32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_round_w(FR::F0, FR::F2).s(),
@@ -4545,7 +4545,7 @@ impl Test for COP1Instructions32 {
             (
                 "ROUND.W.S",
                 7u32,
-                FConst::SIGNALLING_NAN_START_32,
+                FConst::QUIET_NAN_START_32,
                 0f32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_round_w(FR::F0, FR::F2).s(),
@@ -4577,7 +4577,7 @@ impl Test for COP1Instructions32 {
             (
                 "TRUNC.W.S",
                 7u32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 0f32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_trunc_w(FR::F0, FR::F2).s(),
@@ -4585,7 +4585,7 @@ impl Test for COP1Instructions32 {
             (
                 "TRUNC.W.S",
                 7u32,
-                FConst::SIGNALLING_NAN_START_32,
+                FConst::QUIET_NAN_START_32,
                 0f32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_trunc_w(FR::F0, FR::F2).s(),
@@ -4617,7 +4617,7 @@ impl Test for COP1Instructions32 {
             (
                 "CEIL.W.S",
                 7u32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 0f32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_ceil_w(FR::F0, FR::F2).s(),
@@ -4625,7 +4625,7 @@ impl Test for COP1Instructions32 {
             (
                 "CEIL.W.S",
                 7u32,
-                FConst::SIGNALLING_NAN_START_32,
+                FConst::QUIET_NAN_START_32,
                 0f32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_ceil_w(FR::F0, FR::F2).s(),
@@ -4657,7 +4657,7 @@ impl Test for COP1Instructions32 {
             (
                 "FLOOR.W.S",
                 7u32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 0f32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_floor_w(FR::F0, FR::F2).s(),
@@ -4665,7 +4665,7 @@ impl Test for COP1Instructions32 {
             (
                 "FLOOR.W.S",
                 7u32,
-                FConst::SIGNALLING_NAN_START_32,
+                FConst::QUIET_NAN_START_32,
                 0f32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_floor_w(FR::F0, FR::F2).s(),
@@ -4697,7 +4697,7 @@ impl Test for COP1Instructions32 {
             (
                 "CVT.W.S",
                 7u32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 0f32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_cvt_w(FR::F0, FR::F2).s(),
@@ -4705,7 +4705,7 @@ impl Test for COP1Instructions32 {
             (
                 "CVT.W.S",
                 7u32,
-                FConst::SIGNALLING_NAN_START_32,
+                FConst::QUIET_NAN_START_32,
                 0f32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_cvt_w(FR::F0, FR::F2).s(),
@@ -4737,7 +4737,7 @@ impl Test for COP1Instructions32 {
             (
                 "ROUND.L.S",
                 7u32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 0f32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_round_l(FR::F0, FR::F2).s(),
@@ -4745,7 +4745,7 @@ impl Test for COP1Instructions32 {
             (
                 "ROUND.L.S",
                 7u32,
-                FConst::SIGNALLING_NAN_START_32,
+                FConst::QUIET_NAN_START_32,
                 0f32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_round_l(FR::F0, FR::F2).s(),
@@ -4777,7 +4777,7 @@ impl Test for COP1Instructions32 {
             (
                 "TRUNC.L.S",
                 7u32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 0f32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_trunc_l(FR::F0, FR::F2).s(),
@@ -4785,7 +4785,7 @@ impl Test for COP1Instructions32 {
             (
                 "TRUNC.L.S",
                 7u32,
-                FConst::SIGNALLING_NAN_START_32,
+                FConst::QUIET_NAN_START_32,
                 0f32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_trunc_l(FR::F0, FR::F2).s(),
@@ -4817,7 +4817,7 @@ impl Test for COP1Instructions32 {
             (
                 "CEIL.L.S",
                 7u32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 0f32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_ceil_l(FR::F0, FR::F2).s(),
@@ -4825,7 +4825,7 @@ impl Test for COP1Instructions32 {
             (
                 "CEIL.L.S",
                 7u32,
-                FConst::SIGNALLING_NAN_START_32,
+                FConst::QUIET_NAN_START_32,
                 0f32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_ceil_l(FR::F0, FR::F2).s(),
@@ -4857,7 +4857,7 @@ impl Test for COP1Instructions32 {
             (
                 "FLOOR.L.S",
                 7u32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 0f32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_floor_l(FR::F0, FR::F2).s(),
@@ -4865,7 +4865,7 @@ impl Test for COP1Instructions32 {
             (
                 "FLOOR.L.S",
                 7u32,
-                FConst::SIGNALLING_NAN_START_32,
+                FConst::QUIET_NAN_START_32,
                 0f32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_floor_l(FR::F0, FR::F2).s(),
@@ -4897,7 +4897,7 @@ impl Test for COP1Instructions32 {
             (
                 "CVT.L.S",
                 7u32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 0f32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_cvt_l(FR::F0, FR::F2).s(),
@@ -4905,7 +4905,7 @@ impl Test for COP1Instructions32 {
             (
                 "CVT.L.S",
                 7u32,
-                FConst::SIGNALLING_NAN_START_32,
+                FConst::QUIET_NAN_START_32,
                 0f32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_cvt_l(FR::F0, FR::F2).s(),
@@ -4921,7 +4921,7 @@ impl Test for COP1Instructions32 {
             (
                 "CVT.D.S",
                 6u32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 0f32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_cvt_d(FR::F0, FR::F2).s(),
@@ -4929,7 +4929,7 @@ impl Test for COP1Instructions32 {
             (
                 "CVT.D.S",
                 6u32,
-                FConst::SIGNALLING_NAN_START_32,
+                FConst::QUIET_NAN_START_32,
                 0f32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_cvt_d(FR::F0, FR::F2).s(),
@@ -4937,7 +4937,7 @@ impl Test for COP1Instructions32 {
             (
                 "C.F.S",
                 1u32,
-                FConst::SIGNALLING_NAN_START_32,
+                FConst::QUIET_NAN_START_32,
                 1.0f32,
                 ExceptionTimingMode::Off,
                 Assembler::make_cop1_c_cond(Cop1Condition::F, FR::F2, FR::F4).s(),
@@ -4945,7 +4945,7 @@ impl Test for COP1Instructions32 {
             (
                 "C.F.S",
                 6u32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 1.0f32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_c_cond(Cop1Condition::F, FR::F2, FR::F4).s(),
@@ -4953,7 +4953,7 @@ impl Test for COP1Instructions32 {
             (
                 "C.UN.S",
                 1u32,
-                FConst::SIGNALLING_NAN_START_32,
+                FConst::QUIET_NAN_START_32,
                 1.0f32,
                 ExceptionTimingMode::Off,
                 Assembler::make_cop1_c_cond(Cop1Condition::UN, FR::F2, FR::F4).s(),
@@ -4961,7 +4961,7 @@ impl Test for COP1Instructions32 {
             (
                 "C.UN.S",
                 6u32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 1.0f32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_c_cond(Cop1Condition::UN, FR::F2, FR::F4).s(),
@@ -4969,7 +4969,7 @@ impl Test for COP1Instructions32 {
             (
                 "C.EQ.S",
                 1u32,
-                FConst::SIGNALLING_NAN_START_32,
+                FConst::QUIET_NAN_START_32,
                 1.0f32,
                 ExceptionTimingMode::Off,
                 Assembler::make_cop1_c_cond(Cop1Condition::EQ, FR::F2, FR::F4).s(),
@@ -4977,7 +4977,7 @@ impl Test for COP1Instructions32 {
             (
                 "C.EQ.S",
                 6u32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 1.0f32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_c_cond(Cop1Condition::EQ, FR::F2, FR::F4).s(),
@@ -4985,7 +4985,7 @@ impl Test for COP1Instructions32 {
             (
                 "C.UEQ.S",
                 1u32,
-                FConst::SIGNALLING_NAN_START_32,
+                FConst::QUIET_NAN_START_32,
                 1.0f32,
                 ExceptionTimingMode::Off,
                 Assembler::make_cop1_c_cond(Cop1Condition::UEQ, FR::F2, FR::F4).s(),
@@ -4993,7 +4993,7 @@ impl Test for COP1Instructions32 {
             (
                 "C.UEQ.S",
                 6u32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 1.0f32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_c_cond(Cop1Condition::UEQ, FR::F2, FR::F4).s(),
@@ -5001,7 +5001,7 @@ impl Test for COP1Instructions32 {
             (
                 "C.OLT.S",
                 1u32,
-                FConst::SIGNALLING_NAN_START_32,
+                FConst::QUIET_NAN_START_32,
                 1.0f32,
                 ExceptionTimingMode::Off,
                 Assembler::make_cop1_c_cond(Cop1Condition::OLT, FR::F2, FR::F4).s(),
@@ -5009,7 +5009,7 @@ impl Test for COP1Instructions32 {
             (
                 "C.OLT.S",
                 6u32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 1.0f32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_c_cond(Cop1Condition::OLT, FR::F2, FR::F4).s(),
@@ -5017,7 +5017,7 @@ impl Test for COP1Instructions32 {
             (
                 "C.ULT.S",
                 1u32,
-                FConst::SIGNALLING_NAN_START_32,
+                FConst::QUIET_NAN_START_32,
                 1.0f32,
                 ExceptionTimingMode::Off,
                 Assembler::make_cop1_c_cond(Cop1Condition::ULT, FR::F2, FR::F4).s(),
@@ -5025,7 +5025,7 @@ impl Test for COP1Instructions32 {
             (
                 "C.ULT.S",
                 6u32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 1.0f32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_c_cond(Cop1Condition::ULT, FR::F2, FR::F4).s(),
@@ -5033,7 +5033,7 @@ impl Test for COP1Instructions32 {
             (
                 "C.OLE.S",
                 1u32,
-                FConst::SIGNALLING_NAN_START_32,
+                FConst::QUIET_NAN_START_32,
                 1.0f32,
                 ExceptionTimingMode::Off,
                 Assembler::make_cop1_c_cond(Cop1Condition::OLE, FR::F2, FR::F4).s(),
@@ -5041,7 +5041,7 @@ impl Test for COP1Instructions32 {
             (
                 "C.OLE.S",
                 6u32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 1.0f32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_c_cond(Cop1Condition::OLE, FR::F2, FR::F4).s(),
@@ -5049,7 +5049,7 @@ impl Test for COP1Instructions32 {
             (
                 "C.OLE.S",
                 1u32,
-                FConst::SIGNALLING_NAN_START_32,
+                FConst::QUIET_NAN_START_32,
                 1.0f32,
                 ExceptionTimingMode::Off,
                 Assembler::make_cop1_c_cond(Cop1Condition::ULE, FR::F2, FR::F4).s(),
@@ -5057,7 +5057,7 @@ impl Test for COP1Instructions32 {
             (
                 "C.OLE.S",
                 6u32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 1.0f32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_c_cond(Cop1Condition::ULE, FR::F2, FR::F4).s(),
@@ -5065,7 +5065,7 @@ impl Test for COP1Instructions32 {
             (
                 "C.SF.S",
                 6u32,
-                FConst::SIGNALLING_NAN_START_32,
+                FConst::QUIET_NAN_START_32,
                 1.0f32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_c_cond(Cop1Condition::SF, FR::F2, FR::F4).s(),
@@ -5073,7 +5073,7 @@ impl Test for COP1Instructions32 {
             (
                 "C.SF.S",
                 6u32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 1.0f32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_c_cond(Cop1Condition::SF, FR::F2, FR::F4).s(),
@@ -5081,7 +5081,7 @@ impl Test for COP1Instructions32 {
             (
                 "C.NGLE.S",
                 6u32,
-                FConst::SIGNALLING_NAN_START_32,
+                FConst::QUIET_NAN_START_32,
                 1.0f32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_c_cond(Cop1Condition::NGLE, FR::F2, FR::F4).s(),
@@ -5089,7 +5089,7 @@ impl Test for COP1Instructions32 {
             (
                 "C.NGLE.S",
                 6u32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 1.0f32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_c_cond(Cop1Condition::NGLE, FR::F2, FR::F4).s(),
@@ -5097,7 +5097,7 @@ impl Test for COP1Instructions32 {
             (
                 "C.SEQ.S",
                 6u32,
-                FConst::SIGNALLING_NAN_START_32,
+                FConst::QUIET_NAN_START_32,
                 1.0f32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_c_cond(Cop1Condition::SEQ, FR::F2, FR::F4).s(),
@@ -5105,7 +5105,7 @@ impl Test for COP1Instructions32 {
             (
                 "C.SEQ.S",
                 6u32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 1.0f32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_c_cond(Cop1Condition::SEQ, FR::F2, FR::F4).s(),
@@ -5113,7 +5113,7 @@ impl Test for COP1Instructions32 {
             (
                 "C.NGL.S",
                 6u32,
-                FConst::SIGNALLING_NAN_START_32,
+                FConst::QUIET_NAN_START_32,
                 1.0f32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_c_cond(Cop1Condition::NGL, FR::F2, FR::F4).s(),
@@ -5121,7 +5121,7 @@ impl Test for COP1Instructions32 {
             (
                 "C.NGL.S",
                 6u32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 1.0f32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_c_cond(Cop1Condition::NGL, FR::F2, FR::F4).s(),
@@ -5129,7 +5129,7 @@ impl Test for COP1Instructions32 {
             (
                 "C.LT.S",
                 6u32,
-                FConst::SIGNALLING_NAN_START_32,
+                FConst::QUIET_NAN_START_32,
                 1.0f32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_c_cond(Cop1Condition::LT, FR::F2, FR::F4).s(),
@@ -5137,7 +5137,7 @@ impl Test for COP1Instructions32 {
             (
                 "C.LT.S",
                 6u32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 1.0f32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_c_cond(Cop1Condition::LT, FR::F2, FR::F4).s(),
@@ -5145,7 +5145,7 @@ impl Test for COP1Instructions32 {
             (
                 "C.NGE.S",
                 6u32,
-                FConst::SIGNALLING_NAN_START_32,
+                FConst::QUIET_NAN_START_32,
                 1.0f32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_c_cond(Cop1Condition::NGE, FR::F2, FR::F4).s(),
@@ -5153,7 +5153,7 @@ impl Test for COP1Instructions32 {
             (
                 "C.NGE.S",
                 6u32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 1.0f32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_c_cond(Cop1Condition::NGE, FR::F2, FR::F4).s(),
@@ -5161,7 +5161,7 @@ impl Test for COP1Instructions32 {
             (
                 "C.LE.S",
                 6u32,
-                FConst::SIGNALLING_NAN_START_32,
+                FConst::QUIET_NAN_START_32,
                 1.0f32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_c_cond(Cop1Condition::LE, FR::F2, FR::F4).s(),
@@ -5169,7 +5169,7 @@ impl Test for COP1Instructions32 {
             (
                 "C.LE.S",
                 6u32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 1.0f32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_c_cond(Cop1Condition::LE, FR::F2, FR::F4).s(),
@@ -5177,7 +5177,7 @@ impl Test for COP1Instructions32 {
             (
                 "C.NGT.S",
                 6u32,
-                FConst::SIGNALLING_NAN_START_32,
+                FConst::QUIET_NAN_START_32,
                 1.0f32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_c_cond(Cop1Condition::NGT, FR::F2, FR::F4).s(),
@@ -5185,7 +5185,7 @@ impl Test for COP1Instructions32 {
             (
                 "C.NGT.S",
                 6u32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 1.0f32,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_c_cond(Cop1Condition::NGT, FR::F2, FR::F4).s(),
@@ -5534,7 +5534,7 @@ impl Test for COP1Instructions64 {
             (
                 "ADD.D",
                 2u32,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 123f64,
                 Assembler::make_cop1_add(FR::F0, FR::F2, FR::F4).d(),
             ),
@@ -5542,7 +5542,7 @@ impl Test for COP1Instructions64 {
                 "ADD.D",
                 2u32,
                 123f64,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 Assembler::make_cop1_add(FR::F0, FR::F2, FR::F4).d(),
             ),
             // Overflow
@@ -5670,7 +5670,7 @@ impl Test for COP1Instructions64 {
             (
                 "SUB.D",
                 2u32,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 123f64,
                 Assembler::make_cop1_sub(FR::F0, FR::F2, FR::F4).d(),
             ),
@@ -5678,7 +5678,7 @@ impl Test for COP1Instructions64 {
                 "SUB.D",
                 2u32,
                 123f64,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 Assembler::make_cop1_sub(FR::F0, FR::F2, FR::F4).d(),
             ),
             // Overflow
@@ -5946,7 +5946,7 @@ impl Test for COP1Instructions64 {
             (
                 "MUL.D",
                 2u32,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 123f64,
                 Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).d(),
             ),
@@ -5954,7 +5954,7 @@ impl Test for COP1Instructions64 {
                 "MUL.D",
                 2u32,
                 123f64,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).d(),
             ),
             // Overflow
@@ -6132,7 +6132,7 @@ impl Test for COP1Instructions64 {
             (
                 "DIV.D",
                 2u32,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 123f64,
                 Assembler::make_cop1_div(FR::F0, FR::F2, FR::F4).d(),
             ),
@@ -6140,7 +6140,7 @@ impl Test for COP1Instructions64 {
                 "DIV.D",
                 2u32,
                 123f64,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 Assembler::make_cop1_div(FR::F0, FR::F2, FR::F4).d(),
             ),
             // NEG.D is always 1 cycle
@@ -6175,7 +6175,7 @@ impl Test for COP1Instructions64 {
             (
                 "NEG.D",
                 1u32,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 0f64,
                 Assembler::make_cop1_neg(FR::F0, FR::F2).d(),
             ),
@@ -6211,7 +6211,7 @@ impl Test for COP1Instructions64 {
             (
                 "ABS.D",
                 1u32,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 0f64,
                 Assembler::make_cop1_abs(FR::F0, FR::F2).d(),
             ),
@@ -6287,9 +6287,9 @@ impl Test for COP1Instructions64 {
                 Assembler::make_cop1_sqrt(FR::F0, FR::F2).d(),
             ),
             (
-                "SQRT.D (qNAN with exceptions disabled)",
+                "SQRT.D (sNAN with exceptions disabled)",
                 2u32,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 0f64,
                 Assembler::make_cop1_sqrt(FR::F0, FR::F2).d(),
             ),
@@ -6325,14 +6325,14 @@ impl Test for COP1Instructions64 {
             (
                 "MOV.D",
                 1u32,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 0f64,
                 Assembler::make_cop1_mov(FR::F0, FR::F2).d(),
             ),
             (
                 "MOV.D",
                 1u32,
-                FConst::SIGNALLING_NAN_START_64,
+                FConst::QUIET_NAN_START_64,
                 0f64,
                 Assembler::make_cop1_mov(FR::F0, FR::F2).d(),
             ),
@@ -6608,7 +6608,7 @@ impl Test for COP1Instructions64 {
             (
                 "CVT.S.D",
                 2u32,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 0f64,
                 Assembler::make_cop1_cvt_s(FR::F0, FR::F2).d(),
             ),
@@ -6638,7 +6638,7 @@ impl Test for COP1Instructions64 {
             (
                 "C.F.D",
                 1u32,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 1.0f64,
                 Assembler::make_cop1_c_cond(Cop1Condition::F, FR::F2, FR::F4).d(),
             ),
@@ -6659,7 +6659,7 @@ impl Test for COP1Instructions64 {
             (
                 "C.UN.D",
                 1u32,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 1.0f64,
                 Assembler::make_cop1_c_cond(Cop1Condition::UN, FR::F2, FR::F4).d(),
             ),
@@ -6680,7 +6680,7 @@ impl Test for COP1Instructions64 {
             (
                 "C.EQ.D",
                 1u32,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 1.0f64,
                 Assembler::make_cop1_c_cond(Cop1Condition::EQ, FR::F2, FR::F4).d(),
             ),
@@ -6701,7 +6701,7 @@ impl Test for COP1Instructions64 {
             (
                 "C.UEQ.D",
                 1u32,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 1.0f64,
                 Assembler::make_cop1_c_cond(Cop1Condition::UEQ, FR::F2, FR::F4).d(),
             ),
@@ -6722,7 +6722,7 @@ impl Test for COP1Instructions64 {
             (
                 "C.OLT.D",
                 1u32,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 1.0f64,
                 Assembler::make_cop1_c_cond(Cop1Condition::OLT, FR::F2, FR::F4).d(),
             ),
@@ -6743,7 +6743,7 @@ impl Test for COP1Instructions64 {
             (
                 "C.ULT.D",
                 1u32,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 1.0f64,
                 Assembler::make_cop1_c_cond(Cop1Condition::ULT, FR::F2, FR::F4).d(),
             ),
@@ -6764,7 +6764,7 @@ impl Test for COP1Instructions64 {
             (
                 "C.OLE.D",
                 1u32,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 1.0f64,
                 Assembler::make_cop1_c_cond(Cop1Condition::OLE, FR::F2, FR::F4).d(),
             ),
@@ -6785,7 +6785,7 @@ impl Test for COP1Instructions64 {
             (
                 "C.OLE.D",
                 1u32,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 1.0f64,
                 Assembler::make_cop1_c_cond(Cop1Condition::ULE, FR::F2, FR::F4).d(),
             ),
@@ -6806,14 +6806,14 @@ impl Test for COP1Instructions64 {
             (
                 "C.SF.D",
                 1u32,
-                FConst::SIGNALLING_NAN_START_64,
+                FConst::QUIET_NAN_START_64,
                 1.0f64,
                 Assembler::make_cop1_c_cond(Cop1Condition::SF, FR::F2, FR::F4).d(),
             ),
             (
                 "C.SF.D",
                 1u32,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 1.0f64,
                 Assembler::make_cop1_c_cond(Cop1Condition::SF, FR::F2, FR::F4).d(),
             ),
@@ -6834,14 +6834,14 @@ impl Test for COP1Instructions64 {
             (
                 "C.NGLE.D",
                 1u32,
-                FConst::SIGNALLING_NAN_START_64,
+                FConst::QUIET_NAN_START_64,
                 1.0f64,
                 Assembler::make_cop1_c_cond(Cop1Condition::NGLE, FR::F2, FR::F4).d(),
             ),
             (
                 "C.NGLE.D",
                 1u32,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 1.0f64,
                 Assembler::make_cop1_c_cond(Cop1Condition::NGLE, FR::F2, FR::F4).d(),
             ),
@@ -6862,14 +6862,14 @@ impl Test for COP1Instructions64 {
             (
                 "C.SEQ.D",
                 1u32,
-                FConst::SIGNALLING_NAN_START_64,
+                FConst::QUIET_NAN_START_64,
                 1.0f64,
                 Assembler::make_cop1_c_cond(Cop1Condition::SEQ, FR::F2, FR::F4).d(),
             ),
             (
                 "C.SEQ.D",
                 1u32,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 1.0f64,
                 Assembler::make_cop1_c_cond(Cop1Condition::SEQ, FR::F2, FR::F4).d(),
             ),
@@ -6890,14 +6890,14 @@ impl Test for COP1Instructions64 {
             (
                 "C.NGL.D",
                 1u32,
-                FConst::SIGNALLING_NAN_START_64,
+                FConst::QUIET_NAN_START_64,
                 1.0f64,
                 Assembler::make_cop1_c_cond(Cop1Condition::NGL, FR::F2, FR::F4).d(),
             ),
             (
                 "C.NGL.D",
                 1u32,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 1.0f64,
                 Assembler::make_cop1_c_cond(Cop1Condition::NGL, FR::F2, FR::F4).d(),
             ),
@@ -6918,14 +6918,14 @@ impl Test for COP1Instructions64 {
             (
                 "C.LT.D",
                 1u32,
-                FConst::SIGNALLING_NAN_START_64,
+                FConst::QUIET_NAN_START_64,
                 1.0f64,
                 Assembler::make_cop1_c_cond(Cop1Condition::LT, FR::F2, FR::F4).d(),
             ),
             (
                 "C.LT.D",
                 1u32,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 1.0f64,
                 Assembler::make_cop1_c_cond(Cop1Condition::LT, FR::F2, FR::F4).d(),
             ),
@@ -6946,14 +6946,14 @@ impl Test for COP1Instructions64 {
             (
                 "C.NGE.D",
                 1u32,
-                FConst::SIGNALLING_NAN_START_64,
+                FConst::QUIET_NAN_START_64,
                 1.0f64,
                 Assembler::make_cop1_c_cond(Cop1Condition::NGE, FR::F2, FR::F4).d(),
             ),
             (
                 "C.NGE.D",
                 1u32,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 1.0f64,
                 Assembler::make_cop1_c_cond(Cop1Condition::NGE, FR::F2, FR::F4).d(),
             ),
@@ -6974,14 +6974,14 @@ impl Test for COP1Instructions64 {
             (
                 "C.LE.D",
                 1u32,
-                FConst::SIGNALLING_NAN_START_64,
+                FConst::QUIET_NAN_START_64,
                 1.0f64,
                 Assembler::make_cop1_c_cond(Cop1Condition::LE, FR::F2, FR::F4).d(),
             ),
             (
                 "C.LE.D",
                 1u32,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 1.0f64,
                 Assembler::make_cop1_c_cond(Cop1Condition::LE, FR::F2, FR::F4).d(),
             ),
@@ -7002,14 +7002,14 @@ impl Test for COP1Instructions64 {
             (
                 "C.NGT.D",
                 1u32,
-                FConst::SIGNALLING_NAN_START_64,
+                FConst::QUIET_NAN_START_64,
                 1.0f64,
                 Assembler::make_cop1_c_cond(Cop1Condition::NGT, FR::F2, FR::F4).d(),
             ),
             (
                 "C.NGT.D",
                 1u32,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 1.0f64,
                 Assembler::make_cop1_c_cond(Cop1Condition::NGT, FR::F2, FR::F4).d(),
             ),
@@ -7084,22 +7084,6 @@ impl Test for COP1Instructions64 {
                 "ADD.D",
                 7u32,
                 2f64,
-                FConst::QUIET_NAN_START_64,
-                ExceptionTimingMode::JustFire,
-                Assembler::make_cop1_add(FR::F0, FR::F2, FR::F4).d(),
-            ),
-            (
-                "ADD.D",
-                7u32,
-                FConst::QUIET_NAN_START_64,
-                2f64,
-                ExceptionTimingMode::JustFire,
-                Assembler::make_cop1_add(FR::F0, FR::F2, FR::F4).d(),
-            ),
-            (
-                "ADD.D",
-                7u32,
-                2f64,
                 FConst::SIGNALLING_NAN_START_64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_add(FR::F0, FR::F2, FR::F4).d(),
@@ -7108,6 +7092,22 @@ impl Test for COP1Instructions64 {
                 "ADD.D",
                 7u32,
                 FConst::SIGNALLING_NAN_START_64,
+                2f64,
+                ExceptionTimingMode::JustFire,
+                Assembler::make_cop1_add(FR::F0, FR::F2, FR::F4).d(),
+            ),
+            (
+                "ADD.D",
+                7u32,
+                2f64,
+                FConst::QUIET_NAN_START_64,
+                ExceptionTimingMode::JustFire,
+                Assembler::make_cop1_add(FR::F0, FR::F2, FR::F4).d(),
+            ),
+            (
+                "ADD.D",
+                7u32,
+                FConst::QUIET_NAN_START_64,
                 2f64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_add(FR::F0, FR::F2, FR::F4).d(),
@@ -7181,22 +7181,6 @@ impl Test for COP1Instructions64 {
                 "SUB.D",
                 7u32,
                 2f64,
-                FConst::QUIET_NAN_START_64,
-                ExceptionTimingMode::JustFire,
-                Assembler::make_cop1_sub(FR::F0, FR::F2, FR::F4).d(),
-            ),
-            (
-                "SUB.D",
-                7u32,
-                FConst::QUIET_NAN_START_64,
-                2f64,
-                ExceptionTimingMode::JustFire,
-                Assembler::make_cop1_sub(FR::F0, FR::F2, FR::F4).d(),
-            ),
-            (
-                "SUB.D",
-                7u32,
-                2f64,
                 FConst::SIGNALLING_NAN_START_64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_sub(FR::F0, FR::F2, FR::F4).d(),
@@ -7205,6 +7189,22 @@ impl Test for COP1Instructions64 {
                 "SUB.D",
                 7u32,
                 FConst::SIGNALLING_NAN_START_64,
+                2f64,
+                ExceptionTimingMode::JustFire,
+                Assembler::make_cop1_sub(FR::F0, FR::F2, FR::F4).d(),
+            ),
+            (
+                "SUB.D",
+                7u32,
+                2f64,
+                FConst::QUIET_NAN_START_64,
+                ExceptionTimingMode::JustFire,
+                Assembler::make_cop1_sub(FR::F0, FR::F2, FR::F4).d(),
+            ),
+            (
+                "SUB.D",
+                7u32,
+                FConst::QUIET_NAN_START_64,
                 2f64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_sub(FR::F0, FR::F2, FR::F4).d(),
@@ -7278,22 +7278,6 @@ impl Test for COP1Instructions64 {
                 "MUL.D",
                 7u32,
                 1.1f64,
-                FConst::QUIET_NAN_START_64,
-                ExceptionTimingMode::JustFire,
-                Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).d(),
-            ),
-            (
-                "MUL.D",
-                7u32,
-                FConst::QUIET_NAN_START_64,
-                1.1f64,
-                ExceptionTimingMode::JustFire,
-                Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).d(),
-            ),
-            (
-                "MUL.D",
-                7u32,
-                1.1f64,
                 FConst::SIGNALLING_NAN_START_64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).d(),
@@ -7302,6 +7286,22 @@ impl Test for COP1Instructions64 {
                 "MUL.D",
                 7u32,
                 FConst::SIGNALLING_NAN_START_64,
+                1.1f64,
+                ExceptionTimingMode::JustFire,
+                Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).d(),
+            ),
+            (
+                "MUL.D",
+                7u32,
+                1.1f64,
+                FConst::QUIET_NAN_START_64,
+                ExceptionTimingMode::JustFire,
+                Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).d(),
+            ),
+            (
+                "MUL.D",
+                7u32,
+                FConst::QUIET_NAN_START_64,
                 1.1f64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_mul(FR::F0, FR::F2, FR::F4).d(),
@@ -7380,22 +7380,6 @@ impl Test for COP1Instructions64 {
                 Assembler::make_cop1_div(FR::F0, FR::F2, FR::F4).d(),
             ),
             (
-                "DIV.D (1/qNAN)",
-                7u32,
-                1f64,
-                FConst::QUIET_NAN_START_64,
-                ExceptionTimingMode::JustFire,
-                Assembler::make_cop1_div(FR::F0, FR::F2, FR::F4).d(),
-            ),
-            (
-                "DIV.D (qNAN/1)",
-                7u32,
-                FConst::QUIET_NAN_START_64,
-                1f64,
-                ExceptionTimingMode::JustFire,
-                Assembler::make_cop1_div(FR::F0, FR::F2, FR::F4).d(),
-            ),
-            (
                 "DIV.D (1/sNAN)",
                 7u32,
                 1f64,
@@ -7412,6 +7396,22 @@ impl Test for COP1Instructions64 {
                 Assembler::make_cop1_div(FR::F0, FR::F2, FR::F4).d(),
             ),
             (
+                "DIV.D (1/qNAN)",
+                7u32,
+                1f64,
+                FConst::QUIET_NAN_START_64,
+                ExceptionTimingMode::JustFire,
+                Assembler::make_cop1_div(FR::F0, FR::F2, FR::F4).d(),
+            ),
+            (
+                "DIV.D (qNAN/1)",
+                7u32,
+                FConst::QUIET_NAN_START_64,
+                1f64,
+                ExceptionTimingMode::JustFire,
+                Assembler::make_cop1_div(FR::F0, FR::F2, FR::F4).d(),
+            ),
+            (
                 "NEG.D",
                 6u32,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
@@ -7422,7 +7422,7 @@ impl Test for COP1Instructions64 {
             (
                 "NEG.D",
                 6u32,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 0f64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_neg(FR::F0, FR::F2).d(),
@@ -7430,7 +7430,7 @@ impl Test for COP1Instructions64 {
             (
                 "NEG.D",
                 6u32,
-                FConst::SIGNALLING_NAN_START_64,
+                FConst::QUIET_NAN_START_64,
                 0f64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_neg(FR::F0, FR::F2).d(),
@@ -7446,7 +7446,7 @@ impl Test for COP1Instructions64 {
             (
                 "ABS.D",
                 6u32,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 0f64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_abs(FR::F0, FR::F2).d(),
@@ -7454,7 +7454,7 @@ impl Test for COP1Instructions64 {
             (
                 "ABS.D",
                 6u32,
-                FConst::SIGNALLING_NAN_START_64,
+                FConst::QUIET_NAN_START_64,
                 0f64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_abs(FR::F0, FR::F2).d(),
@@ -7486,7 +7486,7 @@ impl Test for COP1Instructions64 {
             (
                 "SQRT.D",
                 7u32,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 0f64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_sqrt(FR::F0, FR::F2).d(),
@@ -7494,7 +7494,7 @@ impl Test for COP1Instructions64 {
             (
                 "SQRT.D",
                 7u32,
-                FConst::SIGNALLING_NAN_START_64,
+                FConst::QUIET_NAN_START_64,
                 0f64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_sqrt(FR::F0, FR::F2).d(),
@@ -7590,7 +7590,7 @@ impl Test for COP1Instructions64 {
             (
                 "ROUND.W.D",
                 7u32,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 0f64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_round_w(FR::F0, FR::F2).d(),
@@ -7598,7 +7598,7 @@ impl Test for COP1Instructions64 {
             (
                 "ROUND.W.D",
                 7u32,
-                FConst::SIGNALLING_NAN_START_64,
+                FConst::QUIET_NAN_START_64,
                 0f64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_round_w(FR::F0, FR::F2).d(),
@@ -7638,7 +7638,7 @@ impl Test for COP1Instructions64 {
             (
                 "TRUNC.W.D",
                 7u32,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 0f64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_trunc_w(FR::F0, FR::F2).d(),
@@ -7646,7 +7646,7 @@ impl Test for COP1Instructions64 {
             (
                 "TRUNC.W.D",
                 7u32,
-                FConst::SIGNALLING_NAN_START_64,
+                FConst::QUIET_NAN_START_64,
                 0f64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_trunc_w(FR::F0, FR::F2).d(),
@@ -7686,7 +7686,7 @@ impl Test for COP1Instructions64 {
             (
                 "CEIL.W.D",
                 7u32,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 0f64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_ceil_w(FR::F0, FR::F2).d(),
@@ -7694,7 +7694,7 @@ impl Test for COP1Instructions64 {
             (
                 "CEIL.W.D",
                 7u32,
-                FConst::SIGNALLING_NAN_START_64,
+                FConst::QUIET_NAN_START_64,
                 0f64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_ceil_w(FR::F0, FR::F2).d(),
@@ -7734,7 +7734,7 @@ impl Test for COP1Instructions64 {
             (
                 "FLOOR.W.D",
                 7u32,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 0f64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_floor_w(FR::F0, FR::F2).d(),
@@ -7742,7 +7742,7 @@ impl Test for COP1Instructions64 {
             (
                 "FLOOR.W.D",
                 7u32,
-                FConst::SIGNALLING_NAN_START_64,
+                FConst::QUIET_NAN_START_64,
                 0f64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_floor_w(FR::F0, FR::F2).d(),
@@ -7782,7 +7782,7 @@ impl Test for COP1Instructions64 {
             (
                 "CVT.W.D",
                 7u32,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 0f64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_cvt_w(FR::F0, FR::F2).d(),
@@ -7790,7 +7790,7 @@ impl Test for COP1Instructions64 {
             (
                 "CVT.W.D",
                 7u32,
-                FConst::SIGNALLING_NAN_START_64,
+                FConst::QUIET_NAN_START_64,
                 0f64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_cvt_w(FR::F0, FR::F2).d(),
@@ -7846,7 +7846,7 @@ impl Test for COP1Instructions64 {
             (
                 "ROUND.L.D",
                 7u32,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 0f64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_round_l(FR::F0, FR::F2).d(),
@@ -7854,7 +7854,7 @@ impl Test for COP1Instructions64 {
             (
                 "ROUND.L.D",
                 7u32,
-                FConst::SIGNALLING_NAN_START_64,
+                FConst::QUIET_NAN_START_64,
                 0f64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_round_l(FR::F0, FR::F2).d(),
@@ -7910,7 +7910,7 @@ impl Test for COP1Instructions64 {
             (
                 "TRUNC.L.D",
                 7u32,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 0f64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_trunc_l(FR::F0, FR::F2).d(),
@@ -7918,7 +7918,7 @@ impl Test for COP1Instructions64 {
             (
                 "TRUNC.L.D",
                 7u32,
-                FConst::SIGNALLING_NAN_START_64,
+                FConst::QUIET_NAN_START_64,
                 0f64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_trunc_l(FR::F0, FR::F2).d(),
@@ -7974,7 +7974,7 @@ impl Test for COP1Instructions64 {
             (
                 "CEIL.L.D",
                 7u32,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 0f64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_ceil_l(FR::F0, FR::F2).d(),
@@ -7982,7 +7982,7 @@ impl Test for COP1Instructions64 {
             (
                 "CEIL.L.D",
                 7u32,
-                FConst::SIGNALLING_NAN_START_64,
+                FConst::QUIET_NAN_START_64,
                 0f64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_ceil_l(FR::F0, FR::F2).d(),
@@ -8038,7 +8038,7 @@ impl Test for COP1Instructions64 {
             (
                 "FLOOR.L.D",
                 7u32,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 0f64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_floor_l(FR::F0, FR::F2).d(),
@@ -8046,7 +8046,7 @@ impl Test for COP1Instructions64 {
             (
                 "FLOOR.L.D",
                 7u32,
-                FConst::SIGNALLING_NAN_START_64,
+                FConst::QUIET_NAN_START_64,
                 0f64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_floor_l(FR::F0, FR::F2).d(),
@@ -8102,7 +8102,7 @@ impl Test for COP1Instructions64 {
             (
                 "CVT.L.D",
                 7u32,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 0f64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_cvt_l(FR::F0, FR::F2).d(),
@@ -8110,7 +8110,7 @@ impl Test for COP1Instructions64 {
             (
                 "CVT.L.D",
                 7u32,
-                FConst::SIGNALLING_NAN_START_64,
+                FConst::QUIET_NAN_START_64,
                 0f64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_cvt_l(FR::F0, FR::F2).d(),
@@ -8134,7 +8134,7 @@ impl Test for COP1Instructions64 {
             (
                 "CVT.S.D",
                 7u32,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 0f64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_cvt_s(FR::F0, FR::F2).d(),
@@ -8142,7 +8142,7 @@ impl Test for COP1Instructions64 {
             (
                 "CVT.S.D",
                 7u32,
-                FConst::SIGNALLING_NAN_START_64,
+                FConst::QUIET_NAN_START_64,
                 0f64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_cvt_s(FR::F0, FR::F2).d(),
@@ -8150,7 +8150,7 @@ impl Test for COP1Instructions64 {
             (
                 "C.F.D",
                 1u32,
-                FConst::SIGNALLING_NAN_START_64,
+                FConst::QUIET_NAN_START_64,
                 1.0f64,
                 ExceptionTimingMode::Off,
                 Assembler::make_cop1_c_cond(Cop1Condition::F, FR::F2, FR::F4).d(),
@@ -8158,7 +8158,7 @@ impl Test for COP1Instructions64 {
             (
                 "C.F.D",
                 6u32,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 1.0f64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_c_cond(Cop1Condition::F, FR::F2, FR::F4).d(),
@@ -8166,7 +8166,7 @@ impl Test for COP1Instructions64 {
             (
                 "C.UN.D",
                 1u32,
-                FConst::SIGNALLING_NAN_START_64,
+                FConst::QUIET_NAN_START_64,
                 1.0f64,
                 ExceptionTimingMode::Off,
                 Assembler::make_cop1_c_cond(Cop1Condition::UN, FR::F2, FR::F4).d(),
@@ -8174,7 +8174,7 @@ impl Test for COP1Instructions64 {
             (
                 "C.UN.D",
                 6u32,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 1.0f64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_c_cond(Cop1Condition::UN, FR::F2, FR::F4).d(),
@@ -8182,7 +8182,7 @@ impl Test for COP1Instructions64 {
             (
                 "C.EQ.D",
                 1u32,
-                FConst::SIGNALLING_NAN_START_64,
+                FConst::QUIET_NAN_START_64,
                 1.0f64,
                 ExceptionTimingMode::Off,
                 Assembler::make_cop1_c_cond(Cop1Condition::EQ, FR::F2, FR::F4).d(),
@@ -8190,7 +8190,7 @@ impl Test for COP1Instructions64 {
             (
                 "C.EQ.D",
                 6u32,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 1.0f64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_c_cond(Cop1Condition::EQ, FR::F2, FR::F4).d(),
@@ -8198,7 +8198,7 @@ impl Test for COP1Instructions64 {
             (
                 "C.UEQ.D",
                 1u32,
-                FConst::SIGNALLING_NAN_START_64,
+                FConst::QUIET_NAN_START_64,
                 1.0f64,
                 ExceptionTimingMode::Off,
                 Assembler::make_cop1_c_cond(Cop1Condition::UEQ, FR::F2, FR::F4).d(),
@@ -8206,7 +8206,7 @@ impl Test for COP1Instructions64 {
             (
                 "C.UEQ.D",
                 6u32,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 1.0f64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_c_cond(Cop1Condition::UEQ, FR::F2, FR::F4).d(),
@@ -8214,7 +8214,7 @@ impl Test for COP1Instructions64 {
             (
                 "C.OLT.D",
                 1u32,
-                FConst::SIGNALLING_NAN_START_64,
+                FConst::QUIET_NAN_START_64,
                 1.0f64,
                 ExceptionTimingMode::Off,
                 Assembler::make_cop1_c_cond(Cop1Condition::OLT, FR::F2, FR::F4).d(),
@@ -8222,7 +8222,7 @@ impl Test for COP1Instructions64 {
             (
                 "C.OLT.D",
                 6u32,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 1.0f64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_c_cond(Cop1Condition::OLT, FR::F2, FR::F4).d(),
@@ -8230,7 +8230,7 @@ impl Test for COP1Instructions64 {
             (
                 "C.ULT.D",
                 1u32,
-                FConst::SIGNALLING_NAN_START_64,
+                FConst::QUIET_NAN_START_64,
                 1.0f64,
                 ExceptionTimingMode::Off,
                 Assembler::make_cop1_c_cond(Cop1Condition::ULT, FR::F2, FR::F4).d(),
@@ -8238,7 +8238,7 @@ impl Test for COP1Instructions64 {
             (
                 "C.ULT.D",
                 6u32,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 1.0f64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_c_cond(Cop1Condition::ULT, FR::F2, FR::F4).d(),
@@ -8246,7 +8246,7 @@ impl Test for COP1Instructions64 {
             (
                 "C.OLE.D",
                 1u32,
-                FConst::SIGNALLING_NAN_START_64,
+                FConst::QUIET_NAN_START_64,
                 1.0f64,
                 ExceptionTimingMode::Off,
                 Assembler::make_cop1_c_cond(Cop1Condition::OLE, FR::F2, FR::F4).d(),
@@ -8254,7 +8254,7 @@ impl Test for COP1Instructions64 {
             (
                 "C.OLE.D",
                 6u32,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 1.0f64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_c_cond(Cop1Condition::OLE, FR::F2, FR::F4).d(),
@@ -8262,7 +8262,7 @@ impl Test for COP1Instructions64 {
             (
                 "C.OLE.D",
                 1u32,
-                FConst::SIGNALLING_NAN_START_64,
+                FConst::QUIET_NAN_START_64,
                 1.0f64,
                 ExceptionTimingMode::Off,
                 Assembler::make_cop1_c_cond(Cop1Condition::ULE, FR::F2, FR::F4).d(),
@@ -8270,7 +8270,7 @@ impl Test for COP1Instructions64 {
             (
                 "C.OLE.D",
                 6u32,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 1.0f64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_c_cond(Cop1Condition::ULE, FR::F2, FR::F4).d(),
@@ -8278,7 +8278,7 @@ impl Test for COP1Instructions64 {
             (
                 "C.SF.D",
                 6u32,
-                FConst::SIGNALLING_NAN_START_64,
+                FConst::QUIET_NAN_START_64,
                 1.0f64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_c_cond(Cop1Condition::SF, FR::F2, FR::F4).d(),
@@ -8286,7 +8286,7 @@ impl Test for COP1Instructions64 {
             (
                 "C.SF.D",
                 6u32,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 1.0f64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_c_cond(Cop1Condition::SF, FR::F2, FR::F4).d(),
@@ -8294,7 +8294,7 @@ impl Test for COP1Instructions64 {
             (
                 "C.NGLE.D",
                 6u32,
-                FConst::SIGNALLING_NAN_START_64,
+                FConst::QUIET_NAN_START_64,
                 1.0f64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_c_cond(Cop1Condition::NGLE, FR::F2, FR::F4).d(),
@@ -8302,7 +8302,7 @@ impl Test for COP1Instructions64 {
             (
                 "C.NGLE.D",
                 6u32,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 1.0f64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_c_cond(Cop1Condition::NGLE, FR::F2, FR::F4).d(),
@@ -8310,7 +8310,7 @@ impl Test for COP1Instructions64 {
             (
                 "C.SEQ.D",
                 6u32,
-                FConst::SIGNALLING_NAN_START_64,
+                FConst::QUIET_NAN_START_64,
                 1.0f64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_c_cond(Cop1Condition::SEQ, FR::F2, FR::F4).d(),
@@ -8318,7 +8318,7 @@ impl Test for COP1Instructions64 {
             (
                 "C.SEQ.D",
                 6u32,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 1.0f64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_c_cond(Cop1Condition::SEQ, FR::F2, FR::F4).d(),
@@ -8326,7 +8326,7 @@ impl Test for COP1Instructions64 {
             (
                 "C.NGL.D",
                 6u32,
-                FConst::SIGNALLING_NAN_START_64,
+                FConst::QUIET_NAN_START_64,
                 1.0f64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_c_cond(Cop1Condition::NGL, FR::F2, FR::F4).d(),
@@ -8334,7 +8334,7 @@ impl Test for COP1Instructions64 {
             (
                 "C.NGL.D",
                 6u32,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 1.0f64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_c_cond(Cop1Condition::NGL, FR::F2, FR::F4).d(),
@@ -8342,7 +8342,7 @@ impl Test for COP1Instructions64 {
             (
                 "C.LT.D",
                 6u32,
-                FConst::SIGNALLING_NAN_START_64,
+                FConst::QUIET_NAN_START_64,
                 1.0f64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_c_cond(Cop1Condition::LT, FR::F2, FR::F4).d(),
@@ -8350,7 +8350,7 @@ impl Test for COP1Instructions64 {
             (
                 "C.LT.D",
                 6u32,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 1.0f64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_c_cond(Cop1Condition::LT, FR::F2, FR::F4).d(),
@@ -8358,7 +8358,7 @@ impl Test for COP1Instructions64 {
             (
                 "C.NGE.D",
                 6u32,
-                FConst::SIGNALLING_NAN_START_64,
+                FConst::QUIET_NAN_START_64,
                 1.0f64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_c_cond(Cop1Condition::NGE, FR::F2, FR::F4).d(),
@@ -8366,7 +8366,7 @@ impl Test for COP1Instructions64 {
             (
                 "C.NGE.D",
                 6u32,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 1.0f64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_c_cond(Cop1Condition::NGE, FR::F2, FR::F4).d(),
@@ -8374,7 +8374,7 @@ impl Test for COP1Instructions64 {
             (
                 "C.LE.D",
                 6u32,
-                FConst::SIGNALLING_NAN_START_64,
+                FConst::QUIET_NAN_START_64,
                 1.0f64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_c_cond(Cop1Condition::LE, FR::F2, FR::F4).d(),
@@ -8382,7 +8382,7 @@ impl Test for COP1Instructions64 {
             (
                 "C.LE.D",
                 6u32,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 1.0f64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_c_cond(Cop1Condition::LE, FR::F2, FR::F4).d(),
@@ -8390,7 +8390,7 @@ impl Test for COP1Instructions64 {
             (
                 "C.NGT.D",
                 6u32,
-                FConst::SIGNALLING_NAN_START_64,
+                FConst::QUIET_NAN_START_64,
                 1.0f64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_c_cond(Cop1Condition::NGT, FR::F2, FR::F4).d(),
@@ -8398,7 +8398,7 @@ impl Test for COP1Instructions64 {
             (
                 "C.NGT.D",
                 6u32,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 1.0f64,
                 ExceptionTimingMode::JustFire,
                 Assembler::make_cop1_c_cond(Cop1Condition::NGT, FR::F2, FR::F4).d(),

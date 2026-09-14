@@ -30,7 +30,7 @@ struct F64Bits {
 }
 
 /// Wrapper for f32 which prints more nicely. This has two benefits:
-/// - Special types like sNAN don't print all kinds of exceptions
+/// - Special types like NaN don't print all kinds of exceptions
 /// - Broken COP1 implementations are less likely to affect the printing
 pub struct SoftF32(F32Bits);
 
@@ -67,9 +67,9 @@ impl Debug for SoftF32 {
                     }
                 } else {
                     if self.0.mantissa().value() >> 22 != 0 {
-                        f.write_str(format!("qNAN (0x{:x})", self.0.raw_value()).as_str())
-                    } else {
                         f.write_str(format!("sNAN (0x{:x})", self.0.raw_value()).as_str())
+                    } else {
+                        f.write_str(format!("qNAN (0x{:x})", self.0.raw_value()).as_str())
                     }
                 }
             }
@@ -83,7 +83,7 @@ impl Debug for SoftF32 {
 }
 
 /// Wrapper for f64 which prints more nicely. This has two benefits:
-/// - Special types like sNAN don't print all kinds of exceptions
+/// - Special types like NaN don't print all kinds of exceptions
 /// - Broken COP1 implementations are less likely to affect the printing
 pub struct SoftF64(F64Bits);
 
@@ -120,9 +120,9 @@ impl Debug for SoftF64 {
                     }
                 } else {
                     if self.0.mantissa().value() >> 51 != 0 {
-                        f.write_str(format!("qNAN (0x{:x})", self.0.raw_value()).as_str())
-                    } else {
                         f.write_str(format!("sNAN (0x{:x})", self.0.raw_value()).as_str())
+                    } else {
+                        f.write_str(format!("qNAN (0x{:x})", self.0.raw_value()).as_str())
                     }
                 }
             }

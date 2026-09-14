@@ -35,8 +35,9 @@ use crate::tests::{Level, Test};
 //   (if it's for example a MFC1, it will be 1. For NOP, it will be 0).
 // - Underflow happens if flush-denorm is set. If flush-denorm is false OR if either underflow or inexact exceptions are actually enabled,
 //   UnimplementedOperationException is fired instead
-// - Signalling NANs don't work at all. If either one of the inputs has this value, UnimplementedOperationException is fired
-// - Quiet NANs are supported, but they are signalling. Also all NANs (including negative ones) are treated equally
+// - Quiet NANs (fraction MSB clear) cause UnimplementedOperationException
+// - Signalling NANs (fraction MSB set) raise InvalidOperation. All NANs (including negative ones) are treated equally
+//   Note: VR4300 inverts the IEEE 754 quiet/signalling bit convention
 
 // TODO:
 // - Nested exception (this will probably show that cause.unimplemented is also cleared?)
@@ -49,8 +50,8 @@ const TARGET_REG_DEFAULT_I32: i32 = 0x12345678i32;
 const TARGET_REG_DEFAULT_I64: i64 = 0x12345678i64;
 
 /// This is the NAN value that the COP1 produces
-const COP1_RESULT_NAN_32: f32 = FConst::SIGNALLING_NAN_END_32;
-const COP1_RESULT_NAN_64: f64 = FConst::SIGNALLING_NAN_END_64;
+const COP1_RESULT_NAN_32: f32 = FConst::QUIET_NAN_END_32;
+const COP1_RESULT_NAN_64: f64 = FConst::QUIET_NAN_END_64;
 
 // Some shortcuts so avoid the need for generic descriptions below
 const fn expected_result<F: Copy>(flags: FCSRFlags, result: F) -> Result<(FCSRFlags, F), ()> {
@@ -2141,177 +2142,177 @@ impl Test for DivS {
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::INFINITY,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 expected_result(
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
             ),
-            // 2/NAN produces another NAN and invalid operation (which is the opposite of what their name implies)
+            // 2/NAN produces another NAN and invalid operation
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                2f32,
+                FConst::SIGNALLING_NAN_START_32,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_32,
+                ),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                2f32,
+                FConst::SIGNALLING_NAN_END_32,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_32,
+                ),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                2f32,
+                FConst::SIGNALLING_NAN_NEGATIVE_START_32,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_32,
+                ),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                2f32,
+                FConst::SIGNALLING_NAN_NEGATIVE_END_32,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_32,
+                ),
+            ),
+            // Quiet NANs aren't supported and cause unimplemented operation
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f32,
                 FConst::QUIET_NAN_START_32,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_32,
-                ),
+                expected_unimplemented_f32(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f32,
                 FConst::QUIET_NAN_END_32,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_32,
-                ),
+                expected_unimplemented_f32(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f32,
                 FConst::QUIET_NAN_NEGATIVE_START_32,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_32,
-                ),
+                expected_unimplemented_f32(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f32,
                 FConst::QUIET_NAN_NEGATIVE_END_32,
+                expected_unimplemented_f32(),
+            ),
+            // NAN/2 produces another NAN and invalid operation
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::SIGNALLING_NAN_START_32,
+                2f32,
                 expected_result(
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
             ),
-            // Signalling NANs aren't supported and cause unimplemented operation
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                2f32,
-                FConst::SIGNALLING_NAN_START_32,
-                expected_unimplemented_f32(),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                2f32,
                 FConst::SIGNALLING_NAN_END_32,
-                expected_unimplemented_f32(),
+                2f32,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_32,
+                ),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                2f32,
                 FConst::SIGNALLING_NAN_NEGATIVE_START_32,
-                expected_unimplemented_f32(),
+                2f32,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_32,
+                ),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                2f32,
                 FConst::SIGNALLING_NAN_NEGATIVE_END_32,
-                expected_unimplemented_f32(),
+                2f32,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_32,
+                ),
             ),
-            // NAN/2 produces another NAN and invalid operation (which is the opposite of what their name implies)
+            // Quiet NANs aren't supported and cause unimplemented operation
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_START_32,
                 2f32,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_32,
-                ),
+                expected_unimplemented_f32(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_END_32,
                 2f32,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_32,
-                ),
+                expected_unimplemented_f32(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_NEGATIVE_START_32,
                 2f32,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_32,
-                ),
+                expected_unimplemented_f32(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_NEGATIVE_END_32,
                 2f32,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_32,
-                ),
+                expected_unimplemented_f32(),
             ),
-            // Signalling NANs aren't supported and cause unimplemented operation
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_START_32,
+                FConst::QUIET_NAN_START_32,
                 2f32,
                 expected_unimplemented_f32(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_END_32,
+                FConst::QUIET_NAN_END_32,
                 2f32,
                 expected_unimplemented_f32(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_NEGATIVE_START_32,
+                FConst::QUIET_NAN_NEGATIVE_START_32,
                 2f32,
                 expected_unimplemented_f32(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_NEGATIVE_END_32,
-                2f32,
-                expected_unimplemented_f32(),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_START_32,
-                2f32,
-                expected_unimplemented_f32(),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_END_32,
-                2f32,
-                expected_unimplemented_f32(),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_NEGATIVE_START_32,
-                2f32,
-                expected_unimplemented_f32(),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_NEGATIVE_END_32,
+                FConst::QUIET_NAN_NEGATIVE_END_32,
                 2f32,
                 expected_unimplemented_f32(),
             ),
@@ -2319,22 +2320,22 @@ impl Test for DivS {
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_START_32,
                 FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 expected_unimplemented_f32(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                FConst::QUIET_NAN_START_32,
                 FConst::SIGNALLING_NAN_START_32,
+                FConst::QUIET_NAN_START_32,
                 expected_unimplemented_f32(),
             ),
             // Mixing NAN with subnormal cause unimplemented
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 expected_unimplemented_f32(),
             ),
@@ -2342,7 +2343,7 @@ impl Test for DivS {
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 expected_unimplemented_f32(),
             ),
         ];
@@ -2943,177 +2944,177 @@ impl Test for DivD {
                 false,
                 FCSRRoundingMode::Nearest,
                 f64::INFINITY,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 expected_result(
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
             ),
-            // 2/NAN produces another NAN and invalid operation (which is the opposite of what their name implies)
+            // 2/NAN produces another NAN and invalid operation
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                2f64,
+                FConst::SIGNALLING_NAN_START_64,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_64,
+                ),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                2f64,
+                FConst::SIGNALLING_NAN_END_64,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_64,
+                ),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                2f64,
+                FConst::SIGNALLING_NAN_NEGATIVE_START_64,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_64,
+                ),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                2f64,
+                FConst::SIGNALLING_NAN_NEGATIVE_END_64,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_64,
+                ),
+            ),
+            // Quiet NANs aren't supported and cause unimplemented operation
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f64,
                 FConst::QUIET_NAN_START_64,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_64,
-                ),
+                expected_unimplemented_f64(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f64,
                 FConst::QUIET_NAN_END_64,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_64,
-                ),
+                expected_unimplemented_f64(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f64,
                 FConst::QUIET_NAN_NEGATIVE_START_64,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_64,
-                ),
+                expected_unimplemented_f64(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f64,
                 FConst::QUIET_NAN_NEGATIVE_END_64,
+                expected_unimplemented_f64(),
+            ),
+            // NAN/2 produces another NAN and invalid operation
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::SIGNALLING_NAN_START_64,
+                2f64,
                 expected_result(
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
             ),
-            // Signalling NANs aren't supported and cause unimplemented operation
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                2f64,
-                FConst::SIGNALLING_NAN_START_64,
-                expected_unimplemented_f64(),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                2f64,
                 FConst::SIGNALLING_NAN_END_64,
-                expected_unimplemented_f64(),
+                2f64,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_64,
+                ),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                2f64,
                 FConst::SIGNALLING_NAN_NEGATIVE_START_64,
-                expected_unimplemented_f64(),
+                2f64,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_64,
+                ),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                2f64,
                 FConst::SIGNALLING_NAN_NEGATIVE_END_64,
-                expected_unimplemented_f64(),
+                2f64,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_64,
+                ),
             ),
-            // NAN/2 produces another NAN and invalid operation (which is the opposite of what their name implies)
+            // Quiet NANs aren't supported and cause unimplemented operation
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_START_64,
                 2f64,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_64,
-                ),
+                expected_unimplemented_f64(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_END_64,
                 2f64,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_64,
-                ),
+                expected_unimplemented_f64(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_NEGATIVE_START_64,
                 2f64,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_64,
-                ),
+                expected_unimplemented_f64(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_NEGATIVE_END_64,
                 2f64,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_64,
-                ),
+                expected_unimplemented_f64(),
             ),
-            // Signalling NANs aren't supported and cause unimplemented operation
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_START_64,
+                FConst::QUIET_NAN_START_64,
                 2f64,
                 expected_unimplemented_f64(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_END_64,
+                FConst::QUIET_NAN_END_64,
                 2f64,
                 expected_unimplemented_f64(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_NEGATIVE_START_64,
+                FConst::QUIET_NAN_NEGATIVE_START_64,
                 2f64,
                 expected_unimplemented_f64(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_NEGATIVE_END_64,
-                2f64,
-                expected_unimplemented_f64(),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_START_64,
-                2f64,
-                expected_unimplemented_f64(),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_END_64,
-                2f64,
-                expected_unimplemented_f64(),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_NEGATIVE_START_64,
-                2f64,
-                expected_unimplemented_f64(),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_NEGATIVE_END_64,
+                FConst::QUIET_NAN_NEGATIVE_END_64,
                 2f64,
                 expected_unimplemented_f64(),
             ),
@@ -3121,22 +3122,22 @@ impl Test for DivD {
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_START_64,
                 FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 expected_unimplemented_f64(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                FConst::QUIET_NAN_START_64,
                 FConst::SIGNALLING_NAN_START_64,
+                FConst::QUIET_NAN_START_64,
                 expected_unimplemented_f64(),
             ),
             // Mixing NAN with subnormal cause unimplemented
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 expected_unimplemented_f64(),
             ),
@@ -3144,7 +3145,7 @@ impl Test for DivD {
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 expected_unimplemented_f64(),
             ),
         ];
@@ -3880,188 +3881,188 @@ impl Test for MulS {
                 0f32,
                 expected_result(FCSRFlags::DEFAULT, -0f32),
             ),
-            // 2*NAN produces another NAN and invalid operation (which is the opposite of what their name implies)
+            // 2*NAN produces another NAN and invalid operation
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                2f32,
+                FConst::SIGNALLING_NAN_START_32,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_32,
+                ),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                2f32,
+                FConst::SIGNALLING_NAN_END_32,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_32,
+                ),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                2f32,
+                FConst::SIGNALLING_NAN_NEGATIVE_START_32,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_32,
+                ),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                2f32,
+                FConst::SIGNALLING_NAN_NEGATIVE_END_32,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_32,
+                ),
+            ),
+            // Quiet NANs aren't supported and cause unimplemented operation
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f32,
                 FConst::QUIET_NAN_START_32,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_32,
-                ),
+                expected_unimplemented_f32(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f32,
                 FConst::QUIET_NAN_END_32,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_32,
-                ),
+                expected_unimplemented_f32(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f32,
                 FConst::QUIET_NAN_NEGATIVE_START_32,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_32,
-                ),
+                expected_unimplemented_f32(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f32,
                 FConst::QUIET_NAN_NEGATIVE_END_32,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_32,
-                ),
-            ),
-            // Signalling NANs aren't supported and cause unimplemented operation
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                2f32,
-                FConst::SIGNALLING_NAN_START_32,
-                expected_unimplemented_f32(),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                2f32,
-                FConst::SIGNALLING_NAN_END_32,
-                expected_unimplemented_f32(),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                2f32,
-                FConst::SIGNALLING_NAN_NEGATIVE_START_32,
-                expected_unimplemented_f32(),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                2f32,
-                FConst::SIGNALLING_NAN_NEGATIVE_END_32,
                 expected_unimplemented_f32(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 f32::INFINITY,
-                FConst::SIGNALLING_NAN_NEGATIVE_END_32,
+                FConst::QUIET_NAN_NEGATIVE_END_32,
                 expected_unimplemented_f32(),
             ),
-            // NAN*2 produces another NAN and invalid operation (which is the opposite of what their name implies)
+            // NAN*2 produces another NAN and invalid operation
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 2f32,
                 expected_result(
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::SIGNALLING_NAN_END_32,
+                2f32,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_32,
+                ),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::SIGNALLING_NAN_NEGATIVE_START_32,
+                2f32,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_32,
+                ),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::SIGNALLING_NAN_NEGATIVE_END_32,
+                2f32,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_32,
+                ),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::SIGNALLING_NAN_NEGATIVE_END_32,
+                f32::INFINITY,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_32,
+                ),
+            ),
+            // Quiet NANs aren't supported and cause unimplemented operation
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::QUIET_NAN_START_32,
+                2f32,
+                expected_unimplemented_f32(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_END_32,
                 2f32,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_32,
-                ),
+                expected_unimplemented_f32(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_NEGATIVE_START_32,
                 2f32,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_32,
-                ),
+                expected_unimplemented_f32(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_NEGATIVE_END_32,
                 2f32,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_32,
-                ),
+                expected_unimplemented_f32(),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::QUIET_NAN_START_32,
+                2f32,
+                expected_unimplemented_f32(),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::QUIET_NAN_END_32,
+                2f32,
+                expected_unimplemented_f32(),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::QUIET_NAN_NEGATIVE_START_32,
+                2f32,
+                expected_unimplemented_f32(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_NEGATIVE_END_32,
-                f32::INFINITY,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_32,
-                ),
-            ),
-            // Signalling NANs aren't supported and cause unimplemented operation
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_START_32,
-                2f32,
-                expected_unimplemented_f32(),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_END_32,
-                2f32,
-                expected_unimplemented_f32(),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_NEGATIVE_START_32,
-                2f32,
-                expected_unimplemented_f32(),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_NEGATIVE_END_32,
-                2f32,
-                expected_unimplemented_f32(),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_START_32,
-                2f32,
-                expected_unimplemented_f32(),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_END_32,
-                2f32,
-                expected_unimplemented_f32(),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_NEGATIVE_START_32,
-                2f32,
-                expected_unimplemented_f32(),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_NEGATIVE_END_32,
                 2f32,
                 expected_unimplemented_f32(),
             ),
@@ -4069,22 +4070,22 @@ impl Test for MulS {
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_START_32,
                 FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 expected_unimplemented_f32(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                FConst::QUIET_NAN_START_32,
                 FConst::SIGNALLING_NAN_START_32,
+                FConst::QUIET_NAN_START_32,
                 expected_unimplemented_f32(),
             ),
             // Mixing NAN with subnormal cause unimplemented
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 expected_unimplemented_f32(),
             ),
@@ -4092,7 +4093,7 @@ impl Test for MulS {
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 expected_unimplemented_f32(),
             ),
         ];
@@ -4599,171 +4600,171 @@ impl Test for MulD {
                 0f64,
                 expected_result(FCSRFlags::DEFAULT, -0f64),
             ),
-            // 2*NAN produces another NAN and invalid operation (which is the opposite of what their name implies)
+            // 2*NAN produces another NAN and invalid operation
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                2f64,
+                FConst::SIGNALLING_NAN_START_64,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_64,
+                ),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                2f64,
+                FConst::SIGNALLING_NAN_END_64,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_64,
+                ),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                2f64,
+                FConst::SIGNALLING_NAN_NEGATIVE_START_64,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_64,
+                ),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                2f64,
+                FConst::SIGNALLING_NAN_NEGATIVE_END_64,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_64,
+                ),
+            ),
+            // Quiet NANs aren't supported and cause unimplemented operation
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f64,
                 FConst::QUIET_NAN_START_64,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_64,
-                ),
+                expected_unimplemented_f64(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f64,
                 FConst::QUIET_NAN_END_64,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_64,
-                ),
+                expected_unimplemented_f64(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f64,
                 FConst::QUIET_NAN_NEGATIVE_START_64,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_64,
-                ),
+                expected_unimplemented_f64(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f64,
                 FConst::QUIET_NAN_NEGATIVE_END_64,
+                expected_unimplemented_f64(),
+            ),
+            // NAN*2 produces another NAN and invalid operation
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::SIGNALLING_NAN_START_64,
+                2f64,
                 expected_result(
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
             ),
-            // Signalling NANs aren't supported and cause unimplemented operation
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                2f64,
-                FConst::SIGNALLING_NAN_START_64,
-                expected_unimplemented_f64(),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                2f64,
                 FConst::SIGNALLING_NAN_END_64,
-                expected_unimplemented_f64(),
+                2f64,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_64,
+                ),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                2f64,
                 FConst::SIGNALLING_NAN_NEGATIVE_START_64,
-                expected_unimplemented_f64(),
+                2f64,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_64,
+                ),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                2f64,
                 FConst::SIGNALLING_NAN_NEGATIVE_END_64,
-                expected_unimplemented_f64(),
+                2f64,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_64,
+                ),
             ),
-            // NAN*2 produces another NAN and invalid operation (which is the opposite of what their name implies)
+            // Quiet NANs aren't supported and cause unimplemented operation
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_START_64,
                 2f64,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_64,
-                ),
+                expected_unimplemented_f64(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_END_64,
                 2f64,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_64,
-                ),
+                expected_unimplemented_f64(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_NEGATIVE_START_64,
                 2f64,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_64,
-                ),
+                expected_unimplemented_f64(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_NEGATIVE_END_64,
                 2f64,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_64,
-                ),
+                expected_unimplemented_f64(),
             ),
-            // Signalling NANs aren't supported and cause unimplemented operation
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_START_64,
+                FConst::QUIET_NAN_START_64,
                 2f64,
                 expected_unimplemented_f64(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_END_64,
+                FConst::QUIET_NAN_END_64,
                 2f64,
                 expected_unimplemented_f64(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_NEGATIVE_START_64,
+                FConst::QUIET_NAN_NEGATIVE_START_64,
                 2f64,
                 expected_unimplemented_f64(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_NEGATIVE_END_64,
-                2f64,
-                expected_unimplemented_f64(),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_START_64,
-                2f64,
-                expected_unimplemented_f64(),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_END_64,
-                2f64,
-                expected_unimplemented_f64(),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_NEGATIVE_START_64,
-                2f64,
-                expected_unimplemented_f64(),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_NEGATIVE_END_64,
+                FConst::QUIET_NAN_NEGATIVE_END_64,
                 2f64,
                 expected_unimplemented_f64(),
             ),
@@ -4771,22 +4772,22 @@ impl Test for MulD {
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_START_64,
                 FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 expected_unimplemented_f64(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                FConst::QUIET_NAN_START_64,
                 FConst::SIGNALLING_NAN_START_64,
+                FConst::QUIET_NAN_START_64,
                 expected_unimplemented_f64(),
             ),
             // Mixing NAN with subnormal cause unimplemented
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 expected_unimplemented_f64(),
             ),
@@ -4794,7 +4795,7 @@ impl Test for MulD {
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 expected_unimplemented_f64(),
             ),
         ];
@@ -5292,143 +5293,143 @@ impl Test for AddS {
                 0f32,
                 expected_unimplemented_f32(),
             ),
-            // 2+qNAN produces another NAN and invalid operation (which is the opposite of what their name implies)
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                2f32,
-                FConst::QUIET_NAN_START_32,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_32,
-                ),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                2f32,
-                FConst::QUIET_NAN_END_32,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_32,
-                ),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                2f32,
-                FConst::QUIET_NAN_NEGATIVE_START_32,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_32,
-                ),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                2f32,
-                FConst::QUIET_NAN_NEGATIVE_END_32,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_32,
-                ),
-            ),
-            // Signalling NANs aren't supported and cause unimplemented operation
+            // 2+sNAN produces another NAN and invalid operation
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f32,
                 FConst::SIGNALLING_NAN_START_32,
-                expected_unimplemented_f32(),
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_32,
+                ),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f32,
                 FConst::SIGNALLING_NAN_END_32,
-                expected_unimplemented_f32(),
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_32,
+                ),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f32,
                 FConst::SIGNALLING_NAN_NEGATIVE_START_32,
-                expected_unimplemented_f32(),
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_32,
+                ),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f32,
                 FConst::SIGNALLING_NAN_NEGATIVE_END_32,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_32,
+                ),
+            ),
+            // Quiet NANs aren't supported and cause unimplemented operation
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                2f32,
+                FConst::QUIET_NAN_START_32,
                 expected_unimplemented_f32(),
             ),
-            // NAN+2 produces another NAN and invalid operation (which is the opposite of what their name implies)
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                FConst::QUIET_NAN_START_32,
                 2f32,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_32,
-                ),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_END_32,
-                2f32,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_32,
-                ),
+                expected_unimplemented_f32(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
+                2f32,
                 FConst::QUIET_NAN_NEGATIVE_START_32,
-                2f32,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_32,
-                ),
+                expected_unimplemented_f32(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                FConst::QUIET_NAN_NEGATIVE_END_32,
                 2f32,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_32,
-                ),
+                FConst::QUIET_NAN_NEGATIVE_END_32,
+                expected_unimplemented_f32(),
             ),
-            // Signalling NANs aren't supported and cause unimplemented operation
+            // NAN+2 produces another NAN and invalid operation
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_START_32,
                 2f32,
-                expected_unimplemented_f32(),
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_32,
+                ),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_END_32,
                 2f32,
-                expected_unimplemented_f32(),
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_32,
+                ),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_START_32,
                 2f32,
-                expected_unimplemented_f32(),
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_32,
+                ),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_END_32,
+                2f32,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_32,
+                ),
+            ),
+            // Quiet NANs aren't supported and cause unimplemented operation
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::QUIET_NAN_START_32,
+                2f32,
+                expected_unimplemented_f32(),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::QUIET_NAN_END_32,
+                2f32,
+                expected_unimplemented_f32(),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::QUIET_NAN_NEGATIVE_START_32,
+                2f32,
+                expected_unimplemented_f32(),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::QUIET_NAN_NEGATIVE_END_32,
                 2f32,
                 expected_unimplemented_f32(),
             ),
@@ -5436,15 +5437,8 @@ impl Test for AddS {
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_START_32,
                 FConst::QUIET_NAN_START_32,
-                expected_unimplemented_f32(),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_START_32,
-                FConst::QUIET_NAN_START_32,
                 expected_unimplemented_f32(),
             ),
             (
@@ -5452,13 +5446,20 @@ impl Test for AddS {
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_START_32,
                 FConst::SIGNALLING_NAN_START_32,
+                expected_unimplemented_f32(),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::SIGNALLING_NAN_START_32,
+                FConst::QUIET_NAN_START_32,
                 expected_unimplemented_f32(),
             ),
             // Mixing NAN with subnormal cause unimplemented
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 expected_unimplemented_f32(),
             ),
@@ -5466,7 +5467,7 @@ impl Test for AddS {
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 expected_unimplemented_f32(),
             ),
         ];
@@ -5964,171 +5965,171 @@ impl Test for AddD {
                 0f64,
                 expected_unimplemented_f64(),
             ),
-            // 2+NAN produces another NAN and invalid operation (which is the opposite of what their name implies)
+            // 2+NAN produces another NAN and invalid operation
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                2f64,
+                FConst::SIGNALLING_NAN_START_64,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_64,
+                ),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                2f64,
+                FConst::SIGNALLING_NAN_END_64,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_64,
+                ),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                2f64,
+                FConst::SIGNALLING_NAN_NEGATIVE_START_64,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_64,
+                ),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                2f64,
+                FConst::SIGNALLING_NAN_NEGATIVE_END_64,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_64,
+                ),
+            ),
+            // Quiet NANs aren't supported and cause unimplemented operation
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f64,
                 FConst::QUIET_NAN_START_64,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_64,
-                ),
+                expected_unimplemented_f64(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f64,
                 FConst::QUIET_NAN_END_64,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_64,
-                ),
+                expected_unimplemented_f64(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f64,
                 FConst::QUIET_NAN_NEGATIVE_START_64,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_64,
-                ),
+                expected_unimplemented_f64(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f64,
                 FConst::QUIET_NAN_NEGATIVE_END_64,
+                expected_unimplemented_f64(),
+            ),
+            // NAN+2 produces another NAN and invalid operation
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::SIGNALLING_NAN_START_64,
+                2f64,
                 expected_result(
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
             ),
-            // Signalling NANs aren't supported and cause unimplemented operation
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                2f64,
-                FConst::SIGNALLING_NAN_START_64,
-                expected_unimplemented_f64(),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                2f64,
                 FConst::SIGNALLING_NAN_END_64,
-                expected_unimplemented_f64(),
+                2f64,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_64,
+                ),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                2f64,
                 FConst::SIGNALLING_NAN_NEGATIVE_START_64,
-                expected_unimplemented_f64(),
+                2f64,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_64,
+                ),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                2f64,
                 FConst::SIGNALLING_NAN_NEGATIVE_END_64,
-                expected_unimplemented_f64(),
+                2f64,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_64,
+                ),
             ),
-            // NAN+2 produces another NAN and invalid operation (which is the opposite of what their name implies)
+            // Quiet NANs aren't supported and cause unimplemented operation
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_START_64,
                 2f64,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_64,
-                ),
+                expected_unimplemented_f64(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_END_64,
                 2f64,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_64,
-                ),
+                expected_unimplemented_f64(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_NEGATIVE_START_64,
                 2f64,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_64,
-                ),
+                expected_unimplemented_f64(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_NEGATIVE_END_64,
                 2f64,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_64,
-                ),
+                expected_unimplemented_f64(),
             ),
-            // Signalling NANs aren't supported and cause unimplemented operation
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_START_64,
+                FConst::QUIET_NAN_START_64,
                 2f64,
                 expected_unimplemented_f64(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_END_64,
+                FConst::QUIET_NAN_END_64,
                 2f64,
                 expected_unimplemented_f64(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_NEGATIVE_START_64,
+                FConst::QUIET_NAN_NEGATIVE_START_64,
                 2f64,
                 expected_unimplemented_f64(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_NEGATIVE_END_64,
-                2f64,
-                expected_unimplemented_f64(),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_START_64,
-                2f64,
-                expected_unimplemented_f64(),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_END_64,
-                2f64,
-                expected_unimplemented_f64(),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_NEGATIVE_START_64,
-                2f64,
-                expected_unimplemented_f64(),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_NEGATIVE_END_64,
+                FConst::QUIET_NAN_NEGATIVE_END_64,
                 2f64,
                 expected_unimplemented_f64(),
             ),
@@ -6136,22 +6137,22 @@ impl Test for AddD {
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_START_64,
                 FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 expected_unimplemented_f64(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                FConst::QUIET_NAN_START_64,
                 FConst::SIGNALLING_NAN_START_64,
+                FConst::QUIET_NAN_START_64,
                 expected_unimplemented_f64(),
             ),
             // Mixing NAN with subnormal cause unimplemented
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 expected_unimplemented_f64(),
             ),
@@ -6159,7 +6160,7 @@ impl Test for AddD {
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 expected_unimplemented_f64(),
             ),
         ];
@@ -6565,171 +6566,171 @@ impl Test for SubS {
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 expected_unimplemented_f32(),
             ),
-            // 2+NAN produces another NAN and invalid operation (which is the opposite of what their name implies)
+            // 2+NAN produces another NAN and invalid operation
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                2f32,
+                FConst::SIGNALLING_NAN_START_32,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_32,
+                ),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                2f32,
+                FConst::SIGNALLING_NAN_END_32,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_32,
+                ),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                2f32,
+                FConst::SIGNALLING_NAN_NEGATIVE_START_32,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_32,
+                ),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                2f32,
+                FConst::SIGNALLING_NAN_NEGATIVE_END_32,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_32,
+                ),
+            ),
+            // Quiet NANs aren't supported and cause unimplemented operation
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f32,
                 FConst::QUIET_NAN_START_32,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_32,
-                ),
+                expected_unimplemented_f32(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f32,
                 FConst::QUIET_NAN_END_32,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_32,
-                ),
+                expected_unimplemented_f32(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f32,
                 FConst::QUIET_NAN_NEGATIVE_START_32,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_32,
-                ),
+                expected_unimplemented_f32(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f32,
                 FConst::QUIET_NAN_NEGATIVE_END_32,
+                expected_unimplemented_f32(),
+            ),
+            // NAN+2 produces another NAN and invalid operation
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::SIGNALLING_NAN_START_32,
+                2f32,
                 expected_result(
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_32,
                 ),
             ),
-            // Signalling NANs aren't supported and cause unimplemented operation
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                2f32,
-                FConst::SIGNALLING_NAN_START_32,
-                expected_unimplemented_f32(),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                2f32,
                 FConst::SIGNALLING_NAN_END_32,
-                expected_unimplemented_f32(),
+                2f32,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_32,
+                ),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                2f32,
                 FConst::SIGNALLING_NAN_NEGATIVE_START_32,
-                expected_unimplemented_f32(),
+                2f32,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_32,
+                ),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                2f32,
                 FConst::SIGNALLING_NAN_NEGATIVE_END_32,
-                expected_unimplemented_f32(),
+                2f32,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_32,
+                ),
             ),
-            // NAN+2 produces another NAN and invalid operation (which is the opposite of what their name implies)
+            // Quiet NANs aren't supported and cause unimplemented operation
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_START_32,
                 2f32,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_32,
-                ),
+                expected_unimplemented_f32(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_END_32,
                 2f32,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_32,
-                ),
+                expected_unimplemented_f32(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_NEGATIVE_START_32,
                 2f32,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_32,
-                ),
+                expected_unimplemented_f32(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_NEGATIVE_END_32,
                 2f32,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_32,
-                ),
+                expected_unimplemented_f32(),
             ),
-            // Signalling NANs aren't supported and cause unimplemented operation
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_START_32,
+                FConst::QUIET_NAN_START_32,
                 2f32,
                 expected_unimplemented_f32(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_END_32,
+                FConst::QUIET_NAN_END_32,
                 2f32,
                 expected_unimplemented_f32(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_NEGATIVE_START_32,
+                FConst::QUIET_NAN_NEGATIVE_START_32,
                 2f32,
                 expected_unimplemented_f32(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_NEGATIVE_END_32,
-                2f32,
-                expected_unimplemented_f32(),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_START_32,
-                2f32,
-                expected_unimplemented_f32(),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_END_32,
-                2f32,
-                expected_unimplemented_f32(),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_NEGATIVE_START_32,
-                2f32,
-                expected_unimplemented_f32(),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_NEGATIVE_END_32,
+                FConst::QUIET_NAN_NEGATIVE_END_32,
                 2f32,
                 expected_unimplemented_f32(),
             ),
@@ -6737,22 +6738,22 @@ impl Test for SubS {
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_START_32,
                 FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 expected_unimplemented_f32(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                FConst::QUIET_NAN_START_32,
                 FConst::SIGNALLING_NAN_START_32,
+                FConst::QUIET_NAN_START_32,
                 expected_unimplemented_f32(),
             ),
             // Mixing NAN with subnormal cause unimplemented
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
                 expected_unimplemented_f32(),
             ),
@@ -6760,7 +6761,7 @@ impl Test for SubS {
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_32,
-                FConst::QUIET_NAN_START_32,
+                FConst::SIGNALLING_NAN_START_32,
                 expected_unimplemented_f32(),
             ),
         ];
@@ -7166,171 +7167,171 @@ impl Test for SubD {
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 expected_unimplemented_f64(),
             ),
-            // 2+NAN produces another NAN and invalid operation (which is the opposite of what their name implies)
+            // 2+NAN produces another NAN and invalid operation
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                2f64,
+                FConst::SIGNALLING_NAN_START_64,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_64,
+                ),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                2f64,
+                FConst::SIGNALLING_NAN_END_64,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_64,
+                ),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                2f64,
+                FConst::SIGNALLING_NAN_NEGATIVE_START_64,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_64,
+                ),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                2f64,
+                FConst::SIGNALLING_NAN_NEGATIVE_END_64,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_64,
+                ),
+            ),
+            // Quiet NANs aren't supported and cause unimplemented operation
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f64,
                 FConst::QUIET_NAN_START_64,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_64,
-                ),
+                expected_unimplemented_f64(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f64,
                 FConst::QUIET_NAN_END_64,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_64,
-                ),
+                expected_unimplemented_f64(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f64,
                 FConst::QUIET_NAN_NEGATIVE_START_64,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_64,
-                ),
+                expected_unimplemented_f64(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 2f64,
                 FConst::QUIET_NAN_NEGATIVE_END_64,
+                expected_unimplemented_f64(),
+            ),
+            // NAN+2 produces another NAN and invalid operation
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::SIGNALLING_NAN_START_64,
+                2f64,
                 expected_result(
                     FCSRFlags::DEFAULT.with_invalid_operation(true),
                     COP1_RESULT_NAN_64,
                 ),
             ),
-            // Signalling NANs aren't supported and cause unimplemented operation
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                2f64,
-                FConst::SIGNALLING_NAN_START_64,
-                expected_unimplemented_f64(),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                2f64,
                 FConst::SIGNALLING_NAN_END_64,
-                expected_unimplemented_f64(),
+                2f64,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_64,
+                ),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                2f64,
                 FConst::SIGNALLING_NAN_NEGATIVE_START_64,
-                expected_unimplemented_f64(),
+                2f64,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_64,
+                ),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                2f64,
                 FConst::SIGNALLING_NAN_NEGATIVE_END_64,
-                expected_unimplemented_f64(),
+                2f64,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_64,
+                ),
             ),
-            // NAN+2 produces another NAN and invalid operation (which is the opposite of what their name implies)
+            // Quiet NANs aren't supported and cause unimplemented operation
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_START_64,
                 2f64,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_64,
-                ),
+                expected_unimplemented_f64(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_END_64,
                 2f64,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_64,
-                ),
+                expected_unimplemented_f64(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_NEGATIVE_START_64,
                 2f64,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_64,
-                ),
+                expected_unimplemented_f64(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::QUIET_NAN_NEGATIVE_END_64,
                 2f64,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_64,
-                ),
+                expected_unimplemented_f64(),
             ),
-            // Signalling NANs aren't supported and cause unimplemented operation
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_START_64,
+                FConst::QUIET_NAN_START_64,
                 2f64,
                 expected_unimplemented_f64(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_END_64,
+                FConst::QUIET_NAN_END_64,
                 2f64,
                 expected_unimplemented_f64(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_NEGATIVE_START_64,
+                FConst::QUIET_NAN_NEGATIVE_START_64,
                 2f64,
                 expected_unimplemented_f64(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_NEGATIVE_END_64,
-                2f64,
-                expected_unimplemented_f64(),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_START_64,
-                2f64,
-                expected_unimplemented_f64(),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_END_64,
-                2f64,
-                expected_unimplemented_f64(),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_NEGATIVE_START_64,
-                2f64,
-                expected_unimplemented_f64(),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_NEGATIVE_END_64,
+                FConst::QUIET_NAN_NEGATIVE_END_64,
                 2f64,
                 expected_unimplemented_f64(),
             ),
@@ -7338,22 +7339,22 @@ impl Test for SubD {
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_START_64,
                 FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 expected_unimplemented_f64(),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                FConst::QUIET_NAN_START_64,
                 FConst::SIGNALLING_NAN_START_64,
+                FConst::QUIET_NAN_START_64,
                 expected_unimplemented_f64(),
             ),
             // Mixing NAN with subnormal cause unimplemented
             (
                 false,
                 FCSRRoundingMode::Nearest,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
                 expected_unimplemented_f64(),
             ),
@@ -7361,7 +7362,7 @@ impl Test for SubD {
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SUBNORMAL_MIN_POSITIVE_64,
-                FConst::QUIET_NAN_START_64,
+                FConst::SIGNALLING_NAN_START_64,
                 expected_unimplemented_f64(),
             ),
         ];
@@ -7466,66 +7467,66 @@ impl Test for AbsS {
                 f32::NEG_INFINITY,
                 expected_result(FCSRFlags::DEFAULT, f32::INFINITY),
             ),
-            // ABS(NAN) produces another NAN and invalid operation (which is the opposite of what their name implies)
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::QUIET_NAN_START_32,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_32,
-                ),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::QUIET_NAN_END_32,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_32,
-                ),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::QUIET_NAN_NEGATIVE_START_32,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_32,
-                ),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::QUIET_NAN_NEGATIVE_END_32,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_32,
-                ),
-            ),
-            // Signalling NANs aren't supported and cause unimplemented operation
+            // ABS(NAN) produces another NAN and invalid operation
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_START_32,
-                expected_unimplemented_f32(),
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_32,
+                ),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_END_32,
-                expected_unimplemented_f32(),
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_32,
+                ),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_START_32,
-                expected_unimplemented_f32(),
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_32,
+                ),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_END_32,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_32,
+                ),
+            ),
+            // Quiet NANs aren't supported and cause unimplemented operation
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::QUIET_NAN_START_32,
+                expected_unimplemented_f32(),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::QUIET_NAN_END_32,
+                expected_unimplemented_f32(),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::QUIET_NAN_NEGATIVE_START_32,
+                expected_unimplemented_f32(),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::QUIET_NAN_NEGATIVE_END_32,
                 expected_unimplemented_f32(),
             ),
             // Subnormal also causes unimplemented
@@ -7674,66 +7675,66 @@ impl Test for AbsD {
                 f64::NEG_INFINITY,
                 expected_result(FCSRFlags::DEFAULT, f64::INFINITY),
             ),
-            // ABS(NAN) produces another NAN and invalid operation (which is the opposite of what their name implies)
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::QUIET_NAN_START_64,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_64,
-                ),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::QUIET_NAN_END_64,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_64,
-                ),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::QUIET_NAN_NEGATIVE_START_64,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_64,
-                ),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::QUIET_NAN_NEGATIVE_END_64,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_64,
-                ),
-            ),
-            // Signalling NANs aren't supported and cause unimplemented operation
+            // ABS(NAN) produces another NAN and invalid operation
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_START_64,
-                expected_unimplemented_f64(),
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_64,
+                ),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_END_64,
-                expected_unimplemented_f64(),
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_64,
+                ),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_START_64,
-                expected_unimplemented_f64(),
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_64,
+                ),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_END_64,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_64,
+                ),
+            ),
+            // Quiet NANs aren't supported and cause unimplemented operation
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::QUIET_NAN_START_64,
+                expected_unimplemented_f64(),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::QUIET_NAN_END_64,
+                expected_unimplemented_f64(),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::QUIET_NAN_NEGATIVE_START_64,
+                expected_unimplemented_f64(),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::QUIET_NAN_NEGATIVE_END_64,
                 expected_unimplemented_f64(),
             ),
             // Subnormal also causes unimplemented
@@ -7882,66 +7883,66 @@ impl Test for NegS {
                 f32::NEG_INFINITY,
                 expected_result(FCSRFlags::DEFAULT, f32::INFINITY),
             ),
-            // ABS(NAN) produces another NAN and invalid operation (which is the opposite of what their name implies)
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::QUIET_NAN_START_32,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_32,
-                ),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::QUIET_NAN_END_32,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_32,
-                ),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::QUIET_NAN_NEGATIVE_START_32,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_32,
-                ),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::QUIET_NAN_NEGATIVE_END_32,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_32,
-                ),
-            ),
-            // Signalling NANs aren't supported and cause unimplemented operation
+            // ABS(NAN) produces another NAN and invalid operation
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_START_32,
-                expected_unimplemented_f32(),
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_32,
+                ),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_END_32,
-                expected_unimplemented_f32(),
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_32,
+                ),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_START_32,
-                expected_unimplemented_f32(),
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_32,
+                ),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_END_32,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_32,
+                ),
+            ),
+            // Quiet NANs aren't supported and cause unimplemented operation
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::QUIET_NAN_START_32,
+                expected_unimplemented_f32(),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::QUIET_NAN_END_32,
+                expected_unimplemented_f32(),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::QUIET_NAN_NEGATIVE_START_32,
+                expected_unimplemented_f32(),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::QUIET_NAN_NEGATIVE_END_32,
                 expected_unimplemented_f32(),
             ),
             // Subnormal also causes unimplemented
@@ -8090,66 +8091,66 @@ impl Test for NegD {
                 f64::NEG_INFINITY,
                 expected_result(FCSRFlags::DEFAULT, f64::INFINITY),
             ),
-            // ABS(NAN) produces another NAN and invalid operation (which is the opposite of what their name implies)
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::QUIET_NAN_START_64,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_64,
-                ),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::QUIET_NAN_END_64,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_64,
-                ),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::QUIET_NAN_NEGATIVE_START_64,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_64,
-                ),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::QUIET_NAN_NEGATIVE_END_64,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_64,
-                ),
-            ),
-            // Signalling NANs aren't supported and cause unimplemented operation
+            // ABS(NAN) produces another NAN and invalid operation
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_START_64,
-                expected_unimplemented_f64(),
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_64,
+                ),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_END_64,
-                expected_unimplemented_f64(),
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_64,
+                ),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_START_64,
-                expected_unimplemented_f64(),
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_64,
+                ),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_END_64,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_64,
+                ),
+            ),
+            // Quiet NANs aren't supported and cause unimplemented operation
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::QUIET_NAN_START_64,
+                expected_unimplemented_f64(),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::QUIET_NAN_END_64,
+                expected_unimplemented_f64(),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::QUIET_NAN_NEGATIVE_START_64,
+                expected_unimplemented_f64(),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::QUIET_NAN_NEGATIVE_END_64,
                 expected_unimplemented_f64(),
             ),
             // Subnormal also causes unimplemented
@@ -8259,14 +8260,14 @@ impl Test for MovS {
             Box::new((
                 false,
                 FCSRRoundingMode::Nearest,
-                FConst::QUIET_NAN_START_32,
-                expected_result(FCSRFlags::DEFAULT, FConst::QUIET_NAN_START_32),
+                FConst::SIGNALLING_NAN_START_32,
+                expected_result(FCSRFlags::DEFAULT, FConst::SIGNALLING_NAN_START_32),
             )),
             Box::new((
                 false,
                 FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_START_32,
-                expected_result(FCSRFlags::DEFAULT, FConst::SIGNALLING_NAN_START_32),
+                FConst::QUIET_NAN_START_32,
+                expected_result(FCSRFlags::DEFAULT, FConst::QUIET_NAN_START_32),
             )),
             Box::new((
                 false,
@@ -8337,14 +8338,14 @@ impl Test for MovD {
             Box::new((
                 false,
                 FCSRRoundingMode::Nearest,
-                FConst::QUIET_NAN_START_64,
-                expected_result(FCSRFlags::DEFAULT, FConst::QUIET_NAN_START_64),
+                FConst::SIGNALLING_NAN_START_64,
+                expected_result(FCSRFlags::DEFAULT, FConst::SIGNALLING_NAN_START_64),
             )),
             Box::new((
                 false,
                 FCSRRoundingMode::Nearest,
-                FConst::SIGNALLING_NAN_START_64,
-                expected_result(FCSRFlags::DEFAULT, FConst::SIGNALLING_NAN_START_64),
+                FConst::QUIET_NAN_START_64,
+                expected_result(FCSRFlags::DEFAULT, FConst::QUIET_NAN_START_64),
             )),
             Box::new((
                 false,
@@ -8497,66 +8498,66 @@ impl Test for SqrtS {
                     3.2669859e-12f32,
                 ),
             ),
-            // Sqrt(NAN) produces another NAN and invalid operation (which is the opposite of what their name implies)
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::QUIET_NAN_START_32,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_32,
-                ),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::QUIET_NAN_END_32,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_32,
-                ),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::QUIET_NAN_NEGATIVE_START_32,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_32,
-                ),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::QUIET_NAN_NEGATIVE_END_32,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_32,
-                ),
-            ),
-            // Signalling NANs aren't supported and cause unimplemented operation
+            // Sqrt(NAN) produces another NAN and invalid operation
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_START_32,
-                expected_unimplemented_f32(),
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_32,
+                ),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_END_32,
-                expected_unimplemented_f32(),
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_32,
+                ),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_START_32,
-                expected_unimplemented_f32(),
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_32,
+                ),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_END_32,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_32,
+                ),
+            ),
+            // Quiet NANs aren't supported and cause unimplemented operation
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::QUIET_NAN_START_32,
+                expected_unimplemented_f32(),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::QUIET_NAN_END_32,
+                expected_unimplemented_f32(),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::QUIET_NAN_NEGATIVE_START_32,
+                expected_unimplemented_f32(),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::QUIET_NAN_NEGATIVE_END_32,
                 expected_unimplemented_f32(),
             ),
             // Subnormal also causes unimplemented
@@ -8748,66 +8749,66 @@ impl Test for SqrtD {
                     6.23742681350137e54f64,
                 ),
             ),
-            // Sqrt(NAN) produces another NAN and invalid operation (which is the opposite of what their name implies)
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::QUIET_NAN_START_64,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_64,
-                ),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::QUIET_NAN_END_64,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_64,
-                ),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::QUIET_NAN_NEGATIVE_START_64,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_64,
-                ),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::QUIET_NAN_NEGATIVE_END_64,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_64,
-                ),
-            ),
-            // Signalling NANs aren't supported and cause unimplemented operation
+            // Sqrt(NAN) produces another NAN and invalid operation
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_START_64,
-                expected_unimplemented_f64(),
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_64,
+                ),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_END_64,
-                expected_unimplemented_f64(),
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_64,
+                ),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_START_64,
-                expected_unimplemented_f64(),
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_64,
+                ),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_END_64,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_64,
+                ),
+            ),
+            // Quiet NANs aren't supported and cause unimplemented operation
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::QUIET_NAN_START_64,
+                expected_unimplemented_f64(),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::QUIET_NAN_END_64,
+                expected_unimplemented_f64(),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::QUIET_NAN_NEGATIVE_START_64,
+                expected_unimplemented_f64(),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::QUIET_NAN_NEGATIVE_END_64,
                 expected_unimplemented_f64(),
             ),
             // Subnormal also causes unimplemented
@@ -9340,66 +9341,66 @@ impl Test for CvtS {
                     -f32::MIN_POSITIVE,
                 ),
             ),
-            // CVT(NAN) produces another NAN and invalid operation (which is the opposite of what their name implies)
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::QUIET_NAN_START_64,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_32,
-                ),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::QUIET_NAN_END_64,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_32,
-                ),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::QUIET_NAN_NEGATIVE_START_64,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_32,
-                ),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::QUIET_NAN_NEGATIVE_END_64,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_32,
-                ),
-            ),
-            // Signalling NANs aren't supported and cause unimplemented operation
+            // CVT(NAN) produces another NAN and invalid operation
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_START_64,
-                expected_unimplemented_f32(),
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_32,
+                ),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_END_64,
-                expected_unimplemented_f32(),
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_32,
+                ),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_START_64,
-                expected_unimplemented_f32(),
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_32,
+                ),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_END_64,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_32,
+                ),
+            ),
+            // Quiet NANs aren't supported and cause unimplemented operation
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::QUIET_NAN_START_64,
+                expected_unimplemented_f32(),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::QUIET_NAN_END_64,
+                expected_unimplemented_f32(),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::QUIET_NAN_NEGATIVE_START_64,
+                expected_unimplemented_f32(),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::QUIET_NAN_NEGATIVE_END_64,
                 expected_unimplemented_f32(),
             ),
             // Subnormal also causes unimplemented
@@ -9808,66 +9809,66 @@ impl Test for CvtD {
                 f32::NEG_INFINITY,
                 expected_result(FCSRFlags::DEFAULT, f64::NEG_INFINITY),
             ),
-            // CVT(NAN) produces another NAN and invalid operation (which is the opposite of what their name implies)
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::QUIET_NAN_START_32,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_64,
-                ),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::QUIET_NAN_END_32,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_64,
-                ),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::QUIET_NAN_NEGATIVE_START_32,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_64,
-                ),
-            ),
-            (
-                false,
-                FCSRRoundingMode::Nearest,
-                FConst::QUIET_NAN_NEGATIVE_END_32,
-                expected_result(
-                    FCSRFlags::DEFAULT.with_invalid_operation(true),
-                    COP1_RESULT_NAN_64,
-                ),
-            ),
-            // Signalling NANs aren't supported and cause unimplemented operation
+            // CVT(NAN) produces another NAN and invalid operation
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_START_32,
-                expected_unimplemented_f64(),
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_64,
+                ),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_END_32,
-                expected_unimplemented_f64(),
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_64,
+                ),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_START_32,
-                expected_unimplemented_f64(),
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_64,
+                ),
             ),
             (
                 false,
                 FCSRRoundingMode::Nearest,
                 FConst::SIGNALLING_NAN_NEGATIVE_END_32,
+                expected_result(
+                    FCSRFlags::DEFAULT.with_invalid_operation(true),
+                    COP1_RESULT_NAN_64,
+                ),
+            ),
+            // Quiet NANs aren't supported and cause unimplemented operation
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::QUIET_NAN_START_32,
+                expected_unimplemented_f64(),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::QUIET_NAN_END_32,
+                expected_unimplemented_f64(),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::QUIET_NAN_NEGATIVE_START_32,
+                expected_unimplemented_f64(),
+            ),
+            (
+                false,
+                FCSRRoundingMode::Nearest,
+                FConst::QUIET_NAN_NEGATIVE_END_32,
                 expected_unimplemented_f64(),
             ),
             // Subnormal also causes unimplemented
@@ -10282,22 +10283,8 @@ impl Test for ConvertToW {
             (-2147483649f64, expected_unimplemented_i32()),
             (f64::INFINITY, expected_unimplemented_i32()),
             (f64::NEG_INFINITY, expected_unimplemented_i32()),
-            // CVT(NAN) produces another NAN and invalid operation (which is the opposite of what their name implies)
-            (FConst::QUIET_NAN_START_64, expected_unimplemented_i32()),
-            (FConst::QUIET_NAN_END_64, expected_unimplemented_i32()),
-            (
-                FConst::QUIET_NAN_NEGATIVE_START_64,
-                expected_unimplemented_i32(),
-            ),
-            (
-                FConst::QUIET_NAN_NEGATIVE_END_64,
-                expected_unimplemented_i32(),
-            ),
-            // Signalling NANs aren't supported and cause unimplemented operation
-            (
-                FConst::SIGNALLING_NAN_START_64,
-                expected_unimplemented_i32(),
-            ),
+            // CVT(NAN) produces another NAN and invalid operation
+            (FConst::SIGNALLING_NAN_START_64, expected_unimplemented_i32()),
             (FConst::SIGNALLING_NAN_END_64, expected_unimplemented_i32()),
             (
                 FConst::SIGNALLING_NAN_NEGATIVE_START_64,
@@ -10305,6 +10292,20 @@ impl Test for ConvertToW {
             ),
             (
                 FConst::SIGNALLING_NAN_NEGATIVE_END_64,
+                expected_unimplemented_i32(),
+            ),
+            // Quiet NANs aren't supported and cause unimplemented operation
+            (
+                FConst::QUIET_NAN_START_64,
+                expected_unimplemented_i32(),
+            ),
+            (FConst::QUIET_NAN_END_64, expected_unimplemented_i32()),
+            (
+                FConst::QUIET_NAN_NEGATIVE_START_64,
+                expected_unimplemented_i32(),
+            ),
+            (
+                FConst::QUIET_NAN_NEGATIVE_END_64,
                 expected_unimplemented_i32(),
             ),
             // Subnormal also causes unimplemented
@@ -10354,22 +10355,8 @@ impl Test for ConvertToW {
             (-2150000000f32, expected_unimplemented_i32()),
             (f32::INFINITY, expected_unimplemented_i32()),
             (f32::NEG_INFINITY, expected_unimplemented_i32()),
-            // Quiet NANs aren't supported and cause unimplemented operation
-            (FConst::QUIET_NAN_START_32, expected_unimplemented_i32()),
-            (FConst::QUIET_NAN_END_32, expected_unimplemented_i32()),
-            (
-                FConst::QUIET_NAN_NEGATIVE_START_32,
-                expected_unimplemented_i32(),
-            ),
-            (
-                FConst::QUIET_NAN_NEGATIVE_END_32,
-                expected_unimplemented_i32(),
-            ),
             // Signalling NANs aren't supported and cause unimplemented operation
-            (
-                FConst::SIGNALLING_NAN_START_32,
-                expected_unimplemented_i32(),
-            ),
+            (FConst::SIGNALLING_NAN_START_32, expected_unimplemented_i32()),
             (FConst::SIGNALLING_NAN_END_32, expected_unimplemented_i32()),
             (
                 FConst::SIGNALLING_NAN_NEGATIVE_START_32,
@@ -10377,6 +10364,20 @@ impl Test for ConvertToW {
             ),
             (
                 FConst::SIGNALLING_NAN_NEGATIVE_END_32,
+                expected_unimplemented_i32(),
+            ),
+            // Quiet NANs aren't supported and cause unimplemented operation
+            (
+                FConst::QUIET_NAN_START_32,
+                expected_unimplemented_i32(),
+            ),
+            (FConst::QUIET_NAN_END_32, expected_unimplemented_i32()),
+            (
+                FConst::QUIET_NAN_NEGATIVE_START_32,
+                expected_unimplemented_i32(),
+            ),
+            (
+                FConst::QUIET_NAN_NEGATIVE_END_32,
                 expected_unimplemented_i32(),
             ),
             // Subnormal also causes unimplemented
@@ -10969,22 +10970,8 @@ impl Test for ConvertToL {
             (f64::MIN, expected_unimplemented_i64()),
             (f64::INFINITY, expected_unimplemented_i64()),
             (f64::NEG_INFINITY, expected_unimplemented_i64()),
-            // CVT(NAN) produces another NAN and invalid operation (which is the opposite of what their name implies)
-            (FConst::QUIET_NAN_START_64, expected_unimplemented_i64()),
-            (FConst::QUIET_NAN_END_64, expected_unimplemented_i64()),
-            (
-                FConst::QUIET_NAN_NEGATIVE_START_64,
-                expected_unimplemented_i64(),
-            ),
-            (
-                FConst::QUIET_NAN_NEGATIVE_END_64,
-                expected_unimplemented_i64(),
-            ),
-            // Signalling NANs aren't supported and cause unimplemented operation
-            (
-                FConst::SIGNALLING_NAN_START_64,
-                expected_unimplemented_i64(),
-            ),
+            // CVT(NAN) produces another NAN and invalid operation
+            (FConst::SIGNALLING_NAN_START_64, expected_unimplemented_i64()),
             (FConst::SIGNALLING_NAN_END_64, expected_unimplemented_i64()),
             (
                 FConst::SIGNALLING_NAN_NEGATIVE_START_64,
@@ -10992,6 +10979,20 @@ impl Test for ConvertToL {
             ),
             (
                 FConst::SIGNALLING_NAN_NEGATIVE_END_64,
+                expected_unimplemented_i64(),
+            ),
+            // Quiet NANs aren't supported and cause unimplemented operation
+            (
+                FConst::QUIET_NAN_START_64,
+                expected_unimplemented_i64(),
+            ),
+            (FConst::QUIET_NAN_END_64, expected_unimplemented_i64()),
+            (
+                FConst::QUIET_NAN_NEGATIVE_START_64,
+                expected_unimplemented_i64(),
+            ),
+            (
+                FConst::QUIET_NAN_NEGATIVE_END_64,
                 expected_unimplemented_i64(),
             ),
             // Subnormal also causes unimplemented
@@ -11040,22 +11041,8 @@ impl Test for ConvertToL {
             (f32::MIN, expected_unimplemented_i64()),
             (f32::INFINITY, expected_unimplemented_i64()),
             (f32::NEG_INFINITY, expected_unimplemented_i64()),
-            // CVT(NAN) produces another NAN and invalid operation (which is the opposite of what their name implies)
-            (FConst::QUIET_NAN_START_32, expected_unimplemented_i64()),
-            (FConst::QUIET_NAN_END_32, expected_unimplemented_i64()),
-            (
-                FConst::QUIET_NAN_NEGATIVE_START_32,
-                expected_unimplemented_i64(),
-            ),
-            (
-                FConst::QUIET_NAN_NEGATIVE_END_32,
-                expected_unimplemented_i64(),
-            ),
-            // Signalling NANs aren't supported and cause unimplemented operation
-            (
-                FConst::SIGNALLING_NAN_START_32,
-                expected_unimplemented_i64(),
-            ),
+            // CVT(NAN) produces another NAN and invalid operation
+            (FConst::SIGNALLING_NAN_START_32, expected_unimplemented_i64()),
             (FConst::SIGNALLING_NAN_END_32, expected_unimplemented_i64()),
             (
                 FConst::SIGNALLING_NAN_NEGATIVE_START_32,
@@ -11063,6 +11050,20 @@ impl Test for ConvertToL {
             ),
             (
                 FConst::SIGNALLING_NAN_NEGATIVE_END_32,
+                expected_unimplemented_i64(),
+            ),
+            // Quiet NANs aren't supported and cause unimplemented operation
+            (
+                FConst::QUIET_NAN_START_32,
+                expected_unimplemented_i64(),
+            ),
+            (FConst::QUIET_NAN_END_32, expected_unimplemented_i64()),
+            (
+                FConst::QUIET_NAN_NEGATIVE_START_32,
+                expected_unimplemented_i64(),
+            ),
+            (
+                FConst::QUIET_NAN_NEGATIVE_END_32,
                 expected_unimplemented_i64(),
             ),
             // Subnormal also causes unimplemented
