@@ -818,6 +818,7 @@ fn default_tests() -> Vec<Box<dyn Test>> {
         Box::new(super::timing::cache::LoadMissVIDisabled {}),
         Box::new(super::timing::cache::LoadFromUncachedVIEnabled {}),
         Box::new(super::timing::cache::LoadFromUncachedVIDisabled {}),
+        Box::new(super::timing::cache_instruction_timing::CacheInstructionTiming {}),
         Box::new(super::rdp::StartAndEndMasking {}),
         Box::new(super::rdp::StartIsValidFlag {}),
         Box::new(super::rdp::StatusFlagsDuringRun {}),
