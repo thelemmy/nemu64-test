@@ -1,4 +1,5 @@
 pub mod cache;
+pub mod cache_instruction_timing;
 
 use alloc::boxed::Box;
 use alloc::format;
