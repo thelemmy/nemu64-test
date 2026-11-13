@@ -46,34 +46,52 @@ impl Test for ClockCPUvsRSP {
 
     fn run(&self, _value: &Box<dyn Any>) -> Result<(), String> {
         const CPU_CLOCK_CYCLES: u32 = 100000;
-        const EXPECTED_RDP_CYCLES: u24 = u24::new(CPU_CLOCK_CYCLES * 4 / 3);
         const RDP_CYCLE_EPSILON: u24 = u24::new(20);
 
         // Freeze doesn't matter. Set it to avoid misconceptions
         unsafe {
             RDP::set_status(DP_SET_STATUS_SET_FREEZE);
         }
-        let cpu_clock_before = count();
-        let rdp_clock_before = RDP::clock();
-        let (cpu_clock_target, cpu_overflow) = cpu_clock_before.overflowing_add(CPU_CLOCK_CYCLES);
+        let mut cpu_clock_before;
+        let mut rdp_clock_before;
+        let mut cpu_clock_target;
+        let mut cpu_overflow;
+        let mut rdp_clock_after;
+        let mut cpu_clock_after;
+        let mut iteration = 0;
 
-        let rdp_clock_after = loop {
-            let cpu_clock = count();
-            let rdp_clock = RDP::clock();
-            if (!cpu_overflow || cpu_clock < cpu_clock_before) && cpu_clock >= cpu_clock_target {
-                break rdp_clock;
+        loop {
+            cpu_clock_before = count();
+            rdp_clock_before = RDP::clock();
+            (cpu_clock_target, cpu_overflow) = cpu_clock_before.overflowing_add(CPU_CLOCK_CYCLES);
+            
+            (rdp_clock_after, cpu_clock_after) = loop {
+                let cpu_clock = count();
+                let rdp_clock = RDP::clock();
+                if (!cpu_overflow || cpu_clock < cpu_clock_before) && cpu_clock >= cpu_clock_target {
+                    break (rdp_clock, cpu_clock);
+                }
+            };
+
+            iteration += 1;
+
+            if iteration == 2 {
+                break;
             }
-        };
+        }
 
         // Let's not leave it frozen
         unsafe {
             RDP::set_status(DP_SET_STATUS_CLEAR_FREEZE);
         }
 
+        let ticks = cpu_clock_after.wrapping_sub(cpu_clock_before);
+        let expected = u24::new(ticks * 4 / 3);
+
         soft_assert_eq_with_epsilon(
             RDP_CYCLE_EPSILON,
             rdp_clock_after.wrapping_sub(rdp_clock_before),
-            EXPECTED_RDP_CYCLES,
+            expected,
             format!(
                 "Expected RDP cycles that pass during {} cpu cycles",
                 CPU_CLOCK_CYCLES

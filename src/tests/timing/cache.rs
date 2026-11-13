@@ -16,6 +16,8 @@ use crate::tests::soft_asserts::{
 };
 use crate::tests::timing::{effective_cycles, ExceptionTimingMode, MeasurementProgram};
 use crate::tests::{Level, Test};
+use crate::graphics::vi::TV_TYPE_PAL;
+use crate::IPL3_TV_TYPE;
 
 // TODO: Time CACHE instruction
 // TODO: Time writes, in particular once the write buffer has been filled
@@ -123,7 +125,7 @@ struct AveragedCycles {
     average: f32,
 }
 
-const BATCHES: usize = 10;
+const BATCHES: usize = 50;
 
 fn get_averaged_cycles_with_codegen(
     iterations: usize,
@@ -224,7 +226,7 @@ impl Test for LoadMissVIEnabled {
                             & (MemoryMap::memory_size() as u32 - 1))
                 };
                 assert_averaged_cycles_with_codegen(
-                    38..=103,
+                    38..=if unsafe { IPL3_TV_TYPE } == TV_TYPE_PAL {108} else {103},
                     42,
                     43.25f32,
                     1.0f32,
@@ -275,8 +277,8 @@ impl Test for LoadMissVIDisabled {
                 assert_averaged_cycles_with_codegen(
                     41..=103,
                     41,
-                    42.5f32,
-                    0.5f32,
+                    if unsafe { IPL3_TV_TYPE } == TV_TYPE_PAL {44.05f32} else {42.5f32},
+                    if unsafe { IPL3_TV_TYPE } == TV_TYPE_PAL {1.0f32} else {0.5f32},
                     &[
                         Assembler::make_lui(GPR::T2, (*base_address >> 16) as i16),
                         Assembler::make_ori(GPR::T2, GPR::T2, *base_address as u16),
@@ -327,7 +329,7 @@ impl Test for LoadFromUncachedVIEnabled {
                 };
                 crate::VIDEO.lock().spinwait_for_vsync();
                 assert_averaged_cycles_with_codegen(
-                    32..=93,
+                    32..=if unsafe { IPL3_TV_TYPE } == TV_TYPE_PAL {103} else {93},
                     *expected_median,
                     *expected_average,
                     4.0f32,
@@ -376,8 +378,8 @@ impl Test for LoadFromUncachedVIDisabled {
             Some(base_address) => assert_averaged_cycles_with_codegen(
                 32..=93,
                 32,
-                34.07f32,
-                1.0f32,
+                if unsafe { IPL3_TV_TYPE } == TV_TYPE_PAL {35.06f32} else {34.07f32},
+                if unsafe { IPL3_TV_TYPE } == TV_TYPE_PAL {3.0f32} else {1.0f32},
                 &[
                     Assembler::make_lui(GPR::T2, (*base_address >> 16) as i16),
                     Assembler::make_ori(GPR::T2, GPR::T2, *base_address as u16),

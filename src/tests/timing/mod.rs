@@ -378,17 +378,45 @@ impl MeasurementProgram {
         // program would evict a vector line and exception-timing tests would measure its reload
         // (~43 extra cycles). Over-allocate and shift the program within the buffer if needed.
         let lines = code.len() * 4 / 32 + 1;
+        // Room to shift: past the vector lines or the wrap (16 + lines), plus up to two lines per
+        // callee. 32 extra lines (1 KB) covers any realistic body.
+        let max_shift_lines = 16 + lines + 32;
         let mut buffer =
-            UncachedHeapMemory::<u32>::new_with_align(code.len() + (16 + lines) * 8, 64);
+            UncachedHeapMemory::<u32>::new_with_align(code.len() + max_shift_lines * 8, 64);
         let base_addr = MemoryMap::physical_to_cached::<u8>(buffer.start_physical()) as usize;
         let base_line = (base_addr >> 5) & 0x1FF;
-        let shift_lines = if base_line < 16 {
-            16 - base_line
-        } else if base_line + lines > 512 {
-            (512 - base_line) + 16
-        } else {
-            0
+ 
+        // Icache indexes used by code outside this buffer that the body calls (J/JAL). The callees
+        // in the tests are at most 16 bytes long, which can straddle two lines.
+        // J = opcode 2, JAL = opcode 3; the target stays in the 256 MB region of the buffer.
+        const MAX_CALLEE_BYTES: usize = 16;
+        let region = base_addr & 0xF000_0000;
+        let mut avoided_lines: Vec<usize> = Vec::new();
+        for &word in body {
+            let opcode = word >> 26;
+            if opcode == 2 || opcode == 3 {
+                let callee = region | (((word & 0x03FF_FFFF) as usize) << 2);
+                avoided_lines.push((callee >> 5) & 0x1FF);
+                avoided_lines.push(((callee + MAX_CALLEE_BYTES - 1) >> 5) & 0x1FF);
+            }
+        }
+ 
+        // Smallest shift for which none of the program's lines (they wrap around the 512 lines)
+        // hits a vector line (0..16) or a callee line
+        let conflicts = |shift: usize| {
+            (base_line + shift..base_line + shift + lines).any(|line| {
+                let index = line & 0x1FF;
+                index < 16 || avoided_lines.contains(&index)
+            })
         };
+        let mut shift_lines = 0;
+        while conflicts(shift_lines) {
+            shift_lines += 1;
+            assert!(
+                shift_lines <= max_shift_lines,
+                "No icache placement found for the measurement program"
+            );
+        }
         let word_offset = shift_lines * 8;
         for (i, &word) in code.iter().enumerate() {
             buffer.write(word_offset + i, word);
