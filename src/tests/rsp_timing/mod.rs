@@ -64,11 +64,12 @@ impl Test for ClockCPUvsRSP {
             cpu_clock_before = count();
             rdp_clock_before = RDP::clock();
             (cpu_clock_target, cpu_overflow) = cpu_clock_before.overflowing_add(CPU_CLOCK_CYCLES);
-            
+
             (rdp_clock_after, cpu_clock_after) = loop {
                 let cpu_clock = count();
                 let rdp_clock = RDP::clock();
-                if (!cpu_overflow || cpu_clock < cpu_clock_before) && cpu_clock >= cpu_clock_target {
+                if (!cpu_overflow || cpu_clock < cpu_clock_before) && cpu_clock >= cpu_clock_target
+                {
                     break (rdp_clock, cpu_clock);
                 }
             };

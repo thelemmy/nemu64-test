@@ -385,7 +385,7 @@ impl MeasurementProgram {
             UncachedHeapMemory::<u32>::new_with_align(code.len() + max_shift_lines * 8, 64);
         let base_addr = MemoryMap::physical_to_cached::<u8>(buffer.start_physical()) as usize;
         let base_line = (base_addr >> 5) & 0x1FF;
- 
+
         // Icache indexes used by code outside this buffer that the body calls (J/JAL). The callees
         // in the tests are at most 16 bytes long, which can straddle two lines.
         // J = opcode 2, JAL = opcode 3; the target stays in the 256 MB region of the buffer.
@@ -400,7 +400,7 @@ impl MeasurementProgram {
                 avoided_lines.push(((callee + MAX_CALLEE_BYTES - 1) >> 5) & 0x1FF);
             }
         }
- 
+
         // Smallest shift for which none of the program's lines (they wrap around the 512 lines)
         // hits a vector line (0..16) or a callee line
         let conflicts = |shift: usize| {
