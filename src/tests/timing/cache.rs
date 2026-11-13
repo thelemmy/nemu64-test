@@ -6,17 +6,18 @@ use alloc::vec;
 use alloc::vec::Vec;
 use core::any::Any;
 use core::arch::asm;
-use core::cmp::{max, min};
 use core::ops::RangeInclusive;
 
 use crate::assembler::{Assembler, GPR};
 use crate::cop0::{RegisterIndex, Status};
+use crate::graphics::vi::TV_TYPE_PAL;
 use crate::memory_map::MemoryMap;
 use crate::tests::soft_asserts::{
     soft_assert_eq, soft_assert_eq_with_epsilon, soft_assert_range_contained_within_expected,
 };
 use crate::tests::timing::{effective_cycles, ExceptionTimingMode, MeasurementProgram};
 use crate::tests::{Level, Test};
+use crate::IPL3_TV_TYPE;
 
 // TODO: Time CACHE instruction
 // TODO: Time writes, in particular once the write buffer has been filled
@@ -124,36 +125,42 @@ struct AveragedCycles {
     average: f32,
 }
 
+const BATCHES: usize = 50;
+
 fn get_averaged_cycles_with_codegen(
     iterations: usize,
     configure_preconditions: &[u32],
     execute: &[u32],
+    before_each_batch: &dyn Fn(),
 ) -> AveragedCycles {
     // Generate the measurement loop, preconditions and execute into a single buffer so their
     // icache placement is fixed relative to each other (see MeasurementProgram)
     let mut program = MeasurementProgram::new(Some(configure_preconditions), execute);
 
-    let mut sum = 0u64;
+    let mut all_cycles: Vec<u32> = Vec::with_capacity(BATCHES * iterations);
+
+    /*let mut sum = 0u64;
     let mut min_value = u32::MAX;
-    let mut max_value = 0;
-    let mut all_cycles = Vec::new();
-    for i in 0..iterations {
-        let (ticks1, ticks2) = program.run(0, 0, Status::DEFAULT, ExceptionTimingMode::Off);
-        let cycles = effective_cycles(ticks1, ticks2, ExceptionTimingMode::Off);
-        // If too many cycles, stop pushing. This avoids running out of memory
-        if i < 100_000 {
-            all_cycles.push(cycles);
+    let mut max_value = 0;*/
+
+    // Batch 0 is the warm-up and is discarded
+    for batch in 0..=BATCHES {
+        before_each_batch();
+        for _ in 0..iterations {
+            let (ticks1, ticks2) = program.run(0, 0, Status::DEFAULT, ExceptionTimingMode::Off);
+            if batch > 0 {
+                all_cycles.push(effective_cycles(ticks1, ticks2, ExceptionTimingMode::Off));
+            }
         }
-        sum += cycles as u64;
-        min_value = min(min_value, cycles);
-        max_value = max(max_value, cycles);
     }
+
+    let sum: u64 = all_cycles.iter().map(|&c| c as u64).sum();
     all_cycles.sort();
 
     AveragedCycles {
-        range: min_value..=max_value,
+        range: all_cycles[0]..=all_cycles[all_cycles.len() - 1],
         median: all_cycles[all_cycles.len() >> 1],
-        average: sum as f32 / iterations as f32,
+        average: sum as f32 / all_cycles.len() as f32,
     }
 }
 
@@ -164,8 +171,14 @@ fn assert_averaged_cycles_with_codegen(
     average_epsilon: f32,
     configure_preconditions: &[u32],
     execute: &[u32],
+    before_each_batch: &dyn Fn(),
 ) -> Result<(), String> {
-    let averaged_cycles = get_averaged_cycles_with_codegen(1_000, configure_preconditions, execute);
+    let averaged_cycles = get_averaged_cycles_with_codegen(
+        1_000,
+        configure_preconditions,
+        execute,
+        before_each_batch,
+    );
 
     // crate::println!("Avg {} Med {} ({}..={})", averaged_cycles.average, averaged_cycles.median, averaged_cycles.range.start(), averaged_cycles.range.end());
 
@@ -217,9 +230,12 @@ impl Test for LoadMissVIEnabled {
                         | ((frontbuffer_bank_base + 1 * 1024 * 1024)
                             & (MemoryMap::memory_size() as u32 - 1))
                 };
-                crate::VIDEO.lock().spinwait_for_vsync();
                 assert_averaged_cycles_with_codegen(
-                    38..=103,
+                    38..=if unsafe { IPL3_TV_TYPE } == TV_TYPE_PAL {
+                        108
+                    } else {
+                        103
+                    },
                     42,
                     43.25f32,
                     1.0f32,
@@ -230,6 +246,7 @@ impl Test for LoadMissVIEnabled {
                         Assembler::make_lw(GPR::R0, 8 * 1024, GPR::T2),
                     ],
                     &[Assembler::make_lw(GPR::R0, 0, GPR::T2)],
+                    &|| crate::VIDEO.lock().spinwait_for_vsync(),
                 )
             }
             _ => Err(format!("Unhandled pattern")),
@@ -269,8 +286,16 @@ impl Test for LoadMissVIDisabled {
                 assert_averaged_cycles_with_codegen(
                     41..=103,
                     41,
-                    42.5f32,
-                    0.5f32,
+                    if unsafe { IPL3_TV_TYPE } == TV_TYPE_PAL {
+                        44.05f32
+                    } else {
+                        42.5f32
+                    },
+                    if unsafe { IPL3_TV_TYPE } == TV_TYPE_PAL {
+                        1.0f32
+                    } else {
+                        0.5f32
+                    },
                     &[
                         Assembler::make_lui(GPR::T2, (*base_address >> 16) as i16),
                         Assembler::make_ori(GPR::T2, GPR::T2, *base_address as u16),
@@ -278,6 +303,7 @@ impl Test for LoadMissVIDisabled {
                         Assembler::make_lw(GPR::R0, 8 * 1024, GPR::T2),
                     ],
                     &[Assembler::make_lw(GPR::R0, 0, GPR::T2)],
+                    &|| {},
                 )
             }
             _ => Err(format!("Unhandled pattern")),
@@ -320,7 +346,11 @@ impl Test for LoadFromUncachedVIEnabled {
                 };
                 crate::VIDEO.lock().spinwait_for_vsync();
                 assert_averaged_cycles_with_codegen(
-                    32..=93,
+                    32..=if unsafe { IPL3_TV_TYPE } == TV_TYPE_PAL {
+                        103
+                    } else {
+                        93
+                    },
                     *expected_median,
                     *expected_average,
                     4.0f32,
@@ -329,6 +359,7 @@ impl Test for LoadFromUncachedVIEnabled {
                         Assembler::make_ori(GPR::T2, GPR::T2, base_address as u16),
                     ],
                     &[Assembler::make_lw(GPR::R0, 0, GPR::T2)],
+                    &|| crate::VIDEO.lock().spinwait_for_vsync(),
                 )
             }
             _ => Err(format!("Unhandled pattern")),
@@ -368,13 +399,22 @@ impl Test for LoadFromUncachedVIDisabled {
             Some(base_address) => assert_averaged_cycles_with_codegen(
                 32..=93,
                 32,
-                32.54f32,
-                1.0f32,
+                if unsafe { IPL3_TV_TYPE } == TV_TYPE_PAL {
+                    35.06f32
+                } else {
+                    34.07f32
+                },
+                if unsafe { IPL3_TV_TYPE } == TV_TYPE_PAL {
+                    3.0f32
+                } else {
+                    1.0f32
+                },
                 &[
                     Assembler::make_lui(GPR::T2, (*base_address >> 16) as i16),
                     Assembler::make_ori(GPR::T2, GPR::T2, *base_address as u16),
                 ],
                 &[Assembler::make_lw(GPR::R0, 0, GPR::T2)],
+                &|| {},
             ),
             _ => Err(format!("Unhandled pattern")),
         }
