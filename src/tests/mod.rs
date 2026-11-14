@@ -595,6 +595,11 @@ pub fn run() {
                 Some(v) => return format!(" with '{:x?}'", v),
                 None => {}
             }
+            match (*value).downcast_ref::<(&str, u64, u64, Status, ExceptionTimingMode, u32, u32, u32)>()
+            {
+                Some(v) => return format!(" with '{:x?}'", v),
+                None => {}
+            }
             match (*value).downcast_ref::<(&str, u32, f32, f32, ExceptionTimingMode, u32)>() {
                 Some((context, cycles, f1, f2, exception_timing_mode, instruction)) => {
                     // Convert f32 to SoftF32 - it prints more nicely
