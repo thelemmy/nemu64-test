@@ -13,7 +13,9 @@ use arbitrary_int::prelude::*;
 use crate::assembler::{
     Assembler, Cop1Condition, Cop1FloatInstruction, Opcode, RegimmOpcode, FR, GPR,
 };
-use crate::cop0::{count, set_count, set_status, status, cause, CacheOp, RegisterIndex, Status, CauseException};
+use crate::cop0::{
+    cause, count, set_count, set_status, status, CacheOp, CauseException, RegisterIndex, Status,
+};
 use crate::cop1::{fcsr, set_fcsr, FCSRFlags, FConst, FCSR};
 use crate::memory_map::MemoryMap;
 use crate::tests::soft_asserts::{soft_assert_eq, soft_assert_eq_decimal, soft_assert_range};
@@ -2436,7 +2438,9 @@ impl Test for Exceptions {
     }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
-        match (*value).downcast_ref::<(&str, u64, u64, Status, ExceptionTimingMode, u32, u32, u32)>() {
+        match (*value)
+            .downcast_ref::<(&str, u64, u64, Status, ExceptionTimingMode, u32, u32, u32)>()
+        {
             Some((
                 _context,
                 value2,
@@ -2468,7 +2472,7 @@ impl Test for Exceptions {
             }
             _ => {}
         }
-        
+
         match (*value).downcast_ref::<(&str, u64, u64, Status, ExceptionTimingMode, u32, u32)>() {
             Some((
                 _context,
