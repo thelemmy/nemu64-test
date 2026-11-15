@@ -85,6 +85,7 @@ fn default_tests() -> Vec<Box<dyn Test>> {
         Box::new(super::address_error_exception::UnalignedJumpWithDelaySlot {}),
         Box::new(super::address_error_exception::LWAddressNotSignExtended {}),
         Box::new(super::address_error_exception::SWAddressNotSignExtended {}),
+        Box::new(super::address_error_exception::AddressErrorVsTlbMiss32 {}),
         Box::new(super::arithmetic::nemu_port::LUIOpcodeTest1 {}),
         Box::new(super::arithmetic::nemu_port::LUIOpcodeTest2 {}),
         Box::new(super::arithmetic::nemu_port::LUIOpcodeTestIntoR0 {}),
