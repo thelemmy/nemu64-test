@@ -876,7 +876,7 @@ const FAMILIES: [&str; 6] = [
     "kuseg misaligned 0x00001001",
     "kseg0 misaligned (own buffer + 1)",
 ];
- 
+
 fn low_word(family: u32, buffer: u32) -> u32 {
     match family {
         0 => 0x0000_1000,
@@ -887,7 +887,7 @@ fn low_word(family: u32, buffer: u32) -> u32 {
         _ => buffer + 1,
     }
 }
- 
+
 fn upper_patterns() -> Vec<u32> {
     // The two canonical values, two alternating patterns, every single bit set, and all ones with
     // a single bit cleared. The last two sets show which upper bits matter.
@@ -900,7 +900,7 @@ fn upper_patterns() -> Vec<u32> {
     }
     patterns
 }
- 
+
 /// What we are sure about: Some(outcome) with outcome None = no exception, Some(code) = ExcCode.
 /// Outer None = not known, the probe then just reports what it saw.
 fn predicted(store: bool, family: u32, upper: u32) -> Option<Option<u32>> {
@@ -923,7 +923,7 @@ fn predicted(store: bool, family: u32, upper: u32) -> Option<Option<u32>> {
         _ => None,
     }
 }
- 
+
 struct Observed {
     upper: u32,
     code: Option<u32>,
@@ -931,7 +931,7 @@ struct Observed {
     context: u64,
     xcontext: u64,
 }
- 
+
 fn code_name(code: Option<u32>) -> String {
     match code {
         None => String::from("no exception"),
@@ -942,7 +942,7 @@ fn code_name(code: Option<u32>) -> String {
         Some(other) => format!("ExcCode {}", other),
     }
 }
- 
+
 fn observe_access(store: bool, address: u64) -> Result<Observed, String> {
     // Reset what a TLB exception writes, so we can see what each exception really updated
     unsafe {
@@ -965,7 +965,7 @@ fn observe_access(store: bool, address: u64) -> Result<Observed, String> {
         }
         Ok(())
     })?;
- 
+
     match seen {
         None => Ok(Observed {
             upper: (address >> 32) as u32,
@@ -988,20 +988,20 @@ fn observe_access(store: bool, address: u64) -> Result<Observed, String> {
         }
     }
 }
- 
+
 /// Probes LW or SW with a base register whose lower 32 bits are in a given segment and whose
 /// upper 32 bits take many values, in 32-bit kernel addressing (KX = 0).
 pub struct AddressErrorVsTlbMiss32 {}
- 
+
 impl Test for AddressErrorVsTlbMiss32 {
     fn name(&self) -> &str {
         "Address error vs TLB miss (32 bit addressing, upper address bits)"
     }
- 
+
     fn level(&self) -> Level {
         Level::Weird
     }
- 
+
     fn values(&self) -> Vec<Box<dyn Any>> {
         let mut result: Vec<Box<dyn Any>> = Vec::new();
         for store in [false, true] {
@@ -1011,7 +1011,7 @@ impl Test for AddressErrorVsTlbMiss32 {
         }
         result
     }
- 
+
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
         match (*value).downcast_ref::<(bool, u32)>() {
             Some((store, family)) => run_probe(*store, *family),
@@ -1027,7 +1027,7 @@ fn run_probe(store: bool, family: u32) -> Result<(), String> {
         if store { "SW" } else { "LW" },
         FAMILIES[family as usize]
     );
- 
+
     // Words the probes may end up reading or (if the address is unexpectedly valid) zeroing
     let buffer = [0x1234_5678u32; 4];
     let buffer_address = buffer.as_ptr() as usize as u32;
@@ -1035,11 +1035,11 @@ fn run_probe(store: bool, family: u32) -> Result<(), String> {
     unsafe {
         cop0::clear_tlb();
     }
- 
+
     let low = low_word(family, buffer_address);
     let mut mismatches: Vec<String> = Vec::new();
     let mut unknown: BTreeMap<Option<u32>, Vec<Observed>> = BTreeMap::new();
- 
+
     for upper in upper_patterns() {
         let address = ((upper as u64) << 32) | low as u64;
         let observed = observe_access(store, address).map_err(|e| format!("{}: {}", header, e))?;
@@ -1059,11 +1059,11 @@ fn run_probe(store: bool, family: u32) -> Result<(), String> {
     }
     // Keep the buffer alive until all probes are done
     core::hint::black_box(&buffer);
- 
+
     if mismatches.is_empty() && unknown.is_empty() {
         return Ok(());
     }
- 
+
     let mut report = format!("{}:", header);
     for line in &mismatches {
         report.push_str(&format!("\n  MISMATCH {}", line));

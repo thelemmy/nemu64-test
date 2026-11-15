@@ -432,18 +432,18 @@ where
         ));
     }
     drop(guard);
- 
+
     let mut skip_guard = EXCEPTION_SKIP.lock();
     assert!(skip_guard.is_none());
     *skip_guard = Some(skip_instructions_on_hit);
     drop(skip_guard);
- 
+
     let result = f();
- 
+
     let mut skip_guard = EXCEPTION_SKIP.lock();
     *skip_guard = None;
     drop(skip_guard);
- 
+
     let seen = drain_seen_exception();
     match result {
         Ok(()) => Ok(seen),
