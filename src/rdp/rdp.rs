@@ -70,6 +70,11 @@ impl RDP {
         u24::extract_u32(Self::clock_32(), 0)
     }
 
+    /// Address of the clock register, for code that has to read it from assembly
+    pub fn clock_register_address() -> usize {
+        unsafe { DP_BASE_REG.add(RegisterOffset::Clock as usize >> 2) as usize }
+    }
+
     pub unsafe fn set_status(value: u32) {
         Self::set_register(RegisterOffset::Status, value);
     }
