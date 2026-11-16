@@ -238,7 +238,7 @@ impl Test for LoadMissVIEnabled {
                     },
                     42,
                     43.25f32,
-                    1.0f32,
+                    1.1f32,
                     &[
                         Assembler::make_lui(GPR::T2, (base_address >> 16) as i16),
                         Assembler::make_ori(GPR::T2, GPR::T2, base_address as u16),
