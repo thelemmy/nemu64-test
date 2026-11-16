@@ -416,6 +416,41 @@ where
     _expect_exception(code, skip_instructions_on_hit, &mut f)
 }
 
+/// Like `expect_exception`, but doesn't expect any particular exception: returns the exception that
+/// fired (and how many fired), or None if nothing fired.
+pub fn observe_exception<F>(
+    skip_instructions_on_hit: u64,
+    f: F,
+) -> Result<Option<(ExceptionContext, u32)>, alloc::string::String>
+where
+    F: FnOnce() -> Result<(), &'static str>,
+{
+    let guard = SEEN_EXCEPTION.lock();
+    if guard.is_some() {
+        return Err(alloc::string::String::from(
+            "An exception was already seen before this one",
+        ));
+    }
+    drop(guard);
+
+    let mut skip_guard = EXCEPTION_SKIP.lock();
+    assert!(skip_guard.is_none());
+    *skip_guard = Some(skip_instructions_on_hit);
+    drop(skip_guard);
+
+    let result = f();
+
+    let mut skip_guard = EXCEPTION_SKIP.lock();
+    *skip_guard = None;
+    drop(skip_guard);
+
+    let seen = drain_seen_exception();
+    match result {
+        Ok(()) => Ok(seen),
+        Err(message) => Err(alloc::string::String::from(message)),
+    }
+}
+
 pub fn install_handler(source: *mut u8, target: *mut u8, size: usize, capacity: usize) {
     assert!(size <= capacity);
 

@@ -13,7 +13,9 @@ use arbitrary_int::prelude::*;
 use crate::assembler::{
     Assembler, Cop1Condition, Cop1FloatInstruction, Opcode, RegimmOpcode, FR, GPR,
 };
-use crate::cop0::{count, set_count, set_status, status, CacheOp, RegisterIndex, Status};
+use crate::cop0::{
+    cause, count, set_count, set_status, status, CacheOp, CauseException, RegisterIndex, Status,
+};
 use crate::cop1::{fcsr, set_fcsr, FCSRFlags, FConst, FCSR};
 use crate::memory_map::MemoryMap;
 use crate::tests::soft_asserts::{soft_assert_eq, soft_assert_eq_decimal, soft_assert_range};
@@ -1087,9 +1089,12 @@ impl Test for Exceptions {
                 6u32,
                 Assembler::make_regimm_trap(RegimmOpcode::TLTIU, GPR::V0.raw_value(), 2),
             ),
-            // Address error (load from 0)
+            // TLB miss (load from 0). Status::DEFAULT is kernel mode with 32-bit addressing
+            // (KSU=0, KX=0, ERL=0), where address 0 is in kuseg, mapped by the TLB. No entry maps
+            // it, so this is a TLB refill exception (TLBL), not an address error (AdEL). The real
+            // address errors are in the "Address error" table below.
             (
-                "LB $0, 0 ($0) (address error)",
+                "LB $0, 0 ($0) (TLB miss)",
                 0u64,
                 0u64,
                 Status::DEFAULT,
@@ -1098,7 +1103,7 @@ impl Test for Exceptions {
                 Assembler::make_lb(GPR::R0, 0, GPR::R0),
             ),
             (
-                "LBU $0, 0 ($0) (address error)",
+                "LBU $0, 0 ($0) (TLB miss)",
                 0u64,
                 0u64,
                 Status::DEFAULT,
@@ -1107,7 +1112,7 @@ impl Test for Exceptions {
                 Assembler::make_lbu(GPR::R0, 0, GPR::R0),
             ),
             (
-                "LH $0, 0 ($0) (address error)",
+                "LH $0, 0 ($0) (TLB miss)",
                 0u64,
                 0u64,
                 Status::DEFAULT,
@@ -1116,7 +1121,7 @@ impl Test for Exceptions {
                 Assembler::make_lh(GPR::R0, 0, GPR::R0),
             ),
             (
-                "LHU $0, 0 ($0) (address error)",
+                "LHU $0, 0 ($0) (TLB miss)",
                 0u64,
                 0u64,
                 Status::DEFAULT,
@@ -1125,7 +1130,7 @@ impl Test for Exceptions {
                 Assembler::make_lhu(GPR::R0, 0, GPR::R0),
             ),
             (
-                "LW $0, 0 ($0) (address error)",
+                "LW $0, 0 ($0) (TLB miss)",
                 0u64,
                 0u64,
                 Status::DEFAULT,
@@ -1134,7 +1139,7 @@ impl Test for Exceptions {
                 Assembler::make_lw(GPR::R0, 0, GPR::R0),
             ),
             (
-                "LWU $0, 0 ($0) (address error)",
+                "LWU $0, 0 ($0) (TLB miss)",
                 0u64,
                 0u64,
                 Status::DEFAULT,
@@ -1143,7 +1148,7 @@ impl Test for Exceptions {
                 Assembler::make_lwu(GPR::R0, 0, GPR::R0),
             ),
             (
-                "LWR $0, 0 ($0) (address error)",
+                "LWR $0, 0 ($0) (TLB miss)",
                 0u64,
                 0u64,
                 Status::DEFAULT,
@@ -1152,7 +1157,7 @@ impl Test for Exceptions {
                 Assembler::make_lwr(GPR::R0, 0, GPR::R0),
             ),
             (
-                "LWL $0, 0 ($0) (address error)",
+                "LWL $0, 0 ($0) (TLB miss)",
                 0u64,
                 0u64,
                 Status::DEFAULT,
@@ -1161,7 +1166,7 @@ impl Test for Exceptions {
                 Assembler::make_lwl(GPR::R0, 0, GPR::R0),
             ),
             (
-                "LD $0, 0 ($0) (address error)",
+                "LD $0, 0 ($0) (TLB miss)",
                 0u64,
                 0u64,
                 Status::DEFAULT,
@@ -1170,7 +1175,7 @@ impl Test for Exceptions {
                 Assembler::make_ld(GPR::R0, 0, GPR::R0),
             ),
             (
-                "LDL $0, 0 ($0) (address error)",
+                "LDL $0, 0 ($0) (TLB miss)",
                 0u64,
                 0u64,
                 Status::DEFAULT,
@@ -1179,7 +1184,7 @@ impl Test for Exceptions {
                 Assembler::make_ldl(GPR::R0, 0, GPR::R0),
             ),
             (
-                "LDR $0, 0 ($0) (address error)",
+                "LDR $0, 0 ($0) (TLB miss)",
                 0u64,
                 0u64,
                 Status::DEFAULT,
@@ -1188,7 +1193,7 @@ impl Test for Exceptions {
                 Assembler::make_ldr(GPR::R0, 0, GPR::R0),
             ),
             (
-                "LL $0, 0 ($0) (address error)",
+                "LL $0, 0 ($0) (TLB miss)",
                 0u64,
                 0u64,
                 Status::DEFAULT,
@@ -1197,7 +1202,7 @@ impl Test for Exceptions {
                 Assembler::make_ll(GPR::R0, 0, GPR::R0),
             ),
             (
-                "LLD $0, 0 ($0) (address error)",
+                "LLD $0, 0 ($0) (TLB miss)",
                 0u64,
                 0u64,
                 Status::DEFAULT,
@@ -1206,7 +1211,7 @@ impl Test for Exceptions {
                 Assembler::make_lld(GPR::R0, 0, GPR::R0),
             ),
             (
-                "LWC1 $0, 0 ($0) (address error)",
+                "LWC1 $0, 0 ($0) (TLB miss)",
                 0u64,
                 0u64,
                 Status::DEFAULT,
@@ -1215,7 +1220,7 @@ impl Test for Exceptions {
                 Assembler::make_lwc1(FR::F0, 0, GPR::R0),
             ),
             (
-                "LDC1 $0, 0 ($0) (address error)",
+                "LDC1 $0, 0 ($0) (TLB miss)",
                 0u64,
                 0u64,
                 Status::DEFAULT,
@@ -2265,10 +2270,209 @@ impl Test for Exceptions {
                 Assembler::make_mfc2(GPR::R0, u5::new(0)),
             ),
         ];
-        crate::tests::boxed_values(VALUES_0)
+
+        /// Same as the rows of VALUES_0, plus the exception code that has to be in Cause afterwards, so a
+        /// row can't silently test another exception than the one it is named after.
+        const VALUES_EXCEPTION_CHECKED: &[(
+            &str,
+            u64,
+            u64,
+            Status,
+            ExceptionTimingMode,
+            u32,
+            u32,
+            u32,
+        )] = &[
+            // --- TLB miss: guards for the relabelled rows, plus the store counterpart ------------------
+            (
+                "LW $0, 0 ($0) (TLB miss)",
+                0u64,
+                0u64,
+                Status::DEFAULT,
+                ExceptionTimingMode::JustFire,
+                6u32,
+                Assembler::make_lw(GPR::R0, 0, GPR::R0),
+                CauseException::TLBL as u32,
+            ),
+            (
+                "SW $0, 0 ($0) (TLB miss, store)",
+                0u64,
+                0u64,
+                Status::DEFAULT,
+                ExceptionTimingMode::JustFire,
+                6u32,
+                Assembler::make_sw(GPR::R0, 0, GPR::R0), // CHECK: assembler function name
+                CauseException::TLBS as u32,
+            ),
+            // --- Address error: misaligned stores (the loads are in VALUES_0) --------------------------
+            // $3 (V1) is the harness' aligned, cached pointer
+            (
+                "SH $0, 1 ($V1) (misalign)",
+                0u64,
+                0u64,
+                Status::DEFAULT,
+                ExceptionTimingMode::JustFire,
+                6u32,
+                Assembler::make_sh(GPR::R0, 1, GPR::V1), // CHECK
+                CauseException::AdES as u32,
+            ),
+            (
+                "SW $0, 1 ($V1) (misalign)",
+                0u64,
+                0u64,
+                Status::DEFAULT,
+                ExceptionTimingMode::JustFire,
+                6u32,
+                Assembler::make_sw(GPR::R0, 1, GPR::V1),
+                CauseException::AdES as u32,
+            ),
+            (
+                "SD $0, 1 ($V1) (misalign)",
+                0u64,
+                0u64,
+                Status::DEFAULT,
+                ExceptionTimingMode::JustFire,
+                6u32,
+                Assembler::make_sd(GPR::R0, 1, GPR::V1), // CHECK
+                CauseException::AdES as u32,
+            ),
+            (
+                "SWC1 $f0, 1 ($V1) (misalign)",
+                0u64,
+                0u64,
+                Status::DEFAULT,
+                ExceptionTimingMode::JustFire,
+                6u32,
+                Assembler::make_swc1(FR::F0, 1, GPR::V1), // CHECK
+                CauseException::AdES as u32,
+            ),
+            (
+                "SDC1 $f0, 1 ($V1) (misalign)",
+                0u64,
+                0u64,
+                Status::DEFAULT,
+                ExceptionTimingMode::JustFire,
+                6u32,
+                Assembler::make_sdc1(FR::F0, 1, GPR::V1), // CHECK
+                CauseException::AdES as u32,
+            ),
+            // --- Address error: 64-bit value that isn't a valid 32-bit address (KX = 0) ----------------
+            (
+                "LW $0, 0 ($V0) (address error, KSEG0 zero-extended)",
+                0x0000_0000_8000_1000u64,
+                0u64,
+                Status::DEFAULT,
+                ExceptionTimingMode::JustFire,
+                6u32,
+                Assembler::make_lw(GPR::R0, 0, GPR::V0),
+                CauseException::AdEL as u32,
+            ),
+            (
+                "LW $0, 0 ($V0) (address error, bit 32 set)",
+                0x0000_0001_0000_0000u64,
+                0u64,
+                Status::DEFAULT,
+                ExceptionTimingMode::JustFire,
+                6u32,
+                Assembler::make_lw(GPR::R0, 0, GPR::V0),
+                CauseException::TLBL as u32,
+            ),
+            (
+                "SW $0, 0 ($V0) (address error, KSEG0 zero-extended)",
+                0x0000_0000_8000_1000u64,
+                0u64,
+                Status::DEFAULT,
+                ExceptionTimingMode::JustFire,
+                6u32,
+                Assembler::make_sw(GPR::R0, 0, GPR::V0),
+                CauseException::AdES as u32,
+            ),
+            (
+                "SW $0, 0 ($V0) (address error, bit 32 set)",
+                0x0000_0001_0000_1000u64,
+                0u64,
+                Status::DEFAULT,
+                ExceptionTimingMode::JustFire,
+                6u32,
+                Assembler::make_sw(GPR::R0, 0, GPR::V0),
+                CauseException::TLBS as u32,
+            ),
+            // --- Address error: undefined 64-bit address (KX = 1) --------------------------------------
+            // Kernel mode with 64-bit addressing: xkuseg ends at 0x0000_00FF_FFFF_FFFF, xksseg starts at
+            // 0x4000_0000_0000_0000. Addresses in the gaps aren't defined.
+            (
+                "LW $0, 0 ($V0) (address error, 64-bit mode, above xkuseg)",
+                0x0000_0100_0000_0000u64,
+                0u64,
+                Status::ADDRESSING_MODE_64_BIT,
+                ExceptionTimingMode::JustFire,
+                6u32,
+                Assembler::make_lw(GPR::R0, 0, GPR::V0),
+                CauseException::AdEL as u32,
+            ),
+            (
+                "LW $0, 0 ($V0) (address error, 64-bit mode, gap before xksseg)",
+                0x2000_0000_0000_0000u64,
+                0u64,
+                Status::ADDRESSING_MODE_64_BIT,
+                ExceptionTimingMode::JustFire,
+                6u32,
+                Assembler::make_lw(GPR::R0, 0, GPR::V0),
+                CauseException::AdEL as u32,
+            ),
+            (
+                "SW $0, 0 ($V0) (address error, 64-bit mode, above xkuseg)",
+                0x0000_0100_0000_0000u64,
+                0u64,
+                Status::ADDRESSING_MODE_64_BIT,
+                ExceptionTimingMode::JustFire,
+                6u32,
+                Assembler::make_sw(GPR::R0, 0, GPR::V0),
+                CauseException::AdES as u32,
+            ),
+        ];
+
+        let mut result = crate::tests::boxed_values(VALUES_0);
+        result.extend(crate::tests::boxed_values(VALUES_EXCEPTION_CHECKED));
+        result
     }
 
     fn run(&self, value: &Box<dyn Any>) -> Result<(), String> {
+        match (*value)
+            .downcast_ref::<(&str, u64, u64, Status, ExceptionTimingMode, u32, u32, u32)>()
+        {
+            Some((
+                _context,
+                value2,
+                value4,
+                status,
+                exception_mode,
+                expected_cycles,
+                instruction,
+                expected_exception,
+            )) => {
+                unsafe {
+                    crate::cop0::clear_tlb();
+                }
+                assert_cycles_with_codegen_one_instruction(
+                    *expected_cycles,
+                    *value2,
+                    *value4,
+                    *status,
+                    *exception_mode,
+                    *instruction,
+                )?;
+                // Cause.ExcCode keeps the last exception after ERET: the one of the last iteration
+                let exception_code = (cause().raw_value() >> 2) & 0x1F;
+                return soft_assert_eq(
+                    exception_code,
+                    *expected_exception,
+                    "Cause.ExcCode: the row doesn't test the exception it is named after",
+                );
+            }
+            _ => {}
+        }
+
         match (*value).downcast_ref::<(&str, u64, u64, Status, ExceptionTimingMode, u32, u32)>() {
             Some((
                 _context,

@@ -20,7 +20,7 @@ fn ori_v0_imm(imm: u16) -> u32 {
     (0x0Du32 << 26) | (2u32 << 16) | u32::from(imm)
 }
 
-#[repr(C, align(32))]
+#[repr(C, align(16384))] // align to 16kb to stabilize the used cached line between builds
 struct IcacheExecSlot {
     insns: [u32; 8],
 }
